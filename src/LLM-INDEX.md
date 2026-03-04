@@ -126,19 +126,75 @@ If retrieved chunks disagree:
 
 ## High-Cost Docs — Resolved
 
-All previously identified high-cost files have been split into individually addressable units:
+All previously identified high-cost files (>40KB) have been split into individually addressable sub-files. Each hub page retains overview content and a routing table to its sub-files.
 
-| Original File | Now Split Into | Index Page |
+### Chapter-Level Splits
+
+| Hub Page | Sub-Files | Directory |
 | --- | --- | --- |
-| `src/decisions/09f-tools.md` | `src/decisions/09f/D016-*.md` … `D057-*.md` (6 files) | `09f-tools.md` (routing table only) |
-| `src/decisions/09g-interaction.md` | `src/decisions/09g/D058-*.md` … `D069-*.md` (4 files) | `09g-interaction.md` (routing table only) |
-| `src/decisions/09b-networking.md` | `src/decisions/09b/D006-*.md` … `D060-*.md` (8 files) | `09b-networking.md` (routing table only) |
-| `src/decisions/09e-community.md` | `src/decisions/09e/D030-*.md` … `D061-*.md` (10 files) | `09e-community.md` (routing table only) |
-| `src/decisions/09d-gameplay.md` | `src/decisions/09d/D013-*.md` … `D070-*.md` (11 files) | `09d-gameplay.md` (routing table only) |
-| `src/02-ARCHITECTURE.md` | `src/architecture/*.md` (13 subsystem files) | `02-ARCHITECTURE.md` (core invariants + routing table) |
-| `src/17-PLAYER-FLOW.md` | `src/player-flow/*.md` (16 screen files) | `17-PLAYER-FLOW.md` (UX principles + state machine + routing table) |
+| `02-ARCHITECTURE.md` | 13 subsystem files | `architecture/` |
+| `03-NETCODE.md` | 13 subsystem files | `netcode/` |
+| `04-MODDING.md` | 10 topic files | `modding/` |
+| `05-FORMATS.md` | 3 topic files | `formats/` |
+| `06-SECURITY.md` | 9 vulnerability-group files | `security/` |
+| `08-ROADMAP.md` | 1 sub-file (Phases 6a–7) | `roadmap/` |
+| `10-PERFORMANCE.md` | 6 topic files | `performance/` |
+| `11-OPENRA-FEATURES.md` | 7 section files | `openra-features/` |
+| `14-METHODOLOGY.md` | 1 sub-file (Research Rigor) | `methodology/` |
+| `15-SERVER-GUIDE.md` | 1 sub-file (Operations) | `server-guide/` |
+| `16-CODING-STANDARDS.md` | 1 sub-file (Quality & Review) | `coding-standards/` |
+| `17-PLAYER-FLOW.md` | 16 screen files | `player-flow/` |
 
-**Retrieval pattern:** Read the index page (~500–800 tokens) to identify which sub-file to load, then load only that sub-file (~2k–12k tokens). Never load the full original content unless doing a cross-cutting audit.
+### Decision Category Splits
+
+| Hub Page | Individual Decision Files | Directory |
+| --- | --- | --- |
+| `decisions/09a-foundation.md` | 10 files | `decisions/09a/` |
+| `decisions/09b-networking.md` | 8 files | `decisions/09b/` |
+| `decisions/09c-modding.md` | 15 files | `decisions/09c/` |
+| `decisions/09d-gameplay.md` | 16 files | `decisions/09d/` |
+| `decisions/09e-community.md` | 10 files | `decisions/09e/` |
+| `decisions/09f-tools.md` | 8 files | `decisions/09f/` |
+| `decisions/09g-interaction.md` | 4 files | `decisions/09g/` |
+
+### Individual Decision Sub-Splits
+
+Large individual decisions have been further split into sub-files:
+
+| Decision Hub | Sub-Files | Directory |
+| --- | --- | --- |
+| `D016-llm-missions.md` | 6 sub-files | `decisions/09f/D016/` |
+| `D019-balance-presets.md` | 1 sub-file | `decisions/09d/D019/` |
+| `D030-workshop-registry.md` | 1 sub-file | `decisions/09e/D030/` |
+| `D031-observability.md` | 1 sub-file | `decisions/09e/D031/` |
+| `D034-sqlite.md` | 1 sub-file | `decisions/09e/D034/` |
+| `D038-scenario-editor.md` | 6 sub-files | `decisions/09f/D038/` |
+| `D049-workshop-assets.md` | 3 sub-files | `decisions/09e/D049/` |
+| `D052-community-servers.md` | 4 sub-files | `decisions/09b/D052/` |
+| `D055-ranked-matchmaking.md` | 1 sub-file | `decisions/09b/D055/` |
+| `D058-command-console.md` | 3 sub-files | `decisions/09g/D058/` |
+| `D059-communication.md` | 5 sub-files | `decisions/09g/D059/` |
+| `D061-data-backup.md` | 2 sub-files | `decisions/09e/D061/` |
+| `D065-tutorial.md` | 5 sub-files | `decisions/09g/D065/` |
+
+### Tracking & Planning Splits
+
+| Hub Page | Sub-Files | Directory |
+| --- | --- | --- |
+| `18-PROJECT-TRACKER.md` | 6 tracker files | `tracker/` |
+| `tracker/decision-tracker.md` | 4 D-range files | `tracker/` |
+| `tracking/milestone-dependency-map.md` | 9 cluster/ladder files | `tracking/milestone-deps/` |
+| `tracking/testing-strategy.md` | 3 topic files | `tracking/testing/` |
+
+### Sub-File Splits Within Existing Directories
+
+| Hub Page | Sub-File | In Directory |
+| --- | --- | --- |
+| `architecture/api-misuse-defense.md` | `api-misuse-patterns.md` | `architecture/` |
+| `modding/tera-templating.md` | `tera-templating-advanced.md` | `modding/` |
+| `modding/workshop.md` | `workshop-features.md` | `modding/` |
+
+**Retrieval pattern:** Read the hub/index page (~500–2,000 tokens) to identify which sub-file to load, then load only that sub-file (~2k–12k tokens). Never load the full original content unless doing a cross-cutting audit.
 
 ---
 

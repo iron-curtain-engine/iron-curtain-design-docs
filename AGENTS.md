@@ -268,6 +268,52 @@ These are not design decisions — they are operational/legal tasks tied to spec
 - **Never run `mdbook build`, `mdbook serve`, or any mdbook command.** The book is built manually by the maintainer when ready. Only edit the markdown source files in `src/`.
 - **When linking to design docs from public-facing files (README, etc.), use the hosted mdbook URL:** `https://dk26.github.io/iron-curtain-design-docs/`. Link to `.html` pages (e.g., `01-VISION.html`), not the raw `src/*.md` source files.
 
+#### File Size Discipline (LLM/RAG Token Efficiency)
+
+The mdbook is structured for efficient LLM/RAG retrieval. Every markdown file in `src/` must stay **under 40 KB** (~10,000–12,000 tokens). This is a hard limit — not a guideline.
+
+**Hub-and-sub-file pattern:** Large topics use a **hub page** (overview + routing table) that links to individually addressable **sub-files** in a subdirectory. The hub retains the introductory/overview content; the sub-files contain the detailed sections. An agent or RAG system reads the hub (~500–2,000 tokens) to identify the relevant sub-file, then loads only that sub-file.
+
+**When writing new content:**
+1. If your new content would push an existing file over 40 KB, split it. Extract the new section (or an existing large section) into a sub-file in the appropriate subdirectory.
+2. Add a routing entry to the hub page's `## Sub-Pages` table.
+3. Add a corresponding entry in `src/SUMMARY.md` (indented under the hub's line).
+4. If the split creates a new directory pattern, add it to the "High-Cost Docs" catalog in `src/LLM-INDEX.md`.
+
+**When editing existing split files:**
+- Edit the sub-file directly — never inline content back into the hub.
+- If a sub-file grows past 40 KB from your edits, split it further using the same pattern.
+
+**SUMMARY.md indentation rules:**
+- Chapter sub-entries: 2-space indent (`  - [Sub](path.md)`)
+- Tracker sub-entries (under `18-PROJECT-TRACKER`): 4-space indent
+- Decision sub-files (under individual `D0XX` entries): 6-space indent
+- Sub-sub-files (under an already-split sub-file): 8-space indent
+
+**Existing directory structure for split files:**
+
+| Hub Page Pattern | Sub-File Directory |
+| --- | --- |
+| `src/02-ARCHITECTURE.md` | `src/architecture/` |
+| `src/03-NETCODE.md` | `src/netcode/` |
+| `src/04-MODDING.md` | `src/modding/` |
+| `src/05-FORMATS.md` | `src/formats/` |
+| `src/06-SECURITY.md` | `src/security/` |
+| `src/08-ROADMAP.md` | `src/roadmap/` |
+| `src/10-PERFORMANCE.md` | `src/performance/` |
+| `src/11-OPENRA-FEATURES.md` | `src/openra-features/` |
+| `src/14-METHODOLOGY.md` | `src/methodology/` |
+| `src/15-SERVER-GUIDE.md` | `src/server-guide/` |
+| `src/16-CODING-STANDARDS.md` | `src/coding-standards/` |
+| `src/17-PLAYER-FLOW.md` | `src/player-flow/` |
+| `src/18-PROJECT-TRACKER.md` | `src/tracker/` + `src/tracking/` |
+| `src/decisions/09X-*.md` | `src/decisions/09X/D0XX-*.md` |
+| Individual `D0XX-*.md` (if split further) | `src/decisions/09X/D0XX/` |
+
+**Files to update together when restructuring:** `src/SUMMARY.md`, `src/LLM-INDEX.md`, and the hub page's routing table. All three must stay in sync.
+
+**Canonical reference:** `src/LLM-INDEX.md` — the full retrieval index, chunking strategy, routing rules, and complete catalog of all splits.
+
 ### Implementation Overlay Discipline (Milestones / Dependencies / Priority)
 
 This project uses an **execution overlay** (milestones `M0–M11`, feature clusters, dependency DAG) in addition to the canonical phase roadmap. Agents must keep new features correctly placed in that overlay.
