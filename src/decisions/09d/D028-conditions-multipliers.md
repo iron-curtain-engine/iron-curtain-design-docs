@@ -30,8 +30,9 @@ Conditions are named boolean flags on entities. They are ref-counted — multipl
 
 ```rust
 /// Per-entity condition state. Ref-counted so multiple sources can grant the same condition.
+/// BTreeMap, not HashMap — deterministic iteration (ic-sim collection policy, see type-safety.md).
 pub struct Conditions {
-    active: HashMap<ConditionId, u32>,  // name → grant count
+    active: BTreeMap<ConditionId, u32>,  // name → grant count
 }
 
 impl Conditions {
@@ -43,15 +44,15 @@ impl Conditions {
 
 **Condition sources** (each a separate system or component hook):
 
-| Source | Grants When | Example |
-|--------|-------------|---------|
-| `on_movement` | Entity is moving | `moving` |
-| `on_damage_state` | Health crosses threshold | `damaged`, `critical` |
-| `on_deploy` | Entity deploys/undeploys | `deployed` |
-| `on_veterancy` | XP level reached | `veteran`, `elite`, `heroic` |
-| `on_terrain` | Entity occupies terrain type | `on_road`, `on_snow` |
-| `on_attack` | Entity fires weapon | `firing` |
-| `on_idle` | Entity has no orders | `idle` |
+| Source            | Grants When                  | Example                      |
+| ----------------- | ---------------------------- | ---------------------------- |
+| `on_movement`     | Entity is moving             | `moving`                     |
+| `on_damage_state` | Health crosses threshold     | `damaged`, `critical`        |
+| `on_deploy`       | Entity deploys/undeploys     | `deployed`                   |
+| `on_veterancy`    | XP level reached             | `veteran`, `elite`, `heroic` |
+| `on_terrain`      | Entity occupies terrain type | `on_road`, `on_snow`         |
+| `on_attack`       | Entity fires weapon          | `firing`                     |
+| `on_idle`         | Entity has no orders         | `idle`                       |
 
 **Condition consumers:** Any component field can declare `requires:` or `disabled_by:` conditions in YAML. The runtime checks `conditions.is_active()` before the component's system processes that entity.
 
@@ -102,16 +103,16 @@ Within each phase, modifiers apply in YAML declaration order. This is determinis
 
 **Multiplier sources** (OpenRA-compatible names):
 
-| Multiplier | Affects | Typical Sources |
-|------------|---------|-----------------|
-| `DamageMultiplier` | Incoming damage | Veterancy, prone stance, armor crates |
-| `FirepowerMultiplier` | Outgoing damage | Veterancy, elite status |
-| `SpeedMultiplier` | Movement speed | Terrain, roads, crates |
-| `RangeMultiplier` | Weapon range | Veterancy, deploy mode |
-| `ReloadDelayMultiplier` | Weapon reload | Veterancy, heroic status |
-| `ProductionCostMultiplier` | Build cost | Player handicap, tech level |
-| `ProductionTimeMultiplier` | Build time | Multiple factories bonus |
-| `RevealsShroudMultiplier` | Sight range | Veterancy, crates |
+| Multiplier                 | Affects         | Typical Sources                       |
+| -------------------------- | --------------- | ------------------------------------- |
+| `DamageMultiplier`         | Incoming damage | Veterancy, prone stance, armor crates |
+| `FirepowerMultiplier`      | Outgoing damage | Veterancy, elite status               |
+| `SpeedMultiplier`          | Movement speed  | Terrain, roads, crates                |
+| `RangeMultiplier`          | Weapon range    | Veterancy, deploy mode                |
+| `ReloadDelayMultiplier`    | Weapon reload   | Veterancy, heroic status              |
+| `ProductionCostMultiplier` | Build cost      | Player handicap, tech level           |
+| `ProductionTimeMultiplier` | Build time      | Multiple factories bonus              |
+| `RevealsShroudMultiplier`  | Sight range     | Veterancy, crates                     |
 
 ### Conditional Modifiers (Tier 1.5)
 
@@ -140,14 +141,14 @@ heavy_tank:
 
 **Filter types:**
 
-| Filter | Examples | Resolves Against |
-|--------|----------|------------------|
-| **state** | `deployed`, `moving`, `idle` | Entity condition bitset |
-| **terrain** | `on_road`, `on_snow`, `on_water` | Cell terrain type |
-| **attribute** | `vs [armored]`, `vs [infantry]` | Target attribute tags |
-| **veterancy** | `veterancy >= 1`, `veterancy == 3` | Entity veterancy level |
-| **proximity** | `near_ally_repair`, `near_enemy` | Spatial query (cached) |
-| **global** | `superweapon_active`, `low_power` | Player-level game state |
+| Filter        | Examples                           | Resolves Against        |
+| ------------- | ---------------------------------- | ----------------------- |
+| **state**     | `deployed`, `moving`, `idle`       | Entity condition bitset |
+| **terrain**   | `on_road`, `on_snow`, `on_water`   | Cell terrain type       |
+| **attribute** | `vs [armored]`, `vs [infantry]`    | Target attribute tags   |
+| **veterancy** | `veterancy >= 1`, `veterancy == 3` | Entity veterancy level  |
+| **proximity** | `near_ally_repair`, `near_enemy`   | Spatial query (cached)  |
+| **global**    | `superweapon_active`, `low_power`  | Player-level game state |
 
 ### Integration with Damage Pipeline
 
@@ -164,9 +165,9 @@ Armament fires → Projectile → impact → Warhead(s)
 
 ### Alternatives Considered
 
-| Alternative | Verdict | Reason |
-|-------------|---------|--------|
-| Hardcoded multiplier tables | Rejected | Not moddable; breaks Tier 1 YAML-only modding promise |
-| Lua-based stat resolution | Rejected | Conditions are too frequent (every tick, every entity) for Lua overhead; YAML declarative approach is faster and simpler |
-| Float-based multipliers | Rejected | Violates Invariant #1 (deterministic sim requires fixed-point) |
-| Unordered modifier evaluation | Rejected | Non-deterministic; would break replays across platforms |
+| Alternative                   | Verdict  | Reason                                                                                                                   |
+| ----------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Hardcoded multiplier tables   | Rejected | Not moddable; breaks Tier 1 YAML-only modding promise                                                                    |
+| Lua-based stat resolution     | Rejected | Conditions are too frequent (every tick, every entity) for Lua overhead; YAML declarative approach is faster and simpler |
+| Float-based multipliers       | Rejected | Violates Invariant #1 (deterministic sim requires fixed-point)                                                           |
+| Unordered modifier evaluation | Rejected | Non-deterministic; would break replays across platforms                                                                  |

@@ -194,10 +194,13 @@ Tier 3 WASM mods can provide custom `Pathfinder` trait implementations (D013, D0
 
 /// Allocate scratch memory from the engine's pre-allocated pool.
 /// Pathfinding is hot-path — no per-tick heap allocation allowed.
-#[wasm_host_fn] fn ic_pathfind_scratch_alloc(bytes: u32) -> *mut u8;
+/// Returns a u32 offset into the guest's linear memory where the
+/// engine has reserved `bytes` of scratch space. The host writes
+/// into guest memory; the guest accesses it via this offset.
+#[wasm_host_fn] fn ic_pathfind_scratch_alloc(bytes: u32) -> u32;
 
 /// Return scratch memory to the pool.
-#[wasm_host_fn] fn ic_pathfind_scratch_free(ptr: *mut u8, bytes: u32);
+#[wasm_host_fn] fn ic_pathfind_scratch_free(offset: u32, bytes: u32);
 ```
 
 **WASM-exported trait functions** (the engine *calls* these on the mod):
@@ -327,8 +330,9 @@ Tier 3 WASM mods can provide custom `AiStrategy` trait implementations (D041, D0
 #[wasm_host_fn] fn ic_ai_issue_order(order: &PlayerOrder) -> bool;
 
 /// Allocate scratch memory from the engine's pre-allocated pool.
-#[wasm_host_fn] fn ic_ai_scratch_alloc(bytes: u32) -> *mut u8;
-#[wasm_host_fn] fn ic_ai_scratch_free(ptr: *mut u8, bytes: u32);
+/// Returns a u32 offset into the guest's linear memory (see pathfinder API for details).
+#[wasm_host_fn] fn ic_ai_scratch_alloc(bytes: u32) -> u32;
+#[wasm_host_fn] fn ic_ai_scratch_free(offset: u32, bytes: u32);
 
 /// String table lookups — resolve u32 type IDs to human-readable names.
 /// Called once at game start or on-demand; results cached WASM-side.

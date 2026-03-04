@@ -30,13 +30,13 @@ All player data lives under a single, self-contained directory. The structure is
 
 **Platform-specific `<data_dir>` resolution:**
 
-| Platform       | Default Location                                                         |
-| -------------- | ------------------------------------------------------------------------ |
-| Windows        | `%APPDATA%\IronCurtain\`                                                 |
-| macOS          | `~/Library/Application Support/IronCurtain/`                             |
-| Linux          | `$XDG_DATA_HOME/iron-curtain/` (default: `~/.local/share/iron-curtain/`) |
-| Browser (WASM) | OPFS virtual filesystem (see `05-FORMATS.md` § Browser Storage)          |
-| Mobile         | App sandbox (platform-managed)                                           |
+| Platform       | Default Location                                                                                 |
+| -------------- | ------------------------------------------------------------------------------------------------ |
+| Windows        | `%APPDATA%\IronCurtain\`                                                                         |
+| macOS          | `~/Library/Application Support/IronCurtain/`                                                     |
+| Linux          | `$XDG_DATA_HOME/iron-curtain/` (default: `~/.local/share/iron-curtain/`)                         |
+| Browser (WASM) | OPFS virtual filesystem (see `05-FORMATS.md` § Browser Storage)                                  |
+| Mobile         | App sandbox (platform-managed)                                                                   |
 | Portable mode  | `<exe_dir>/data/` (activated by `IC_PORTABLE=1`, `--portable`, or `portable.marker` next to exe) |
 
 Override with `IC_DATA_DIR` environment variable or `--data-dir` CLI flag. All path resolution is centralized in `ic-paths` (see § Crate Design Notes). All asset loading goes through Bevy's asset system (rule 5 below) — the data directory is for player-generated content, not game assets.
@@ -61,7 +61,7 @@ Post-milestone toasts (same system as D030's Workshop cleanup prompts) nudge pla
 
 4. **Render quality is configurable per device.** FPS cap, particle density, post-FX toggles, resolution scaling, shadow quality — all runtime-configurable. Mobile caps at 30fps; desktop targets 60-240fps. The renderer reads a `RenderSettings` resource, not compile-time constants. Four render quality tiers (Baseline → Standard → Enhanced → Ultra) are auto-detected from `wgpu::Adapter` capabilities at startup. Tier 0 (Baseline) targets GL 3.3 / WebGL2 hardware — no compute shaders, no post-FX, CPU particle fallback, palette tinting for weather. **Advanced Bevy rendering features (3D render modes, heavy post-FX, dynamic lighting) are optional layers, not baseline requirements; the classic 2D game must remain fully playable on no-dedicated-GPU systems that meet the downlevel hardware floor.** See `10-PERFORMANCE.md` § "GPU & Hardware Compatibility" for tier definitions and hardware floor analysis.
 
-5. **No raw filesystem I/O.** All asset loading goes through Bevy's asset system, never `std::fs` directly. Mobile and browser have sandboxed filesystems; WASM has no filesystem at all. Save games use platform-appropriate storage (e.g., `localStorage` on web, app sandbox on mobile).
+5. **No raw filesystem I/O.** All asset loading goes through Bevy's asset system, never `std::fs` directly. Mobile and browser have sandboxed filesystems; WASM targets use browser storage APIs (OPFS primary, IndexedDB fallback, localStorage for settings only — see `05-FORMATS.md` § Browser Asset Storage). Save games use platform-appropriate storage (OPFS/IndexedDB on web, app sandbox on mobile).
 
 6. **App lifecycle is handled.** Mobile and consoles require suspend/resume/save-on-background. The snapshottable sim makes this trivial — `snapshot()` on suspend, `restore()` on resume. This must be an engine-level lifecycle hook, not an afterthought.
 

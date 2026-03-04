@@ -24,7 +24,7 @@ pub trait NetworkModel: Send + Sync {
 }
 ```
 
-**Trait shape note:** This trait is lockstep-shaped — `poll_tick()` returns confirmed orders or nothing, matching lockstep's "wait, then advance" pattern. All shipping implementations fit naturally. See § "Deferred Optional Architectures" for how this constrains non-lockstep experiments (M11).
+**Trait shape note:** This trait is lockstep-shaped — `poll_tick()` returns confirmed orders or nothing, matching lockstep's "wait, then advance" pattern. All shipping implementations fit naturally. See § "Additional NetworkModel Architectures" for how this constrains non-lockstep experiments (M11).
 
 ### Deployment Modes
 
@@ -119,7 +119,20 @@ impl NetworkModel for LocalNetwork {
     }
     
     fn poll_tick(&mut self) -> Option<TickOrders> {
-        // Always ready — no waiting for other clients
+        // Accumulator-based: tracks how much real time has elapsed and
+        // emits one tick per TICK_DURATION of accumulated time. This
+        // preserves the fixed 30 tps rate independent of frame rate —
+        // if a frame arrives late, multiple ticks are available on the
+        // next calls (bounded by GameLoop's MAX_TICKS_PER_FRAME cap).
+        let now = Instant::now();
+        let elapsed = now - self.last_poll_time;
+        if elapsed < TICK_DURATION {
+            return None; // Not enough time for the next tick
+        }
+        // Deduct one tick's worth of time; remainder carries forward.
+        // This prevents drift — late frames catch up, early frames wait.
+        self.last_poll_time += TICK_DURATION;
+        self.tick += 1;
         Some(TickOrders {
             tick: self.tick,
             orders: std::mem::take(&mut self.pending),
@@ -128,7 +141,7 @@ impl NetworkModel for LocalNetwork {
 }
 ```
 
-At 30 tps, a click-to-move in single player is confirmed within ~33ms — imperceptible to humans (reaction time is ~200ms). Combined with visual prediction, the game feels **instant**.
+At 30 tps, a click-to-move in single player is confirmed within ~33 ms — imperceptible to humans (reaction time is ~200 ms). The accumulator pattern (`last_poll_time += TICK_DURATION` instead of `= now + TICK_DURATION`) ensures the sim maintains exactly 30 tps regardless of frame rate — missed time is caught up via multiple ticks per frame, bounded by `GameLoop`'s `MAX_TICKS_PER_FRAME` cap. Combined with visual prediction, the game feels **instant**.
 
 ### Replay Playback
 
@@ -143,40 +156,49 @@ Replays are signed by the relay server for tamper-proofing (see `06-SECURITY.md`
 
 ### Background Replay Writer
 
-During live games, the replay file is written by a **background writer** using a lock-free queue — the sim thread never blocks on I/O. This prevents disk write latency from causing frame hitches (a problem observed in 0 A.D.'s synchronous replay recording — see `research/0ad-warzone2100-netcode-analysis.md`):
+During live games, the replay file is written by a **background writer** using a bounded channel — the sim thread spends at most 5 ms on I/O per tick. This prevents disk write latency from causing sustained frame hitches (a problem observed in 0 A.D.'s synchronous replay recording — see `research/0ad-warzone2100-netcode-analysis.md`):
 
 ```rust
-/// Non-blocking replay recorder. The sim thread pushes tick frames
-/// into a lock-free queue; a background thread drains and writes.
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::time::Duration;
+
+/// Bounded-latency replay recorder. The sim thread pushes tick frames
+/// into a bounded channel; a background thread drains and writes.
 pub struct BackgroundReplayWriter {
     queue: crossbeam::channel::Sender<ReplayTickFrame>,
     handle: std::thread::JoinHandle<()>,
+    /// Counts frames lost due to channel backpressure (V45).
+    lost_frame_count: AtomicU32,
 }
 
 impl BackgroundReplayWriter {
-    /// Called from the sim thread after each tick. Never blocks.
+    /// Called from the sim thread after each tick. Blocks at most 5ms
+    /// (send_timeout) — bounded latency, not lock-free.
     pub fn record_tick(&self, frame: ReplayTickFrame) {
-        // crossbeam bounded channel — if the writer falls behind,
-        // oldest frames are still in memory (not dropped). The buffer
-        // is sized for ~10 seconds of ticks (300 frames at 30 tps).
-        let _ = self.queue.try_send(frame);
+        // crossbeam bounded channel sized for ~10 seconds of ticks
+        // (300 frames at 30 tps). Use send_timeout to avoid blocking
+        // the sim thread while giving the writer a chance to drain.
+        // If the timeout expires, the frame is lost — tracked in the
+        // replay header (see V45 mitigations below).
+        match self.queue.send_timeout(frame, Duration::from_millis(5)) {
+            Ok(()) => {},
+            Err(_) => self.lost_frame_count.fetch_add(1, Ordering::Relaxed),
+        }
     }
 }
 ```
 
-> **Security (V45):** `try_send` silently drops frames when the channel is full — contradicting the code comment. Lost frames break the Ed25519 signature chain (V4). Mitigations: track frame loss count in replay header, use `send_timeout(frame, 5ms)` instead of `try_send`, mark replays with lost frames as `incomplete` (playable but not ranked-verifiable), handle signature chain gaps explicitly. See `06-SECURITY.md` § Vulnerability 45.
+> **Security (V45):** The `send_timeout` pattern above bounds blocking to 5ms. If the writer still can't keep up, frames are lost — `lost_frame_count` is recorded in the replay header. Lost frames break the Ed25519 signature chain (V4). Replays with lost frames are marked `incomplete` (playable but not ranked-verifiable). The signature chain handles gaps via the `skipped_ticks` field in `TickSignature` — see `formats/save-replay-formats.md` § TickSignature and `06-SECURITY.md` § Vulnerability 45.
 
-The background thread writes frames incrementally — the `.icrep` file is always valid (see `05-FORMATS.md` § Replay File Format). If the game crashes, the replay up to the last flushed frame is recoverable. On game end, the writer flushes remaining frames, writes the final header (total ticks, final state hash), and closes the file.
+The background thread writes frames incrementally — the `.icrep` file is always valid (see `formats/save-replay-formats.md` § Replay File Format). If the game crashes, the replay up to the last flushed frame is recoverable. On game end, the writer flushes remaining frames, writes the final header (`total_ticks`, `final_state_hash`, `lost_frame_count`), sets the `INCOMPLETE` flag (bit 4) if any frames were lost, and closes the file.
 
-## Deferred Optional Architectures (Not Shipping)
+## Additional NetworkModel Architectures
 
-The `NetworkModel` trait preserves architectural escape hatches for fundamentally different networking approaches. **None of these are part of the shipping netcode.** IC ships one netcode: relay-assisted deterministic lockstep with sub-tick ordering. Everything above this section — sub-tick, QoS calibration, timing feedback, adaptive run-ahead, never-stall relay, visual prediction — is part of that single integrated lockstep system.
+The `NetworkModel` trait enables fundamentally different networking approaches beyond the default relay lockstep. IC ships relay-assisted deterministic lockstep with sub-tick ordering as the default. Everything above this section — sub-tick, QoS calibration, timing feedback, adaptive run-ahead, never-stall relay, visual prediction — is part of that default lockstep system.
 
-These deferred architectures are outside `M4` and `M7` core lockstep scope. They would require a separate explicit decision and execution-overlay placement to become active work.
+### Fog-Authoritative Server (anti-maphack)
 
-### Fog-Authoritative Server (anti-maphack, `P-Optional` / `M11`)
-
-Server runs full sim, sends each client only visible entities. Eliminates maphack architecturally. Requires server compute per game. See `06-SECURITY.md` § Vulnerability 1 and `research/fog-authoritative-server-design.md` for the full design.
+Server runs full sim, sends each client only visible entities. Eliminates maphack architecturally. Requires server compute per game. An operator enables it per-room or per-match-type via `ic-server` capability flags (D074) — it is not a separate product. See `06-SECURITY.md` § Vulnerability 1, `decisions/09b/D074-community-server-bundle.md`, and `research/fog-authoritative-server-design.md` for the full design. Implementation milestone: `M11` (`P-Optional`), but the `NetworkModel` trait abstraction and `ic-server` capability infrastructure are designed to support it from day one.
 
 ### Rollback / GGPO-Style (`P-Optional` / `M11`)
 

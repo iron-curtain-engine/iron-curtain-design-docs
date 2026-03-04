@@ -35,7 +35,7 @@ The simulation and renderer are completely decoupled from day one.
 │                                             │
 │  Input(I) → Network(N) → Sim (tick) → Render│
 │                                             │
-│  Sim runs at fixed tick rate (e.g., 15/sec) │
+│  Sim runs at fixed 30 tps (D060)            │
 │  Renderer interpolates between sim states   │
 │  Renderer can run at any FPS independently  │
 └─────────────────────────────────────────────┘
@@ -46,7 +46,7 @@ The simulation and renderer are completely decoupled from day one.
 - **Pure:** No I/O, no floats in game logic, no network awareness
 - **Fixed-point math:** `i32`/`i64` with known scale (never `f32`/`f64` in sim)
 - **Snapshottable:** Full state serializable for replays, save games, desync debugging, rollback, campaign state persistence (D021)
-- **Headless-capable:** Can run without renderer (dedicated servers, AI training, automated testing)
+- **Headless-capable:** `ic-sim` can run without a renderer (dedicated servers, AI training, automated testing). External consumers drive `Simulation` directly — `GameLoop` is the client-side frame loop and always renders (see `architecture/game-loop.md`).
 - **Library-first:** `ic-sim` is a Rust library crate usable by external projects — not just an internal dependency of `ic-game`
 
 ### External Sim API (Bot Development & Research)
@@ -135,8 +135,10 @@ impl Simulation {
     }
 
     /// Snapshot for rollback / desync debugging / save games.
-    /// Uses crash-safe serialization: payload written first, header
-    /// updated atomically after fsync (Fossilize pattern — see D010).
+    /// Returns a SimSnapshot (in-memory serialized state). Pure — no I/O.
+    /// Callers (in ic-game) persist snapshots using crash-safe I/O:
+    /// payload written first, header updated atomically after fsync
+    /// (Fossilize pattern — see D010 and state-recording.md).
     pub fn snapshot(&self) -> SimSnapshot { /* serialize everything */ }
     pub fn restore(&mut self, snap: &SimSnapshot) { /* deserialize */ }
 
@@ -289,7 +291,7 @@ pub trait FogProvider: Send + Sync {
 }
 ```
 
-RA1 registers `RadiusFogProvider` (circle-based, fast, matches original RA). RA2/TS would register `ElevationFogProvider` (raycasts against terrain heightmap). A deferred fog-authoritative `NetworkModel` variant (not part of `M1-M4`; see multiplayer trust/productization milestones) reuses the same trait on the server side to determine which entities to send per client. See D041 in `decisions/09d-gameplay.md` for full rationale.
+RA1 registers `RadiusFogProvider` (circle-based, fast, matches original RA). RA2/TS would register `ElevationFogProvider` (raycasts against terrain heightmap). The fog-authoritative `NetworkModel` variant (D074 — operator-enabled capability, implementation at `M11`) reuses the same trait on the server side to determine which entities to send per client. See D041 in `decisions/09d-gameplay.md` for full rationale.
 
 #### Entity Visibility Model
 
@@ -355,18 +357,20 @@ impl<T> DoubleBuffered<T> {
 
 **Where double buffering applies:**
 
-| Data Structure                         | Writer System                  | Reader Systems                                                | Why Not Single Buffer                                                                        |
-| -------------------------------------- | ------------------------------ | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `FogProvider` output (visibility grid) | `fog_system()` (step 21)       | `targeting_system()`, `ai_system()`, render                   | Targeting must see same visibility as AI — mid-tick update breaks determinism                |
-| Influence maps (AI)                    | `influence_map_system()`       | `military_manager`, `economy_manager`, `building_placement`   | Multiple AI managers read influence data; rebuilding mid-decision corrupts scoring           |
-| Global condition modifiers (D028)      | `condition_system()` (step 12) | `damage_system()`, `movement_system()`, `production_system()` | A "low power" modifier applied mid-tick means some systems use old damage values, others new |
-| Weather terrain effects (D022)         | `weather_system()` (step 16)   | `movement_system()`, `pathfinding`, render                    | Terrain surface state (mud, ice) affects movement cost; inconsistency causes desync          |
+| Data Structure                         | Writer System                             | Reader Systems                                                | Why Not Single Buffer                                                                        |
+| -------------------------------------- | ----------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `FogProvider` output (visibility grid) | `fog_system()` (step 21)                  | `combat_system()`, AI managers, render                        | Combat targeting must see same visibility as AI — mid-tick update breaks determinism         |
+| Influence maps (AI)                    | `influence_map_system()` (AI subsystem)   | `military_manager`, `economy_manager`, `building_placement`   | Multiple AI managers read influence data; rebuilding mid-decision corrupts scoring           |
+| Global condition modifiers (D028)      | `condition_system()` (step 14)            | `combat_system()`, `movement_system()`, `production_system()` | A "low power" modifier applied mid-tick means some systems use old damage values, others new |
+| Weather terrain effects (D022)         | `weather_surface_system()` (Phase 4, TBD) | `movement_system()`, `pathfinding`, render                    | Terrain surface state (mud, ice) affects movement cost; inconsistency causes desync          |
+
+> **Note:** `influence_map_system()` and `weather_surface_system()` are not in the RA1 21-step pipeline above. Influence maps are computed by AI subsystems (Phase 4, D043). `weather_surface_system` ships with dynamic weather (Phase 4, D022). When added, they will be inserted at defined points in the game module’s pipeline. The double-buffer pattern applies regardless of where in the pipeline they land.
 
 **Why not Bevy's system ordering alone?** Bevy's scheduler can enforce that `fog_system()` runs before `targeting_system()`. But it cannot prevent a system scheduled *between* two readers from mutating shared state. Double buffering makes the guarantee structural: the read buffer is physically separate from the write buffer. No scheduling mistake can cause a reader to see partial writes.
 
 **Cost:** One extra copy of each double-buffered data structure. For fog visibility (a bit array over map cells), this is ~32KB for a 512×512 map. For influence maps (a `[i32; CELLS]` array), it's ~1MB for a 512×512 map. These are allocated once at game start and never reallocated — consistent with Layer 5's zero-allocation principle.
 
-**Swap timing:** `DoubleBuffered::swap()` is called in `Simulation::apply_tick()` before the system pipeline runs. This is a fixed point in the tick — step 0, before step 1 (`order_validation_system()`). The write buffer from the previous tick becomes the read buffer for the current tick. The swap is a pointer swap (`std::mem::swap`), not a copy — effectively free.
+**Swap timing:** `DoubleBuffered::swap()` is called in `Simulation::apply_tick()` before the system pipeline runs. This is a fixed point in the tick — step 0, before the engine runs `OrderValidator` (D041) and then `apply_orders()` (step 1). The write buffer from the previous tick becomes the read buffer for the current tick. The swap is a pointer swap (`std::mem::swap`), not a copy — effectively free.
 
 ### OrderValidator Trait (D041)
 

@@ -91,7 +91,7 @@ This document systematically analyzes every public API boundary in Iron Curtain,
 | L4  | Script modifies global state shared between scripts                             | mod    | Each Lua script runs in an isolated environment (`_ENV`). Global tables are read-only from the script's perspective (metatable `__newindex` error). Scripts communicate only through host-mediated APIs.                                                                                  | T3: script A sets global → script B cannot see it                             |
 | L5  | Script crafts a `UnitTag` directly to manipulate units it shouldn't access      | mod    | Lua receives `UnitTag` values from host API calls. Lua's number type represents them as opaque integers. Every host API that accepts a `UnitTag` validates ownership against the calling script's `PlayerId`. Lua cannot construct a valid `UnitTag` — it must receive one from the host. | T3: script forges UnitTag for enemy unit → host rejects                       |
 | L6  | Script calls `Trigger.AfterDelay()` with delay=0 to create recursive timer bomb | mod    | Timer system enforces minimum delay (`MIN_TRIGGER_DELAY`, e.g., 1 tick). `BoundedCvar` ensures the minimum cannot be configured to 0. Timer depth is bounded — recursive timer chains exceeding `MAX_TRIGGER_DEPTH` are terminated.                                                       | T3: delay=0 timer → rejected or clamped; recursive chain → terminated         |
-| L7  | Non-deterministic Lua behavior (e.g., table iteration order, `math.random()`)   | mod    | `math.random()` is overridden to use the sim's `DeterministicRng`. Table creation uses deterministic key ordering by construction. `os.time()`, `os.clock()` are removed from the environment.                                                                                            | T2: Lua script producing random numbers → identical sequence across platforms |
+| L7  | Non-deterministic Lua behavior (e.g., table iteration order, `math.random()`)   | mod    | `math.random()` is redirected to the sim's `DeterministicRng` (not removed — OpenRA compat). Table creation uses deterministic key ordering by construction. `os.time()`, `os.clock()` are removed from the environment.                                                                  | T2: Lua script producing random numbers → identical sequence across platforms |
 
 ---
 
@@ -130,6 +130,6 @@ This document systematically analyzes every public API boundary in Iron Curtain,
 
 ## Sub-Pages
 
-| Section | Topic | File |
-| --- | --- | --- |
+| Section                  | Topic                                                                                                                                                                                      | File                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | Analysis 8-14 + Patterns | Campaign Graph, Console, Chat, Double-Buffered State, Entity Identity, Config Loading, Asset Pipeline + cross-cutting type-system defense patterns + defense gap analysis + summary matrix | [api-misuse-patterns.md](api-misuse-patterns.md) |

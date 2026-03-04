@@ -1,10 +1,10 @@
 ## D074: Community Server — Unified Binary with Capability Flags
 
-|                |                                                                                                                                                                                   |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Status**     | Accepted                                                                                                                                                                          |
-| **Phase**      | Phase 2 (health + logging), Phase 4 (Workshop seeding), Phase 5 (full Community Server with all capabilities), Phase 6a (federation, self-update, advanced ops)                  |
-| **Depends on** | D007 (relay server), D030 (Workshop registry), D034 (SQLite), D049 (P2P distribution), D052 (community servers), D055 (ranked matchmaking), D072 (server management)            |
+|                |                                                                                                                                                                                                                                                                                                                                          |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**     | Accepted                                                                                                                                                                                                                                                                                                                                 |
+| **Phase**      | Phase 2 (health + logging), Phase 4 (Workshop seeding), Phase 5 (full Community Server with all capabilities), Phase 6a (federation, self-update, advanced ops)                                                                                                                                                                          |
+| **Depends on** | D007 (relay server), D030 (Workshop registry), D034 (SQLite), D049 (P2P distribution), D052 (community servers), D055 (ranked matchmaking), D072 (server management)                                                                                                                                                                     |
 | **Driver**     | Multiple decisions describe overlapping server-side components (relay, tracking, Workshop, ranking, matchmaking, moderation) as conceptually separate services with inconsistent naming (`ic-relay` vs `ic-server`). Operators need a single binary with a single setup experience — not five separate services to install and maintain. |
 
 ### Decision Capsule (LLM/RAG Summary)
@@ -36,13 +36,13 @@
 
 The existing design describes these server-side components across separate decisions:
 
-| Component | Designed in | Binary name used |
-|-----------|------------|-----------------|
-| Relay (order router) | D007 | `ic-relay` (D072) |
-| Tracking server (game browser) | 03-NETCODE.md | unspecified |
-| Workshop server (content hosting) | D030, D049 | unspecified |
-| Community server (ranking, matchmaking, moderation) | D052 | `ic-server` (mentioned once) |
-| Server management (CLI, dashboard) | D072 | `ic-relay` |
+| Component                                           | Designed in   | Binary name used             |
+| --------------------------------------------------- | ------------- | ---------------------------- |
+| Relay (order router)                                | D007          | `ic-relay` (D072)            |
+| Tracking server (game browser)                      | 03-NETCODE.md | unspecified                  |
+| Workshop server (content hosting)                   | D030, D049    | unspecified                  |
+| Community server (ranking, matchmaking, moderation) | D052          | `ic-server` (mentioned once) |
+| Server management (CLI, dashboard)                  | D072          | `ic-relay`                   |
 
 D052 states: "The `ic-server` binary bundles all capabilities into a single process with feature flags." D072 designs the full management experience but scopes it to relay only under the name `ic-relay`. The research file (`research/p2p-federated-registry-analysis.md`) proposes `ic-server all` but classifies it as an opportunity, not a settled decision.
 
@@ -72,13 +72,13 @@ moderation = false    # Overwatch-style review system (D052, opt-in)
 
 **Why a relay is sufficient — and when it isn't.** IC uses **deterministic lockstep**: all clients run the exact same simulation from the same validated orders. Players send commands ("move unit to X", "build tank"), not state ("I have 500 tanks"). A compromised client cannot report more units, stronger units, or extra resources — the simulation computes state identically on every machine. Invalid orders (build without resources, control enemy units) are rejected deterministically by every client's sim and by the relay before broadcast (D012). A cheater who modifies their local state simply desyncs from every other player and gets detected by per-tick sync hash comparison.
 
-The one vulnerability lockstep cannot solve is **maphack** — since every client runs the full simulation, all game state exists in client memory, and fog of war is a rendering filter, not a data boundary. IC addresses this with `FogAuthoritativeNetwork` (06-SECURITY.md) — a `NetworkModel` variant (D006) where the server runs the sim and sends each client only the entities they can see. This is a heavier deployment (real CPU per game, not just order routing), but it uses the same `ic-server` binary, the same `NetworkModel` trait, and the same capability infrastructure. An operator enables it per-room or per-match-type; it is not a separate product or a deferred feature.
+The one vulnerability lockstep cannot solve is **maphack** — since every client runs the full simulation, all game state exists in client memory, and fog of war is a rendering filter, not a data boundary. IC addresses this with `FogAuthoritativeNetwork` (06-SECURITY.md) — a `NetworkModel` variant (D006) where the server runs the sim and sends each client only the entities they can see. This is a heavier deployment (real CPU per game, not just order routing), but it uses the same `ic-server` binary, the same `NetworkModel` trait, and the same capability infrastructure. An operator enables it per-room or per-match-type — it is not a separate product. The architecture (trait abstraction, capability flags, server binary) supports FogAuth from day one; implementation ships at `M11` (`P-Optional`).
 
-| Deployment | Server runs sim? | Maphack-proof? | Cost | Use case |
-|---|---|---|---|---|
-| **Relay (default)** | No — order router only | No (fog is client-side) | ~2–10 KB/game | Casual, ranked, LAN, most play |
-| **FogAuth** | Yes — full sim, partial state to each client | Yes | Real CPU per game | Tournaments, high-stakes, anti-cheat-critical |
-| **Listen server** | No — embedded relay in host client | No | Zero infrastructure | "Host Game" button, zero setup |
+| Deployment          | Server runs sim?                             | Maphack-proof?          | Cost                | Use case                                      |
+| ------------------- | -------------------------------------------- | ----------------------- | ------------------- | --------------------------------------------- |
+| **Relay (default)** | No — order router only                       | No (fog is client-side) | ~2–10 KB/game       | Casual, ranked, LAN, most play                |
+| **FogAuth**         | Yes — full sim, partial state to each client | Yes                     | Real CPU per game   | Tournaments, high-stakes, anti-cheat-critical |
+| **Listen server**   | No — embedded relay in host client           | No                      | Zero infrastructure | "Host Game" button, zero setup                |
 
 All three are `NetworkModel` implementations behind the same trait. Clients use the same protocol. The sim has zero imports from `ic-net` (D006 invariant).
 
@@ -93,13 +93,13 @@ When a capability is disabled:
 
 Presets are named configurations that set sensible defaults for common use cases. They extend D072's deployment profiles (which control gameplay parameters) with capability selection:
 
-| Preset | Capabilities Enabled | Use Case |
-|--------|---------------------|----------|
-| `minimal` | relay | Dedicated game server only — LAN party, small clan, testing |
-| `community` | relay, tracker, workshop, ranking | Standard community server (default) |
-| `competitive` | relay, tracker, workshop, ranking, matchmaking, moderation | Tournament / league server |
-| `workshop-seed` | workshop | Dedicated content seeder (bandwidth volunteer) |
-| `custom` | operator picks | Advanced operators |
+| Preset          | Capabilities Enabled                                       | Use Case                                                    |
+| --------------- | ---------------------------------------------------------- | ----------------------------------------------------------- |
+| `minimal`       | relay                                                      | Dedicated game server only — LAN party, small clan, testing |
+| `community`     | relay, tracker, workshop, ranking                          | Standard community server (default)                         |
+| `competitive`   | relay, tracker, workshop, ranking, matchmaking, moderation | Tournament / league server                                  |
+| `workshop-seed` | workshop                                                   | Dedicated content seeder (bandwidth volunteer)              |
+| `custom`        | operator picks                                             | Advanced operators                                          |
 
 ```
 $ ic-server --preset community
@@ -158,19 +158,19 @@ Fields for disabled capabilities are omitted entirely.
 
 D072's web dashboard extends per-capability:
 
-| Page | Capability | Shows |
-|------|-----------|-------|
-| **Status** (home) | all | Server health, enabled capabilities, system metrics |
-| **Players** | relay | Connected players, ping, kick/ban |
-| **Matches** | relay | Active/recent matches, replays |
-| **Server Log** | all | Live log viewer |
-| **Config** | all | `server_config.toml` with inline editing |
-| **Bans** | relay | Ban list management |
-| **Backups** | all | SQLite backup/restore |
-| **Workshop** | workshop | Seeded packages, peer connections, download stats |
-| **Rankings** | ranking | Leaderboard, rating distribution, season status |
-| **Moderation** | moderation | Review queue, case history, reviewer stats |
-| **Tracker** | tracker | Listed games, heartbeat status |
+| Page              | Capability | Shows                                               |
+| ----------------- | ---------- | --------------------------------------------------- |
+| **Status** (home) | all        | Server health, enabled capabilities, system metrics |
+| **Players**       | relay      | Connected players, ping, kick/ban                   |
+| **Matches**       | relay      | Active/recent matches, replays                      |
+| **Server Log**    | all        | Live log viewer                                     |
+| **Config**        | all        | `server_config.toml` with inline editing            |
+| **Bans**          | relay      | Ban list management                                 |
+| **Backups**       | all        | SQLite backup/restore                               |
+| **Workshop**      | workshop   | Seeded packages, peer connections, download stats   |
+| **Rankings**      | ranking    | Leaderboard, rating distribution, season status     |
+| **Moderation**    | moderation | Review queue, case history, reviewer stats          |
+| **Tracker**       | tracker    | Listed games, heartbeat status                      |
 
 Pages for disabled capabilities do not appear in the navigation.
 
@@ -212,14 +212,14 @@ Existing implementations (librqbit, libtorrent-rasterbar, aquatic, WebTorrent) a
 
 **What IC's P2P engine implements:**
 
-| Component | Approach |
-|-----------|---------|
-| **BT wire protocol** | Implement from BEP 3/5/9/10/23/29 specs. Standard protocol — clients interoperate with any BT peer. |
-| **Embedded tracker** | Built into `ic-server`. Simple announce/scrape protocol with IC-specific authenticated announce (D052 Ed25519 identity). No external tracker dependency. |
-| **WebRTC transport** | BT wire protocol over WebRTC data channels. Enables browser↔desktop interop. Workshop server acts as bridge node speaking TCP + uTP + WebRTC simultaneously. |
-| **Bandwidth control** | First-class configurable upload/download limits, seeding policies, per-peer throttling. |
+| Component                    | Approach                                                                                                                                                                |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **BT wire protocol**         | Implement from BEP 3/5/9/10/23/29 specs. Standard protocol — clients interoperate with any BT peer.                                                                     |
+| **Embedded tracker**         | Built into `ic-server`. Simple announce/scrape protocol with IC-specific authenticated announce (D052 Ed25519 identity). No external tracker dependency.                |
+| **WebRTC transport**         | BT wire protocol over WebRTC data channels. Enables browser↔desktop interop. Workshop server acts as bridge node speaking TCP + uTP + WebRTC simultaneously.            |
+| **Bandwidth control**        | First-class configurable upload/download limits, seeding policies, per-peer throttling.                                                                                 |
 | **Content-aware scheduling** | IC's domain knowledge produces better piece selection than any generic BT client. Lobby-urgent priority, rarest-first within tiers, endgame mode, background pre-fetch. |
-| **Metadata service** | Thin REST API for package manifests, search, and dependency resolution. Secondary to the P2P transfer layer. |
+| **Metadata service**         | Thin REST API for package manifests, search, and dependency resolution. Secondary to the P2P transfer layer.                                                            |
 
 **Transport strategy:**
 
@@ -323,10 +323,10 @@ Small communities without the `tracker` capability: clients connect directly to 
 
 D030's Workshop Git Index (`iron-curtain/workshop-index`) hosts content package manifests. The community seed list (`iron-curtain/community-servers`) hosts community server addresses. Same pattern, different purpose:
 
-| Repository | Contains | Purpose |
-|---|---|---|
-| `iron-curtain/workshop-index` | Package manifests + download URLs | Content discovery (Phase 0–3) |
-| `iron-curtain/community-servers` | Community server endpoints + public keys | Community discovery |
+| Repository                       | Contains                                 | Purpose                       |
+| -------------------------------- | ---------------------------------------- | ----------------------------- |
+| `iron-curtain/workshop-index`    | Package manifests + download URLs        | Content discovery (Phase 0–3) |
+| `iron-curtain/community-servers` | Community server endpoints + public keys | Community discovery           |
 
 ---
 
@@ -370,13 +370,13 @@ $ ic-server --setup
 
 #### Packaging
 
-| Distribution | What | Phase |
-|---|---|---|
-| **Standalone binary** | Single `ic-server` binary + README | Phase 5 |
-| **Docker** | `ghcr.io/ironcurtain/ic-server:latest` (scratch + musl, ~8–12 MB) | Phase 5 |
-| **Docker (debug)** | `ghcr.io/ironcurtain/ic-server:debug` (Debian slim, includes curl/sqlite3) | Phase 5 |
-| **One-click deploy** | Templates for DigitalOcean, Hetzner, Railway, Fly.io | Phase 5 |
-| **Helm chart** | `ironcurtain/community-server` (extends D072's Kubernetes Operator) | Phase 6a |
+| Distribution          | What                                                                       | Phase    |
+| --------------------- | -------------------------------------------------------------------------- | -------- |
+| **Standalone binary** | Single `ic-server` binary + README                                         | Phase 5  |
+| **Docker**            | `ghcr.io/ironcurtain/ic-server:latest` (scratch + musl, ~8–12 MB)          | Phase 5  |
+| **Docker (debug)**    | `ghcr.io/ironcurtain/ic-server:debug` (Debian slim, includes curl/sqlite3) | Phase 5  |
+| **One-click deploy**  | Templates for DigitalOcean, Hetzner, Railway, Fly.io                       | Phase 5  |
+| **Helm chart**        | `ironcurtain/community-server` (extends D072's Kubernetes Operator)        | Phase 6a |
 
 Docker image naming changes from D072:
 - `relay:latest` → `ic-server:latest`
@@ -507,14 +507,14 @@ This is not a policy — it is an architectural constraint enforced by the WASM 
 
 **Layer 2 — Defaults are maximally restrictive, not maximally permissive.**
 
-| Setting | Default | Effect |
-|---------|---------|--------|
-| `content_trust.block_threshold` | `2` | Content blocked by 2+ communities is auto-blocked |
-| `content_trust.warn_threshold` | `1` | Content flagged by 1+ community shows advisory |
-| `content_trust.allow_override` | `false` | Player cannot bypass blocks without changing config |
-| `workshop.auto_update` | `false` | Updates never install silently |
-| `workshop.allow_untrusted_sources` | `false` | Only configured Workshop sources are accepted |
-| `workshop.max_download_size_mb` | `100` | Downloads exceeding 100 MB require confirmation |
+| Setting                            | Default | Effect                                              |
+| ---------------------------------- | ------- | --------------------------------------------------- |
+| `content_trust.block_threshold`    | `2`     | Content blocked by 2+ communities is auto-blocked   |
+| `content_trust.warn_threshold`     | `1`     | Content flagged by 1+ community shows advisory      |
+| `content_trust.allow_override`     | `false` | Player cannot bypass blocks without changing config |
+| `workshop.auto_update`             | `false` | Updates never install silently                      |
+| `workshop.allow_untrusted_sources` | `false` | Only configured Workshop sources are accepted       |
+| `workshop.max_download_size_mb`    | `100`   | Downloads exceeding 100 MB require confirmation     |
 
 A player who never touches settings gets the safest possible experience. Every relaxation is an explicit opt-in that requires editing config or using `--allow-*` CLI flags.
 
@@ -553,18 +553,18 @@ CARs add the missing **cross-community coordination layer** — the mechanism fo
 
 ### 6. Cross-References & Resolved Gaps
 
-| Gap | Resolution |
-|-----|-----------|
-| D072 calls binary `ic-relay`, install layout calls it `ic-server` | **Resolved:** binary is `ic-server`. All D072 management interfaces apply to the unified binary. |
-| D052 mentions `ic-server` with feature flags but never specifies them | **Resolved:** `[capabilities]` section in `server_config.toml` with six flags. |
-| Workshop server described as separate binary in D030/D049 | **Resolved:** Workshop is a capability within `ic-server`, deployable standalone via `workshop-seed` preset. |
-| No P2P engine design study | **Resolved:** IC builds its own P2P engine from BT specs, informed by studying existing implementations. Design study in `research/bittorrent-p2p-libraries.md`. |
-| No community discovery mechanism beyond per-community tracking | **Resolved:** Static seed list in `iron-curtain/community-servers` GitHub repo. |
-| No operator setup experience for server deployment | **Resolved:** First-run wizard via `ic-server --setup` and web dashboard. |
-| D072 dashboard pages relay-only | **Resolved:** Dashboard extends per-capability (Workshop, Rankings, Moderation, Tracker pages). |
-| Docker images named `relay:*` | **Resolved:** renamed to `ic-server:*`. |
-| No cross-community content moderation coordination | **Resolved:** Content Advisory Records (CARs) — Ed25519-signed advisories shared between communities, with Garden Fence consensus thresholds. |
-| No defense against fractureiser-class attacks (compromised author auto-updates) | **Resolved:** `ic.lock` pins versions + SHA-256; no silent auto-updates; quarantine-before-release for new publications. |
+| Gap                                                                             | Resolution                                                                                                                                                       |
+| ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D072 calls binary `ic-relay`, install layout calls it `ic-server`               | **Resolved:** binary is `ic-server`. All D072 management interfaces apply to the unified binary.                                                                 |
+| D052 mentions `ic-server` with feature flags but never specifies them           | **Resolved:** `[capabilities]` section in `server_config.toml` with six flags.                                                                                   |
+| Workshop server described as separate binary in D030/D049                       | **Resolved:** Workshop is a capability within `ic-server`, deployable standalone via `workshop-seed` preset.                                                     |
+| No P2P engine design study                                                      | **Resolved:** IC builds its own P2P engine from BT specs, informed by studying existing implementations. Design study in `research/bittorrent-p2p-libraries.md`. |
+| No community discovery mechanism beyond per-community tracking                  | **Resolved:** Static seed list in `iron-curtain/community-servers` GitHub repo.                                                                                  |
+| No operator setup experience for server deployment                              | **Resolved:** First-run wizard via `ic-server --setup` and web dashboard.                                                                                        |
+| D072 dashboard pages relay-only                                                 | **Resolved:** Dashboard extends per-capability (Workshop, Rankings, Moderation, Tracker pages).                                                                  |
+| Docker images named `relay:*`                                                   | **Resolved:** renamed to `ic-server:*`.                                                                                                                          |
+| No cross-community content moderation coordination                              | **Resolved:** Content Advisory Records (CARs) — Ed25519-signed advisories shared between communities, with Garden Fence consensus thresholds.                    |
+| No defense against fractureiser-class attacks (compromised author auto-updates) | **Resolved:** `ic.lock` pins versions + SHA-256; no silent auto-updates; quarantine-before-release for new publications.                                         |
 
 ### Decisions NOT Changed by D074
 

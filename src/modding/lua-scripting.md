@@ -25,24 +25,24 @@ Iron Curtain's Lua API is a **strict superset** of OpenRA's 16 global objects. A
 
 **OpenRA-compatible globals (all supported identically):**
 
-| Global           | Purpose                            |
-| ---------------- | ---------------------------------- |
-| `Actor`          | Create, query, manipulate actors   |
-| `Map`            | Terrain, bounds, spatial queries   |
-| `Trigger`        | Event hooks (OnKilled, AfterDelay) |
-| `Media`          | Audio, video, text display         |
-| `Player`         | Player state, resources, diplomacy |
-| `Reinforcements` | Spawn units at edges/drops         |
-| `Camera`         | Pan, position, shake               |
-| `DateTime`       | Game time queries                  |
-| `Objectives`     | Mission objective management       |
-| `Lighting`       | Global lighting control            |
-| `UserInterface`  | UI text, notifications             |
-| `Utils`          | Math, random, table utilities      |
-| `Beacon`         | Map beacon management              |
-| `Radar`          | Radar ping control                 |
-| `HSLColor`       | Color construction                 |
-| `WDist`          | Distance unit conversion           |
+| Global           | Purpose                                                         |
+| ---------------- | --------------------------------------------------------------- |
+| `Actor`          | Create, query actors; mutations via trigger context (see below) |
+| `Map`            | Terrain, bounds, spatial queries                                |
+| `Trigger`        | Event hooks (OnKilled, AfterDelay)                              |
+| `Media`          | Audio, video, text display                                      |
+| `Player`         | Player state, resources, diplomacy                              |
+| `Reinforcements` | Spawn units at edges/drops                                      |
+| `Camera`         | Pan, position, shake                                            |
+| `DateTime`       | Game time queries                                               |
+| `Objectives`     | Mission objective management                                    |
+| `Lighting`       | Global lighting control                                         |
+| `UserInterface`  | UI text, notifications                                          |
+| `Utils`          | Math, random, table utilities                                   |
+| `Beacon`         | Map beacon management                                           |
+| `Radar`          | Radar ping control                                              |
+| `HSLColor`       | Color construction                                              |
+| `WDist`          | Distance unit conversion                                        |
 
 **IC-exclusive extensions (additive, no conflicts):**
 
@@ -60,7 +60,14 @@ Iron Curtain's Lua API is a **strict superset** of OpenRA's 16 global objects. A
 | `Tutorial`    | Tutorial step management, contextual hints, UI highlighting, camera focus, build/order restrictions for pedagogical pacing (D065). Available in all game modes — modders use it to build tutorial sequences in custom campaigns. See `decisions/09g/D065-tutorial.md` for the full API.                                    |
 | `Ai`          | AI scripting primitives (Phase 4) — force composition, resource ratios, patrol/attack commands; inspired by Stratagus's proven Lua AI API (`AiForce`, `AiSetCollect`, `AiWait` pattern — see `research/stratagus-stargus-opencraft-analysis.md`). Enables Tier 2 modders to write custom AI behaviors without Tier 3 WASM. |
 
-Each actor reference exposes properties matching its components (`.Health`, `.Location`, `.Owner`, `.Move()`, `.Attack()`, `.Stop()`, `.Guard()`, `.Deploy()`, etc.) — identical to OpenRA's actor property groups.
+Each actor reference exposes **read-only properties** (`.Health`, `.Location`, `.Owner`) and **order-issuing methods** (`.Move()`, `.Attack()`, `.Stop()`, `.Guard()`, `.Deploy()`) — identical to OpenRA's actor property groups. Order-issuing methods enqueue orders into the sim's order pipeline for the current tick; they do not mutate state directly.
+
+> **Two Lua write paths (both deterministic):**
+>
+> 1. **Order methods** (`.Move()`, `.Attack()`, `.Deploy()`, etc.) — enqueue `PlayerOrder`s processed by `apply_orders()`. Available in all Lua contexts. These are the standard write path.
+> 2. **Trigger-context mutations** (`Actor.Create()`, `unit:Teleport()`, `Reinforcements.Spawn()`, `unit:AddAbility()`) — direct sim writes that execute **inside `trigger_system()` (step 19)**. These run at a fixed point in the pipeline on every client with identical state, making them deterministic. They are available in mission/map trigger callbacks and mod command handlers (`Commands.register` — see D058), but **not** in standalone mod scripts running outside the trigger pipeline. This is how OpenRA's Lua missions work — `Actor.Create` spawns an entity during the trigger step, not via the order queue.
+>
+> The critical guarantee: both paths produce identical results on every client because they execute at deterministic points in the system pipeline with identical inputs.
 
 **In-game command system (inspired by Mojang's Brigadier):** Mojang's Brigadier parser (3,668★, MIT) defines commands as a typed tree where each node is an argument with a parser, suggestions, and permission checks. This architecture — tree-based, type-safe, permission-aware, with mod-injected commands — is the model for IC's in-game console and chat commands. Mods should be able to register custom commands (e.g., `/spawn`, `/weather`, `/teleport` for mission scripting) using the same tree-based architecture, with tab-completion suggestions generated from the command tree. See `research/mojang-wube-modding-analysis.md` § Brigadier and `decisions/09g/D058-command-console.md` for the full command console design.
 
@@ -86,13 +93,13 @@ This principle ensures the modding ecosystem survives VM transitions, just as VS
 -- Mission scripting
 function OnPlayerEnterArea(player, area)
   if area == "bridge_crossing" then
-    SpawnReinforcements("allies", {"Tank", "Tank"}, "north")
+    Reinforcements.Spawn("allies", {"Tank", "Tank"}, "north")
     PlayEVA("reinforcements_arrived")
   end
 end
 
--- Custom unit behavior
-Hooks.OnUnitCreated("ChronoTank", function(unit)
+-- Custom unit behavior (Trigger.OnUnitCreated is an IC extension on the OpenRA Trigger global)
+Trigger.OnUnitCreated("ChronoTank", function(unit)
   unit:AddAbility("chronoshift", {
     cooldown = 120,
     range = 15,
@@ -104,9 +111,9 @@ Hooks.OnUnitCreated("ChronoTank", function(unit)
   })
 end)
 
--- Idle unit automation (inspired by SC2's OnUnitIdle callback —
--- see research/blizzard-github-analysis.md § Part 6)
-Hooks.OnUnitIdle("Harvester", function(unit)
+-- Idle unit automation (Trigger.OnUnitIdle is an IC extension — inspired by
+-- SC2's OnUnitIdle callback, see research/blizzard-github-analysis.md § Part 6)
+Trigger.OnUnitIdle("Harvester", function(unit)
   -- Automatically send idle harvesters back to the nearest ore field
   local ore = Map.FindClosestResource(unit.position, "ore")
   if ore then
@@ -125,26 +132,26 @@ end)
 
 **Lua standard library inclusion policy** (precedent: Stratagus selectively loads stdlib modules, excluding `io` and `package` in release builds — see `research/stratagus-stargus-opencraft-analysis.md` §6). IC is stricter:
 
-| Lua stdlib  | Loaded      | Notes                                                                                                         |
-| ----------- | ----------- | ------------------------------------------------------------------------------------------------------------- |
-| `base`      | ✅ selective | `print` redirected to engine log; `dofile`, `loadfile`, `load` **removed** (arbitrary code execution vectors) |
-| `table`     | ✅           | Safe — table manipulation only                                                                                |
-| `string`    | ✅           | Safe — string operations only                                                                                 |
-| `math`      | ✅ modified  | `math.random` **removed** — replaced by `Utils.RandomInteger()` from engine's deterministic PRNG              |
-| `coroutine` | ✅           | Useful for mission scripting flow control                                                                     |
-| `utf8`      | ✅           | Safe — Unicode string handling (Lua 5.4)                                                                      |
-| `io`        | ❌           | Filesystem access — never loaded in sandbox                                                                   |
-| `os`        | ❌           | `os.execute()`, `os.remove()`, `os.rename()` are dangerous; entire module excluded                            |
-| `package`   | ❌           | Module loading from filesystem — never loaded in sandbox                                                      |
-| `debug`     | ❌           | Can inspect/modify internals, bypass sandboxing; development-only if needed                                   |
+| Lua stdlib  | Loaded      | Notes                                                                                                                                                                                        |
+| ----------- | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `base`      | ✅ selective | `print` redirected to engine log; `dofile`, `loadfile`, `load` **removed** (arbitrary code execution vectors)                                                                                |
+| `table`     | ✅           | Safe — table manipulation only                                                                                                                                                               |
+| `string`    | ✅           | Safe — string operations only                                                                                                                                                                |
+| `math`      | ✅ modified  | `math.random` **redirected** to the engine's deterministic PRNG (same sequence as `Utils.RandomInteger()`). Not removed — existing OpenRA scripts that call `math.random()` work unmodified. |
+| `coroutine` | ✅           | Useful for mission scripting flow control                                                                                                                                                    |
+| `utf8`      | ✅           | Safe — Unicode string handling (Lua 5.4)                                                                                                                                                     |
+| `io`        | ❌           | Filesystem access — never loaded in sandbox                                                                                                                                                  |
+| `os`        | ❌           | `os.execute()`, `os.remove()`, `os.rename()` are dangerous; entire module excluded                                                                                                           |
+| `package`   | ❌           | Module loading from filesystem — never loaded in sandbox                                                                                                                                     |
+| `debug`     | ❌           | Can inspect/modify internals, bypass sandboxing; development-only if needed                                                                                                                  |
 
-**Determinism note:** Lua's internal number type is `f64`, but this does not affect sim determinism. Lua has **read-only access** to game state and **write access exclusively through orders** (and campaign state writes like `Campaign.set_flag()`, which are themselves deterministic because they execute at the same pipeline step on every client). The sim processes orders deterministically — Lua cannot directly modify sim components. Lua evaluation produces identical results across all clients because it runs at the same point in the system pipeline (the `triggers` step, see system execution order in `02-ARCHITECTURE.md`), with the same game state as input, on every tick. Any Lua-driven campaign state mutations are applied deterministically within this step, ensuring save/load and replay consistency.
+**Determinism note:** Lua's internal number type is `f64`, but this does not affect sim determinism. Lua has two write paths, both deterministic: (1) **order methods** (`.Move()`, `.Attack()`, etc.) enqueue `PlayerOrder`s processed by the sim's order pipeline, and (2) **trigger-context mutations** (`Actor.Create()`, `unit:Teleport()`, `Reinforcements.Spawn()`) execute direct sim writes inside `trigger_system()` (step 19) — available in mission/map trigger callbacks and mod command handlers (D058), but not in standalone mod scripts outside the trigger pipeline. Campaign state writes (`Campaign.set_flag()`) are also trigger-context mutations. Lua evaluation produces identical results across all clients because it runs at the same point in the system pipeline (the `triggers` step, see system execution order in `02-ARCHITECTURE.md`), with the same game state as input, on every tick. All Lua-driven mutations — orders, entity spawns, campaign state — are applied deterministically within this step, ensuring save/load and replay consistency.
 
 **Additional determinism safeguards:**
 
 - **String hashing → deterministic `pairs()`:** Lua's internal string hash uses a randomized seed by default (since Lua 5.3.3). The sandbox initializes `mlua` with a fixed seed, making hash table slot ordering identical across all clients. Combined with our deterministic pipeline (same code, same state, same insertion order on every client), this makes `pairs()` iteration order deterministic without modification. No sorted wrapper is needed — `pairs()` runs at native speed (zero overhead). For mod authors who want *explicit* ordering for gameplay clarity (e.g., "process units alphabetically"), the engine provides `Utils.SortedPairs(t)` — but this is a convenience for readability, not a determinism requirement. `ipairs()` is already deterministic (sequential integer keys) and should be preferred for array-style tables.
 - **Garbage collection timing:** Lua's GC is configured with a fixed-step incremental mode (`LUA_GCINC`) with identical parameters on all clients. Finalizers (`__gc` metamethods) are disabled in the sandbox — mods cannot register them. This eliminates GC-timing-dependent side effects.
-- **`math.random()`:** Removed from the sandbox. Mods use the engine-provided `Utils.RandomInteger(min, max)` which draws from the sim's deterministic PRNG.
+- **`math.random()`:** Redirected to the sim's deterministic PRNG (not removed — OpenRA compat requires it). `math.random()` returns a deterministic fixed-point number; `math.random(m)` and `math.random(m, n)` return deterministic integers. `Utils.RandomInteger(min, max)` is the preferred IC API but both draw from the same PRNG and produce identical sequences.
 
 ### Lua Execution Resource Limits
 

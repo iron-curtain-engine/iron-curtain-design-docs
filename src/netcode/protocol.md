@@ -30,7 +30,11 @@ pub enum PlayerOrder {
     SetRallyPoint { building: BuildingId, position: WorldPos },
     Sell { building: BuildingId },
     Idle,  // Explicit no-op — keeps player in the tick's order list for timing/presence
-    // ... every possible player action
+    ChatMessage { channel: ChatChannel, text: String },  // D059
+    ChatCommand { cmd: String, args: Vec<String> },       // Mod-registered sim commands (D058)
+    CheatCode(CheatId),                                   // Hidden cheat activation (D058)
+    SetCvar { name: String, value: String },              // DEV_ONLY/SERVER cvar mutation
+    // ... every other possible player action (deploy, stance, surrender, pings, etc.)
 }
 
 /// Sub-tick timestamp on every order (CS2-inspired, see below).

@@ -405,10 +405,15 @@ Guided by `src/13-PHILOSOPHY.md` (C&C creator principles, OpenRA lessons). Key r
 
 Treat feedback as input, not instruction. Validate every claim before acting.
 
-1. **Verify the factual claim.** Read the text being criticized. Is the characterization accurate?
-2. **Evaluate against project architecture.** Does the fix respect crate boundaries and invariants?
-3. **Accept, adapt, or defer — and be explicit about which.** Accept valid fixes. Adapt when the intent is right but the suggestion is imprecise. Defer when it belongs to a different scope/phase.
-4. **Don't accept all feedback uncritically.** Reviewers can be wrong. But if three people flag the same paragraph, the paragraph has a problem.
+1. **Verify the factual claim.** Read the text being criticized. Is the characterization accurate? Quote the actual text. If the reviewer misread or mischaracterized the doc, say so and reject the finding.
+2. **Evaluate against project architecture.** Does the fix respect crate boundaries and invariants? A finding about `HashMap` in `ic-script` is not the same as `HashMap` in `ic-sim` — the enforcement scope matters.
+3. **Independently assess severity.** Do not accept the reviewer's severity rating at face value. A missing cross-reference is Low, not Medium. A determinism violation is High. Assign your own severity and state it if it differs from the reviewer's.
+4. **Distinguish bugs from preferences.** "The doc is wrong" (factual contradiction, invariant violation) is a bug. "The doc could be clearer" is a preference. Bugs get fixed. Preferences get evaluated against the cost of the change and may be rejected.
+5. **Reject or downgrade with justification.** If a finding is invalid, does not violate any invariant, or is based on a misreading, reject it explicitly. State the reason. Do not implement changes just because someone flagged something.
+6. **Accept, adapt, or defer — and be explicit about which.** Accept valid fixes. Adapt when the intent is right but the suggestion is imprecise. Defer when it belongs to a different scope/phase.
+7. **Don't accept all feedback uncritically.** Reviewers can be wrong. But if three people flag the same paragraph, the paragraph has a problem.
+8. **Produce a disposition table.** For each finding, state your verdict: **Accepted** (fix applied), **Downgraded** (lower severity, fix applied or deferred), **Rejected** (invalid, with reason), or **Deferred** (valid but out of scope). Include files changed.
+9. **Check for cascade inconsistencies.** When fixing a confirmed finding, search for the same pattern in other files. Fix all occurrences in one pass — but only where the same error actually exists. Don't change correct text to match a fix elsewhere.
 
 ### Known Duplication to Fix
 - Performance details appear in both `src/decisions/09a-foundation.md` (D015) and `src/10-PERFORMANCE.md` — the latter is canonical

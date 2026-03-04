@@ -166,8 +166,8 @@ function OnAASiteDestroyed()
 
         -- Reinforcements arrive at the newly revealed beach
         Trigger.AfterDelay(150, function()
-            Reinforcements.Arrive("allies", {"Tank", "Tank", "APC", "Rifle", "Rifle"},
-                                  "south_beach_entry")
+            Reinforcements.Spawn("allies", {"Tank", "Tank", "APC", "Rifle", "Rifle"},
+                                 "south_beach_entry")
             PlayEVA("reinforcements_arrived")
         end)
 
@@ -386,7 +386,7 @@ function TriggerPhaseTransition(config)
             -- 3. Spawn reinforcements (if provided)
             if config.reinforcements then
                 for _, r in ipairs(config.reinforcements) do
-                    Reinforcements.Arrive(r.faction, r.units, r.entry_point)
+                    Reinforcements.Spawn(r.faction, r.units, r.entry_point)
                 end
             end
             -- 4. Add new objectives (if provided)
@@ -445,17 +445,17 @@ Each phase transition uses the systems described above. The campaign state (D021
 
 The scenario editor exposes all three systems through its visual interface. These are **Advanced mode** features (hidden in Simple mode to keep it approachable).
 
-| Editor Feature | Mode | Description |
-|---|---|---|
-| **Layer Panel** | Advanced | Side panel listing all map layers. Create, rename, delete, toggle visibility. Click a layer to highlight its bounds and member entities. Drag entities into layers. |
-| **Layer Bounds Tool** | Advanced | Draw/resize rectangles on the map to define layer spatial extents. Color-coded overlay per layer (semi-transparent tinting). |
-| **Preview Layer** | Advanced | Toggle button per layer — shows what the map looks like with that layer active/inactive. Useful for testing expansion flow without running the mission. |
-| **Expansion Zone Module** | Advanced | Drag-and-drop module in the Connections panel: wire a trigger condition → layer activation. Properties: shroud reveal mode, camera action, delay. |
-| **Portal Placement** | Advanced | Place a portal entity on a building footprint. Properties panel: linked sub-map file, spawn point, exit point, allowed unit types, transition effect, outcomes. |
-| **Sub-Map Tab** | Advanced | Open a linked sub-map in a new editor tab. Edit the interior with all standard tools. Portal entry/exit markers shown as special gizmos. |
-| **Portal Connections View** | Advanced | Overlay showing lines from portal entities to their sub-map files. Click to open. Visual indication of which outcomes are wired to which parent map effects. |
-| **Phase Briefing Module** | Advanced | Drag-and-drop module: combines video/briefing reference + layer activation + reinforcement list + new objectives. The "next phase" button in module form. |
-| **Test Phase Flow** | Advanced | Play button that runs through phase transitions in sequence — activates layers, plays briefings, spawns reinforcements — without running full AI/combat simulation. Quick iteration on mission pacing. |
+| Editor Feature              | Mode     | Description                                                                                                                                                                                            |
+| --------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Layer Panel**             | Advanced | Side panel listing all map layers. Create, rename, delete, toggle visibility. Click a layer to highlight its bounds and member entities. Drag entities into layers.                                    |
+| **Layer Bounds Tool**       | Advanced | Draw/resize rectangles on the map to define layer spatial extents. Color-coded overlay per layer (semi-transparent tinting).                                                                           |
+| **Preview Layer**           | Advanced | Toggle button per layer — shows what the map looks like with that layer active/inactive. Useful for testing expansion flow without running the mission.                                                |
+| **Expansion Zone Module**   | Advanced | Drag-and-drop module in the Connections panel: wire a trigger condition → layer activation. Properties: shroud reveal mode, camera action, delay.                                                      |
+| **Portal Placement**        | Advanced | Place a portal entity on a building footprint. Properties panel: linked sub-map file, spawn point, exit point, allowed unit types, transition effect, outcomes.                                        |
+| **Sub-Map Tab**             | Advanced | Open a linked sub-map in a new editor tab. Edit the interior with all standard tools. Portal entry/exit markers shown as special gizmos.                                                               |
+| **Portal Connections View** | Advanced | Overlay showing lines from portal entities to their sub-map files. Click to open. Visual indication of which outcomes are wired to which parent map effects.                                           |
+| **Phase Briefing Module**   | Advanced | Drag-and-drop module: combines video/briefing reference + layer activation + reinforcement list + new objectives. The "next phase" button in module form.                                              |
+| **Test Phase Flow**         | Advanced | Play button that runs through phase transitions in sequence — activates layers, plays briefings, spawns reinforcements — without running full AI/combat simulation. Quick iteration on mission pacing. |
 
 > **Simple mode** users can still create multi-phase missions — they just use the pre-built `map_expansion`, `sub_map_transition`, and `phase_briefing` modules from the module library, filling in parameters via the properties panel. Advanced mode gives direct layer/portal manipulation for power users.
 

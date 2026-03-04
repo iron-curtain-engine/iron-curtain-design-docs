@@ -300,7 +300,8 @@ pub struct ActiveVote {
     /// Eligible voters for this vote (determined at proposal time).
     pub eligible_voters: Vec<PlayerId>,
     /// Votes cast so far. Key = voter, value = choice.
-    pub ballots: HashMap<PlayerId, VoteChoice>,
+    /// BTreeMap, not HashMap — deterministic iteration (ic-sim collection policy).
+    pub ballots: BTreeMap<PlayerId, VoteChoice>,
     /// Tick when the vote was proposed.
     pub started_at: u64,
     /// Tick when the vote expires (started_at + duration_ticks).
@@ -344,7 +345,14 @@ pub enum VoteFailReason {
 }
 ```
 
-#### Vote Configuration (YAML)
+#### Vote Configuration
+
+Vote configuration follows D067's format split: **YAML defines game-content defaults**, **TOML provides server-operator overrides**.
+
+**Precedence (highest wins):**
+1. **Lobby settings** (host/tournament organizer overrides for this match)
+2. **`server_config.toml` `[votes]` section** (server operator preferences — D064)
+3. **`vote_config.yaml`** (game module defaults shipped with the mod)
 
 Each vote type's parameters are defined in YAML, configurable per lobby, per server, and per game module. Tournament organizers override via lobby settings.
 
@@ -495,7 +503,8 @@ pub struct ActivePoll {
     pub id: PollId,
     pub proposer: PlayerId,
     pub phrase_id: u16,           // maps to chat_wheel_phrases.yaml
-    pub responses: HashMap<PlayerId, bool>,
+    /// BTreeMap, not HashMap — deterministic iteration (ic-sim collection policy).
+    pub responses: BTreeMap<PlayerId, bool>,
     pub expires_at: u64,          // 15 seconds after proposal
 }
 ```

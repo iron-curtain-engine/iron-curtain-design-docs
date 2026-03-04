@@ -165,11 +165,11 @@ BAR's experience with 291 client-side widgets demonstrates that UI extensions ar
 
 IC addresses this with a three-tier policy:
 
-| Mod Category | Ranked Status | Examples |
-|---|---|---|
-| **Sim-affecting mods** (custom pathfinders, balance changes, WASM modules) | **Blocked** unless hash-whitelisted and certified (D045) | Custom pathfinder, new unit types |
-| **Client-only cosmetic** (UI themes, sound packs, palette swaps) | **Allowed** — no gameplay impact | D032 UI themes, announcer packs |
-| **Client-only informational** (overlays, analytics, automation helpers) | **Restricted** — official IC client provides the baseline feature set; third-party informational widgets are disabled in ranked queues | Custom damage indicators, APM overlays, auto-queue helpers |
+| Mod Category                                                               | Ranked Status                                                                                                                          | Examples                                                   |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **Sim-affecting mods** (custom pathfinders, balance changes, WASM modules) | **Blocked** unless hash-whitelisted and certified (D045)                                                                               | Custom pathfinder, new unit types                          |
+| **Client-only cosmetic** (UI themes, sound packs, palette swaps)           | **Allowed** — no gameplay impact                                                                                                       | D032 UI themes, announcer packs                            |
+| **Client-only informational** (overlays, analytics, automation helpers)    | **Restricted** — official IC client provides the baseline feature set; third-party informational widgets are disabled in ranked queues | Custom damage indicators, APM overlays, auto-queue helpers |
 
 **Rationale:** The "restricted informational" tier prevents an arms race where competitive players must install community widgets to remain competitive. The official client includes the features that matter (production hotkeys, control groups, minimap pings, rally points). Community widgets remain fully available in casual, custom, and single-player modes.
 
@@ -258,7 +258,7 @@ See `03-NETCODE.md` § "Match Lifecycle" for the full protocol, data structures,
 - **D036 (Achievements):** Seasonal achievements: "Reach Captain," "Place in top 100," "Win 50 ranked matches this season," etc.
 - **D034 (SQLite Storage):** `MatchmakingStorage` trait's existing methods (`update_rating()`, `record_match()`, `get_leaderboard()`) handle all ranked data persistence. Season history added as new tables.
 - **03-NETCODE.md (Match Lifecycle):** Ready-check, pause, surrender, disconnect penalties, spectator delay, and post-game flow. D055 sets ranked-specific parameters; the match lifecycle protocol is game-mode-agnostic. The **In-Match Vote Framework** (`03-NETCODE.md` § "In-Match Vote Framework") generalizes the surrender vote into a generic callvote system (surrender, kick, remake, draw, mod-defined) with per-vote-type ranked constraints.
-- **05-FORMATS.md (Analysis Event Stream):** `PauseEvent`, `MatchEnded`, and `VoteEvent` analysis events record match lifecycle moments in the replay for tooling without re-simulation.
+- **formats/save-replay-formats.md (Analysis Event Stream):** `PauseEvent`, `MatchEnded`, and `VoteEvent` analysis events record match lifecycle moments in the replay for tooling without re-simulation.
 
 ### Relationship to `research/ranked-matchmaking-analysis.md`
 

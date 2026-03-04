@@ -1,5 +1,7 @@
 ## Game Loop
 
+`GameLoop` is the **client-side** frame loop — it always has a renderer and always draws. Headless consumers (dedicated servers, bot harnesses, automated tests) drive `Simulation` directly via its public API (see `02-ARCHITECTURE.md` § External Sim API) and never instantiate `GameLoop`.
+
 ```rust
 pub struct GameLoop<N: NetworkModel, I: InputSource> {
     sim: Simulation,
@@ -18,13 +20,22 @@ impl<N: NetworkModel, I: InputSource> GameLoop<N, I> {
             self.network.submit_order(order);
         }
 
-        // 2. Advance sim as far as confirmed orders allow
+        // 2. Advance sim — bounded to avoid starving the renderer.
+        //    At 30 tps / 60 fps most frames process 0-1 ticks.
+        //    The cap handles edge cases (e.g., multiplayer reconnect backlog,
+        //    system sleep resume) where many ticks are ready at once.
+        const MAX_TICKS_PER_FRAME: u32 = 4;
+        let mut ticks_this_frame = 0;
         while let Some(tick_orders) = self.network.poll_tick() {
             self.sim.apply_tick(&tick_orders);
             self.network.report_sync_hash(
                 self.sim.tick(),
                 self.sim.state_hash(),
             );
+            ticks_this_frame += 1;
+            if ticks_this_frame >= MAX_TICKS_PER_FRAME {
+                break; // Remaining ticks processed next frame
+            }
         }
 
         // 3. Render always runs, interpolates between sim states
@@ -34,6 +45,8 @@ impl<N: NetworkModel, I: InputSource> GameLoop<N, I> {
 ```
 
 **Key property:** `GameLoop` is generic over `N: NetworkModel` and `I: InputSource`. It has zero knowledge of whether it's running single-player or multiplayer, or whether input comes from a mouse, touchscreen, or gamepad. This is the central architectural guarantee.
+
+**Not for headless use.** `GameLoop` always renders — it is the client-side frame driver. `ic-server` runs the relay protocol without any `GameLoop` or `Simulation` instance. External bot/test harnesses use the external sim API (`inject_orders()` + `step()`) in their own loop — see `02-ARCHITECTURE.md` § External Sim API for a concrete headless loop example. The sim's headless capability is a property of `ic-sim`, not of `GameLoop`.
 
 ### Game Lifecycle State Machine
 

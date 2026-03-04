@@ -16,7 +16,7 @@
   - Modders learn one API; skills transfer between OpenRA and IC
   - API surface is testable independently of the Lua VM implementation (D004)
 - **Non-goals:** Binary compatibility with OpenRA's C# Lua host. IC uses `mlua` (Rust); same API surface, different host implementation. Also not a goal: supporting OpenRA's deprecated or internal-only Lua functions.
-- **Invariants preserved:** Deterministic sim (Lua scripts produce `PlayerOrder`s that flow through the sim; scripts do not directly mutate sim state). Sandbox boundary (resource limits, no filesystem access without capability tokens).
+- **Invariants preserved:** Deterministic sim (Lua has two write paths, both deterministic: order methods that enqueue `PlayerOrder`s, and trigger-context mutations that execute direct sim writes inside `trigger_system()` at a fixed pipeline step on every client — see `modding/lua-scripting.md` § Two Lua Write Paths). Sandbox boundary (resource limits, no filesystem access without capability tokens).
 - **Public interfaces / types / commands:** 16 OpenRA globals + 11 IC extension globals (see tables below)
 - **Affected docs:** `04-MODDING.md` § Lua API, `modding/campaigns.md` (Campaign global examples)
 - **Keywords:** Lua API, scripting, OpenRA compatibility, mission scripting, globals, superset, Campaign, Weather, Trigger
@@ -25,40 +25,40 @@
 
 ### OpenRA-Compatible Globals (16, all supported identically)
 
-| Global | Purpose |
-|--------|---------|
-| `Actor` | Create, query, manipulate actors |
-| `Map` | Terrain, bounds, spatial queries |
-| `Trigger` | Event hooks (OnKilled, AfterDelay, OnEnteredFootprint, etc.) |
-| `Media` | Audio, video, text display |
-| `Player` | Player state, resources, diplomacy |
-| `Reinforcements` | Spawn units at edges/drops |
-| `Camera` | Pan, position, shake |
-| `DateTime` | Game time queries (ticks, seconds) |
-| `Objectives` | Mission objective management |
-| `Lighting` | Global lighting control |
-| `UserInterface` | UI text, notifications |
-| `Utils` | Math, random, table utilities |
-| `Beacon` | Map beacon management |
-| `Radar` | Radar ping control |
-| `HSLColor` | Color construction |
-| `WDist` | Distance unit conversion |
+| Global           | Purpose                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------ |
+| `Actor`          | Create, query actors; mutations via trigger context (see `modding/lua-scripting.md`) |
+| `Map`            | Terrain, bounds, spatial queries                                                     |
+| `Trigger`        | Event hooks (OnKilled, AfterDelay, OnEnteredFootprint, etc.)                         |
+| `Media`          | Audio, video, text display                                                           |
+| `Player`         | Player state, resources, diplomacy                                                   |
+| `Reinforcements` | Spawn units at edges/drops                                                           |
+| `Camera`         | Pan, position, shake                                                                 |
+| `DateTime`       | Game time queries (ticks, seconds)                                                   |
+| `Objectives`     | Mission objective management                                                         |
+| `Lighting`       | Global lighting control                                                              |
+| `UserInterface`  | UI text, notifications                                                               |
+| `Utils`          | Math, random, table utilities                                                        |
+| `Beacon`         | Map beacon management                                                                |
+| `Radar`          | Radar ping control                                                                   |
+| `HSLColor`       | Color construction                                                                   |
+| `WDist`          | Distance unit conversion                                                             |
 
 ### IC Extension Globals (additive, no conflicts)
 
-| Global | Purpose | Phase |
-|--------|---------|-------|
-| `Campaign` | Branching campaign state, roster access, flags (D021) | Phase 4 |
-| `Weather` | Dynamic weather control (D022) | Phase 4 |
-| `Layer` | Map layer activation/deactivation for dynamic mission flow | Phase 4 |
-| `SubMap` | Sub-map transitions (interiors, underground) | Phase 6b |
-| `Region` | Named region queries | Phase 4 |
-| `Var` | Mission/campaign variable access | Phase 4 |
-| `Workshop` | Mod metadata queries | Phase 6a |
-| `LLM` | LLM integration hooks (D016) | Phase 7 |
-| `Achievement` | Achievement trigger/query API (D036) | Phase 5 |
-| `Tutorial` | Tutorial step management, hints, UI highlighting (D065) | Phase 4 |
-| `Ai` | AI scripting primitives — force composition, patrol, attack (D043) | Phase 4 |
+| Global        | Purpose                                                            | Phase    |
+| ------------- | ------------------------------------------------------------------ | -------- |
+| `Campaign`    | Branching campaign state, roster access, flags (D021)              | Phase 4  |
+| `Weather`     | Dynamic weather control (D022)                                     | Phase 4  |
+| `Layer`       | Map layer activation/deactivation for dynamic mission flow         | Phase 4  |
+| `SubMap`      | Sub-map transitions (interiors, underground)                       | Phase 6b |
+| `Region`      | Named region queries                                               | Phase 4  |
+| `Var`         | Mission/campaign variable access                                   | Phase 4  |
+| `Workshop`    | Mod metadata queries                                               | Phase 6a |
+| `LLM`         | LLM integration hooks (D016)                                       | Phase 7  |
+| `Achievement` | Achievement trigger/query API (D036)                               | Phase 5  |
+| `Tutorial`    | Tutorial step management, hints, UI highlighting (D065)            | Phase 4  |
+| `Ai`          | AI scripting primitives — force composition, patrol, attack (D043) | Phase 4  |
 
 ### Stability Guarantee
 

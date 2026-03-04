@@ -45,17 +45,18 @@ pub struct VoiceReplayFrame {
 }
 ```
 
-**Header extension:** The replay header (`ReplayHeader`) gains a new field:
+**Header extension:** The replay header (`ReplayHeader`) gains voice-related fields. The full canonical header is defined in `formats/save-replay-formats.md`; only the voice-specific additions are shown here:
 
 ```rust
 pub struct ReplayHeader {
-    // ... existing fields ...
+    // ... existing fields (magic, version, compression, flags, offsets, hashes,
+    //     lost_frame_count) — see formats/save-replay-formats.md for complete definition ...
     pub voice_offset: u32,       // 0 if no voice stream
     pub voice_length: u32,       // Compressed length of voice stream
 }
 ```
 
-The `flags` field gains a `HAS_VOICE` bit. Replay viewers check this flag before attempting to load voice data.
+The `flags` field gains a `HAS_VOICE` bit (bit 3). The canonical `flags` definition also includes `INCOMPLETE` (bit 4, for frame-loss tracking — see V45). Replay viewers check the `HAS_VOICE` flag before attempting to load voice data.
 
 #### Storage Cost
 
@@ -341,36 +342,36 @@ When a teammate responds:
 
 The request wheel adapts based on game state:
 
-| Context | Available requests |
-|---------|-------------------|
-| **Early game** (first 3 minutes) | Build expansion, Share resources, Scout here |
-| **Under air attack** | "Need AA" is highlighted / auto-suggested |
-| **Ally's base under attack** | "Need backup at [ally's base]" auto-fills location |
-| **Low on resources** | "Need credits" is highlighted |
-| **Enemy superweapon detected** | "Destroy superweapon!" appears as a special request option |
+| Context                          | Available requests                                         |
+| -------------------------------- | ---------------------------------------------------------- |
+| **Early game** (first 3 minutes) | Build expansion, Share resources, Scout here               |
+| **Under air attack**             | "Need AA" is highlighted / auto-suggested                  |
+| **Ally's base under attack**     | "Need backup at [ally's base]" auto-fills location         |
+| **Low on resources**             | "Need credits" is highlighted                              |
+| **Enemy superweapon detected**   | "Destroy superweapon!" appears as a special request option |
 
 This is lightweight context — the request wheel shows all options always, but highlights contextually relevant ones with a subtle glow. No options are hidden.
 
 #### Integration with Existing Systems
 
-| System | How requests integrate |
-|--------|----------------------|
-| **Pings (D059 §3)** | Requests are an extension of the ping system — same minimap markers, same rendering pipeline, same deterministic order stream |
-| **Chat wheel (D059 §4a)** | Chat wheel is for social phrases ("gg", "gl hf"). Request wheel is for tactical coordination. Separate keys, separate radials. |
-| **Tactical markers (D059 §3)** | Requests create tactical markers with a request-specific icon and auto-expire behavior |
-| **D070 support requests** | In Commander & SpecOps mode, the request wheel transforms into the role-specific request wheel (§10 below). Same UX, different content. |
-| **Replay** | Requests are recorded as `PlayerOrder::CoordinationRequest` in the order stream. Replays show all requests with timing and responses — reviewers can see the teamwork. |
-| **MVP Awards** | "Best Wingman" award (post-game.md) tracks request responses as assist actions |
+| System                         | How requests integrate                                                                                                                                                 |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Pings (D059 §3)**            | Requests are an extension of the ping system — same minimap markers, same rendering pipeline, same deterministic order stream                                          |
+| **Chat wheel (D059 §4a)**      | Chat wheel is for social phrases ("gg", "gl hf"). Request wheel is for tactical coordination. Separate keys, separate radials.                                         |
+| **Tactical markers (D059 §3)** | Requests create tactical markers with a request-specific icon and auto-expire behavior                                                                                 |
+| **D070 support requests**      | In Commander & SpecOps mode, the request wheel transforms into the role-specific request wheel (§10 below). Same UX, different content.                                |
+| **Replay**                     | Requests are recorded as `PlayerOrder::CoordinationRequest` in the order stream. Replays show all requests with timing and responses — reviewers can see the teamwork. |
+| **MVP Awards**                 | "Best Wingman" award (post-game.md) tracks request responses as assist actions                                                                                         |
 
 #### Mode-Aware Behavior
 
-| Game mode | Request system behavior |
-|-----------|------------------------|
-| **1v1** | Request wheel disabled (no teammates) |
-| **2v2, 3v3, FFA teams** | Standard request wheel with military/economy/tactical categories |
-| **Co-op vs AI** | Same as team games, plus cooperative-specific requests ("Hold this lane", "I'll take left") |
+| Game mode                      | Request system behavior                                                                                                                       |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1v1**                        | Request wheel disabled (no teammates)                                                                                                         |
+| **2v2, 3v3, FFA teams**        | Standard request wheel with military/economy/tactical categories                                                                              |
+| **Co-op vs AI**                | Same as team games, plus cooperative-specific requests ("Hold this lane", "I'll take left")                                                   |
 | **Commander & SpecOps (D070)** | Request wheel becomes the role-specific request/response system (§10 below) with lifecycle states, support queue, and Commander approval flow |
-| **Survival (D070-adjacent)** | Request wheel adds survival-specific options ("Need medkit", "Cover me", "Objective spotted") |
+| **Survival (D070-adjacent)**   | Request wheel adds survival-specific options ("Need medkit", "Cover me", "Objective spotted")                                                 |
 
 #### Fun Factor Alignment
 
@@ -470,9 +471,9 @@ Every D070 role-critical coordination action must have:
 - **D055 (Ranked Matchmaking):** Voice is stripped from ranked replay submissions. Chat and pings are preserved (they are orders in the deterministic stream).
 - **D058 (Chat/Command Console):** All coordination features are accessible via console commands. D058 defined the input system; D059 defines the routing, voice, spatial signaling, and voice effect selection that D058's commands control. The `/all`, `/team`, `/w` commands were placeholder in D058 — D059 specifies their routing implementation. Voice effect commands (`/voice effect list`, `/voice effect set`, `/voice effect preview`) give console-first access to the voice effects system.
 - **D070 (Asymmetric Commander & Field Ops Co-op):** D059 provides the standardized request/response coordination UX, typed support markers, and status vocabulary for D070 scenarios. D070 defines gameplay meaning and authoring; D059 defines the communication surfaces and feedback loops.
-- **05-FORMATS.md (Replay Format):** Voice stream extends the replay file format with a new section. The replay header gains `voice_offset`/`voice_length` fields and a `HAS_VOICE` flag bit. Voice is independent of the order and analysis streams — tools that don't process voice ignore it.
+- **05-FORMATS.md (Replay Format):** Voice stream extends the replay file format with a new section. The replay header gains `voice_offset`/`voice_length` fields and a `HAS_VOICE` flag bit (bit 3). The canonical replay header also includes `lost_frame_count` and an `INCOMPLETE` flag (bit 4) for frame-loss tracking (V45) — see `formats/save-replay-formats.md` for the complete header definition. Voice is independent of the order and analysis streams — tools that don't process voice ignore it.
 - **06-SECURITY.md:** New `ProtocolLimits` fields for voice, ping, and drawing rate limits. Voice spoofing prevention (relay-stamped speaker ID). Voice-in-replay consent model addresses privacy requirements.
-- **D010 (Snapshots) / Analysis Event Stream:** The replay analysis event stream now includes **camera position samples** (`CameraPositionSample`), **selection tracking** (`SelectionChanged`), **control group events** (`ControlGroupEvent`), **ability usage** (`AbilityUsed`), **pause events** (`PauseEvent`), and **match end events** (`MatchEnded`) — see `05-FORMATS.md` § "Analysis Event Stream" for the full enum. Camera samples are lightweight (~8 bytes per player per sample at 2 Hz = ~1 KB/min for 8 players). D059 notes this integration because voice-in-replay is most valuable when combined with camera tracking — hearing what a player said while seeing what they were looking at.
+- **D010 (Snapshots) / Analysis Event Stream:** The replay analysis event stream now includes **camera position samples** (`CameraPositionSample`), **selection tracking** (`SelectionChanged`), **control group events** (`ControlGroupEvent`), **ability usage** (`AbilityUsed`), **pause events** (`PauseEvent`), and **match end events** (`MatchEnded`) — see `formats/save-replay-formats.md` § "Analysis Event Stream" for the full enum. Camera samples are lightweight (~8 bytes per player per sample at 2 Hz = ~1 KB/min for 8 players). D059 notes this integration because voice-in-replay is most valuable when combined with camera tracking — hearing what a player said while seeing what they were looking at.
 - **03-NETCODE.md (Match Lifecycle):** D059's competitive voice rules (pause behavior, eliminated player routing, ranked restrictions, coach slot) integrate with the match lifecycle protocol defined in `03-NETCODE.md` § "Match Lifecycle." Voice pause behavior follows the game pause state — voice continues during pause per D059's competitive voice rules. Surrender and disconnect events affect voice routing (eliminated-to-observer transition). The **In-Match Vote Framework** (`03-NETCODE.md` § "In-Match Vote Framework") extends D059's tactical coordination: tactical polls build on the chat wheel phrase system (`poll: true` phrases in `chat_wheel_phrases.yaml`), and `/callvote` commands are registered via D058's Brigadier command tree. See vote framework research: `research/vote-callvote-system-analysis.md`.
 
 ### Shared Infrastructure: Voice, Game Netcode & Workshop Cross-Pollination

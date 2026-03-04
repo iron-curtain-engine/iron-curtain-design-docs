@@ -6,7 +6,7 @@
 
 1. **The C&C open-source community is a GPL community.** EA released every C&C source code drop under GPL v3 — Red Alert, Tiberian Dawn, Generals/Zero Hour, and the Remastered Collection engine. OpenRA uses GPL v3. Stratagus uses GPL-2.0. Spring Engine uses GPL-2.0. The community this project is built for lives in GPL-land. GPL v3 is the license they know, trust, and expect.
 
-2. **Legal compatibility with EA source.** `ra-formats` directly references EA's GPL v3 source code for struct definitions, compression algorithms, and lookup tables (see `05-FORMATS.md` § Binary Format Codec Reference). GPL v3 for the engine is the cleanest legal path — no license compatibility analysis required.
+2. **Legal compatibility with EA source.** `ra-formats` directly references EA's GPL v3 source code for struct definitions, compression algorithms, and lookup tables (see `formats/binary-codecs.md` § Binary Format Codec Reference). GPL v3 for the engine is the cleanest legal path — no license compatibility analysis required.
 
 3. **The engine stays open — forever.** GPL guarantees that no one can fork the engine, close-source it, and compete with the community's own project. For a community that has watched proprietary decisions kill or fragment C&C projects over three decades, this guarantee matters. MIT/Apache would allow exactly the kind of proprietary fork the community fears.
 

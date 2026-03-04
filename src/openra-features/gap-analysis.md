@@ -71,7 +71,7 @@ DamageMultiplier@CRITICAL:
 ```
 
 **Iron Curtain status:** **Designed and scheduled as Phase 2 exit criterion (D028).** The condition system is a core modding primitive:
-- `Conditions` component: `HashMap<ConditionId, u32>` (ref-counted named conditions per entity)
+- `Conditions` component: `BTreeMap<ConditionId, u32>` (ref-counted named conditions per entity; `BTreeMap` per deterministic collection policy)
 - Condition sources: `GrantConditionOnMovement`, `GrantConditionOnDamageState`, `GrantConditionOnDeploy`, `GrantConditionOnAttack`, `GrantConditionOnTerrain`, `GrantConditionOnVeterancy` — all exposed in YAML
 - Condition consumers: any component field can declare `requires:` or `disabled_by:` conditions
 - Runtime: systems check `conditions.is_active("deployed")` via fast bitset or hash lookup
@@ -95,7 +95,7 @@ rifle_infantry:
         modifier: 1.5
 ```
 
-ECS implementation: a `Conditions` component holding a `HashMap<ConditionId, u32>` (ref-counted). Systems check `conditions.is_active("deployed")`. YAML `disabled_by` / `requires` fields map to runtime condition checks.
+ECS implementation: a `Conditions` component holding a `BTreeMap<ConditionId, u32>` (ref-counted; `BTreeMap` per deterministic collection policy — see D028). Systems check `conditions.is_active("deployed")`. YAML `disabled_by` / `requires` fields map to runtime condition checks.
 
 ---
 

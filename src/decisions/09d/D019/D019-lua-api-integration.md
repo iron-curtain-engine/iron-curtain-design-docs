@@ -153,7 +153,7 @@
 **What this adds to Phase 2:**
 
 1. **Condition system:**
-   - `Conditions` component: `HashMap<ConditionId, u32>` (ref-counted named conditions per entity)
+   - `Conditions` component: `BTreeMap<ConditionId, u32>` (ref-counted named conditions per entity; `BTreeMap` per ic-sim deterministic collection policy)
    - Condition sources: `GrantConditionOnMovement`, `GrantConditionOnDamageState`, `GrantConditionOnDeploy`, `GrantConditionOnAttack`, `GrantConditionOnTerrain`, `GrantConditionOnVeterancy` — exposed in YAML
    - Condition consumers: any component field can declare `requires:` or `disabled_by:` conditions
    - Runtime: systems check `conditions.is_active("deployed")` via fast bitset or hash lookup

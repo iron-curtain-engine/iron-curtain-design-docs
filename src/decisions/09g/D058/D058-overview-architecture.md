@@ -196,7 +196,10 @@ impl CommandDispatcher {
     /// Parse input into a command + arguments. Does NOT execute.
     pub fn parse(&self, input: &str, source: &CommandSource) -> ParseResult;
 
-    /// Execute a previously parsed command.
+    /// Execute a previously parsed **local-only** command (e.g., `/help`, `/volume`).
+    /// Sim-affecting mod commands are NOT executed here — they are packaged into
+    /// `PlayerOrder::ChatCommand` and routed through the deterministic order pipeline.
+    /// See "Mod command execution contract" below.
     pub fn execute(&self, parsed: &ParseResult) -> CommandResult;
 
     /// Generate tab-completion suggestions at cursor position.
@@ -207,9 +210,13 @@ impl CommandDispatcher {
 }
 ```
 
+**Mod command execution contract:** `CommandDispatcher` lives in `ic-game`, but mod command handlers that perform trigger-context mutations (e.g., `Reinforcements.Spawn()`, `Actor.Create()`) are **not executed by the dispatcher directly**. Instead, the dispatcher packages the parsed command into a `PlayerOrder::ChatCommand { cmd, args }` which flows through the deterministic order pipeline. On every client, the sim's `OrderValidator` (D041 — runs before `apply_orders`, see `02-ARCHITECTURE.md` § OrderValidator Trait) validates the `ChatCommand` by re-parsing each string argument against the registered `CommandNode` types. If validation passes, `apply_orders` (step 1) queues the command, and `trigger_system()` (step 19) invokes the mod handler in trigger context — the same execution environment as mission trigger callbacks. This guarantees determinism: every client runs the same handler with the same state at the same pipeline step. The dispatcher's `execute()` method is used only for **local-only commands** (e.g., `/help`, `/volume`) that produce no `PlayerOrder`.
+
+**ChatCommand argument canonicalization:** The `args: Vec<String>` on the wire uses a canonical string encoding to ensure all clients parse identically. Typed arguments (e.g., `PositionArg`, `IntegerArg`) are serialized to their canonical string form by the sending client's `CommandDispatcher::parse()` — positions as `"x,y"` or `"x,y,z"` (fixed-point decimal), integers as decimal digits, booleans as `"true"`/`"false"`, player names as their canonical display form. On the sim side, `OrderValidator` re-parses each string argument using the same `CommandNode` argument type registered at mod load time. If re-parsing fails (type mismatch, out-of-range, unknown player), the order is **rejected at validation time** — before `apply_orders`, before any system runs. This is deterministic rejection on all clients (D012). `trigger_system()` (step 19) receives only pre-validated `ChatCommand`s and invokes the handler with guaranteed-valid arguments. This two-phase parse→serialize→re-parse design means the wire format is always `Vec<String>` (simple, versionable), while type safety is enforced at both ends.
+
 **Permission filtering:** Commands whose root node's permission requirement exceeds the source's level are invisible — not shown in `/help`, not tab-completed, not executable. A regular player never sees `/kick` or `/c`. This is Brigadier's `requirement` predicate.
 
-**Append-only registration:** Mods register commands by adding children to the root node. A mod can also extend existing commands by adding new sub-nodes. Two mods adding `/spawn` would conflict — the second registration merges into the first's node, following Brigadier's merge semantics.
+**Append-only registration:** Mods register commands by adding children to the root node. A mod can also extend existing commands by adding new sub-nodes. Two mods adding different sub-commands under `/spawn` coexist — the second registration merges into the first's node (Brigadier tree merge). If two mods register the exact same leaf command (e.g., both register `/spawn tank`), the last mod loaded replaces the earlier handler, with a warning logged. This is the same rule applied to unprefixed namespace collisions in D058 § "Mod-Registered Commands."
 
 #### Configuration Variables (Cvars)
 
@@ -301,5 +308,5 @@ Cvars are the runtime mirror of `config.toml`. Changing a cvar with `PERSISTENT`
 | `/cvars [category]`   | List all cvars (optionally filtered) | `/cvars audio`              |
 | `/toggle <cvar>`      | Toggle boolean cvar                  | `/toggle render.vsync`      |
 
-**Sim-affecting cvars** (like fog of war, game speed) use the `DEV_ONLY` flag and flow through the order pipeline as `PlayerOrder::SetCvar(name, value)` — deterministic, validated, visible to all clients. Client-only cvars (render settings, audio) take effect immediately without going through the sim.
+**Sim-affecting cvars** (like fog of war, game speed) use the `DEV_ONLY` flag and flow through the order pipeline as `PlayerOrder::SetCvar { name, value }` — deterministic, validated, visible to all clients. Client-only cvars (render settings, audio) take effect immediately without going through the sim.
 

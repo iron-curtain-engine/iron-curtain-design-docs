@@ -56,30 +56,30 @@
 | `/weather <type>`                     | Force weather state (D022). Valid types defined by D022's weather state machine — e.g., `clear`, `rain`, `snow`, `storm`, `sandstorm`; exact set is game-module-specific. |
 | `/desync_check`                       | Force full-state hash comparison across all clients                                                                                                                       |
 | `/save_snapshot`                      | Write sim state snapshot to disk                                                                                                                                          |
-| `/step [N]`                           | Advance N sim ticks while paused (default: 1). Requires `/pause` first. Essential for determinism debugging — inspired by SAGE engine's script debugger frame-stepping   |
+| `/step [N]`                           | Advance N sim ticks while paused (default: 1). Requires `/pause` first. Essential for determinism debugging — inspired by SAGE engine's script debugger frame-stepping    |
 
 **Diagnostic overlay commands (client-local, no network traffic):**
 
 These commands control the real-time diagnostic overlay described in `10-PERFORMANCE.md` § Diagnostic Overlay & Real-Time Observability. They are **client-local** — they read telemetry data already being collected (D031) and do not produce `PlayerOrder`s. Level 1–2 commands are available to all players; Level 3 panels require `dev-tools`.
 
-| Command                  | Description                                                              | Permission |
-| ------------------------ | ------------------------------------------------------------------------ | ---------- |
-| `/diag` or `/diag 1`    | Toggle basic diagnostic overlay (FPS, tick time, RTT, entity count)     | Player     |
-| `/diag 0`               | Turn off diagnostic overlay                                             | Player     |
-| `/diag 2`               | Detailed overlay (per-system breakdown, pathfinding, memory, network)   | Player     |
-| `/diag 3`               | Full developer overlay (ECS inspector, AI viewer, desync debugger)      | Developer  |
-| `/diag net`             | Show only the network diagnostic panel                                   | Player     |
-| `/diag sim`             | Show only the sim tick breakdown panel                                   | Player     |
-| `/diag path`            | Show only the pathfinding statistics panel                               | Player     |
-| `/diag mem`             | Show only the memory usage panel                                         | Player     |
-| `/diag ai`              | Show AI state viewer for selected unit(s)                                | Developer  |
-| `/diag orders`          | Show order queue inspector                                               | Developer  |
-| `/diag fog`             | Toggle fog-of-war debug visualization on game world                      | Developer  |
-| `/diag desync`          | Show desync debugger panel                                               | Developer  |
-| `/diag history`         | Toggle graph history mode (scrolling line graphs for key metrics)        | Player     |
-| `/diag pos <corner>`    | Move overlay position: `tl`, `tr`, `bl`, `br` (default: `tr`)          | Player     |
-| `/diag scale <factor>`  | Scale overlay text size, 0.5–2.0 (accessibility)                        | Player     |
-| `/diag export`          | Dump current overlay snapshot to timestamped JSON file                   | Player     |
+| Command                | Description                                                           | Permission |
+| ---------------------- | --------------------------------------------------------------------- | ---------- |
+| `/diag` or `/diag 1`   | Toggle basic diagnostic overlay (FPS, tick time, RTT, entity count)   | Player     |
+| `/diag 0`              | Turn off diagnostic overlay                                           | Player     |
+| `/diag 2`              | Detailed overlay (per-system breakdown, pathfinding, memory, network) | Player     |
+| `/diag 3`              | Full developer overlay (ECS inspector, AI viewer, desync debugger)    | Developer  |
+| `/diag net`            | Show only the network diagnostic panel                                | Player     |
+| `/diag sim`            | Show only the sim tick breakdown panel                                | Player     |
+| `/diag path`           | Show only the pathfinding statistics panel                            | Player     |
+| `/diag mem`            | Show only the memory usage panel                                      | Player     |
+| `/diag ai`             | Show AI state viewer for selected unit(s)                             | Developer  |
+| `/diag orders`         | Show order queue inspector                                            | Developer  |
+| `/diag fog`            | Toggle fog-of-war debug visualization on game world                   | Developer  |
+| `/diag desync`         | Show desync debugger panel                                            | Developer  |
+| `/diag history`        | Toggle graph history mode (scrolling line graphs for key metrics)     | Player     |
+| `/diag pos <corner>`   | Move overlay position: `tl`, `tr`, `bl`, `br` (default: `tr`)         | Player     |
+| `/diag scale <factor>` | Scale overlay text size, 0.5–2.0 (accessibility)                      | Player     |
+| `/diag export`         | Dump current overlay snapshot to timestamped JSON file                | Player     |
 
 **Note on DeveloperMode interaction:** Dev commands check `DeveloperMode` sim state (V44). In multiplayer, dev mode must be unanimously enabled in the lobby before game start. Dev commands issued without active dev mode are rejected by the sim with an error message. This is enforced at the order validation layer (D012), not the UI layer.
 
@@ -297,12 +297,12 @@ The design principle: **anything the GUI can do, the console can do.** Every but
 
 **PlayerOrder variant taxonomy:** Commands map to `PlayerOrder` variants as follows:
 - **GUI-equivalent commands** (`/move`, `/attack`, `/build`, `/sell`, `/deploy`, `/stance`, `/select`, `/place`, etc.) produce the **same native `PlayerOrder` variant** as their GUI counterpart — e.g., `/move 120,80` produces `PlayerOrder::Move { target: WorldPos(120,80) }`, identical to right-clicking the map.
-- **Cvar mutations** (`/set <name> <value>`) produce `PlayerOrder::SetCvar(name, value)` when the cvar has `DEV_ONLY` or `SERVER` flags — these flow through order validation.
+- **Cvar mutations** (`/set <name> <value>`) produce `PlayerOrder::SetCvar { name, value }` when the cvar has `DEV_ONLY` or `SERVER` flags — these flow through order validation.
 - **Cheat codes** (hidden phrases typed in chat) produce `PlayerOrder::CheatCode(CheatId)` — see "Hidden Cheat Codes" below.
 - **Chat messages** (`/s`, `/w`, unprefixed text) produce `PlayerOrder::ChatMessage { channel, text }` — see D059 § Text Chat.
 - **Coordination actions** (pings, chat wheel, minimap drawing) produce their respective `PlayerOrder` variants (`TacticalPing`, `ChatWheelPhrase`, `MinimapDraw`) — see D059 § Coordination.
 - **Meta-commands** (`/help`, `/locale`, `/hotkeys`, `/voice diag`, etc.) are **local-only** — they produce no `PlayerOrder` and never touch the sim.
-- **`PlayerOrder::ChatCommand(cmd, args)`** is used only for mod-registered commands that produce custom sim-side effects not covered by a native variant. Engine commands never use `ChatCommand`.
+- **`PlayerOrder::ChatCommand { cmd, args }`** is used only for mod-registered commands that produce custom sim-side effects not covered by a native variant. Engine commands never use `ChatCommand`.
 
 **Game-module registration example (RA1):** The RA1 game module registers all RA1-specific commands during `GameModule::register_commands()`. A Tiberian Dawn module would register similar but distinct commands (e.g., `/sell` exists in both, but `/power_activate` with different superweapon names). A total conversion could register entirely novel commands (`/mutate`, `/terraform`, etc.) using the same `CommandDispatcher` infrastructure. This follows the "game is a mod" principle (13-PHILOSOPHY.md § Principle 4) — the base game uses the same registration API available to external modules.
 
@@ -317,12 +317,17 @@ Commands.register("spawn_reinforcements", {
     permission = "host",       -- only host can use
     arguments = {
         { name = "faction", type = "string", suggestions = {"allies", "soviet"} },
+        { name = "unit_type", type = "string", suggestions = {"Tank", "Rifle", "APC"} },
         { name = "count",   type = "integer", min = 1, max = 50 },
-        { name = "location", type = "position" },
+        { name = "location", type = "string", suggestions = {"north", "south", "east", "west"} },
     },
     execute = function(source, args)
-        -- Mod logic here
-        SpawnReinforcements(args.faction, args.count, args.location)
+        -- Mod logic here — note: Reinforcements.Spawn takes
+        -- (faction, unit_type_list, entry_point_id), matching
+        -- the canonical Lua API (see modding/lua-scripting.md).
+        local units = {}
+        for i = 1, args.count do table.insert(units, args.unit_type) end
+        Reinforcements.Spawn(args.faction, units, args.location)
         return "Spawned " .. args.count .. " " .. args.faction .. " reinforcements"
     end
 })
@@ -330,22 +335,22 @@ Commands.register("spawn_reinforcements", {
 
 **Sandboxing:** Mod commands execute within the same Lua sandbox as mission scripts. A mod command cannot access the filesystem, network, or memory outside its sandbox. The `CommandSource` tracks which mod registered the command — if a mod command crashes or times out, the error is attributed to the mod, not the engine.
 
-**Namespace collision:** Mod commands are prefixed with the mod name by default: a mod named `cool_units` registering `spawn` creates `/cool_units:spawn`. Mods can request unprefixed registration (`/spawn`) but collisions are resolved by load order — last mod wins, with a warning logged. The convention follows Minecraft's `namespace:command` pattern.
+**Namespace collision:** Mod commands are prefixed with the mod name by default: a mod named `cool_units` registering `spawn` creates `/cool_units:spawn`. Mods can request unprefixed registration (`/spawn`) but collisions are resolved deterministically: sub-commands under the same parent node are merged (Brigadier tree merge — two mods adding different sub-commands under `/spawn` coexist). If two mods register the exact same leaf command path, the last mod loaded replaces the earlier handler, with a warning logged. The convention follows Minecraft's `namespace:command` pattern.
 
 #### Anti-Trolling Measures
 
 Chat and commands create trolling surfaces. IC addresses each:
 
-| Trolling Vector                                                            | Mitigation                                                                                                                                                                                                                                                                                                                                                                |
-| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Chat spam**                                                              | Rate limit: max 5 messages per 3 seconds, relay-enforced (see D059 § Text Chat). Client applies the same limit locally to avoid round-trip rejection. Exceeding the limit queues messages with a cooldown warning. Configurable by server.                                                                                                                                |
-| **Chat harassment**                                                        | `/ignore` is client-side and instant. `/mute` is admin-enforced and server-side. Ignored players can't whisper you.                                                                                                                                                                                                                                                       |
+| Trolling Vector                                                                  | Mitigation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Chat spam**                                                                    | Rate limit: max 5 messages per 3 seconds, relay-enforced (see D059 § Text Chat). Client applies the same limit locally to avoid round-trip rejection. Exceeding the limit queues messages with a cooldown warning. Configurable by server.                                                                                                                                                                                                                                                                                                    |
+| **Chat harassment**                                                              | `/ignore` is client-side and instant. `/mute` is admin-enforced and server-side. Ignored players can't whisper you.                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | **Unicode abuse** (oversized chars, bidi-spoof controls, invisible chars, zalgo) | Chat input is sanitized **before** order injection: preserve legitimate letters/numbers/punctuation (including Arabic/Hebrew/RTL text), but strip disallowed control/invisible characters used for spoofing, normalize Unicode to NFC, cap display width, and clamp combining-character abuse. Normalization happens on the sending client before the text enters `PlayerOrder::ChatMessage` — ensuring all clients receive identical normalized bytes (determinism requirement). Homoglyph detection warns admins of impersonation attempts. |
-| **Command abuse** (admin runs `/kill` on all players)                      | Admin commands that affect other players are logged as telemetry events (D031). Community server governance (D037) allows reputation consequences.                                                                                                                                                                                                                        |
-| **Lua injection** via chat                                                 | Chat messages never touch the command parser unless they start with `/`. A message like `hello /c game.destroy()` is plain text, not a command. Only the first `/` at position 0 triggers command parsing.                                                                                                                                                                |
-| **Fake command output**                                                    | System messages (command results, join/leave notifications) use a distinct visual style (color, icon) that players cannot replicate through chat.                                                                                                                                                                                                                         |
-| **Command spam**                                                           | Commands have the same rate limit as chat. Dev commands additionally logged with timestamps for abuse review.                                                                                                                                                                                                                                                             |
-| **Programmable spam** (Factorio's speaker problem)                         | IC doesn't have programmable speakers, but any future mod-driven notification system should respect the same per-player mute controls.                                                                                                                                                                                                                                    |
+| **Command abuse** (admin runs `/kill` on all players)                            | Admin commands that affect other players are logged as telemetry events (D031). Community server governance (D037) allows reputation consequences.                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Lua injection** via chat                                                       | Chat messages never touch the command parser unless they start with `/`. A message like `hello /c game.destroy()` is plain text, not a command. Only the first `/` at position 0 triggers command parsing.                                                                                                                                                                                                                                                                                                                                    |
+| **Fake command output**                                                          | System messages (command results, join/leave notifications) use a distinct visual style (color, icon) that players cannot replicate through chat.                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Command spam**                                                                 | Commands have the same rate limit as chat. Dev commands additionally logged with timestamps for abuse review.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| **Programmable spam** (Factorio's speaker problem)                               | IC doesn't have programmable speakers, but any future mod-driven notification system should respect the same per-player mute controls.                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 #### Achievement and Ranking Interaction
 

@@ -1,11 +1,23 @@
 ## Crate Dependency Graph
 
+### External Standalone Crates (D076 Tier 1 — separate repos, MIT OR Apache-2.0)
+
+```
+cnc-formats         (clean-room C&C binary format parsing: .mix, .shp, .pal, .aud, .tmp, .vqa)
+fixed-game-math     (deterministic fixed-point arithmetic: Fixed<N>, trig, CORDIC, Newton sqrt)
+deterministic-rng   (seedable platform-identical PRNG: range sampling, weighted selection, shuffle)
+```
+
+These exist from Phase 0, day one, in separate repositories (D076). They have zero IC-specific dependencies.
+
+### IC Monorepo Crates (GPL v3 with modding exception)
+
 ```
 ic-protocol  (shared types: PlayerOrder, TimestampedOrder)
-    ↑
-    ├── ic-sim      (depends on: ic-protocol, ra-formats)
+    ↑         (depends on: fixed-game-math)
+    ├── ic-sim      (depends on: ic-protocol, ra-formats, fixed-game-math, deterministic-rng)
     ├── ic-net      (depends on: ic-protocol; contains RelayCore library + relay-server binary)
-    ├── ra-formats  (standalone — .mix, .shp, .pal, YAML)
+    ├── ra-formats  (wraps cnc-formats + EA-derived constants — .mix, .shp, .pal, YAML)
     ├── ic-render   (depends on: ic-sim for reading state)
     ├── ic-ui       (depends on: ic-sim, ic-render; reads SQLite for player analytics — D034)
     ├── ic-audio    (depends on: ra-formats)
@@ -25,12 +37,12 @@ ic-protocol  (shared types: PlayerOrder, TimestampedOrder)
 
 The crate graph produces four ship binaries. Each targets a distinct audience with an interface appropriate to that audience's workflow:
 
-| Binary | Crate | Interface | Primary Audience | What It Is |
-| --- | --- | --- | --- | --- |
-| `iron-curtain[.exe]` | `ic-game` | **GUI application** | Players | The game. Launches into a windowed/fullscreen menu with mouse/touch/controller interaction. Players never see a terminal. |
-| `ic-editor[.exe]` | `ic-editor` | **GUI application** | Modders, map makers | The SDK. Visual scenario editor, asset studio, campaign editor (D038+D040). |
-| `ic-server[.exe]` | `ic-net` | **CLI / daemon** | Server operators | Headless dedicated/relay server. Designed for systemd, Docker, and unattended operation. No window, no renderer. |
-| `ic[.exe]` | `ic-game` (feature-gated) | **CLI tool** | Modders, CI/CD, developers | Developer/modder utility. `ic mod check`, `ic mod publish`, `ic replay validate`, `ic server validate-config`. Analogous to OpenRA's `OpenRA.Utility.exe`. |
+| Binary               | Crate                     | Interface           | Primary Audience           | What It Is                                                                                                                                                 |
+| -------------------- | ------------------------- | ------------------- | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `iron-curtain[.exe]` | `ic-game`                 | **GUI application** | Players                    | The game. Launches into a windowed/fullscreen menu with mouse/touch/controller interaction. Players never see a terminal.                                  |
+| `ic-editor[.exe]`    | `ic-editor`               | **GUI application** | Modders, map makers        | The SDK. Visual scenario editor, asset studio, campaign editor (D038+D040).                                                                                |
+| `ic-server[.exe]`    | `ic-net`                  | **CLI / daemon**    | Server operators           | Headless dedicated/relay server. Designed for systemd, Docker, and unattended operation. No window, no renderer.                                           |
+| `ic[.exe]`           | `ic-game` (feature-gated) | **CLI tool**        | Modders, CI/CD, developers | Developer/modder utility. `ic mod check`, `ic mod publish`, `ic replay validate`, `ic server validate-config`. Analogous to OpenRA's `OpenRA.Utility.exe`. |
 
 **GUI-first principle:** The game client (`iron-curtain`) is a GUI application — not a CLI tool with a GUI bolted on. Players interact through menus, buttons, and mouse clicks. CLI flags on the game binary (`--windowed`, `--mod mymod`, `--portable`) are **launch parameters** (the same kind every game accepts), not a "CLI mode." The game never requires a terminal to play.
 
@@ -63,22 +75,22 @@ IC uses two async runtimes that never overlap within a single thread. The split 
 
 **Bevy does not use tokio.** Bevy's `bevy_tasks` crate is built on `async-executor` / `futures-lite` (the smol family) — a lightweight, custom thread-pool executor with three pools:
 
-| Pool | Purpose | Example Uses |
-| --- | --- | --- |
-| `ComputeTaskPool` | CPU work needed for the current frame | Pathfinding, visibility culling, ECS queries |
+| Pool                   | Purpose                                | Example Uses                                              |
+| ---------------------- | -------------------------------------- | --------------------------------------------------------- |
+| `ComputeTaskPool`      | CPU work needed for the current frame  | Pathfinding, visibility culling, ECS queries              |
 | `AsyncComputeTaskPool` | CPU work that can span multiple frames | Map loading, mod validation, state snapshot serialization |
-| `IoTaskPool` | Short-lived I/O-bound tasks | File reads, config loading, embedded relay socket I/O |
+| `IoTaskPool`           | Short-lived I/O-bound tasks            | File reads, config loading, embedded relay socket I/O     |
 
 But key IC dependencies — `librqbit` (BitTorrent P2P), `reqwest` (HTTP), `tokio-tungstenite` (WebSocket), `quinn` (QUIC) — require **tokio**. Calling `tokio::Runtime::block_on()` from inside Bevy's executor panics. The solution is a dedicated tokio runtime on a background OS thread, communicating via channels.
 
 #### Per-Binary Runtime Strategy
 
-| Binary | Game Loop | Async I/O | Bridge |
-| --- | --- | --- | --- |
-| `iron-curtain` (game) | Bevy scheduler + `bevy_tasks` pools | Dedicated tokio thread (background OS thread) | `crossbeam-channel` |
-| `ic-editor` (SDK) | Bevy scheduler + `bevy_tasks` pools | Dedicated tokio thread (background OS thread) | `crossbeam-channel` |
-| `ic-server` (relay) | No Bevy, no game loop | `#[tokio::main]` — tokio is the entire runtime | N/A |
-| `ic` (CLI) | No Bevy, no game loop | `tokio::runtime::Runtime::new()` + `block_on` | N/A |
+| Binary                | Game Loop                           | Async I/O                                      | Bridge              |
+| --------------------- | ----------------------------------- | ---------------------------------------------- | ------------------- |
+| `iron-curtain` (game) | Bevy scheduler + `bevy_tasks` pools | Dedicated tokio thread (background OS thread)  | `crossbeam-channel` |
+| `ic-editor` (SDK)     | Bevy scheduler + `bevy_tasks` pools | Dedicated tokio thread (background OS thread)  | `crossbeam-channel` |
+| `ic-server` (relay)   | No Bevy, no game loop               | `#[tokio::main]` — tokio is the entire runtime | N/A                 |
+| `ic` (CLI)            | No Bevy, no game loop               | `tokio::runtime::Runtime::new()` + `block_on`  | N/A                 |
 
 #### The Channel Bridge (Bevy Binaries)
 
@@ -104,7 +116,7 @@ For `ic-game` and `ic-editor`, a single background OS thread hosts a tokio runti
 4. A Bevy system polls `result_rx.try_recv()` each frame and injects results into the ECS world as events or resource mutations.
 5. The sim never touches any of this — it remains pure.
 
-**Channel choice:** `crossbeam-channel` for the sync↔async boundary (already used by IC's replay writer and voice pipeline — see `05-FORMATS.md` § Replay Recording and D059 § Voice Pipeline). Within the tokio runtime, `tokio::sync::mpsc` for intra-task communication.
+**Channel choice:** `crossbeam-channel` for the sync↔async boundary (already used by IC's replay writer and voice pipeline — see `netcode/network-model-trait.md` § BackgroundReplayWriter and D059 § Voice Pipeline). Within the tokio runtime, `tokio::sync::mpsc` for intra-task communication.
 
 ```rust
 /// Commands sent from Bevy systems to the tokio I/O thread.
@@ -179,14 +191,14 @@ pub struct WasmIoBridge { /* internal state */ }
 
 **Platform-specific behavior:**
 
-| Capability | Native | WASM |
-| --- | --- | --- |
-| HTTP (reqwest) | Tokio thread | Browser Fetch API (reqwest auto-switches) |
-| LLM API calls | Tokio thread (reqwest) | Browser Fetch API |
-| P2P downloads (librqbit) | Tokio thread | **Not available** — HTTP fallback from relay/CDN |
-| WebSocket | Tokio thread (tokio-tungstenite) | Browser WebSocket API |
-| WebRTC/VoIP | Tokio thread driving str0m | Browser WebRTC API (native, no str0m) |
-| UDP relay | Tokio thread (tokio::net::UdpSocket) | WebTransport or WebSocket tunnel |
+| Capability               | Native                               | WASM                                             |
+| ------------------------ | ------------------------------------ | ------------------------------------------------ |
+| HTTP (reqwest)           | Tokio thread                         | Browser Fetch API (reqwest auto-switches)        |
+| LLM API calls            | Tokio thread (reqwest)               | Browser Fetch API                                |
+| P2P downloads (librqbit) | Tokio thread                         | **Not available** — HTTP fallback from relay/CDN |
+| WebSocket                | Tokio thread (tokio-tungstenite)     | Browser WebSocket API                            |
+| WebRTC/VoIP              | Tokio thread driving str0m           | Browser WebRTC API (native, no str0m)            |
+| UDP relay                | Tokio thread (tokio::net::UdpSocket) | WebTransport or WebSocket tunnel                 |
 
 `librqbit` is **native-only** — WASM browser builds fall back to HTTP downloads served by Workshop CDN or relay mirrors. This constraint should be accepted early and the Workshop download system designed with HTTP fallback from the start (D049).
 
@@ -253,15 +265,15 @@ The sim is pure (invariant #1) and emits no I/O. Audio events are therefore prod
 
 **Event taxonomy:**
 
-| Event type | Trigger source (sim state change) | Audio bus target |
-| --- | --- | --- |
-| `CombatAudioEvent` | Weapon fire, projectile impact, explosion, unit death | `SfxBus` (WeaponSub / ExplosionSub) |
-| `ProductionAudioEvent` | Build started, build complete, unit ready | `SfxBus` (UiSub) |
-| `MovementAudioEvent` | Unit acknowledge, unit move start, formation move | `VoiceBus` (UnitSub) |
-| `EvaNotification` | Base under attack, unit lost, building complete, nuke detected, etc. | `VoiceBus` (EvaSub) |
-| `MusicStateChange` | Combat intensity shift, mission end (victory/defeat) | `MusicBus` |
-| `AmbientAudioEvent` | Biome change (map load), weather transition (D022) | `AmbientBus` (BiomeSub / WeatherSub) |
-| `UiAudioEvent` | Button click, menu transition, chat message received | `SfxBus` (UiSub) |
+| Event type             | Trigger source (sim state change)                                    | Audio bus target                     |
+| ---------------------- | -------------------------------------------------------------------- | ------------------------------------ |
+| `CombatAudioEvent`     | Weapon fire, projectile impact, explosion, unit death                | `SfxBus` (WeaponSub / ExplosionSub)  |
+| `ProductionAudioEvent` | Build started, build complete, unit ready                            | `SfxBus` (UiSub)                     |
+| `MovementAudioEvent`   | Unit acknowledge, unit move start, formation move                    | `VoiceBus` (UnitSub)                 |
+| `EvaNotification`      | Base under attack, unit lost, building complete, nuke detected, etc. | `VoiceBus` (EvaSub)                  |
+| `MusicStateChange`     | Combat intensity shift, mission end (victory/defeat)                 | `MusicBus`                           |
+| `AmbientAudioEvent`    | Biome change (map load), weather transition (D022)                   | `AmbientBus` (BiomeSub / WeatherSub) |
+| `UiAudioEvent`         | Button click, menu transition, chat message received                 | `SfxBus` (UiSub)                     |
 
 **Rust type definitions:**
 
@@ -548,7 +560,7 @@ pub struct WasmInstance {
 }
 ```
 
-**Determinism guarantee:** Both Lua and WASM execute at a fixed point in the system pipeline (`trigger_system()` step). All clients run the same mod code with the same game state at the same tick. Lua's string hash seed is fixed. `math.random()` is replaced with the sim's deterministic PRNG.
+**Determinism guarantee:** Both Lua and WASM execute at a fixed point in the system pipeline (`trigger_system()` step). All clients run the same mod code with the same game state at the same tick. Lua's string hash seed is fixed. `math.random()` is redirected to the sim's deterministic PRNG (not removed — OpenRA compat requires it).
 
 **WASM determinism nuance:** WASM execution is deterministic for integer and fixed-point operations, but the WASM spec permits non-determinism in floating-point NaN bit patterns. If a WASM mod uses `f32`/`f64` internally (which is legal — the sim's fixed-point invariant applies to `ic-sim` Rust code, not to mod-internal computation), different CPU architectures may produce different NaN payloads, causing deterministic divergence (desync). Mitigations:
 - **Runtime mandate:** IC uses `wasmtime` exclusively. All clients use the same `wasmtime` version (engine-pinned). `wasmtime` canonicalizes NaN outputs for WASM arithmetic operations, which eliminates NaN bit-pattern divergence across platforms.
@@ -565,10 +577,10 @@ pub struct WasmInstance {
 
 **Two modes:**
 
-| Mode | Resolution strategy | Use case |
-| --- | --- | --- |
-| **Platform (default)** | XDG / `%APPDATA%` / `~/Library/Application Support/` per D061 table | Normal installed game (Steam, package manager, manual install) |
-| **Portable** | All paths relative to the executable location | USB-stick deployments, Steam Deck SD cards, developer tooling, self-contained distributions |
+| Mode                   | Resolution strategy                                                 | Use case                                                                                    |
+| ---------------------- | ------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Platform (default)** | XDG / `%APPDATA%` / `~/Library/Application Support/` per D061 table | Normal installed game (Steam, package manager, manual install)                              |
+| **Portable**           | All paths relative to the executable location                       | USB-stick deployments, Steam Deck SD cards, developer tooling, self-contained distributions |
 
 Mode is selected by (highest priority first):
 1. `IC_PORTABLE=1` environment variable

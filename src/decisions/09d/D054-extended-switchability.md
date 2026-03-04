@@ -324,7 +324,7 @@ The version 1 → 2 migration path: saves with version 1 headers decode via binc
 
 **Why NOT a trait?** Unlike Transport and SignatureScheme, snapshot codecs have zero pluggability requirement. No game module, mod, or community server needs to provide a custom snapshot serializer. This is purely internal version dispatch — a `match` statement is the right abstraction, not a trait. D041's principle: "abstract the *algorithm*, not the *data*." Snapshot serialization is data marshaling with no algorithmic variation — the right tool is version-tagged dispatch, not trait polymorphism.
 
-**Relationship to replay format:** The replay file format (`05-FORMATS.md`) also has a `version: u16` in its header. The same version-to-codec dispatch applies to replay tick frames (`ReplayTickFrame` serialization). Replay version 1 uses bincode + LZ4 block compression. A future version 2 could use postcard + LZ4. The replay header version and the save header version evolve independently — a replay viewer doesn't need to understand save files and vice versa.
+**Relationship to replay format:** The replay file format (`formats/save-replay-formats.md`) also has a `version: u16` in its header. The same version-to-codec dispatch applies to replay tick frames (`ReplayTickFrame` serialization). Replay version 1 uses bincode + LZ4 block compression. A future version 2 could use postcard + LZ4. The replay header version and the save header version evolve independently — a replay viewer doesn't need to understand save files and vice versa.
 
 ### What Still Does NOT Need Abstraction
 

@@ -13,6 +13,8 @@ iron_curtain_save_v1.icsave  (file extension: .icsave)
 
 ### Header (32 bytes, fixed)
 
+All header fields use **little-endian** byte order and are **packed with no padding** (`#[repr(C, packed)]` in Rust, or equivalent sequential layout). Parsers must read fields at their exact byte offsets. This is the wire format — implementations in other languages read the same bytes in the same order.
+
 ```rust
 pub struct SaveHeader {
     pub magic: [u8; 4],              // b"ICSV" — "Iron Curtain Save"
@@ -76,6 +78,38 @@ pub struct SimSnapshot {
     pub campaign_state: Option<CampaignState>,  // D021 branching state
     pub script_state: Option<ScriptState>,      // Lua/WASM variable snapshots
 }
+
+/// Serializable snapshot of all active script state.
+/// This is the *data* extracted from Lua/WASM runtimes — not the VM handles
+/// themselves. On save, the engine calls each mod's `on_serialize()` callback
+/// to extract mod-declared variables into this struct. On load, `on_deserialize()`
+/// restores them into a freshly initialized VM.
+pub struct ScriptState {
+    /// Per-mod Lua variable snapshots (mod_id → serialized table).
+    /// Each mod’s `on_serialize()` returns a Lua table; the engine
+    /// serializes it to MessagePack bytes. `on_deserialize()` receives
+    /// the same bytes and restores the table.
+    pub lua_states: BTreeMap<ModId, Vec<u8>>,
+    /// Per-mod WASM linear memory snapshots (mod_id → memory bytes).
+    /// Only the mod's declared persistent memory region is captured,
+    /// not the entire WASM linear memory. Mods declare persistent
+    /// size via `[persistence] bytes = N` in their manifest.
+    pub wasm_states: BTreeMap<ModId, Vec<u8>>,
+    /// Global mission/campaign variables set via `Var.Set()` (Lua)
+    /// or `ic_var_set()` (WASM host fn). These are engine-managed,
+    /// not mod-managed — they survive mod version changes.
+    pub mission_vars: BTreeMap<String, ScriptValue>,
+}
+
+/// Script-layer value type for mission variables.
+/// Deliberately minimal — complex state belongs in mod-managed
+/// Lua tables or WASM memory, not in engine-managed variables.
+pub enum ScriptValue {
+    Bool(bool),
+    Int(i64),
+    Fixed(FixedPoint),
+    Str(String),
+}
 ```
 
 **Size estimate:** A 500-unit game snapshot is ~200KB uncompressed, ~40-80KB compressed. Well within "instant save/load" territory.
@@ -84,7 +118,7 @@ pub struct SimSnapshot {
 
 Save files embed `engine_version` and `mod_api_version`. Loading a save from an older engine version triggers the migration path (if migration exists) or shows a compatibility warning. Save files are forward-compatible within the same `mod_api` major version.
 
-**Platform note:** On WASM (browser), saves go to `localStorage` or IndexedDB via Bevy's platform-appropriate storage. On mobile, saves go to the app sandbox. The format is identical — only the storage backend differs.
+**Platform note:** On WASM (browser), saves go to OPFS (primary) or IndexedDB (fallback) via Bevy's platform-appropriate storage — see `05-FORMATS.md` § Browser Asset Storage for the full tier hierarchy. On mobile, saves go to the app sandbox. The format is identical — only the storage backend differs.
 
 ## Replay File Format
 
@@ -97,35 +131,49 @@ iron_curtain_replay_v1.icrep  (file extension: .icrep)
 ├── Header (fixed-size, uncompressed)
 ├── Metadata (JSON, uncompressed)
 ├── Tick Order Stream (framed, LZ4-compressed)
-├── Voice Stream (per-player Opus tracks, optional — D059)
-├── Signature Chain (Ed25519 hash chain, optional)
+├── Analysis Event Stream (LZ4-compressed, optional — HAS_EVENTS flag)
+├── Voice Stream (per-player Opus tracks, optional — HAS_VOICE flag, D059)
+├── Signature Chain (Ed25519 hash chain, optional — SIGNED flag)
 └── Embedded Resources (map + mod manifest, optional)
 ```
 
-### Header (56 bytes, fixed)
+### Header (76 bytes, fixed)
+
+Same wire-format rules as the save header: **little-endian**, **packed with no padding**.
 
 ```rust
 pub struct ReplayHeader {
     pub magic: [u8; 4],              // b"ICRP" — "Iron Curtain Replay"
     pub version: u16,                // Serialization format version (1)
     pub compression_algorithm: u8,   // D063: 0x01 = LZ4 (current), 0x02 reserved for zstd in a later format revision
-    pub flags: u8,                   // Bit flags (signed, has_events, has_voice) — repacked from u16 (D063)
+    pub flags: u8,                   // Bit flags: signed(0), has_events(1), has_voice(3), incomplete(4)
     pub metadata_offset: u32,
     pub metadata_length: u32,
     pub orders_offset: u32,
     pub orders_length: u32,          // Compressed length
+    pub events_offset: u32,          // 0 if no analysis events (HAS_EVENTS flag)
+    pub events_length: u32,          // Compressed length of analysis event stream
     pub signature_offset: u32,
     pub signature_length: u32,
     pub total_ticks: u64,            // Total ticks in the replay
     pub final_state_hash: u64,       // state_hash() of the last tick (integrity)
-    pub voice_offset: u32,           // 0 if no voice stream (D059)
+    pub voice_offset: u32,           // 0 if no voice stream (HAS_VOICE flag, D059)
     pub voice_length: u32,           // Compressed length of voice stream
+    pub embedded_offset: u32,        // 0 if Minimal mode (no embedded resources)
+    pub embedded_length: u32,        // Length of embedded resources section
+    pub lost_frame_count: u32,       // Frames dropped by BackgroundReplayWriter (V45, see network-model-trait.md)
 }
 ```
 
 > **Compression (D063):** The `compression_algorithm` byte identifies which decompressor to use for the tick order stream and embedded keyframe snapshots. Version 1 files use `0x01` (LZ4). Compression level during live recording defaults to `fastest` (configurable via `settings.toml` `compression.replay_level`). Use `ic replay recompress` to re-encode at a higher compression level for archival. See `decisions/09a-foundation.md` § D063.
 
-The `flags` field includes a `HAS_VOICE` bit (bit 3). When set, the voice stream section contains per-player Opus audio tracks recorded with player consent. See `decisions/09g/D059-communication.md` for the voice consent model, storage costs, and replay playback integration.
+The `flags` field bits:
+- Bit 0: `SIGNED` — Ed25519 signature chain present (`signature_offset`/`signature_length` are valid)
+- Bit 1: `HAS_EVENTS` — analysis event stream present (`events_offset`/`events_length` are valid)
+- Bit 3: `HAS_VOICE` — per-player Opus audio tracks recorded with player consent (`voice_offset`/`voice_length` are valid; see `decisions/09g/D059-communication.md`)
+- Bit 4: `INCOMPLETE` — one or more tick frames were lost during recording (see `lost_frame_count`). Replay is playable but not ranked-verifiable — the Ed25519 signature chain has gaps (V45). Set by `BackgroundReplayWriter` when `lost_frame_count > 0` at flush time.
+
+**Section presence convention:** Each optional section has an `_offset`/`_length` pair in the header. A section is present when its corresponding flag bit is set AND its offset is non-zero. Readers must check the flag bit, not just the offset, to distinguish "section absent" from "section at offset 0" (impossible in practice since offset 0 is the header, but the flag is the canonical indicator). Embedded resources have no flag bit — presence is determined solely by `embedded_offset != 0`.
 
 ### Metadata (JSON)
 
@@ -134,6 +182,8 @@ The `flags` field includes a `HAS_VOICE` bit (bit 3). When set, the voice stream
   "replay_id": "a3f7c2d1-...",
   "timestamp": "2027-03-15T15:00:00Z",
   "engine_version": "0.5.0",
+  "base_build": 1,
+  "data_version": "sha256:def456...",
   "game_module": "ra1",
   "active_mods": [ { "id": "base-ra1", "version": "1.0.0" } ],
   "map_name": "Tournament Island",
@@ -157,6 +207,8 @@ The `flags` field includes a `HAS_VOICE` bit (bit 3). When set, the voice stream
   "relay_server": "relay.ironcurtain.gg"
 }
 ```
+
+**Replay versioning** (following SC2's dual-version scheme): `base_build` identifies the protocol/serialization format version (matches the binary header's `version` field — used to select the correct deserializer). `data_version` is a SHA-256 hash of the game rules state (unit stats, weapon tables, balance preset) at recording time. A replay is playable if the engine supports its `base_build` protocol, even if the game data has changed between versions — the sim loads rules matching the `data_version` hash (from embedded resources or local cache).
 
 ### Data Minimization (Privacy)
 
@@ -273,7 +325,11 @@ pub struct ReplaySignature {
 pub struct TickSignature {
     pub tick: u64,
     pub state_hash: u64,
-    pub relay_sig: Ed25519Signature,  // relay signs (tick, hash, prev_sig_hash)
+    /// Number of ticks skipped before this one (0 = contiguous, >0 = gap due to
+    /// BackgroundReplayWriter frame loss — see V45). Verifiers include the gap
+    /// count in the hash chain: `hash(prev_sig_hash, skipped_ticks, tick, state_hash)`.
+    pub skipped_ticks: u32,
+    pub relay_sig: Ed25519Signature,  // relay signs (skipped_ticks, tick, hash, prev_sig_hash)
 }
 ```
 
@@ -298,7 +354,7 @@ pub struct EmbeddedResources {
 }
 ```
 
-**Embedding modes (controlled by a replay header flag):**
+**Embedding modes** (determined by `embedded_offset`/`embedded_length` in the header and the content of the `EmbeddedResources` struct):
 
 | Mode            | Map                 | Mod Rules           | Size Impact | Use Case                                     |
 | --------------- | ------------------- | ------------------- | ----------- | -------------------------------------------- |
@@ -319,12 +375,26 @@ pub struct EmbeddedResources {
 ```rust
 impl NetworkModel for ReplayPlayback {
     fn poll_tick(&mut self) -> Option<TickOrders> {
-        let frame = self.read_next_frame()?;
-        // Optionally verify: assert_eq!(expected_hash, sim.state_hash());
-        Some(frame.orders)
+        let frame: ReplayTickFrame = self.read_next_frame()?;
+
+        // Verify state hash against the sim's current state.
+        // On mismatch: desync detected — playback has diverged.
+        if let Some(sim_hash) = self.last_sim_hash {
+            if sim_hash != frame.state_hash {
+                self.on_desync(frame.tick, sim_hash, frame.state_hash);
+            }
+        }
+
+        // Convert Vec<TimestampedOrder> into TickOrders for the sim.
+        Some(TickOrders {
+            tick: frame.tick,
+            orders: frame.orders,
+        })
     }
 }
 ```
+
+**Hash verification timing:** The `state_hash` in each `ReplayTickFrame` is the sim's state hash *after* the previous tick executed. `ReplayPlayback` records the sim's `state_hash()` after each `step()` call (via callback or polling) and verifies it against the next frame's `state_hash`. A mismatch means the local sim has diverged from the recorded game — this triggers a desync warning in the UI (not a crash). For foreign replays (D056), divergence is expected and tracked by `DivergenceTracker`.
 
 **Playback features:** Variable speed (0.5x to 8x), pause, scrub to any tick (re-simulates from nearest keyframe). The recorder takes a `SimSnapshot` keyframe every 300 ticks (~10 seconds at 30 tps) and stores it in the `.icrep` file. A 60-minute replay contains ~360 keyframes (~3-6 MB overhead depending on game state size), enabling sub-second seeking to any point. Keyframes are mandatory — the recorder always writes them.
 

@@ -486,7 +486,9 @@ pub fn run_client_match<T: Transport>(
     // 4. Construct NetworkModel over encrypted transport
     let network = RelayLockstepNetwork::new(transport);
 
-    // 5. Construct GameLoop (defined in architecture/game-loop.md)
+    // 5. Construct GameLoop — the client-side frame driver (always renders).
+    //    Headless consumers (servers, bots, tests) drive Simulation directly
+    //    and never instantiate GameLoop. See architecture/game-loop.md.
     let mut game_loop = GameLoop {
         sim: Simulation::new(seed, rules),
         renderer: Renderer::new(),

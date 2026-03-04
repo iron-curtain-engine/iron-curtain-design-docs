@@ -819,7 +819,7 @@ Players can disable screen shake entirely via settings (`/camera_shake off` — 
 #### Camera in Replays and Save Games
 
 - **Save games:** `GameCamera` state (position, zoom, follow target) is serialized alongside other client-side state. On load, the camera restores to where the player was looking.
-- **Replays:** `CameraPositionSample` events (see `05-FORMATS.md`) record each player's viewport center and zoom level at 2 Hz. Replay viewers can follow any player's camera or use free camera. The replay camera is independent of the recorded camera data — the viewer controls their own viewport.
+- **Replays:** `CameraPositionSample` events (see `formats/save-replay-formats.md` § "Analysis Event Stream") record each player's viewport center and zoom level at 2 Hz. Replay viewers can follow any player's camera or use free camera. The replay camera is independent of the recorded camera data — the viewer controls their own viewport.
 - **Observer mode:** Observers have independent camera control with no zoom restrictions (they can zoom out further than players for overview). The `follow_player` option (see `ObserverState`) syncs the observer's camera to a player's recorded `CameraPositionSample` stream.
 
 #### Camera Configuration (YAML)
@@ -957,7 +957,7 @@ pub struct ObserverState {
 
 #### Game Score / Performance Metrics
 
-The sim tracks a comprehensive `GameScore` per player, updated every tick. This powers the observer economy overlay, post-game stats screen, and the replay analysis event stream (see `05-FORMATS.md` § "Analysis Event Stream"). Design informed by SC2's `ScoreDetails` protobuf (see `research/blizzard-github-analysis.md` § Part 2).
+The sim tracks a comprehensive `GameScore` per player, updated every tick. This powers the observer economy overlay, post-game stats screen, and the replay analysis event stream (see `formats/save-replay-formats.md` § "Analysis Event Stream"). Design informed by SC2's `ScoreDetails` protobuf (see `research/blizzard-github-analysis.md` § Part 2).
 
 ```rust
 #[derive(Clone, Serialize, Deserialize)]
