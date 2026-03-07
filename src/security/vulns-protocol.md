@@ -224,7 +224,7 @@ impl RelaySessionAuth {
 - **Ephemeral session keys.** Generated fresh for each game. Distinct from D052 long-lived identity keys (see `decisions/09b/D052/D052-keys-operations-integration.md`). No long-lived keys to steal. Key exchange happens during lobby setup over the encrypted channel (Vulnerability 14).
 - **Defense in depth.** Relay validates signatures AND stamps orders. Sim validates order legality (D012).
 - **Overhead is minimal.** Ed25519 signing is ~15,000 ops/second on a single core. At peak RTS APM (~300 orders/minute = 5/second), signature overhead is negligible.
-- **Replays include the relay-signed tick hash chain.** Each tick's `state_hash` is signed by the relay via `TickSignature` (see `formats/save-replay-formats.md` § Signature Chain). This chain allows post-hoc verification that no tick outcomes were tampered with — useful for tournament dispute resolution. Per-order session signatures are NOT stored in replays; the replay verification model is tick-level, not order-level.
+- **Replays include the relay-signed tick hash chain.** State hashes at signing cadence boundaries (every N ticks, default 30) are signed by the relay via `TickSignature` (see `formats/save-replay-formats.md` § Signature Chain). This sparse chain allows post-hoc verification that no tick outcomes were tampered with — useful for tournament dispute resolution. Per-order session signatures are NOT stored in replays; the replay verification model is tick-level, not order-level.
 
 ## Vulnerability 17: State Saturation (Order Flooding)
 

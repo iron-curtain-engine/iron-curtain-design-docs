@@ -124,13 +124,13 @@ The cross-engine layer **may**:
 
 Cross-engine compatibility levels are **not equal** from a trust, anti-cheat, or ranked-certification perspective.
 
-| Level | What It Enables | Trust / Anti-Cheat Capability | Ranked / Certified Match Policy |
-| --- | --- | --- | --- |
-| **0** Shared lobby/browser | Community discovery, map/mod browsing, engine-tagged lobbies | No live gameplay anti-cheat shared across engines. IC anti-cheat applies only to actual IC-hosted matches. External engine listings retain their own trust model. | N/A (discovery only) |
-| **1** Replay compatibility | Import/view/analyze foreign replays, divergence tracking | Useful for analysis and regression testing. Can support anti-cheat review workflows **only** as evidence tooling (integrity depends on replay signatures/source). No live enforcement. | Not a live match mode |
-| **2** Casual cross-play + periodic resync | Playable cross-engine matches with visible drift correction | Limited anti-cheat posture. `SimReconciler` bounds/caps help reject absurd corrections, but authority trust and correction semantics create new abuse surfaces. Rubber-banding is expected. | **Unranked by default** |
-| **3** Embedded foreign authority + prediction | Stronger cross-engine fidelity via embedded authority process | Better behavioral integrity than Level 2 if authority is trusted and verified, but adds binary trust, sandboxing, version drift, and attestation complexity. Still a high-risk trust path. | **Unranked by default** unless separately certified by an explicit `M7+`/`M11` decision |
-| **4** True lockstep cross-play | Bit-identical cross-engine lockstep | In theory can approach native lockstep trust if the entire stack is equivalent; in practice this is effectively a port and outside project scope. | Not planned |
+| Level                                         | What It Enables                                               | Trust / Anti-Cheat Capability                                                                                                                                                               | Ranked / Certified Match Policy                                                         |
+| --------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| **0** Shared lobby/browser                    | Community discovery, map/mod browsing, engine-tagged lobbies  | No live gameplay anti-cheat shared across engines. IC anti-cheat applies only to actual IC-hosted matches. External engine listings retain their own trust model.                           | N/A (discovery only)                                                                    |
+| **1** Replay compatibility                    | Import/view/analyze foreign replays, divergence tracking      | Useful for analysis and regression testing. Can support anti-cheat review workflows **only** as evidence tooling (integrity depends on replay signatures/source). No live enforcement.      | Not a live match mode                                                                   |
+| **2** Casual cross-play + periodic resync     | Playable cross-engine matches with visible drift correction   | Limited anti-cheat posture. `SimReconciler` bounds/caps help reject absurd corrections, but authority trust and correction semantics create new abuse surfaces. Rubber-banding is expected. | **Unranked by default**                                                                 |
+| **3** Embedded foreign authority + prediction | Stronger cross-engine fidelity via embedded authority process | Better behavioral integrity than Level 2 if authority is trusted and verified, but adds binary trust, sandboxing, version drift, and attestation complexity. Still a high-risk trust path.  | **Unranked by default** unless separately certified by an explicit `M7+`/`M11` decision |
+| **4** True lockstep cross-play                | Bit-identical cross-engine lockstep                           | In theory can approach native lockstep trust if the entire stack is equivalent; in practice this is effectively a port and outside project scope.                                           | Not planned                                                                             |
 
 ### Anti-cheat warning (default posture)
 
@@ -142,13 +142,13 @@ Cross-engine compatibility levels are **not equal** from a trust, anti-cheat, or
 
 To avoid vague claims like "IC can host cross-engine with anti-cheat," define host modes by **what IC is actually responsible for**.
 
-| Host Mode | Primary Purpose | Typical Compatibility Level(s) | What IC Controls | Anti-Cheat / Trust Value | Ranked / Certification |
-| --- | --- | --- | --- | --- | --- |
-| **Discovery Gateway** | Unified browser/listings/maps/mod metadata across communities/engines | Level 0 | Listing aggregation, engine tagging, join routing, metadata fetch | UX clarity + trust labeling only. No live gameplay enforcement. | Not a gameplay mode |
-| **Replay Analysis Authority** | Import/verify/analyze replays for moderation, regression, and education | Level 1 | Replay decoding, provenance labeling, divergence tracking, evidence tooling | Detection/review support only; no live prevention. Quality depends on replay integrity/source. | Not a gameplay mode |
-| **Casual Interop Relay** | Experimental/casual cross-engine live matches | Level 2 (and some Level 3 experiments) | Session relay, protocol adaptation, timing normalization (where applicable), bounded reconciliation policy, logs | Better than unmanaged interop: can reduce abuse and provide evidence, but cannot claim full IC-certified anti-cheat against foreign clients. | **Unranked by default** |
-| **Embedded Authority Bridge Host** | Higher-fidelity cross-engine experiments with hosted foreign authority process | Level 3 | Host process supervision, adapter/reconciler policy, logs, optional attestation scaffolding | Potentially stronger trust than Level 2, but still high complexity and not equivalent to native IC certified play without explicit certification work. | **Unranked by default** unless separately certified |
-| **Certified IC Relay** *(native baseline)* | Standard IC multiplayer (same engine) | Native IC path (not a cross-engine level) | IC relay authority, IC validation/certification chain, signed replays/results | Full IC anti-cheat/trust posture (as defined by D007/D012/D052 and security policies). | Ranked-eligible when queue/mode rules allow |
+| Host Mode                                  | Primary Purpose                                                                | Typical Compatibility Level(s)            | What IC Controls                                                                                                 | Anti-Cheat / Trust Value                                                                                                                               | Ranked / Certification                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------ | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| **Discovery Gateway**                      | Unified browser/listings/maps/mod metadata across communities/engines          | Level 0                                   | Listing aggregation, engine tagging, join routing, metadata fetch                                                | UX clarity + trust labeling only. No live gameplay enforcement.                                                                                        | Not a gameplay mode                                 |
+| **Replay Analysis Authority**              | Import/verify/analyze replays for moderation, regression, and education        | Level 1                                   | Replay decoding, provenance labeling, divergence tracking, evidence tooling                                      | Detection/review support only; no live prevention. Quality depends on replay integrity/source.                                                         | Not a gameplay mode                                 |
+| **Casual Interop Relay**                   | Experimental/casual cross-engine live matches                                  | Level 2 (and some Level 3 experiments)    | Session relay, protocol adaptation, timing normalization (where applicable), bounded reconciliation policy, logs | Better than unmanaged interop: can reduce abuse and provide evidence, but cannot claim full IC-certified anti-cheat against foreign clients.           | **Unranked by default**                             |
+| **Embedded Authority Bridge Host**         | Higher-fidelity cross-engine experiments with hosted foreign authority process | Level 3                                   | Host process supervision, adapter/reconciler policy, logs, optional attestation scaffolding                      | Potentially stronger trust than Level 2, but still high complexity and not equivalent to native IC certified play without explicit certification work. | **Unranked by default** unless separately certified |
+| **Certified IC Relay** *(native baseline)* | Standard IC multiplayer (same engine)                                          | Native IC path (not a cross-engine level) | IC relay authority, IC validation/certification chain, signed replays/results                                    | Full IC anti-cheat/trust posture (as defined by D007/D012/D052 and security policies).                                                                 | Ranked-eligible when queue/mode rules allow         |
 
 ### Practical interpretation
 
@@ -252,11 +252,11 @@ pub enum CrossEngineTrustTier {
 }
 ```
 
-| Tier | Client Type | IC Enforces | IC Cannot Enforce |
-| --- | --- | --- | --- |
-| **Tier 0: Native** | IC client | Time authority, order validation (structural + sim), rate limiting, behavioral analysis, replay signing, match certification | Maphack (lockstep architectural limit) |
-| **Tier 1: Verified Foreign** | Known engine (e.g., OpenRA) with version-matched `OrderCodec` | Time authority, order validation (structural + sim — orders translated to IC types), rate limiting, behavioral analysis, replay signing | Client binary integrity, sim agreement, maphack |
-| **Tier 2: Unverified Foreign** | Unknown engine or version without matched codec | Time authority, rate limiting, structural order validation (format/bounds only), replay logging | Sim-level order validation, behavioral baselines (unknown input characteristics), sim agreement, maphack |
+| Tier                           | Client Type                                                   | IC Enforces                                                                                                                             | IC Cannot Enforce                                                                                        |
+| ------------------------------ | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| **Tier 0: Native**             | IC client                                                     | Time authority, order validation (structural + sim), rate limiting, behavioral analysis, replay signing, match certification            | Maphack (lockstep architectural limit)                                                                   |
+| **Tier 1: Verified Foreign**   | Known engine (e.g., OpenRA) with version-matched `OrderCodec` | Time authority, order validation (structural + sim — orders translated to IC types), rate limiting, behavioral analysis, replay signing | Client binary integrity, sim agreement, maphack                                                          |
+| **Tier 2: Unverified Foreign** | Unknown engine or version without matched codec               | Time authority, rate limiting, structural order validation (format/bounds only), replay logging                                         | Sim-level order validation, behavioral baselines (unknown input characteristics), sim agreement, maphack |
 
 **Policy:** Ranked/certified matches require all-Tier-0 (native IC only). Cross-engine matches are **unranked by default** but IC's relay still enforces every layer it can — the match is more secure than unmanaged interop even without ranked certification.
 
@@ -333,7 +333,7 @@ pub enum CrossEngineAuthorityMode {
     /// Foreign clients reconcile TO IC's state. IC never accepts external corrections.
     IcAuthority {
         /// Ticks between authoritative hash broadcasts.
-        hash_interval_ticks: u64,          // default: 30 (1 second at 30 tps)
+        hash_interval_ticks: u64,          // default: 30 (~2 seconds at Slower ~15 tps)
         /// Maximum entity correction magnitude IC will instruct foreign clients to apply.
         max_correction_magnitude: FixedPoint,
     },
@@ -358,18 +358,18 @@ pub enum CrossEngineAuthorityMode {
 
 ### Security Comparison: IC Hosts vs. IC Joins
 
-| Security Property | IC Hosts (foreign joins IC) | Foreign Hosts (IC joins foreign) |
-| --- | --- | --- |
-| **Time authority** | IC relay — trusted, enforced | Foreign server — untrusted |
-| **Order validation** | IC validates ALL clients' orders | Only IC validates its own orders locally |
-| **Rate limiting** | IC's 3-layer system on all clients | Foreign server's policy (unknown, possibly none) |
-| **Behavioral analysis** | Kaladin on ALL client input streams | Only on IC client's own input |
-| **Replay signing** | IC relay signs — certified evidence chain | Foreign replay format, likely unsigned |
-| **Sim authority** | IC sim is reference — corrections flow outward | Foreign sim is reference — IC accepts bounded corrections |
-| **Correction trust** | IC never accepts external corrections | IC must trust foreign corrections (bounded) |
-| **Match certification** | IC relay certifies result (Ed25519 signed) | Uncertified — P2P trust at best |
-| **Maphack prevention** | Same — lockstep architectural limit | Same — lockstep architectural limit |
-| **Client integrity** | Cannot verify foreign binary | Cannot verify foreign binary |
+| Security Property       | IC Hosts (foreign joins IC)                    | Foreign Hosts (IC joins foreign)                          |
+| ----------------------- | ---------------------------------------------- | --------------------------------------------------------- |
+| **Time authority**      | IC relay — trusted, enforced                   | Foreign server — untrusted                                |
+| **Order validation**    | IC validates ALL clients' orders               | Only IC validates its own orders locally                  |
+| **Rate limiting**       | IC's 3-layer system on all clients             | Foreign server's policy (unknown, possibly none)          |
+| **Behavioral analysis** | Kaladin on ALL client input streams            | Only on IC client's own input                             |
+| **Replay signing**      | IC relay signs — certified evidence chain      | Foreign replay format, likely unsigned                    |
+| **Sim authority**       | IC sim is reference — corrections flow outward | Foreign sim is reference — IC accepts bounded corrections |
+| **Correction trust**    | IC never accepts external corrections          | IC must trust foreign corrections (bounded)               |
+| **Match certification** | IC relay certifies result (Ed25519 signed)     | Uncertified — P2P trust at best                           |
+| **Maphack prevention**  | Same — lockstep architectural limit            | Same — lockstep architectural limit                       |
+| **Client integrity**    | Cannot verify foreign binary                   | Cannot verify foreign binary                              |
 
 **Bottom line:** IC-hosted cross-engine play gives IC control over 7 of 10 security properties. IC-joining-foreign gives IC control over 1 (its own local validation). The recommendation for cross-engine play is clear: **always prefer IC as host**.
 
@@ -507,7 +507,7 @@ pub enum ReconcileAction {
 ```rust
 /// Maximum ticks since last sync before bounds stop growing.
 /// Prevents unbounded drift acceptance if sync messages stop arriving.
-const MAX_TICKS_SINCE_SYNC: u64 = 300; // 10 seconds at 30 tps
+const MAX_TICKS_SINCE_SYNC: u64 = 300; // ~20 seconds at Slower default ~15 tps
 
 /// Maximum resource correction per sync cycle (one harvester full load).
 const MAX_CREDIT_DELTA: i64 = 5000;

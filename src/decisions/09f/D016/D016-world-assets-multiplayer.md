@@ -232,7 +232,7 @@ Co-op campaigns are long. Players can't always finish in one sitting. The system
 
 **How multiplayer save works (technically):**
 
-- **Mid-mission save:** Uses D010 — full sim snapshot. Both players receive the snapshot. Either player can host the resume session. The save file is a standard `.icsave` containing the sim snapshot and campaign state (embedded in `SimSnapshot.campaign_state`). No order history is stored — the snapshot is self-contained; the sim restores from it directly without replaying orders. See `formats/save-replay-formats.md` for the canonical `.icsave` layout.
+- **Mid-mission save:** Uses D010 — full sim snapshot. Both players receive the snapshot. Either player can host the resume session. The save file is a standard `.icsave` containing the full `SimSnapshot` (sim core + campaign state + script state). No order history is stored — the snapshot is self-contained; the game restores from it via `GameRunner::restore_full()` (see `02-ARCHITECTURE.md` § ic-game Integration) without replaying orders. See `formats/save-replay-formats.md` for the canonical `.icsave` layout.
 - **Between-mission save:** The natural pause point. Campaign state (D021) is serialized — roster, flags, mission graph position, world map state (if World Domination). No sim snapshot needed — the next mission hasn't started yet.
 - **Campaign ownership:** The campaign is "owned" by the creating player but the save state is portable. If Player A disappears, Player B has a full local copy and can resume solo or with a new partner.
 

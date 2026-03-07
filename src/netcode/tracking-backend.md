@@ -117,7 +117,7 @@ There must never be a single point of failure that takes down the entire multipl
 
 ### Design Principles
 
-1. **Just a binary.** Each server is a single Rust executable with zero mandatory external dependencies. Run it directly (`./tracking-server` or `./relay-server`), as a systemd service, in Docker, or in Kubernetes — whatever suits the operator. No external database, no runtime, no JVM. Download, configure, run. Services that need persistent storage use an embedded SQLite database file (D034) — no separate database process to install or operate.
+1. **Just a binary.** Each server is a single Rust executable with zero mandatory external dependencies. Run it directly (`./ic-server`), as a systemd service, in Docker, or in Kubernetes — whatever suits the operator. No external database, no runtime, no JVM. Download, configure, run. Services that need persistent storage use an embedded SQLite database file (D034) — no separate database process to install or operate.
 
 2. **Stateless or self-contained.** The tracking server holds no critical state — listings live in memory with TTL expiry (for multi-instance: shared via Redis). The relay, workshop, and matchmaking servers persist data (match results, resource metadata, ratings) to an embedded SQLite file (D034). Killing a process loses only in-flight game sessions — persistent records survive in the `.db` file. Relay servers hold per-game session state in memory but games are short-lived; if a relay dies, recovery is **mode-specific**: casual/custom games may offer unranked continuation or fallback if supported, while ranked follows the degraded-certification / void policy (`06-SECURITY.md` V32) rather than silently switching authority paths.
 
@@ -139,8 +139,7 @@ There must never be a single point of failure that takes down the entire multipl
 
 ```bash
 # Download and run — no Docker, no cloud, no dependencies
-./tracking-server --port 8080 --heartbeat-ttl 30s
-./relay-server --port 9090 --region home --max-games 50
+./ic-server --port 9090 --region home --max-games 50
 ```
 
 Works on any machine: home PC, spare laptop, Raspberry Pi, VPS. The tracking server uses in-memory storage by default — no Redis needed for a single instance.
@@ -151,7 +150,7 @@ Works on any machine: home PC, spare laptop, Raspberry Pi, VPS. The tracking ser
 # docker-compose.yaml (community self-hosting)
 services:
   tracking:
-    image: ghcr.io/iron-curtain/tracking-server:latest
+    image: ghcr.io/ironcurtain/ic-server:latest
     ports:
       - "8080:8080"
     environment:
@@ -163,7 +162,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
 
   relay:
-    image: ghcr.io/iron-curtain/relay-server:latest
+    image: ghcr.io/ironcurtain/ic-server:latest
     ports:
       - "9090:9090/udp"
       - "9090:9090/tcp"
@@ -235,7 +234,7 @@ The relay server is the heavier service (per-game session state, UDP forwarding)
 The tracking server is a standalone Rust binary (not Bevy — no ECS needed). It shares `ic-protocol` for order serialization.
 
 The relay logic lives as a library (`RelayCore`) in `ic-net`. This library is used in two contexts:
-- **`relay-server` binary** — standalone headless process that hosts multiple concurrent games. Not Bevy, no ECS. Uses `RelayCore` + async I/O (tokio). This is the "dedicated server" for community hosting, server rooms, and Raspberry Pis.
+- **`ic-server` binary** — standalone headless process that hosts multiple concurrent games. Not Bevy, no ECS. Uses `RelayCore` + async I/O (tokio). This is the “dedicated server” for community hosting, server rooms, and Raspberry Pis.
 - **Game client** — `EmbeddedRelayNetwork` wraps `RelayCore` inside the game process. The host player runs the relay and plays simultaneously. Uses Bevy's async task system for I/O. This is the "Host Game" button.
 
 Both share `ic-protocol` for order serialization. Both are developed in Phase 5 alongside the multiplayer client code. For the full async runtime architecture (tokio thread bridge for Bevy binaries, WASM portability, `IoBridge` trait), see `architecture/crate-graph.md` § "Async Architecture: Dual-Runtime with Channel Bridge."

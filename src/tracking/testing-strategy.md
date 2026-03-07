@@ -6,7 +6,7 @@ This document defines the automated testing infrastructure for Iron Curtain. Eve
 
 1. **Determinism is testable.** If a system is deterministic (Invariant #1), its behavior can be reproduced exactly. Tests that rely on determinism are the strongest tests we have.
 2. **No untested exit criteria.** Every milestone exit criterion (see 18-PROJECT-TRACKER.md) must have a corresponding automated test. If a criterion cannot be tested automatically, it must be flagged as a manual review gate.
-3. **CI is the authority.** If CI passes, the code is shippable. If CI fails, the code does not merge. No exceptions, no "it works on my machine."
+3. **CI is the automated authority.** If CI fails, the code does not merge — no exceptions, no "it works on my machine." When manual review gates exist (Principle 2), both CI and the manual gate must pass before the code is shippable.
 4. **Fast feedback, thorough verification.** PR gates must complete in <10 minutes. Nightly suites handle expensive verification. Weekly suites cover exhaustive/long-running scenarios.
 
 ## CI/CD Pipeline Tiers
@@ -82,8 +82,8 @@ This document defines the automated testing infrastructure for Iron Curtain. Eve
 
 ## Sub-Pages
 
-| Section | Topic | File |
-| --- | --- | --- |
-| Infrastructure & Subsystems | Test infrastructure requirements (harness, benchmarks, fuzz, replay corpus) + 16 subsystem test specifications | [testing-infrastructure-subsystems.md](testing/testing-infrastructure-subsystems.md) |
+| Section                          | Topic                                                                                                                    | File                                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| Infrastructure & Subsystems      | Test infrastructure requirements (harness, benchmarks, fuzz, replay corpus) + 16 subsystem test specifications           | [testing-infrastructure-subsystems.md](testing/testing-infrastructure-subsystems.md)         |
 | Properties, Misuse & Integration | Property-based testing (proptest) + API misuse test matrix + integration scenario matrix + measurement/metrics framework | [testing-properties-misuse-integration.md](testing/testing-properties-misuse-integration.md) |
-| Coverage & Release | Coverage mapping (design features to tests) + release criteria + phase rollout | [testing-coverage-release.md](testing/testing-coverage-release.md) |
+| Coverage & Release               | Coverage mapping (design features to tests) + release criteria + phase rollout                                           | [testing-coverage-release.md](testing/testing-coverage-release.md)                           |

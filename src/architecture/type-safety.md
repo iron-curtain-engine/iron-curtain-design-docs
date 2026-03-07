@@ -281,11 +281,12 @@ Messages from the client and messages from the server must be distinct types, ev
 pub struct FromClient<T>(pub T);
 pub struct FromServer<T>(pub T);
 
-// Server code accepts only FromClient messages
+// Relay accepts only FromClient messages
 fn handle_order(msg: FromClient<PlayerOrder>) { ... }
 
-// Client code accepts only FromServer messages
-fn handle_state_update(msg: FromServer<SimSnapshot>) { ... }
+// Client accepts only FromServer messages (TickOrders is the core
+// lockstep payload — see wire-format.md § Frame enum)
+fn handle_confirmed_orders(msg: FromServer<TickOrders>) { ... }
 ```
 
 ### Bounded Collections: No Unbounded Growth in Sim State

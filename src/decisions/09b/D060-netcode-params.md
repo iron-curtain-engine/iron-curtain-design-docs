@@ -56,7 +56,7 @@ IC adopts a **three-tier exposure model** for netcode parameters:
 | -------------- | -------------------------------------------- | ---------------- | ------------ | -------------------- |
 | **Game Speed** | Slowest / Slower / Normal / Faster / Fastest | Slower (~15 tps) | Host (lobby) | Synced — all clients |
 
-One setting. Game speed is the only parameter where player preference is legitimate ("I like slower, more strategic games" vs. "I prefer fast-paced gameplay"). In ranked play, game speed is server-enforced and not configurable.
+One setting. Game speed is the only parameter where player preference is legitimate ("I like slower, more strategic games" vs. "I prefer fast-paced gameplay"). In ranked play, game speed is server-enforced and not configurable (pending decision `P009` — whether one canonical speed applies globally or communities may choose with rating normalization).
 
 Game speed affects only the interval between sim ticks — system behavior is tick-count-based, so all game logic works identically at any speed. Single-player can change speed mid-game; multiplayer sets it in lobby. This matches how every C&C game handled speed (see `02-ARCHITECTURE.md` § Game Speed).
 

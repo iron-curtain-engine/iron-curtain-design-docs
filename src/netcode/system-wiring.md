@@ -465,7 +465,7 @@ impl RelayCore {
                     });
                 }
             }
-            // Prune old entries (keep last ~4 seconds at 30 tps)
+            // Prune old entries (keep last ~8 seconds at Slower default ~15 tps)
             self.sync_hashes.retain(|&t, _| t > tick.saturating_sub(120));
         }
     }

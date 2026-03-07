@@ -143,7 +143,7 @@ The `SimReconciler` in `07-CROSS-ENGINE.md` uses `is_sane_correction()` to bound
 **Cap `ticks_since_sync`:**
 
 ```rust
-const MAX_TICKS_SINCE_SYNC: u64 = 300; // 10 seconds at 30 tps
+const MAX_TICKS_SINCE_SYNC: u64 = 300; // ~20 seconds at Slower default ~15 tps
 
 fn is_sane_correction(correction: &EntityCorrection, ticks_since_sync: u64) -> bool {
     let capped_ticks = ticks_since_sync.min(MAX_TICKS_SINCE_SYNC);

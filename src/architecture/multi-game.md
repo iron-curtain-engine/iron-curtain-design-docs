@@ -46,9 +46,57 @@ pub trait GameModule {
     fn register_commands(&self, dispatcher: &mut CommandDispatcher);
 
     /// YAML rule schema for this game's unit definitions.
+    /// Used by the editor for validation/autocomplete and by `ic mod lint` for checking.
     fn rule_schema(&self) -> RuleSchema;
 }
+
+/// Describes the YAML rule structure for a game module.
+/// Maps top-level YAML keys to expected field types, marks required vs optional fields,
+/// and declares valid enum values. Used by the scenario editor (D038) for autocomplete,
+/// `ic mod lint` for validation, and LLM generation (D016) for schema-aware output.
+struct RuleSchema {
+    /// Top-level actor categories (e.g., "infantry", "vehicle", "building", "aircraft").
+    actor_categories: Vec<CategoryDef>,
+    /// Weapon definition schema.
+    weapon_schema: FieldMap,
+    /// Projectile/warhead schemas.
+    warhead_schema: FieldMap,
+}
 ```
+
+### Bevy App Construction (ic-game)
+
+The `GameModule` trait provides the pieces; the `ic-game` binary assembles them into a Bevy `App`. Each IC crate exposes a Bevy `Plugin` that accepts game-module-provided configuration:
+
+```rust
+// ic-game/src/main.rs (simplified)
+fn main() {
+    let module: Box<dyn GameModule> = select_game_module(); // CLI flag, config, or lobby selection
+
+    let mut app = App::new();
+    app.add_plugins(DefaultPlugins);                    // Bevy: windowing, input, asset server
+    app.add_plugins(SimPlugin::new(&*module));           // ic-sim: ECS components + system pipeline
+    app.add_plugins(NetPlugin);                          // ic-net: NetworkModel, relay client
+    app.add_plugins(RenderPlugin::new(&*module));        // ic-render: sprite/voxel backends
+    app.add_plugins(AudioPlugin);                        // ic-audio: .aud, EVA, music
+    app.add_plugins(UiPlugin);                           // ic-ui: sidebar, minimap, build queue
+    app.add_plugins(ScriptPlugin);                       // ic-script: Lua + WASM runtimes
+    app.add_plugins(AiPlugin);                           // ic-ai: skirmish AI
+    app.run();
+}
+```
+
+**What `SimPlugin::new()` does internally:**
+
+1. Calls `module.register_components(world)` — inserts game-specific ECS components
+2. Stores the system pipeline from `module.system_pipeline()` as a resource — `Simulation::apply_tick()` runs these in order
+3. Inserts trait objects as Bevy resources: `module.pathfinder()` → `Res<Box<dyn Pathfinder>>`, `module.spatial_index()` → `Res<Box<dyn SpatialIndex>>`, etc.
+4. Calls `module.register_format_loaders(registry)` — registers `.shp`, `.mix`, etc. with Bevy's `AssetServer`
+5. Stores `module.rule_schema()` for validation and editor integration
+
+**Plugin registration order matters:** `SimPlugin` must register before `RenderPlugin` (render reads sim state). `NetPlugin` provides the `NetworkModel` resource that `GameLoop` depends on. `ScriptPlugin` registers after `SimPlugin` because Lua/WASM scripts interact with already-registered components.
+
+**Module selection:** `select_game_module()` returns a `Box<dyn GameModule>` based on launch context — defaulting to RA1, switchable via `--mod td` CLI flag or lobby selection. The module choice is fixed for the lifetime of a match; switching modules between matches uses the drop-and-recreate strategy (see `game-loop.md` § Match Cleanup).
 
 **Validation from OpenRA mod ecosystem:** Analysis of six major OpenRA community mods (see `research/openra-mod-architecture-analysis.md`) confirms that every `GameModule` trait method addresses a real extension need:
 

@@ -321,7 +321,7 @@ Workshop Server (ic-server with workshop capability)
 - **Workshop registry integration:** Manifest lookup, dependency resolution, and version checking happen before the BT transfer begins. Standard BT distributes raw bytes with no semantic awareness.
 - **Peer scoring with domain knowledge (D049):** `PeerScore = Capacity(0.4) + Locality(0.3) + SeedStatus(0.2) + LobbyContext(0.1)`. IC knows lobby membership, geographic proximity, and content popularity — producing better peer selection than generic BT.
 
-**Open design question (uTP vs. QUIC):** Standard BT uses uTP (BEP 29) for UDP transport. QUIC (`quinn` crate, pure Rust, mature) provides similar congestion control with modern TLS and multiplexing. IC could speak uTP for BT interop and QUIC for IC-to-IC optimized transfers. Decision deferred to Phase 4 implementation — both are viable.
+**Open design question (uTP vs. QUIC):** Standard BT uses uTP (BEP 29) for UDP transport. QUIC (`quinn` crate, pure Rust, mature) provides similar congestion control with modern TLS and multiplexing. IC could speak uTP for BT interop and QUIC for IC-to-IC optimized transfers. Decision deferred to Phase 4 implementation — both are viable (pending decision `P008`).
 
 #### Relationship to D049
 

@@ -16,7 +16,7 @@ Comprehensive verification of anti-cheat logic and security across the Iron Curt
 | F1      | HIGH     | CLOSED — Pipeline-wide NaN guards with fail-closed semantics               | V34 amended, proptest added |
 | F2      | HIGH     | CLOSED — New vulnerability entry with origin validation + challenge secret | V57 added                   |
 | F3      | HIGH     | CLOSED — Monotonic sequence number + cooldown + conflict resolution        | V47 amended                 |
-| F4      | HIGH     | CLOSED — Tiered hard-fail/grace/soft-fail CRL policy                       | V48 amended                 |
+| F4      | HIGH     | CLOSED — V48 model resolved: TOFU + RK rotation (no CRL needed)            | V48 rewritten               |
 | F5      | MEDIUM   | CLOSED — Pre-filter by fog + constant-time padding                         | V5 amended, proptest added  |
 | F6      | MEDIUM   | CLOSED — External URL blocking during replay playback                      | V41 amended, proptest added |
 | F7      | MEDIUM   | CLOSED — 120-second minimum observer delay floor for ranked                | V59 added                   |
@@ -128,25 +128,18 @@ The BIP-39 emergency rotation (immediate, bypass old key) is the correct recover
 
 ---
 
-### Finding 4: V48 CRL Revocation — Unknown-Status Behavior Unspecified
+### Finding 4: V48 Server Trust Model — Resolved by TOFU Canonicalization
 
 **Severity: HIGH**  
 **Affected:** V48 (06-SECURITY.md)
 
-CRL cache TTL is 1 hour. OCSP fast-check has a 50ms timeout. The doc doesn't specify behavior when **both** fail (cache expired AND OCSP unreachable):
+**Original finding:** V48 specified a CRL/OCSP certificate revocation model without defining unknown-status behavior (soft-fail vs hard-fail). This was a genuine gap.
 
-- If the client proceeds anyway (soft-fail), a revoked server operates indefinitely when the CRL distribution point is down
-- If the client blocks (hard-fail), network issues at the CRL endpoint prevent all community server connections — a denial-of-service via CRL infrastructure
+**Resolution:** The V48 trust model has been rewritten to align with D052's canonical TOFU + SK/RK two-key hierarchy. IC does not use a CA/CRL/OCSP infrastructure — community servers are self-sovereign with SSH/PGP-style trust-on-first-use. This eliminates the CRL unknown-status problem entirely: there is no CRL to go stale and no OCSP endpoint to become unreachable.
 
-This is the same "soft-fail vs hard-fail" debate from the TLS certificate revocation world. Neither extreme is acceptable.
+The equivalent ambiguity in the TOFU model ("what happens when key state is ambiguous?") is now resolved by V48's connection policy table: key match → proceed, valid rotation chain → update and proceed, no valid chain → reject for ranked / warn for unranked / warn-only for LAN. First ranked connections require seed list or manual trust verification.
 
-**Recommendation:** 
-- Specify a **hard-fail with grace period**: if CRL is expired AND OCSP fails, accept the cached CRL for an additional 24 hours, then hard-fail. This gives operators time to fix CRL distribution while bounding the vulnerability window.
-- For ranked matches specifically: hard-fail immediately when revocation status is unknown (competitive integrity > availability)
-- For unranked: soft-fail with a visible warning ("Server certificate status could not be verified")
-- Add this decision to the Competitive Integrity Summary table
-
-**Milestone:** M9+ (community server auth ships Phase 7)
+**Milestone:** M5 (identity key management ships Phase 5)
 
 ---
 
@@ -212,7 +205,7 @@ D071 mentions "ranked mode restricts to observer-with-delay" but neither `06-SEC
 In fog-authoritative mode, spectators see the full game state. Without a mandatory minimum delay, a spectator could relay fogged information to a player via out-of-band channels (Discord, phone) with trivial latency.
 
 **Recommendation:**
-- Define a **minimum observer delay floor** for ranked matches (e.g., 120 seconds / 3600 ticks — enough that tactical information is stale)
+- Define a **minimum observer delay floor** for ranked matches (e.g., 120 seconds / 2,400 ticks at Normal ~20 tps — enough that tactical information is stale). The floor is enforced in wall-clock seconds; the relay computes the minimum tick count from the match's game speed preset (V59).
 - Make this a `ProtocolLimits`-style hard floor that community servers cannot reduce below for ranked games
 - Document this in the Competitive Integrity Summary table
 - Add to D055's ranked exit criteria

@@ -34,38 +34,35 @@ The encoder iterates priority groups in order: changes-often fields first, then 
 
 ### Entity Baselines (from Quake 3)
 
-Quake 3's networking introduced **entity baselines** — a default state for each entity type that serves as the base for delta encoding (see `research/quake3-netcode-analysis.md`). Instead of encoding deltas against the previous snapshot (which requires both sender and receiver to track full state history), deltas are encoded against a well-known baseline that both sides already have. This eliminates the need to retransmit reference frames on packet loss.
+Quake 3's networking introduced **entity baselines** — a default state for each entity type that serves as a reference for delta encoding (see `research/quake3-netcode-analysis.md`). IC applies this concept as an **internal optimization within** the canonical snapshot-relative delta model:
 
-IC applies this concept to snapshot deltas:
+IC's structural delta model is always anchored to a concrete prior full snapshot (`SimCoreDelta.baseline_tick` / `baseline_hash` — see `formats/replay-keyframes-analysis.md`). Entity baselines are a complementary optimization *within* that model: when computing a delta against a known prior snapshot, fields that match both the prior snapshot **and** their archetype's default state can be omitted with a single-bit flag per field, because the receiver can reconstruct them from its own copy of the archetype baseline. This reduces delta size further without changing the structural requirement that every delta references a concrete prior snapshot.
 
 ```rust
 /// Per-archetype baseline state. Registered at game module initialization.
-/// All delta encoding uses baseline as the reference when no prior
-/// snapshot is available (e.g., reconnection, first snapshot after load).
+/// Used as an optimization within snapshot-relative deltas: fields matching
+/// both the prior snapshot and the baseline are encoded as "still at
+/// baseline" (1 bit) instead of "unchanged from prior" (field bytes).
+/// This complements — does NOT replace — the concrete-snapshot-relative
+/// delta model defined in replay-keyframes-analysis.md.
 pub struct EntityBaseline {
     pub archetype: ArchetypeLabel,
     pub default_components: Vec<u8>,  // Serialized default state for this archetype
 }
-
-/// When computing a delta:
-/// 1. If previous snapshot exists → delta against previous (normal case)
-/// 2. If no previous snapshot → delta against baseline
-///    Much smaller than a full snapshot because most fields
-///    (owner, unit_type, armor, max_health) match the baseline.
 ```
-
-**Why baselines matter for reconnection:** When a reconnecting client receives a snapshot, it has no previous state to delta against. Without baselines, the server must send a full uncompressed snapshot (~300KB for 1000 units). With baselines, the server sends deltas against the baseline — only fields that differ from the archetype's default state (position, health, facing, orders). For a 1000-unit game, ~60% of fields match the baseline, reducing the reconnection snapshot to ~120KB.
 
 **Baseline registration:** Each game module registers baselines for its archetypes during initialization (e.g., "Allied Rifle Infantry" has default health=50, armor=None, speed=4). The baseline is frozen at game start — it never changes during play. Both sides (sender and receiver) derive the same baseline from the same game module data.
 
+**Reconnection benefit:** When a reconnecting client receives a full `SimSnapshot` (not a delta), the baseline optimization has no role — the full snapshot is self-contained. Entity baselines reduce the *internal representation cost* of deltas used in replay keyframes and the autosave game-thread handoff, not the reconnection snapshot itself.
+
 ### Performance Impact by Use Case
 
-| Use Case              | Full Snapshot   | Delta Snapshot   | Improvement                |
-| --------------------- | --------------- | ---------------- | -------------------------- |
-| Autosave (every 30s)  | 300 KB per save | ~30 KB per save  | 10x smaller                |
-| Replay recording      | 4.5 MB/s        | ~450 KB/s        | 10x less IO                |
-| Reconnection transfer | 300 KB burst    | 30 KB + deltas   | Faster join                |
-| Desync diagnosis      | Full state dump | Field-level diff | Pinpoints exact divergence |
+| Use Case                          | Without Delta Encoding       | With Delta Encoding       | Notes                                                                                                                                                      |
+| --------------------------------- | ---------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Autosave (every 30s)              | ~300 KB game-thread snapshot | ~30 KB game-thread delta  | Game thread produces `SimCoreDelta` (~30 KB); I/O thread reconstructs full `SimSnapshot` for `.icsave` (~300 KB on disk). Savings are in game-thread cost. |
+| Replay keyframe (every 300 ticks) | ~300 KB per keyframe         | ~30 KB per delta keyframe | 9 of every 10 keyframes are deltas; 1 is a full snapshot. Order stream is separate (~1 KB/s continuous).                                                   |
+| Reconnection transfer             | ~300 KB full snapshot        | ~300 KB full snapshot     | Reconnection sends a full `SimSnapshot` (not a delta) — the client has no prior state. Entity baselines reduce internal encoding overhead only.            |
+| Desync diagnosis                  | Full state dump              | Field-level diff          | Pinpoints exact divergence — diff two `SimCoreDelta`s at a known tick.                                                                                     |
 
 ### Benchmarks
 
@@ -108,7 +105,7 @@ The following performance patterns are established across the design docs. They 
 | All SQLite writes on dedicated I/O thread                                      | `decisions/09e-community.md` D031  | Ring buffer → batch transaction; game loop thread never touches SQLite                                                                                        |
 | I/O ring buffer ≥1024 entries                                                  | `decisions/09e-community.md` D031  | Absorbs 500 ms HDD checkpoint stall at 600 events/s peak with 3.4× headroom                                                                                   |
 | WAL checkpoint suppressed during gameplay (HDD)                                | `decisions/09e-community.md` D034  | Random I/O checkpoint on spinning disk takes 200–500 ms; defer to safe points                                                                                 |
-| Autosave fsync on I/O thread, never game thread                                | `decisions/09a-foundation.md` D010 | HDD fsync takes 50–200 ms; game thread only produces DeltaSnapshot bytes                                                                                      |
+| Autosave fsync on I/O thread, never game thread                                | `decisions/09a-foundation.md` D010 | HDD fsync takes 50–200 ms; game thread produces SimCoreDelta + changed campaign/script state, I/O thread reconstructs full SimSnapshot for .icsave            |
 | Replay keyframe: snapshot on game thread, LZ4+I/O on background                | `05-FORMATS.md`                    | ~1 ms game thread cost every 300 ticks; compression + write async                                                                                             |
 | Weather quadrant rotation (1/4 map per tick)                                   | `decisions/09c-modding.md` D022    | Sim-only amortization — no camera dependency in deterministic sim                                                                                             |
 | `gameplay.db` mmap capped at 64 MB                                             | `decisions/09e-community.md` D034  | 1.6% of 4 GB min-spec RAM; scaled up on systems with ≥8 GB                                                                                                    |

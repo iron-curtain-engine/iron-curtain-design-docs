@@ -17,52 +17,43 @@ Every game module implements `GameModule`, which bundles everything the engine n
 
 ```rust
 pub trait GameModule: Send + Sync + 'static {
-    /// Human-readable name ("Red Alert", "Tiberian Dawn")
-    fn name(&self) -> &str;
+    /// Register ECS components (unit types, mechanics) into the world.
+    fn register_components(&self, world: &mut World);
 
-    /// Register ECS components, systems, and system ordering
-    fn register_systems(&self, app: &mut App);
+    /// Return the ordered system pipeline for this game's simulation tick.
+    fn system_pipeline(&self) -> Vec<Box<dyn System>>;
 
-    /// Provide the module's Pathfinder implementation
+    /// Provide the pathfinding implementation (selected by lobby/experience profile, D045).
     fn pathfinder(&self) -> Box<dyn Pathfinder>;
 
-    /// Provide the module's SpatialIndex implementation
+    /// Provide the spatial index implementation (spatial hash, BVH, etc.).
     fn spatial_index(&self) -> Box<dyn SpatialIndex>;
 
-    /// Provide the module's FogProvider implementation (D041)
+    /// Provide the fog of war implementation (D041).
     fn fog_provider(&self) -> Box<dyn FogProvider>;
 
-    /// Provide the module's DamageResolver implementation (D041)
+    /// Provide the damage resolution algorithm (D041).
     fn damage_resolver(&self) -> Box<dyn DamageResolver>;
 
-    /// Provide the module's OrderValidator implementation (D041)
+    /// Provide order validation logic (D041).
     fn order_validator(&self) -> Box<dyn OrderValidator>;
 
-    /// Provide the module's render plugin (sprite, voxel, 3D, etc.)
-    fn render_plugin(&self) -> Box<dyn RenderPlugin>;
+    /// Register format loaders (e.g., .vxl for RA2, .shp for RA1).
+    fn register_format_loaders(&self, registry: &mut FormatRegistry);
 
-    /// List available render modes — Classic, HD, 3D, etc. (D048)
+    /// Register render backends (sprite renderer, voxel renderer, etc.).
+    fn register_renderers(&self, registry: &mut RenderRegistry);
+
+    /// List available render modes — Classic, HD, 3D, etc. (D048).
     fn render_modes(&self) -> Vec<RenderMode>;
-
-    /// Provide the module's UI layout (sidebar style, build queue, etc.)
-    fn ui_layout(&self) -> UiLayout;
-
-    /// Provide format loaders for this module's asset types
-    fn format_loaders(&self) -> Vec<Box<dyn FormatLoader>>;
 
     /// Register game-module-specific commands into the Brigadier command tree (D058).
     /// RA1 registers `/sell`, `/deploy`, `/stance`, etc. A total conversion registers
     /// its own novel commands. Engine built-in commands are pre-registered before this.
     fn register_commands(&self, dispatcher: &mut CommandDispatcher);
 
-    /// List available balance presets (D019)
-    fn balance_presets(&self) -> Vec<BalancePreset>;
-
-    /// List available experience profiles (D019 + D032 + D033 + D043 + D045 + D048)
-    fn experience_profiles(&self) -> Vec<ExperienceProfile>;
-
-    /// Default experience profile name
-    fn default_profile(&self) -> &str;
+    /// YAML rule schema for this game's unit definitions.
+    fn rule_schema(&self) -> RuleSchema;
 }
 ```
 

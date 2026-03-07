@@ -14,7 +14,7 @@ In deferred direct-peer modes (for example, explicit LAN/experimental variants w
 pub struct PeerAttestation {
     pub tick: SimTick,
     pub peer_id: PlayerId,
-    pub state_hash: SimStateHash,
+    pub state_hash: SyncHash,
     pub peer_signature: Ed25519Signature,
 }
 ```
@@ -215,7 +215,8 @@ Observers in lockstep RTS games receive the full game state (all player orders).
 
 **Mandatory minimum observer delay for ranked matches:**
 
-- Ranked matches enforce a **minimum 120-second (3,600-tick at 30 tps) observer delay**. This is a `ProtocolLimits`-style hard floor — not configurable below 120s by lobby settings, server config, or console commands.
+- Ranked matches enforce a **minimum 120-second observer delay**. This is a `ProtocolLimits`-style hard floor — not configurable below 120s by lobby settings, server config, or console commands.
+- **Enforcement is in wall-clock seconds, not fixed ticks.** The relay computes the minimum tick count at match start from the match's game speed: `min_delay_ticks = floor_secs × tps_for_speed_preset` (e.g., 120s × 20 tps = 2,400 ticks at Normal; 120s × 50 tps = 6,000 ticks at Fastest). If the operator's configured `spectator.delay_ticks` falls below this computed minimum, the relay clamps it upward. This ensures the wall-time floor holds regardless of game speed preset (D060).
 - Implementation: The relay server buffers observer-bound state updates and releases them only after the delay window. The buffer is per-observer, not shared — each observer's view is independently delayed.
 - The 120-second floor is chosen because it exceeds the tactical relevance window for most RTS engagements (build order scouting is revealed by 2 minutes anyway, and active combat decisions have ~5-10 second relevance).
 
@@ -294,71 +295,71 @@ This supersedes naive string-based checks like `path.contains("..")` (see V33) w
 
 Iron Curtain's anti-cheat is **architectural, not bolted on.** Every defense emerges from design decisions made for other reasons:
 
-| Threat                                     | Defense                                           | Source                                   |
-| ------------------------------------------ | ------------------------------------------------- | ---------------------------------------- |
-| Maphack                                    | Fog-authoritative server                          | Network model architecture               |
-| Order injection                            | Deterministic validation in sim                   | Sim purity (invariant #1)                |
-| Order forgery (direct-peer optional mode)  | Ed25519 per-order signing                         | Session auth design                      |
-| Lag switch                                 | Relay server owns the clock                       | Relay architecture (D007)                |
-| Speed hack                                 | Relay tick authority                              | Same as above                            |
-| State saturation                           | Time-budget pool + EWMA scoring + hard caps       | OrderBudget + EwmaTrafficMonitor + relay |
-| Eavesdropping                              | AEAD / TLS transport encryption                   | Transport security design                |
-| Packet forgery                             | Authenticated encryption (AEAD)                   | Transport security design                |
-| Protocol DoS                               | BoundedReader + size caps + rate limits           | Protocol hardening                       |
-| Replay tampering                           | Ed25519 signed hash chain                         | Replay system design                     |
-| Automation                                 | Dual-model detection (behavioral + statistical)   | Relay-side + post-hoc replay analysis    |
-| Result fraud                               | Relay-certified match results                     | Relay architecture                       |
-| Seed manipulation                          | Commit-reveal seed protocol                       | Connection establishment (03-NETCODE.md) |
-| Version mismatch                           | Protocol handshake                                | Lobby system                             |
-| WASM mod abuse                             | Capability-based sandbox                          | Modding architecture (D005)              |
-| Desync exploit                             | Server-side only analysis                         | Security by design                       |
-| Supply chain attack                        | Anomaly detection + provenance + 2FA + lockfile   | Workshop security (D030)                 |
-| Typosquatting                              | Publisher-scoped naming + similarity detection    | Workshop naming (D030)                   |
-| Manifest confusion                         | Canonical-inside-package + manifest_hash          | Workshop integrity (D030/D049)           |
-| Index poisoning                            | Path-scoped PR validation + signed index          | Git-index security (D049)                |
-| Dependency confusion                       | Source-pinned lockfiles + shadow warnings         | Workshop federation (D050)               |
-| Version mutation                           | Immutability rule + CI enforcement                | Workshop integrity (D030)                |
-| Relay exhaustion                           | Connection limits + per-IP caps + idle timeout    | Relay architecture (D007)                |
-| Desync-as-DoS                              | Per-player attribution + strike system            | Desync detection                         |
-| Win-trading                                | Diminishing returns + distinct-opponent req       | Ranked integrity (D055)                  |
-| Queue dodging                              | Anonymous veto + escalating dodge penalty         | Matchmaking fairness (D055)              |
-| Tracking phishing                          | Protocol handshake + trust indicators + HTTPS     | CommunityBridge security                 |
-| Cross-community rep                        | Community-scoped display + local-only ratings     | SCR portability (D052)                   |
-| Placement carnage                          | Hidden matchmaking rating + min match quality     | Season transition (D055)                 |
-| Desperation exploit                        | Reduced info content + min queue population       | Matchmaking fairness (D055)              |
-| Relay ranked SPOF                          | Checkpoint hashes + degraded cert + monitoring    | Relay architecture (D007)                |
-| Tier config inject                         | Monotonic validation + path sandboxing            | YAML loading defense                     |
-| EWMA NaN                                   | Finite guard + reset-to-safe + alpha validation   | Traffic monitor hardening                |
-| Reconciler drift                           | Capped ticks_since_sync + defined MAX_DELTA       | Cross-engine security (D011)             |
-| Anti-cheat trust                           | Relay ≠ judge + defined thresholds + appeal       | Dual-model integrity (V12)               |
-| Behavioral mmk pool                        | Continuous trust score + tiered consequences      | Behavioral matchmaking (V12/D055)        |
-| Detection evasion                          | Population baselines + continuous recalibration   | Population-baseline comparison (V12/V54) |
-| Enforcement timing                         | Wave ban cadence + intelligence gathering         | Enforcement timing strategy (V12)        |
-| Protocol fingerprint                       | Opt-in sources + proxy routing + minimal ident    | CommunityBridge privacy                  |
-| Format parser DoS                          | Decompression caps + fuzzing + iteration limits   | `ra-formats` defensive parsing (V38)     |
-| Lua sandbox bypass                         | `string.rep` cap + coroutine check + fatal limits | Modding sandbox hardening (V39)          |
-| LLM content inject                         | Validation pipeline + cumulative limits + filter  | LLM safety gate (V40)                    |
-| Replay resource skip                       | Consent prompt + content-type restriction         | Replay security model (V41)              |
-| Save game bomb                             | Decompression cap + schema validation + size cap  | Format safety (V42)                      |
-| DNS rebinding/SSRF                         | IP range block + DNS pinning + post-resolve val   | WASM network hardening (V43)             |
-| Dev mode exploit                           | Sim-state flag + lobby-only + ranked disabled     | Multiplayer integrity (V44)              |
-| Replay frame loss                          | Frame loss counter + `send_timeout` + gap mark    | Replay integrity (V45)                   |
-| Path traversal                             | `strict-path` boundary enforcement                | Path security infrastructure             |
-| Name impersonation                         | UTS #39 skeleton + mixed-script ban + BiDi strip  | Display name validation (V46)            |
-| Key compromise                             | Dual-signed rotation + BIP-39 emergency recovery  | Identity key rotation (V47)              |
-| Server impersonation                       | Cert chain + CRL + OCSP-style fast revocation     | Community server auth (V48)              |
-| Package forgery                            | Author Ed25519 signing + registry counter-sign    | Workshop package integrity (V49)         |
-| Mod cross-probing                          | Namespace isolation + capability-gated IPC        | WASM module isolation (V50)              |
-| Supply chain update                        | Popularity quarantine + diff review + rollback    | Workshop package quarantine (V51)        |
-| Star-jacking                               | Rate limit + anomaly detection + fork detection   | Workshop reputation defense (V52)        |
-| Direct-peer replay forgery (optional mode) | Peer-attested frame hashes + end-match signing    | Direct-peer replay attestation (V53)     |
-| False accusations                          | Tiered thresholds + calibration + graduated resp  | Anti-cheat false-positive control (V54)  |
-| Bug-as-cheat                               | Desync fingerprint + classification heuristic     | Desync classification (V55)              |
-| BiDi text injection                        | Unified sanitization pipeline + context registry  | Text safety (V56)                        |
-| ICRP local CSWSH                           | Origin validation + challenge secret + bind local | ICRP WebSocket hardening (V57)           |
-| Lobby host manipulation                    | Change notification + ranked whitelist + metadata | Lobby integrity (V58)                    |
-| Ranked spectator ghosting                  | 120s minimum delay floor + relay-enforced buffer  | Observer delay enforcement (V59)         |
-| Observer RNG prediction                    | Delay + fog-auth + behavioral detection           | Lockstep limitation (V60, acknowledged)  |
+| Threat                                     | Defense                                                       | Source                                   |
+| ------------------------------------------ | ------------------------------------------------------------- | ---------------------------------------- |
+| Maphack                                    | Fog-authoritative server                                      | Network model architecture               |
+| Order injection                            | Deterministic validation in sim                               | Sim purity (invariant #1)                |
+| Order forgery (direct-peer optional mode)  | Ed25519 per-order signing                                     | Session auth design                      |
+| Lag switch                                 | Relay server owns the clock                                   | Relay architecture (D007)                |
+| Speed hack                                 | Relay tick authority                                          | Same as above                            |
+| State saturation                           | Time-budget pool + EWMA scoring + hard caps                   | OrderBudget + EwmaTrafficMonitor + relay |
+| Eavesdropping                              | AEAD / TLS transport encryption                               | Transport security design                |
+| Packet forgery                             | Authenticated encryption (AEAD)                               | Transport security design                |
+| Protocol DoS                               | BoundedReader + size caps + rate limits                       | Protocol hardening                       |
+| Replay tampering                           | Ed25519 signed hash chain                                     | Replay system design                     |
+| Automation                                 | Dual-model detection (behavioral + statistical)               | Relay-side + post-hoc replay analysis    |
+| Result fraud                               | Relay-certified match results                                 | Relay architecture                       |
+| Seed manipulation                          | Commit-reveal seed protocol                                   | Connection establishment (03-NETCODE.md) |
+| Version mismatch                           | Protocol handshake                                            | Lobby system                             |
+| WASM mod abuse                             | Capability-based sandbox                                      | Modding architecture (D005)              |
+| Desync exploit                             | Server-side only analysis                                     | Security by design                       |
+| Supply chain attack                        | Anomaly detection + provenance + 2FA + lockfile               | Workshop security (D030)                 |
+| Typosquatting                              | Publisher-scoped naming + similarity detection                | Workshop naming (D030)                   |
+| Manifest confusion                         | Canonical-inside-package + manifest_hash                      | Workshop integrity (D030/D049)           |
+| Index poisoning                            | Path-scoped PR validation + signed index                      | Git-index security (D049)                |
+| Dependency confusion                       | Source-pinned lockfiles + shadow warnings                     | Workshop federation (D050)               |
+| Version mutation                           | Immutability rule + CI enforcement                            | Workshop integrity (D030)                |
+| Relay exhaustion                           | Connection limits + per-IP caps + idle timeout                | Relay architecture (D007)                |
+| Desync-as-DoS                              | Per-player attribution + strike system                        | Desync detection                         |
+| Win-trading                                | Diminishing returns + distinct-opponent req                   | Ranked integrity (D055)                  |
+| Queue dodging                              | Anonymous veto + escalating dodge penalty                     | Matchmaking fairness (D055)              |
+| Tracking phishing                          | Protocol handshake + trust indicators + HTTPS                 | CommunityBridge security                 |
+| Cross-community rep                        | Community-scoped display + local-only ratings                 | SCR portability (D052)                   |
+| Placement carnage                          | Hidden matchmaking rating + min match quality                 | Season transition (D055)                 |
+| Desperation exploit                        | Reduced info content + min queue population                   | Matchmaking fairness (D055)              |
+| Relay ranked SPOF                          | Checkpoint hashes + degraded cert + monitoring                | Relay architecture (D007)                |
+| Tier config inject                         | Monotonic validation + path sandboxing                        | YAML loading defense                     |
+| EWMA NaN                                   | Finite guard + reset-to-safe + alpha validation               | Traffic monitor hardening                |
+| Reconciler drift                           | Capped ticks_since_sync + defined MAX_DELTA                   | Cross-engine security (D011)             |
+| Anti-cheat trust                           | Relay ≠ judge + defined thresholds + appeal                   | Dual-model integrity (V12)               |
+| Behavioral mmk pool                        | Continuous trust score + tiered consequences                  | Behavioral matchmaking (V12/D055)        |
+| Detection evasion                          | Population baselines + continuous recalibration               | Population-baseline comparison (V12/V54) |
+| Enforcement timing                         | Wave ban cadence + intelligence gathering                     | Enforcement timing strategy (V12)        |
+| Protocol fingerprint                       | Opt-in sources + proxy routing + minimal ident                | CommunityBridge privacy                  |
+| Format parser DoS                          | Decompression caps + fuzzing + iteration limits               | `ra-formats` defensive parsing (V38)     |
+| Lua sandbox bypass                         | `string.rep` cap + coroutine check + fatal limits             | Modding sandbox hardening (V39)          |
+| LLM content inject                         | Validation pipeline + cumulative limits + filter              | LLM safety gate (V40)                    |
+| Replay resource skip                       | Consent prompt + content-type restriction                     | Replay security model (V41)              |
+| Save game bomb                             | Decompression cap + schema validation + size cap              | Format safety (V42)                      |
+| DNS rebinding/SSRF                         | IP range block + DNS pinning + post-resolve val               | WASM network hardening (V43)             |
+| Dev mode exploit                           | Sim-state flag + lobby-only + ranked disabled                 | Multiplayer integrity (V44)              |
+| Replay frame loss                          | Frame loss counter + `send_timeout` + gap mark                | Replay integrity (V45)                   |
+| Path traversal                             | `strict-path` boundary enforcement                            | Path security infrastructure             |
+| Name impersonation                         | UTS #39 skeleton + mixed-script ban + BiDi strip              | Display name validation (V46)            |
+| Key compromise                             | Dual-signed rotation + BIP-39 emergency recovery              | Identity key rotation (V47)              |
+| Server impersonation                       | TOFU key pinning + RK emergency rotation + seed list curation | Community server auth (V48)              |
+| Package forgery                            | Author Ed25519 signing + registry counter-sign                | Workshop package integrity (V49)         |
+| Mod cross-probing                          | Namespace isolation + capability-gated IPC                    | WASM module isolation (V50)              |
+| Supply chain update                        | Popularity quarantine + diff review + rollback                | Workshop package quarantine (V51)        |
+| Star-jacking                               | Rate limit + anomaly detection + fork detection               | Workshop reputation defense (V52)        |
+| Direct-peer replay forgery (optional mode) | Peer-attested frame hashes + end-match signing                | Direct-peer replay attestation (V53)     |
+| False accusations                          | Tiered thresholds + calibration + graduated resp              | Anti-cheat false-positive control (V54)  |
+| Bug-as-cheat                               | Desync fingerprint + classification heuristic                 | Desync classification (V55)              |
+| BiDi text injection                        | Unified sanitization pipeline + context registry              | Text safety (V56)                        |
+| ICRP local CSWSH                           | Origin validation + challenge secret + bind local             | ICRP WebSocket hardening (V57)           |
+| Lobby host manipulation                    | Change notification + ranked whitelist + metadata             | Lobby integrity (V58)                    |
+| Ranked spectator ghosting                  | 120s minimum delay floor + relay-enforced buffer              | Observer delay enforcement (V59)         |
+| Observer RNG prediction                    | Delay + fog-auth + behavioral detection                       | Lockstep limitation (V60, acknowledged)  |
 
 **No kernel-level anti-cheat.** Open-source, cross-platform, no ring-0 drivers. We accept that lockstep RTS will always have a maphack risk in client-sim modes — the fog-authoritative server is the real answer for high-stakes play.
 

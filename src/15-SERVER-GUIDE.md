@@ -30,7 +30,7 @@ Regular players do not need this guide. Player-facing settings (game speed, grap
 Every parameter has a sane default. A bare relay server works without any configuration file:
 
 ```bash
-./relay-server
+./ic-server
 ```
 
 This starts a relay on the default port with:
@@ -55,7 +55,7 @@ Any parameter you omit uses its compiled default. You never need to specify the 
 Start the server with a specific config file:
 
 ```bash
-./relay-server --config /path/to/server_config.toml
+./ic-server --config /path/to/server_config.toml
 ```
 
 ### Validating a Configuration
@@ -213,11 +213,11 @@ The relay server accepts player connections, orders and forwards game data betwe
 
 The relay's match QoS auto-profile should stay within these envelopes:
 
-| Queue Type | Deadline Envelope | Shared Run-Ahead Envelope | Suggested Fixed Baseline (if auto-profile unavailable) |
-| ---------- | ----------------- | ------------------------- | ------------------------------------------------------- |
-| Ranked / Competitive | 90–140 ms | 3–5 ticks | 110 ms |
-| Casual / Community | 120–220 ms | 4–7 ticks | 160 ms |
-| Training / Debug | 200–500 ms | 6–15 ticks | 300 ms |
+| Queue Type           | Deadline Envelope | Shared Run-Ahead Envelope | Suggested Fixed Baseline (if auto-profile unavailable) |
+| -------------------- | ----------------- | ------------------------- | ------------------------------------------------------ |
+| Ranked / Competitive | 90–140 ms         | 3–5 ticks                 | 110 ms                                                 |
+| Casual / Community   | 120–220 ms        | 4–7 ticks                 | 160 ms                                                 |
+| Training / Debug     | 200–500 ms        | 6–15 ticks                | 300 ms                                                 |
 
 If your runtime currently supports only a fixed `relay.tick_deadline_ms`, choose the baseline above and tune by observed late-order rate. If match auto-profile envelopes are available, prefer those and keep fixed overrides minimal.
 
@@ -293,23 +293,24 @@ These parameters control the lifecycle of individual games, from lobby acceptanc
 
 ### Spectator Configuration (`spectator.*`)
 
-| Parameter                        | Default (casual) | Default (ranked) | What It Controls                               |
-| -------------------------------- | ---------------- | ---------------- | ---------------------------------------------- |
-| `spectator.allow_live`           | true             | true             | Whether live spectating is enabled at all      |
-| `spectator.delay_ticks`          | 90 (3s)          | 3600 (2min)      | Feed delay in ticks (at 30 tps)                |
-| `spectator.max_per_match`        | 50               | 50               | Maximum spectators per match                   |
-| `spectator.full_visibility`      | true             | false            | Whether spectators see both teams              |
-| `spectator.allow_player_disable` | true             | false            | Whether players can opt out of being spectated |
+| Parameter                        | Default (casual) | Default (ranked) | What It Controls                                                                                                                                                                |
+| -------------------------------- | ---------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `spectator.allow_live`           | true             | true             | Whether live spectating is enabled at all                                                                                                                                       |
+| `spectator.delay_ticks`          | 60 (3s†)         | 2400 (120s†)     | Feed delay in ticks (†at Normal ~20 tps). For ranked/tournament, the relay clamps this upward to enforce V59's wall-time floor (120s/180s) regardless of game speed — see below |
+| `spectator.max_per_match`        | 50               | 50               | Maximum spectators per match                                                                                                                                                    |
+| `spectator.full_visibility`      | true             | false            | Whether spectators see both teams                                                                                                                                               |
+| `spectator.allow_player_disable` | true             | false            | Whether players can opt out of being spectated                                                                                                                                  |
 
-**Common delay values** (at 30 ticks per second):
+**V59 wall-time floor enforcement:** The security floor for ranked (120s) and tournament (180s) is defined in wall-clock seconds, not ticks. The relay computes the minimum tick count at match start: `min_delay_ticks = floor_secs × tps_for_speed_preset`. If `spectator.delay_ticks` falls below this computed minimum, the relay clamps it upward. This ensures the floor holds at any game speed (D060). The tick values below assume Normal (~20 tps); at other speeds the relay adjusts automatically.
 
-| Ticks | Real Time  | Use Case                                   |
-| ----- | ---------- | ------------------------------------------ |
-| 0     | No delay   | LAN tournaments (no stream sniping risk)   |
-| 90    | 3 seconds  | Casual viewing                             |
-| 3600  | 2 minutes  | Ranked default (anti-stream-sniping)       |
-| 9000  | 5 minutes  | Competitive league (stricter anti-sniping) |
-| 18000 | 10 minutes | Maximum supported delay                    |
+| Ticks (Normal ~20 tps) | Real Time | Use Case                                                                 |
+| ---------------------- | --------- | ------------------------------------------------------------------------ |
+| 0                      | No delay  | Unranked practice / training (not ranked or tournament — see V59 floors) |
+| 60                     | 3 seconds | Casual viewing                                                           |
+| 2400                   | 2 minutes | Ranked minimum (V59 floor — relay enforces 120s at any speed)            |
+| 3600                   | 3 minutes | Tournament minimum (V59 floor — relay enforces 180s at any speed)        |
+| 9000                   | 7.5 min   | Competitive league (stricter anti-sniping)                               |
+| 18000                  | 15 min    | Maximum supported delay                                                  |
 
 **For casters / content creators:**
 - Set `full_visibility: true` so casters can see entire battlefield
@@ -366,26 +367,26 @@ Each vote type (surrender, kick, remake, draw) follows the same parameter schema
 
 These parameters define hard limits on what players can send through the relay. They are the first line of defense against abuse.
 
-| Parameter                            | Default | What It Controls                           |
-| ------------------------------------ | ------- | ------------------------------------------ |
-| `protocol.max_order_size`            | 4096    | Maximum single order size (bytes)          |
-| `protocol.max_orders_per_tick`       | 256     | Hard ceiling on orders per tick per player |
-| `protocol.max_chat_length`           | 512     | Maximum chat message characters            |
-| `protocol.max_file_transfer_size`    | 65536   | Maximum file transfer size (bytes)         |
-| `protocol.max_pending_per_peer`      | 262144  | Maximum buffered data per peer (bytes)     |
-| `protocol.max_voice_packets_per_sec` | 50      | VoIP packet rate limit                     |
-| `protocol.max_voice_packet_size`     | 256     | VoIP packet size limit (bytes)             |
-| `protocol.max_pings_per_interval`    | 3       | Contextual pings per 5-second window       |
-| `protocol.max_minimap_draw_points`   | 32      | Points per minimap drawing                 |
-| `protocol.max_markers_per_player`    | 10      | Tactical markers per player                |
-| `protocol.max_markers_per_team`      | 30      | Tactical markers per team                  |
+| Parameter                               | Default | What It Controls                           |
+| --------------------------------------- | ------- | ------------------------------------------ |
+| `protocol.max_order_size`               | 4096    | Maximum single order size (bytes)          |
+| `protocol.max_orders_per_tick`          | 256     | Hard ceiling on orders per tick per player |
+| `protocol.max_chat_length`              | 512     | Maximum chat message characters            |
+| `protocol.max_file_transfer_size`       | 65536   | Maximum file transfer size (bytes)         |
+| `protocol.max_pending_per_peer`         | 262144  | Maximum buffered data per peer (bytes)     |
+| `protocol.max_voice_packets_per_second` | 50      | VoIP packet rate limit                     |
+| `protocol.max_voice_packet_size`        | 256     | VoIP packet size limit (bytes)             |
+| `protocol.max_pings_per_interval`       | 3       | Contextual pings per 5-second window       |
+| `protocol.max_minimap_draw_points`      | 32      | Points per minimap drawing                 |
+| `protocol.max_markers_per_player`       | 10      | Tactical markers per player                |
+| `protocol.max_markers_per_team`         | 30      | Tactical markers per team                  |
 
 > **Warning:** Raising protocol limits above defaults increases the abuse surface. The defaults are tuned for competitive play. Only increase them if you have a specific need and understand the anti-cheat implications.
 
 **When to change these:**
 
 - **Large team games (8v8):** You may want to raise `max_markers_per_team` to 50–60 for more tactical coordination.
-- **VoIP quality:** Raising `max_voice_packets_per_sec` beyond 50 is unlikely to improve quality — the Opus codec is efficient. Consider raising `chat.voip_bitrate_kbps` instead.
+- **VoIP quality:** Raising `max_voice_packets_per_second` beyond 50 is unlikely to improve quality — the Opus codec is efficient. Consider raising `chat.voip_bitrate_kbps` instead.
 - **Mod development:** Mods that use very large orders might need `max_order_size` raised to 8192 or 16384.
 
 ---
@@ -454,6 +455,6 @@ These parameters tune the automated anti-cheat system. The system analyzes match
 
 ## Sub-Pages
 
-| Section | Topic | File |
-| --- | --- | --- |
+| Section                 | Topic                                                                                                                                                                                                                                                                       | File                                        |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | Operations & Deployment | Subsystem reference continued (ranking/Glicko-2, matchmaking, AI, telemetry, DB, Workshop/P2P, compression) + deployment profiles + Docker/Kubernetes + tournament operations + security hardening + capacity planning + troubleshooting + CLI reference + engine constants | [operations.md](server-guide/operations.md) |

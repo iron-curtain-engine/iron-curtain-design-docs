@@ -51,9 +51,11 @@ impl<N: NetworkModel, I: InputSource> GameLoop<N, I> {
 }
 ```
 
+**Match-end signing:** When a match ends (surrender, victory, disconnect — see `netcode/match-lifecycle.md`), the game loop emits a final `report_state_hash()` for the terminal tick regardless of whether it falls on a signing cadence boundary. This ensures the relay's `TickSignature` chain covers the complete match with no unsigned tail (see `formats/save-replay-formats.md` § Signature Chain).
+
 **Key property:** `GameLoop` is generic over `N: NetworkModel` and `I: InputSource`. It has zero knowledge of whether it's running single-player or multiplayer, or whether input comes from a mouse, touchscreen, or gamepad. This is the central architectural guarantee.
 
-**Lockstep-family only.** The `GameLoop` shown above is the **lockstep client loop** — it owns a full `Simulation` and calls `sim.apply_tick()` with confirmed orders from `poll_tick()`. This covers all shipping implementations: `LocalNetwork`, `ReplayPlayback`, `EmbeddedRelayNetwork`, and `RelayLockstepNetwork`. Deferred non-lockstep architectures (FogAuth, rollback) require a different client-side loop variant — FogAuth clients do not run the full sim but instead maintain a partial world via a reconciler (see `research/fog-authoritative-server-design.md` § 7), and rollback clients need speculative execution with snapshot/restore. The `NetworkModel` trait and `ic-server` capability infrastructure are designed to support these variants from day one, but the `GameLoop` struct itself would need a parallel implementation (e.g., `FogAuthGameLoop`) or an enum-based client driver. This is an `M11` design concern — the current `GameLoop` is complete and correct for all pre-`M11` milestones.
+**Lockstep-family only.** The `GameLoop` shown above is the **lockstep client loop** — it owns a full `Simulation` and calls `sim.apply_tick()` with confirmed orders from `poll_tick()`. This covers all shipping implementations: `LocalNetwork`, `ReplayPlayback`, `EmbeddedRelayNetwork`, and `RelayLockstepNetwork`. Deferred non-lockstep architectures (FogAuth, rollback) require a different client-side loop variant — FogAuth clients do not run the full sim but instead maintain a partial world via a reconciler (see `research/fog-authoritative-server-design.md` § 7), and rollback clients need speculative execution with snapshot/restore. The `NetworkModel` trait and `ic-server` capability infrastructure are designed to support these variants from day one, but the `GameLoop` struct itself would need a parallel implementation (e.g., `FogAuthGameLoop`) or an enum-based client driver. This is an `M11` design concern (pending decision `P007`) — the current `GameLoop` is complete and correct for all pre-`M11` milestones.
 
 **Not for headless use.** `GameLoop` always renders — it is the client-side frame driver. `ic-server` runs the relay protocol without any `GameLoop` or `Simulation` instance. External bot/test harnesses use the external sim API (`inject_orders()` + `step()`) in their own loop — see `02-ARCHITECTURE.md` § External Sim API for a concrete headless loop example. The sim's headless capability is a property of `ic-sim`, not of `GameLoop`.
 
@@ -92,3 +94,24 @@ The game application transitions through a fixed set of states. Design informed 
 State transitions are events in Bevy's event system — plugins react to transitions without polling. The sim exists only during `InGame` and `InReplay`; all other states are menu/UI-only.
 
 **D069 integration:** The installation/setup wizard is modeled as an **`InMenus` subflow** (UI-only) rather than a separate app state that changes sim/network invariants. Platform/store installers may precede launch, but IC-controlled setup runs after `Launched → InMenus` using platform capability metadata (see `PlatformInstallerCapabilities` in [platform-portability.md](platform-portability.md)).
+
+### Match Cleanup & World Reset
+
+When transitioning out of `InGame` or `InReplay` back to `InMenus`, the client must guarantee zero state leakage between matches. State leakage (lingering entities, stale resources, un-cleared caches) is a known class of "desync on match 2 but not match 1" bugs in RTS engines.
+
+**Strategy: drop and recreate.** The `Simulation` (which owns the Bevy `World` containing all ECS entities, components, and sim resources) is **dropped** on match exit, not incrementally cleaned. A fresh `Simulation` is constructed on the next `Loading → InGame` transition. This is the simplest correct approach — it is impossible for state to leak across a drop boundary.
+
+**What is dropped:**
+- The entire Bevy `World` (all entities, components, resources) inside `Simulation`
+- The `UnitPool` (tag allocator resets — new match starts at generation 0)
+- All WASM mod instances (sandbox VMs are terminated and re-instantiated for the next match)
+- Lua script state (VMs are dropped; fresh VMs created on next match load)
+- Campaign runner state in `GameRunner` (replaced by new `CampaignState` or `None`)
+
+**What survives across matches:**
+- Bevy `AssetServer` and loaded asset handles (textures, audio, meshes) — these live in the outer Bevy `App`, not inside `Simulation`. Assets are shared across matches; the asset server's reference counting handles unloading when no match references them.
+- Player settings, keybindings, UI theme state (menu-layer resources)
+- Network connection to the relay (for re-queue / rematch without reconnection)
+- Mod registry and `GameModule` registration (module switching requires returning to `InMenus` and re-entering `Loading` with the new module)
+
+**Module switching (e.g., RA1 → TD):** Requires a full return to `InMenus`. The `GameModule` registration is re-run during `Loading` for the new module. Because `Simulation` is dropped between matches, module-specific ECS components from the previous game are already gone. Asset handles for the previous module are released when their reference counts reach zero (Bevy's standard asset lifecycle).

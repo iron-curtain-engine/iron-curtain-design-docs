@@ -160,7 +160,9 @@ pub struct SpectatorConfig {
     /// Whether live spectating is allowed for this match.
     pub allow_live_spectators: bool,     // Default: true (casual), configurable (ranked)
     /// Delay in ticks before spectators see game state.
-    pub spectator_delay_ticks: u64,      // Default: 90 (~3 seconds casual), 3600 (~120s ranked, V59 floor)
+    /// The relay clamps this upward for ranked/tournament matches to enforce
+    /// V59's wall-time floor (120s ranked, 180s tournament) regardless of game speed.
+    pub spectator_delay_ticks: u64,      // Default: 60 (~3s casual at Normal ~20 tps); ranked/tournament: relay-computed from floor_secs × tps
     /// Maximum spectators per match (relay bandwidth management).
     pub max_spectators: u32,             // Default: 50 (relay), unlimited (local)
     /// Whether spectators can see both team's views (false = assigned perspective).
@@ -170,12 +172,12 @@ pub struct SpectatorConfig {
 
 **Delay tiers:**
 
-| Context               | Default Delay           | Rationale                                                                                                                                                                                        |
-| --------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Casual / unranked** | 3 seconds (90 ticks)    | Minimal delay — enough to prevent frame-perfect info leaks, short enough for engaging spectating                                                                                                 |
-| **Ranked**            | 2 minutes (3,600 ticks) | Anti-stream-sniping. CS2 uses 90s-2min; SC2 uses 3min. 2 minutes is the sweet spot for RTS (long enough to prevent scouting info exploitation, short enough for spectators to follow the action) |
-| **Tournament**        | Configurable (0s–10min) | Organizer controls. 0s delay for offline LAN events. 5-10 min for online tournaments with dedicated observer casters                                                                             |
-| **Replay**            | 0s                      | No delay — the game is already finished                                                                                                                                                          |
+| Context               | Default Delay                                                                                                        | Rationale                                                                                                                                                                                                              |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Casual / unranked** | ~3 seconds (60 ticks at Normal ~20 tps)                                                                              | Minimal delay — enough to prevent frame-perfect info leaks, short enough for engaging spectating                                                                                                                       |
+| **Ranked**            | 120 seconds (V59 wall-time floor — relay computes ticks from speed: 2,400 at Normal, 6,000 at Fastest, etc.)         | Anti-stream-sniping. CS2 uses 90s-2min; SC2 uses 3min. 120 seconds is the sweet spot for RTS (long enough to prevent scouting info exploitation, short enough for spectators to follow the action)                     |
+| **Tournament**        | 180 seconds minimum (V59 wall-time floor — relay computes ticks from speed: 3,600 at Normal, 9,000 at Fastest, etc.) | Tournament floor per V59. Server operator may increase for online tournaments with dedicated observer casters. Unranked exhibition matches may use 0s (see `security/vulns-edge-cases-infra.md` § Tiered delay policy) |
+| **Replay**            | 0s                                                                                                                   | No delay — the game is already finished                                                                                                                                                                                |
 
 **Anti-coaching:** In ranked team games, spectators are assigned to one team's perspective (`full_visibility: false`) and cannot switch mid-game. This prevents a friend from spectating and relaying enemy information via external voice. The relay enforces this — it simply doesn't send the opposing team's orders to biased spectators until the delay expires.
 
@@ -194,7 +196,7 @@ After the sim transitions to `GameEnded`, the network layer manages the post-gam
    - Re-queue (returns to matchmaking immediately)
    - Leave (returns to main menu)
 3. **Rating update display.** For ranked games, the rating change is shown within the post-game lobby: "Captain II → Captain I (+32 rating)". The community server computes the new rating from `CertifiedMatchResult`, signs two SCRs (rating + match record), and the relay forwards them to the client as `Frame::RatingUpdate(Vec<SignedCredentialRecord>)` on `MessageLane::Orders` (reliable — the lane is idle post-game; see wire-format.md § Default lane configuration, D052 credential-store-validation.md). The client stores both SCRs in its local SQLite credential file.
-4. **Lobby timeout.** After 5 minutes, the post-game lobby auto-closes. Resources are released.
+4. **Lobby timeout.** After 5 minutes, the post-game lobby auto-closes. Resources are released — see `architecture/game-loop.md` § Match Cleanup & World Reset for the drop-and-recreate strategy that guarantees zero state leakage between matches.
 
 ### In-Match Vote Framework (Callvote System)
 

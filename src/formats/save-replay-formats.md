@@ -73,7 +73,10 @@ Human-readable metadata for the save browser UI. Stored as JSON (not the binary 
 The payload is a `SimSnapshot` serialized via `serde` (bincode format for compactness) and compressed with LZ4 (fast decompression, good ratio for game state data). LZ4 was chosen over LZO (used by original RA) for its better Rust ecosystem support (`lz4_flex` crate) and superior decompression speed. The save file header's `version` field selects the serialization codec — version `1` uses bincode; version `2` is reserved for postcard if introduced under D054's migration/codec-dispatch path. The `compression_algorithm` byte selects the decompressor independently (D063). Compression level is configurable via `settings.toml` (`compression.save_level`: fastest/balanced/compact). See `decisions/09d/D054-extended-switchability.md` for the serialization version-to-codec dispatch and `decisions/09a-foundation.md` § D063 for the compression strategy.
 
 ```rust
-pub struct SimSnapshot {
+/// Sim-internal snapshot — what `Simulation::snapshot()` returns.
+/// Contains only state owned by `ic-sim`: ECS entities, player states,
+/// map, RNG, and the string intern table. No script or campaign state.
+pub struct SimCoreSnapshot {
     pub tick: u64,
     pub game_seed: u64,                  // game seed (for cross-game restore rejection — see api-misuse-defense.md S3)
     pub map_hash: StateHash,             // SHA-256 of the map (for cross-game restore rejection)
@@ -82,8 +85,16 @@ pub struct SimSnapshot {
     pub entities: Vec<EntitySnapshot>,   // all entities + all components
     pub player_states: Vec<PlayerState>, // credits, power, tech tree, etc.
     pub map_state: MapState,             // resource cells, terrain modifications
-    pub campaign_state: Option<CampaignState>,  // D021 branching state
-    pub script_state: Option<ScriptState>,      // Lua/WASM variable snapshots
+}
+
+/// Full persistable snapshot — composed by `ic-game` from `SimCoreSnapshot`
+/// plus external state collected from `ic-script` (script state) and the
+/// campaign system (campaign state). This is the type serialized to `.icsave`
+/// files and replay keyframes. `ic-sim` never produces this directly.
+pub struct SimSnapshot {
+    pub core: SimCoreSnapshot,                  // Sim-internal state (produced by ic-sim)
+    pub campaign_state: Option<CampaignState>,  // D021 branching state (collected by ic-game)
+    pub script_state: Option<ScriptState>,      // Lua/WASM variable snapshots (collected by ic-game via ic-script)
 }
 
 /// Serializable snapshot of all active script state.
@@ -147,7 +158,7 @@ iron_curtain_replay_v1.icrep  (file extension: .icrep)
 └── Embedded Resources (map + mod manifest, optional)
 ```
 
-### Header (84 bytes, fixed)
+### Header (108 bytes, fixed)
 
 Same wire-format rules as the save header: **little-endian**, **packed with no padding**.
 
@@ -168,14 +179,14 @@ pub struct ReplayHeader {
     pub signature_offset: u32,
     pub signature_length: u32,
     pub total_ticks: u64,            // Total ticks in the replay
-    pub final_state_hash: u64,       // SyncHash of the last tick (fast integrity check)
+    pub final_state_hash: StateHash, // Full SHA-256 of the terminal tick (matches final TickSignature entry)
     pub voice_offset: u32,           // 0 if no voice stream (HAS_VOICE flag, D059)
     pub voice_length: u32,           // Compressed length of voice stream
     pub embedded_offset: u32,        // 0 if Minimal mode (no embedded resources)
     pub embedded_length: u32,        // Length of embedded resources section
     pub lost_frame_count: u32,       // Frames dropped by BackgroundReplayWriter (V45, see network-model-trait.md)
 }
-// Total: 4 + 2 + 1 + 1 + (14 × 4) + 8 + 4 = 84 bytes
+// Total: 4 + 2 + 1 + 1 + (14 × 4) + 8 + 32 + 4 = 108 bytes
 ```
 
 > **Compression (D063):** The `compression_algorithm` byte identifies which decompressor to use for the tick order stream and embedded keyframe snapshots. Version 1 files use `0x01` (LZ4). Compression level during live recording defaults to `fastest` (configurable via `settings.toml` `compression.replay_level`). Use `ic replay recompress` to re-encode at a higher compression level for archival. See `decisions/09a-foundation.md` § D063.
@@ -255,114 +266,11 @@ Frames are serialized with bincode and compressed in blocks (LZ4 block compressi
 
 ### Keyframe Index & Snapshots
 
-The keyframe section stores periodic `SimSnapshot` or `DeltaSnapshot` captures that enable fast seeking without re-simulating from tick 0. Keyframes are **mandatory** — the recorder writes one every 300 ticks (~10 seconds at 30 tps). A 60-minute replay contains ~360 keyframes.
-
-The section begins with a fixed-length index (for O(1) seek-to-tick), followed by the snapshot data blobs:
-
-```rust
-/// Keyframe index entry — one per keyframe, stored as a flat array
-/// at the start of the keyframe section for fast lookup.
-pub struct KeyframeIndexEntry {
-    pub tick: u64,                    // Tick this keyframe was captured at
-    pub blob_offset: u32,             // Offset within the keyframe section (after the index array)
-    pub blob_length: u32,             // Compressed length of the snapshot blob
-    pub uncompressed_length: u32,     // For pre-allocation
-    pub is_full: bool,                // true = Full SimSnapshot, false = DeltaSnapshot
-}
-
-/// DeltaSnapshot — encodes only components that changed since a baseline.
-/// See state-recording.md for the TrackChanges derive macro and ChangeMask
-/// that make delta encoding efficient.
-pub struct DeltaSnapshot {
-    pub baseline_tick: SimTick,       // Tick of the baseline this delta is relative to
-    pub baseline_hash: SyncHash,      // SyncHash of the baseline (for branch-safety — see api-misuse-defense.md S10)
-    pub tick: SimTick,                // Tick this delta represents
-    pub intern_table_delta: Option<StringInternerDelta>, // New interned strings since baseline (if any)
-    pub changed_entities: Vec<EntityDelta>,  // Only entities with changed components
-    pub changed_players: Vec<PlayerStateDelta>,
-    pub changed_map: Option<MapStateDelta>,
-    pub campaign_state: Option<CampaignState>,  // Full campaign state if changed since baseline (D021 — typically small: flags + mission ID)
-    pub script_state: Option<ScriptState>,      // Full script state if changed since baseline (collected by ic-game via ic-script)
-}
-```
-
-The first keyframe (tick 0) is always a full `SimSnapshot`. Subsequent keyframes alternate between full snapshots (every Nth keyframe, default N=10, i.e., every 3000 ticks) and delta snapshots relative to the previous full keyframe. This bounds worst-case seek cost: restoring to any tick requires loading at most one full snapshot + 9 deltas.
-
-**Seeking algorithm:** To seek to tick T: (1) binary search the keyframe index for the largest keyframe tick ≤ T, (2) decompress and restore that snapshot, (3) re-simulate forward from the keyframe tick to T using the order stream.
+Periodic `SimSnapshot` or `DeltaSnapshot` captures that enable fast seeking without re-simulating from tick 0. Keyframes are **mandatory** — every 300 ticks (~20 seconds at the Slower default). Full/delta alternation bounds worst-case seek cost to one full snapshot + 9 deltas. For the complete type definitions (`KeyframeIndexEntry`, `DeltaSnapshot`, `SimCoreDelta`, `EntityDelta`, `PlayerStateDelta`, `MapStateDelta`, `StringInternerSnapshot/Delta`) and the seeking algorithm, see [Replay Keyframes & Analysis Events](replay-keyframes-analysis.md) § Keyframe Index & Snapshots.
 
 ### Analysis Event Stream
 
-Alongside the order stream (which enables deterministic replay), IC replays include a separate **analysis event stream** — derived events sampled from the simulation state during recording. This stream enables replay analysis tools (stats sites, tournament review, community analytics) to extract rich data **without re-simulating the entire game**.
-
-This design follows SC2's separation of `replay.game.events` (orders for playback) from `replay.tracker.events` (analytical data for post-game tools). See `research/blizzard-github-analysis.md` § 5.2–5.3.
-
-**Event taxonomy:**
-
-```rust
-/// Analysis events derived from simulation state during recording.
-/// These are NOT inputs — they are sampled observations for tooling.
-/// Entity references use UnitTag — the stable generational identity
-/// defined in 02-ARCHITECTURE.md § External Entity Identity.
-pub enum AnalysisEvent {
-    /// Unit fully created (spawned or construction completed).
-    UnitCreated { tick: u64, tag: UnitTag, unit_type: UnitTypeId, owner: PlayerId, pos: WorldPos },
-    /// Building/unit construction started.
-    ConstructionStarted { tick: u64, tag: UnitTag, unit_type: UnitTypeId, owner: PlayerId, pos: WorldPos },
-    /// Building/unit construction completed (pairs with ConstructionStarted).
-    ConstructionCompleted { tick: u64, tag: UnitTag },
-    /// Unit destroyed.
-    UnitDestroyed { tick: u64, tag: UnitTag, killer_tag: Option<UnitTag>, killer_owner: Option<PlayerId> },
-    /// Periodic position sample for combat-active units (delta-encoded, max 256 per event).
-    UnitPositionSample { tick: u64, positions: Vec<(UnitTag, WorldPos)> },
-    /// Periodic per-player economy/military snapshot.
-    PlayerStatSnapshot { tick: u64, player: PlayerId, stats: PlayerStats },
-    /// Resource harvested.
-    ResourceCollected { tick: u64, player: PlayerId, resource_type: ResourceType, amount: i32 },
-    /// Upgrade completed.
-    UpgradeCompleted { tick: u64, player: PlayerId, upgrade_id: UpgradeId },
-
-    // --- Competitive analysis events (Phase 5+) ---
-
-    /// Periodic camera position sample — where each player is looking.
-    /// Sampled at 2 Hz (~8 bytes per player per sample). Enables coaching
-    /// tools ("you weren't watching your base during the drop"), replay
-    /// heatmaps, and attention analysis. See D059 § Integration.
-    CameraPositionSample { tick: u64, player: PlayerId, viewport_center: WorldPos, zoom_level: u16 },
-    /// Player selection changed — what the player is controlling.
-    /// Delta-encoded: only records additions/removals from the previous selection.
-    /// Enables micro/macro analysis and attention tracking.
-    SelectionChanged { tick: u64, player: PlayerId, added: Vec<UnitTag>, removed: Vec<UnitTag> },
-    /// Control group assignment or recall.
-    ControlGroupEvent { tick: u64, player: PlayerId, group: u8, action: ControlGroupAction },
-    /// Ability or superweapon activation.
-    AbilityUsed { tick: u64, player: PlayerId, ability_id: AbilityId, target: Option<WorldPos> },
-    /// Game pause/unpause event.
-    PauseEvent { tick: u64, player: PlayerId, paused: bool },
-    /// Match ended — captures the end reason for analysis tools.
-    MatchEnded { tick: u64, outcome: MatchOutcome },
-    /// Vote lifecycle event — proposal, ballot, and resolution.
-    /// See `03-NETCODE.md` § "In-Match Vote Framework" for the full vote system.
-    VoteEvent { tick: u64, event: VoteAnalysisEvent },
-}
-
-/// Control group action types for ControlGroupEvent.
-pub enum ControlGroupAction {
-    Assign,   // player set this control group
-    Append,   // player added to this control group (shift+assign)
-    Recall,   // player pressed the control group hotkey to select
-}
-```
-
-**Competitive analysis rationale:**
-- **CameraPositionSample:** SC2 and AoE2 replays both include camera tracking. Coaches review where a player was looking ("you weren't watching your expansion when the attack came"). At 2 Hz with 8 bytes per player, a 20-minute 2-player game adds ~19 KB — negligible. Combines powerfully with voice-in-replay (D059): hearing what a player said while seeing what they were looking at.
-- **SelectionChanged / ControlGroupEvent:** SC2's `replay.game.events` includes selection deltas. Control group usage frequency and response time are key skill metrics that distinguish player brackets. Delta-encoded selections are compact (~12 bytes per change).
-- **AbilityUsed:** Superweapon timing, chronosphere accuracy, iron curtain placement decisions. Critical for tournament review.
-- **PauseEvent / MatchEnded:** Structural events that analysis tools need without re-simulating. See `03-NETCODE.md` § Match Lifecycle for the full pause and surrender specifications.
-- **VoteEvent:** Records vote proposals, individual ballots, and resolutions for post-match review and behavioral analysis. Tournament admins can audit vote patterns (e.g., excessive failed kick votes). See `03-NETCODE.md` § "In-Match Vote Framework."
-- **Not required for playback** — the order stream alone is sufficient for deterministic replay. Analysis events are a convenience cache.
-- **Compact position sampling** — `UnitPositionSample` uses delta-encoded unit indices and includes only units that have inflicted or taken damage recently (following SC2's tracker event model). This keeps the stream compact even in large battles.
-- **Fixed-point stat values** — `PlayerStatSnapshot` uses fixed-point integers (matching the sim), not floats.
-- **Independent compression** — the analysis stream is LZ4-compressed in its own block, separate from the order stream. Tools that only need orders skip it; tools that only need stats skip the orders.
+SC2-inspired analytical data stream sampled during recording — enables stats sites, tournament review, and coaching tools to extract rich data without re-simulating. 18 event types covering unit lifecycle, economy, camera tracking, selection/control groups, abilities, votes, and match structure. For the full `AnalysisEvent` enum, competitive analysis rationale, and compression details, see [Replay Keyframes & Analysis Events](replay-keyframes-analysis.md) § Analysis Event Stream.
 
 ### Signature Chain (Relay-Certified Replays)
 
@@ -387,7 +295,9 @@ pub struct TickSignature {
 
 The signature chain is a linked hash chain — each signature includes the hash of the previous signature. Tampering with any tick invalidates all subsequent signatures. Only relay-hosted games produce signed replays. Unsigned replays are fully functional for playback — signatures add trust, not capability.
 
-**Selective tick verification via Merkle paths:** When the sim uses Merkle tree state hashing (see `03-NETCODE.md` § Merkle Tree State Hashing), each `TickSignature` can include the Merkle root rather than a flat hash. This enables **selective verification**: a tournament official can verify that tick 5,000 is authentic without replaying ticks 1–4,999 — just by checking the Merkle path from the tick's root to the signature chain. The signature chain itself forms a hash chain (each entry includes the previous entry's hash), so verifying any single tick also proves the integrity of the chain up to that point. This is the same principle as SPV (Simplified Payment Verification) in Bitcoin — prove a specific item belongs to a signed set without downloading the full set. Useful for dispute resolution ("did this specific moment really happen?") without replaying or transmitting the entire match.
+**Match-end closure:** The relay always emits a final `TickSignature` for the terminal tick of the match, regardless of whether it falls on a signing cadence boundary. This ensures the signature chain covers the complete match — there is no unsigned tail between the last regular cadence boundary and the actual final tick. The `ReplayHeader.final_state_hash` (a `StateHash`, not a truncated `SyncHash`) matches the `state_hash` in this terminal `TickSignature` entry, providing a quick integrity check without scanning the full chain.
+
+**Selective tick verification via Merkle paths:** When the sim uses Merkle tree state hashing (see `03-NETCODE.md` § Merkle Tree State Hashing), each `TickSignature` can include the Merkle root rather than a flat hash. This enables **selective verification at signing cadence boundaries**: a tournament official can verify that a signed tick (e.g., tick 5,100 at cadence=30) is authentic without replaying from the start — just by checking the Merkle path from that tick's root to the signature chain. For ticks between signing boundaries (e.g., tick 5,017), verification requires replaying deterministically from the nearest preceding signed tick (tick 5,010 at cadence=30) — 7 ticks of re-simulation, not the full game. The signature chain itself forms a hash chain (each entry includes the previous entry's hash), so verifying any single signed tick also proves the integrity of the chain up to that point. This is the same principle as SPV (Simplified Payment Verification) in Bitcoin — prove a specific item belongs to a signed set without downloading the full set. Useful for dispute resolution ("did this specific moment really happen?") with at most one cadence interval of re-simulation.
 
 ### Embedded Resources (Self-Contained Replays)
 
@@ -448,14 +358,15 @@ impl NetworkModel for ReplayPlayback {
 
 **Hash verification timing:** The `state_hash` in each `ReplayTickFrame` is the sim's state hash *after* the previous tick executed. `ReplayPlayback` records the sim's `state_hash()` after each `step()` call (via callback or polling) and verifies it against the next frame's `state_hash`. A mismatch means the local sim has diverged from the recorded game — this triggers a desync warning in the UI (not a crash). For foreign replays (D056), divergence is expected and tracked by `DivergenceTracker`.
 
-**Playback features:** Variable speed (0.5x to 8x), pause, scrub to any tick (re-simulates from nearest keyframe). The recorder takes a `SimSnapshot` keyframe every 300 ticks (~10 seconds at 30 tps) and stores it in the `.icrep` file. A 60-minute replay contains ~360 keyframes (~3-6 MB overhead depending on game state size), enabling sub-second seeking to any point. Keyframes are mandatory — the recorder always writes them.
+**Playback features:** Variable speed (0.5x to 8x), pause, scrub to any tick (re-simulates from nearest keyframe). The recorder writes a keyframe every 300 ticks (~20 seconds at the Slower default of ~15 tps): most keyframes are `DeltaSnapshot`s relative to the preceding full snapshot, with a full `SimSnapshot` keyframe every 3000 ticks (every 10th keyframe). A 60-minute replay at Slower speed contains ~180 keyframes (~3–6 MB overhead depending on game state size), enabling sub-second seeking to any point. Keyframes are mandatory — the recorder always writes them.
 
-**Keyframe serialization threading:** Producing a replay keyframe involves two phases with different thread requirements:
+**Keyframe serialization threading:** Producing a replay keyframe involves three phases with different thread and crate requirements:
 
-1. **ECS snapshot** (game thread): `Simulation::delta_snapshot()` reads ECS state via `ChangeMask` iteration. This MUST run on the game thread because it reads live sim state. Cost: ~0.5–1 ms for 500 units (lightweight — bitfield scan + changed component serialization). Produces a `Vec<u8>` of serialized component data.
-2. **LZ4 compression + file write** (background writer thread): The serialized bytes are sent through the replay writer's crossbeam channel to the background thread, which performs LZ4 compression (~0.3–0.5 ms for ~200 KB → ~40–80 KB) and appends to the `.icrep` file. File I/O never touches the game thread.
+1. **Sim core delta** (game thread, `ic-sim`): `Simulation::delta_snapshot(baseline)` reads ECS state and intern table changes via `ChangeMask` iteration, where `baseline` is the `StateRecorder`'s `last_full_snapshot` (see `state-recording.md`). This MUST run on the game thread because it reads live sim state. Cost: ~0.5–1 ms for 500 units (lightweight — bitfield scan + changed component serialization). Produces a `SimCoreDelta`.
+2. **External state collection** (game thread, `ic-game`): `ic-game` compares current campaign/script state against the `StateRecorder`'s `last_campaign_state` / `last_script_state` baselines (see `state-recording.md`). Campaign state is a small struct (flags + mission ID) — trivial copy. Script state collection calls `ic-script`'s `on_serialize()` callbacks for each active mod's Lua/WASM state. Cost: ~0.1–0.5 ms depending on mod count and state size. `ic-game` composes the full `DeltaSnapshot { core, campaign_state, script_state }` — including `campaign_state` / `script_state` only if they changed since the respective baselines — serializes it to `Vec<u8>`, and passes the blob to `BackgroundReplayWriter::record_keyframe()` (see `network-model-trait.md` § Background Replay Writer).
+3. **LZ4 compression + file write** (background writer thread): The serialized bytes are sent through the replay writer's crossbeam channel to the background thread, which performs LZ4 compression (~0.3–0.5 ms for ~200 KB → ~40–80 KB) and appends to the `.icrep` file. File I/O never touches the game thread.
 
-The game thread contributes ~1 ms every 300 ticks (~10 seconds) for keyframe production — well within the 33 ms tick budget. The LZ4 compression and disk write happen asynchronously on the background writer.
+The game thread contributes ~1–1.5 ms every 300 ticks (~20 seconds at Slower default) for keyframe production — well within the 67 ms tick budget (Slower default). The LZ4 compression and disk write happen asynchronously on the background writer. Full `SimSnapshot` keyframes (every 3000 ticks) cost more (~2–3 ms game thread) because they serialize all entities rather than just changed components.
 
 ### Foreign Replay Decoders (D056)
 

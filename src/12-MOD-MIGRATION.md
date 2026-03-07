@@ -391,29 +391,30 @@ The full Remastered experience would be a game module (D018):
 pub struct RemasteredModule;
 
 impl GameModule for RemasteredModule {
-    fn name(&self) -> &str { "C&C Remastered" }
-
-    fn register_systems(&self, app: &mut App) {
+    fn register_components(&self, world: &mut World) {
         // Everything from RA1Module, plus:
-        app.add_systems(Update, toggle_render_quality);
-        app.add_systems(Update, camera_zoom);
-
-        // Register HD asset loaders alongside classic ones
-        app.add_plugins(HdSpritePlugin);
-        app.add_plugins(HdAudioPlugin);
-
-        // Remastered UI theme
-        app.insert_resource(UiTheme::Remastered);
-
-        // Balance preset
-        app.insert_resource(BalancePreset::Remastered);
+        world.insert_resource(UiTheme::Remastered);
+        world.insert_resource(BalancePreset::Remastered);
     }
 
-    fn register_assets(&self, server: &AssetServer) {
-        // Load both classic and HD asset sets
-        server.register_loader::<ShpLoader>();   // Classic
-        server.register_loader::<HdPngLoader>(); // HD
+    fn system_pipeline(&self) -> Vec<Box<dyn System>> {
+        let mut pipeline = Ra1Module.system_pipeline();
+        pipeline.push(Box::new(toggle_render_quality));
+        pipeline.push(Box::new(camera_zoom));
+        pipeline
     }
+
+    fn register_format_loaders(&self, registry: &mut FormatRegistry) {
+        Ra1Module.register_format_loaders(registry); // Classic .shp/.mix
+        registry.register::<HdPngLoader>();           // HD sprites
+        registry.register::<HdAudioLoader>();         // HD audio
+    }
+
+    fn render_modes(&self) -> Vec<RenderMode> {
+        vec![RenderMode::Classic, RenderMode::Hd]
+    }
+
+    // ... remaining trait methods delegate to Ra1Module
 }
 ```
 

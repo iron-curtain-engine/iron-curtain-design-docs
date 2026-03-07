@@ -2,17 +2,17 @@
 
 Iron Curtain uses the Glicko-2 rating system. These parameters let league administrators tune it for their community's size and activity level.
 
-| Parameter                      | Default | What It Controls                                                           |
-| ------------------------------ | ------- | -------------------------------------------------------------------------- |
-| `rank.default_rating`          | 1500    | Starting rating for new players                                            |
-| `rank.default_deviation`       | 350     | Starting rating deviation (uncertainty)                                    |
-| `rank.system_tau`              | 0.5     | Volatility sensitivity — how quickly ratings respond to unexpected results |
-| `rank.rd_floor`                | 45      | Minimum deviation (maximum confidence)                                     |
-| `rank.rd_ceiling`              | 350     | Maximum deviation (maximum uncertainty)                                    |
-| `rank.inactivity_c`            | 34.6    | How fast deviation grows during inactivity                                 |
-| `rank.match_min_ticks`         | 3600    | Minimum ticks (2 min) for any rating weight                                |
-| `rank.match_full_weight_ticks` | 18000   | Ticks (10 min) at which the match gets full rating weight                  |
-| `rank.match_short_game_factor` | 300     | Short-game duration weighting factor                                       |
+| Parameter                      | Default | What It Controls                                                                                    |
+| ------------------------------ | ------- | --------------------------------------------------------------------------------------------------- |
+| `rank.default_rating`          | 1500    | Starting rating for new players                                                                     |
+| `rank.default_deviation`       | 350     | Starting rating deviation (uncertainty)                                                             |
+| `rank.system_tau`              | 0.5     | Volatility sensitivity — how quickly ratings respond to unexpected results                          |
+| `rank.rd_floor`                | 45      | Minimum deviation (maximum confidence)                                                              |
+| `rank.rd_ceiling`              | 350     | Maximum deviation (maximum uncertainty)                                                             |
+| `rank.inactivity_c`            | 34.6    | How fast deviation grows during inactivity                                                          |
+| `rank.match_min_ticks`         | 3600    | Minimum ticks for any rating weight (game progression, not wall time — see note below)              |
+| `rank.match_full_weight_ticks` | 18000   | Ticks at which the match gets full rating weight (game progression, not wall time — see note below) |
+| `rank.match_short_game_factor` | 300     | Short-game duration weighting factor                                                                |
 
 **Understanding `system_tau`:**
 
@@ -20,7 +20,9 @@ Iron Curtain uses the Glicko-2 rating system. These parameters let league admini
 - **Default (0.5):** Balanced. Works well for most deployments.
 - **Higher tau (0.6–1.0):** Ratings change quickly. Good for new communities where players are still finding their level, or for communities with high player turnover.
 
-**Match duration weighting:** Short games (e.g., an early GG at 3 minutes) contribute less to rating changes than full-length matches. `match_min_ticks` is the minimum game length for any rating influence. Below that, the match does not affect ratings at all. `match_full_weight_ticks` is the length at which the match counts fully.
+**Match duration weighting:** Short games (e.g., an early GG) contribute less to rating changes than full-length matches. `match_min_ticks` is the minimum game length for any rating influence. Below that, the match does not affect ratings at all. `match_full_weight_ticks` is the length at which the match counts fully.
+
+**Why ticks, not seconds:** These thresholds measure game progression — the number of sim updates (orders processed, economy cycles, combat ticks) — not wall time. A 3,600-tick game has the same strategic depth at any speed preset. Wall-clock equivalents depend on the server's ranked game speed (D060: server-enforced, not player-configurable): at Normal ~20 tps that's ~3 min / ~15 min; at Slower ~15 tps it's ~4 min / ~20 min. Since ranked speed is fixed per server, operators know the exact wall-time mapping for their community.
 
 **Recommendation for small communities (< 200 active players):** Raise `system_tau` to 0.7 and lower `rank.rd_floor` to 60. This lets ratings converge faster and better reflects the smaller, more volatile skill pool.
 
@@ -50,14 +52,14 @@ Iron Curtain uses the Glicko-2 rating system. These parameters let league admini
 
 ### Matchmaking (`matchmaking.*`)
 
-| Parameter                              | Default | What It Controls                             |
-| -------------------------------------- | ------- | -------------------------------------------- |
-| `matchmaking.initial_range`            | 100     | Starting rating search window (± this value) |
-| `matchmaking.widen_step`               | 50      | Rating range expansion per interval          |
-| `matchmaking.widen_interval_secs`      | 30      | Time between range expansions                |
-| `matchmaking.max_range`                | 500     | Maximum rating search range                  |
-| `matchmaking.desperation_timeout_secs` | 300     | Time before accepting any available match    |
-| `matchmaking.min_match_quality`        | 0.3     | Minimum match quality score (0.0–1.0)        |
+| Parameter                              | Default | What It Controls                                                                                      |
+| -------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------- |
+| `matchmaking.initial_range`            | 100     | Starting rating search window (± this value)                                                          |
+| `matchmaking.widen_step`               | 50      | Rating range expansion per interval                                                                   |
+| `matchmaking.widen_interval_secs`      | 30      | Time between range expansions                                                                         |
+| `matchmaking.max_range`                | 500     | Maximum rating search range                                                                           |
+| `matchmaking.desperation_timeout_secs` | 300     | Time before relaxing range to max (requires ≥3 in queue, V31; `min_match_quality` still applies, V30) |
+| `matchmaking.min_match_quality`        | 0.3     | Minimum match quality score (0.0–1.0)                                                                 |
 
 **How matchmaking expands:**
 
@@ -68,7 +70,7 @@ Time = 60s:  Search ±200
 Time = 90s:  Search ±250
 ...
 Time = 240s: Search ±500 (max_range reached)
-Time = 300s: Accept any match (desperation)
+Time = 300s: Desperation mode (relaxes range, but requires ≥3 in queue and min_match_quality still blocks; see D055 V30/V31)
 ```
 
 **Small community tuning:** The most common issue is long queue times due to low population. Address this by:
@@ -79,8 +81,8 @@ initial_range = 200           # Wider initial search
 widen_step = 100              # Expand faster
 widen_interval_secs = 15      # Expand more often
 max_range = 1000              # Search much wider
-desperation_timeout_secs = 120   # Accept any match after 2 min
-min_match_quality = 0.1       # Accept lower quality matches
+desperation_timeout_secs = 120   # Relax range ceiling sooner (still requires ≥3 in queue, V31)
+min_match_quality = 0.1       # Accept lower quality matches (still enforced at desperation, V30)
 ```
 
 **Competitive league tuning:** Prioritize match quality over queue time:
@@ -236,13 +238,13 @@ Iron Curtain ships four pre-built profiles as starting points. Copy and modify t
 **Key overrides:**
 - High `max_connections_per_ip` (LAN: many players behind one router)
 - Generous pauses (admin-mediated equipment issues)
-- Zero spectator delay (no stream-sniping on LAN)
+- Tournament-mode spectator delay (180 seconds for ranked — the security floor is non-negotiable even on LAN; see `security/vulns-edge-cases-infra.md` § Tiered delay policy. For unranked exhibition matches, set `spectator.delay_ticks: 0`)
 - Large spectator count (audience)
 - Surrender and remake votes disabled (admin decides)
 - Sensitive anti-cheat (review all upsets)
 
 ```bash
-./relay-server --config profiles/tournament-lan.toml
+./ic-server --config profiles/tournament-lan.toml
 ```
 
 ### Casual Community
@@ -258,7 +260,7 @@ Iron Curtain ships four pre-built profiles as starting points. Copy and modify t
 - Wide matchmaking range (small population)
 
 ```bash
-./relay-server --config profiles/casual-community.toml
+./ic-server --config profiles/casual-community.toml
 ```
 
 ### Competitive League
@@ -275,7 +277,7 @@ Iron Curtain ships four pre-built profiles as starting points. Copy and modify t
 - Sensitive anti-cheat
 
 ```bash
-./relay-server --config profiles/competitive-league.toml
+./ic-server --config profiles/competitive-league.toml
 ```
 
 ### Training / Practice
@@ -291,7 +293,7 @@ Iron Curtain ships four pre-built profiles as starting points. Copy and modify t
 - Large telemetry database, no auto-pruning
 
 ```bash
-./relay-server --config profiles/training.toml
+./ic-server --config profiles/training.toml
 ```
 
 ---
@@ -307,7 +309,7 @@ Environment variables are the primary way to override configuration in container
 version: "3.8"
 services:
   relay:
-    image: ghcr.io/iron-curtain/relay-server:latest
+    image: ghcr.io/ironcurtain/ic-server:latest
     ports:
       - "7000:7000/udp"
       - "7001:7001/tcp"
@@ -344,7 +346,7 @@ services:
     environment:
       IC_MATCH_PAUSE_MAX_PER_PLAYER: "5"
       IC_MATCH_PAUSE_MAX_DURATION_SECS: "300"
-      IC_SPECTATOR_DELAY_TICKS: "0"
+      IC_SPECTATOR_DELAY_TICKS: "3600"  # 180s at Normal ~20 tps; relay clamps upward at faster speeds to enforce V59's 180s wall-time floor
       IC_SPECTATOR_MAX_PER_MATCH: "200"
       IC_SPECTATOR_FULL_VISIBILITY: "true"
       IC_VOTE_SURRENDER_ENABLED: "false"
@@ -379,7 +381,7 @@ data:
 spec:
   containers:
     - name: relay
-      image: ghcr.io/iron-curtain/relay-server:latest
+      image: ghcr.io/ironcurtain/ic-server:latest
       args: ["--config", "/etc/ic/server_config.toml"]
       volumeMounts:
         - name: config
@@ -459,7 +461,7 @@ For public-facing servers, the defaults provide reasonable protection:
 | IP abuse            | `relay.max_connections_per_ip: 5`                                      |
 | Protocol abuse      | `protocol.max_orders_per_tick: 256`, all `protocol.*` limits           |
 | Chat spam           | `chat.rate_limit_messages: 5`, `chat.rate_limit_window_secs: 3`        |
-| VoIP abuse          | `protocol.max_voice_packets_per_sec: 50`                               |
+| VoIP abuse          | `protocol.max_voice_packets_per_second: 50`                            |
 
 **For high-risk environments** (public server, competitive stakes):
 - Lower `relay.connect_rate_per_sec` to 5
@@ -495,14 +497,14 @@ These are estimates based on design targets. Actual usage will depend on game co
 
 When OTEL export is enabled, monitor these metrics:
 
-| Metric                     | Healthy Range              | Action If Exceeded                               |
-| -------------------------- | -------------------------- | ------------------------------------------------ |
-| Relay tick processing time | < 33ms (at 30 tps)         | Reduce `max_games` or add hardware               |
-| Connection count           | < 80% of `max_connections` | Raise limit or add relay instances               |
-| Order rate per player      | < `order_hard_ceiling`     | Check for bot/macro abuse                        |
-| Desync rate                | 0 per 10,000 ticks         | Investigate mod compatibility                    |
-| Anti-cheat queue depth     | < `degrade_at_depth`       | Raise `queue_depth` or add review capacity       |
-| telemetry.db size          | < `max_db_size_mb`         | Lower `retention_days` or raise `max_db_size_mb` |
+| Metric                     | Healthy Range                                            | Action If Exceeded                               |
+| -------------------------- | -------------------------------------------------------- | ------------------------------------------------ |
+| Relay tick processing time | < tick interval (67ms at Slower default, 50ms at Normal) | Reduce `max_games` or add hardware               |
+| Connection count           | < 80% of `max_connections`                               | Raise limit or add relay instances               |
+| Order rate per player      | < `order_hard_ceiling`                                   | Check for bot/macro abuse                        |
+| Desync rate                | 0 per 10,000 ticks                                       | Investigate mod compatibility                    |
+| Anti-cheat queue depth     | < `degrade_at_depth`                                     | Raise `queue_depth` or add review capacity       |
+| telemetry.db size          | < `max_db_size_mb`                                       | Lower `retention_days` or raise `max_db_size_mb` |
 
 ---
 
@@ -602,8 +604,8 @@ render_budget_pct = 10
 
 | Command                            | Description                             |
 | ---------------------------------- | --------------------------------------- |
-| `./relay-server`                   | Start with defaults                     |
-| `./relay-server --config <path>`   | Start with a specific config file       |
+| `./ic-server`                      | Start with defaults                     |
+| `./ic-server --config <path>`      | Start with a specific config file       |
 | `ic server validate-config <path>` | Validate a config file without starting |
 
 ### Runtime Console Commands (Admin)
@@ -630,16 +632,16 @@ render_budget_pct = 10
 
 These values are always-on, universally correct, and not exposed as configuration parameters. They exist here so operators understand what is NOT tunable and why.
 
-| Constant                 | Value     | Why It's Not Configurable                                                         |
-| ------------------------ | --------- | --------------------------------------------------------------------------------- |
-| Sim tick rate            | 30 tps    | Affects CPU cost, bandwidth, and sync timing. Game speed adjusts perceived speed. |
-| Sub-tick ordering        | Always on | Zero-cost fairness improvement (D008). No legitimate reason to disable.           |
-| Adaptive run-ahead       | Always on | Proven over 20+ years (Generals). Automatically adapts to latency.                |
-| Anti-lag-switch          | Always on | Non-negotiable for competitive integrity.                                         |
-| Deterministic simulation | Always    | Breaking determinism breaks replays, spectating, and multiplayer sync.            |
-| Fixed-point math         | Always    | Floats in sim = cross-platform desync.                                            |
-| Order validation in sim  | Always    | Validation IS anti-cheat (D012). Disabling it enables cheating.                   |
-| SQLite synchronous mode  | Per D034  | FULL for credentials, NORMAL for telemetry. Data integrity over performance.      |
+| Constant                 | Value                           | Why It's Not Configurable                                                            |
+| ------------------------ | ------------------------------- | ------------------------------------------------------------------------------------ |
+| Sim tick rate            | Set by game speed preset (D060) | Slower ~15 tps (default), Normal ~20 tps, Fastest 50 tps. Not independently tunable. |
+| Sub-tick ordering        | Always on                       | Zero-cost fairness improvement (D008). No legitimate reason to disable.              |
+| Adaptive run-ahead       | Always on                       | Proven over 20+ years (Generals). Automatically adapts to latency.                   |
+| Anti-lag-switch          | Always on                       | Non-negotiable for competitive integrity.                                            |
+| Deterministic simulation | Always                          | Breaking determinism breaks replays, spectating, and multiplayer sync.               |
+| Fixed-point math         | Always                          | Floats in sim = cross-platform desync.                                               |
+| Order validation in sim  | Always                          | Validation IS anti-cheat (D012). Disabling it enables cheating.                      |
+| SQLite synchronous mode  | Per D034                        | FULL for credentials, NORMAL for telemetry. Data integrity over performance.         |
 
 ---
 

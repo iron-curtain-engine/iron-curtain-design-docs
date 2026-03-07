@@ -135,8 +135,8 @@ All previously identified high-cost files (>40KB) have been split into individua
 | ------------------------ | ----------------------------- | ------------------- |
 | `02-ARCHITECTURE.md`     | 13 subsystem files            | `architecture/`     |
 | `03-NETCODE.md`          | 14 subsystem files            | `netcode/`          |
-| `04-MODDING.md`          | 10 topic files                | `modding/`          |
-| `05-FORMATS.md`          | 3 topic files                 | `formats/`          |
+| `04-MODDING.md`          | 11 topic files                | `modding/`          |
+| `05-FORMATS.md`          | 4 topic files                 | `formats/`          |
 | `06-SECURITY.md`         | 9 vulnerability-group files   | `security/`         |
 | `08-ROADMAP.md`          | 1 sub-file (Phases 6a–7)      | `roadmap/`          |
 | `10-PERFORMANCE.md`      | 6 topic files                 | `performance/`      |
@@ -194,6 +194,7 @@ Large individual decisions have been further split into sub-files:
 | ------------------------------------ | ------------------------------------------------ | --------------- |
 | `architecture/api-misuse-defense.md` | `api-misuse-patterns.md`                         | `architecture/` |
 | `modding/tera-templating.md`         | `tera-templating-advanced.md`                    | `modding/`      |
+| `modding/wasm-modules.md`            | `wasm-showcases.md`                              | `modding/`      |
 | `modding/workshop.md`                | `workshop-features.md`, `workshop-moderation.md` | `modding/`      |
 | `player-flow/replays.md`             | `replays-analysis-sharing.md`                    | `player-flow/`  |
 

@@ -127,7 +127,15 @@ pub struct Simulation {
 
 impl Simulation {
     /// THE critical function. Pure, deterministic, no I/O.
-    pub fn apply_tick(&mut self, orders: &TickOrders) {
+    /// Panics in debug if `orders.tick != self.tick` (caller bug — the relay
+    /// guarantees tick alignment). In release, a tick mismatch is a hard error
+    /// that cannot be silently ignored (returns `Err`). All other order-level
+    /// failures are handled inside validation (D012) and never surface here.
+    pub fn apply_tick(&mut self, orders: &TickOrders) -> Result<(), SimError> {
+        debug_assert_eq!(orders.tick, self.tick, "tick mismatch: caller bug");
+        if orders.tick != self.tick {
+            return Err(SimError::TickMismatch { expected: self.tick, got: orders.tick });
+        }
         // 0. Swap double buffers (fog, influence maps — see Double Buffering below)
         self.swap_double_buffers();
         // 1. Validate all orders via OrderValidator (D041/D012 — anti-cheat)
@@ -138,30 +146,46 @@ impl Simulation {
         self.run_systems(&validated);
         // 3. Advance tick
         self.tick += 1;
+        Ok(())
     }
 
     /// Snapshot for rollback / desync debugging / save games.
-    /// Returns the sim-internal portion of a SimSnapshot (ECS entities,
+    /// Returns a SimCoreSnapshot — the sim-internal portion only (ECS entities,
     /// player states, map, RNG, intern table). Pure — no I/O.
     /// The full SimSnapshot (including script_state and campaign_state)
     /// is composed by `ic-game`, which collects script state from
-    /// `ic-script` and attaches it before persisting. This preserves
-    /// the crate boundary: `ic-sim` never imports `ic-script`.
+    /// `ic-script` and wraps it: `SimSnapshot { core, campaign_state, script_state }`.
+    /// This preserves the crate boundary: `ic-sim` never imports `ic-script`.
     /// Callers (in ic-game) persist snapshots using crash-safe I/O:
     /// payload written first, header updated atomically after fsync
     /// (Fossilize pattern — see D010 and state-recording.md).
-    pub fn snapshot(&self) -> SimSnapshot { /* serialize everything */ }
-    pub fn restore(&mut self, snap: &SimSnapshot) { /* deserialize */ }
+    pub fn snapshot(&self) -> SimCoreSnapshot { /* serialize sim-internal state */ }
 
-    /// Delta snapshot — encodes only components that changed since
-    /// `baseline`. ~10x smaller than full snapshot for typical gameplay.
-    /// Used for autosave, reconnection state transfer, and replay
-    /// keyframes. See D010 and `10-PERFORMANCE.md` § Delta Encoding.
-    pub fn delta_snapshot(&self, baseline: &SimSnapshot) -> DeltaSnapshot {
+    /// Restore from a sim-core snapshot. Returns `Err(SimError::ConfigMismatch)`
+    /// if the snapshot's `game_seed` or `map_hash` don't match the current
+    /// `Simulation` config — prevents cross-game snapshot injection (S3).
+    pub fn restore(&mut self, snap: &SimCoreSnapshot) -> Result<(), SimError> {
+        /* verify config, then deserialize */
+    }
+
+    /// Delta snapshot — encodes only sim-internal components that changed
+    /// since `baseline`. ~10x smaller than full snapshot for typical gameplay.
+    /// Returns a SimCoreDelta; `ic-game` wraps it into DeltaSnapshot by
+    /// attaching campaign/script state if changed.
+    /// Used for replay keyframes and autosave.
+    /// Autosave: the game thread produces a SimCoreDelta (cheap) plus any
+    /// changed CampaignState/ScriptState (see D010 and state-recording.md
+    /// for the baseline pattern), then the I/O thread applies the sim delta
+    /// to its cached baseline to reconstruct a full SimSnapshot for .icsave.
+    /// See D010 and `10-PERFORMANCE.md` § Delta Encoding.
+    pub fn delta_snapshot(&self, baseline: &SimCoreSnapshot) -> SimCoreDelta {
         /* property-level diff — only changed components serialized */
     }
-    pub fn apply_delta(&mut self, delta: &DeltaSnapshot) {
-        /* merge delta into current state */
+    /// Apply a sim-core delta. Returns `Err(SimError::BaselineMismatch)` if
+    /// `delta.baseline_tick` / `delta.baseline_hash` don't match current state
+    /// — prevents applying a delta from a divergent branch (S10).
+    pub fn apply_delta(&mut self, delta: &SimCoreDelta) -> Result<(), SimError> {
+        /* verify baseline, then merge delta into current state */
     }
 
     /// Fast hash for per-tick desync detection (SyncHash newtype — see type-safety.md)
@@ -173,12 +197,75 @@ impl Simulation {
     /// before u64 truncation.
     pub fn full_state_hash(&self) -> StateHash { /* SHA-256 Merkle root */ }
 
-    /// Surgical correction for cross-engine reconciliation
-    pub fn apply_correction(&mut self, correction: &EntityCorrection) {
+    /// Surgical correction for cross-engine reconciliation.
+    /// Requires `&ReconcilerToken` — an unforgeable capability token (S5).
+    /// Only the `SimReconciler` system can construct one (`_private: ()`).
+    pub fn apply_correction(
+        &mut self,
+        correction: &EntityCorrection,
+        _token: &ReconcilerToken,
+    ) {
         // Directly set an entity's field — only used by reconciler
     }
 }
 ```
+
+### ic-game Integration: Full Snapshot Restore & Delta Application
+
+`ic-sim` only exposes `restore(&SimCoreSnapshot)` and `apply_delta(&SimCoreDelta)` — sim-internal operations. The full `SimSnapshot` and `DeltaSnapshot` types (defined in `formats/save-replay-formats.md`) include campaign and script state that lives outside `ic-sim`. The **`ic-game` integration layer** provides the end-to-end restore and apply contracts:
+
+```rust
+/// ic-game integration — NOT part of ic-sim.
+/// This is the canonical contract for full snapshot restore (save-load,
+/// reconnection) and full delta application (replay seeking).
+/// All callers go through these functions.
+impl GameRunner {
+    /// Restore from a full SimSnapshot (save-load, reconnection).
+    /// Called after verification: save-load verifies payload_hash;
+    /// reconnection verifies Verified<SimSnapshot> via StateHash
+    /// (see desync-recovery.md § Reconnection).
+    ///
+    /// Core restore is attempted first — if it fails, campaign and script
+    /// state are NOT modified (preserving the pre-call state).
+    pub fn restore_full(&mut self, snap: &SimSnapshot) -> Result<(), SimError> {
+        // 1. Restore sim-internal state (may fail: config mismatch)
+        self.simulation.restore(&snap.core)?;
+        // 2. Restore campaign state (D021 branching graph, flags, roster)
+        self.campaign = snap.campaign_state.clone();
+        // 3. Rehydrate script state: initialize fresh Lua/WASM VMs,
+        //    then call each mod's on_deserialize() with saved bytes.
+        //    ic-game orchestrates this via ic-script — ic-sim is not involved.
+        if let Some(ref script) = snap.script_state {
+            self.script_runtime.rehydrate(script);
+        }
+        Ok(())
+    }
+
+    /// Apply a full DeltaSnapshot (replay seeking only).
+    /// The caller must apply deltas in order on top of a restored full
+    /// snapshot — see replay-keyframes-analysis.md § Seeking algorithm.
+    ///
+    /// Core delta is applied first — if it fails (baseline mismatch),
+    /// campaign and script state are NOT modified.
+    pub fn apply_full_delta(&mut self, delta: &DeltaSnapshot) -> Result<(), SimError> {
+        // 1. Apply sim-internal delta (may fail: baseline mismatch)
+        self.simulation.apply_delta(&delta.core)?;
+        // 2. Replace campaign state if the delta includes it
+        if let Some(ref campaign) = delta.campaign_state {
+            self.campaign = Some(campaign.clone());
+        }
+        // 3. Replace script state if the delta includes it.
+        //    Script deltas are full replacements (not incremental patches)
+        //    because Lua/WASM state is opaque to the engine.
+        if let Some(ref script) = delta.script_state {
+            self.script_runtime.rehydrate(script);
+        }
+        Ok(())
+    }
+}
+```
+
+**Use sites:** `restore_full()` is called by save-load (`formats/save-replay-formats.md`), reconnection (`netcode/desync-recovery.md` § Reconnection step 5), and co-op resume (`D016-world-assets-multiplayer.md`). `apply_full_delta()` is called during replay seeking (applying intervening deltas between a full keyframe and the target tick). Reconnection does **not** use `apply_full_delta()` — the reconnecting client receives a full `SimSnapshot` via `restore_full()`, then catches up by re-simulating ticks at accelerated speed via normal `apply_tick()` (see `desync-recovery.md` § Reconnection).
 
 ### Order Validation (inside sim, deterministic)
 

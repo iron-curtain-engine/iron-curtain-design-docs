@@ -321,7 +321,7 @@ pub struct CertifiedMatchResult {
     pub result: MatchOutcome,
     pub final_tick: u64,
     pub duration: Duration,
-    pub final_state_hash: u64,
+    pub final_state_hash: StateHash,   // Full SHA-256 of terminal tick (matches final TickSignature)
     pub order_stream_hash: [u8; 32],  // SHA-256 of deterministic order stream (for certification)
     pub replay_hash: [u8; 32],        // SHA-256 of relay's replay file (for per-file integrity)
     pub server_signature: Ed25519Signature,

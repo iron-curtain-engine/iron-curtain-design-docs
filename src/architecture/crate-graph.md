@@ -15,7 +15,7 @@ These exist from Phase 0, day one, in separate repositories (D076). They have ze
 ```
 ic-protocol  (shared types: PlayerOrder, TimestampedOrder)
     ↑         (depends on: fixed-game-math)
-    ├── ic-sim      (depends on: ic-protocol, ra-formats, fixed-game-math, deterministic-rng)
+    ├── ic-sim      (depends on: ic-protocol, ra-formats, fixed-game-math, deterministic-rng, bevy_ecs [public])
     ├── ic-net      (depends on: ic-protocol; contains RelayCore library + ic-server binary)
     ├── ra-formats  (wraps cnc-formats + EA-derived constants — .mix, .shp, .pal, YAML)
     ├── ic-render   (depends on: ic-sim for reading state)
@@ -30,6 +30,8 @@ ic-protocol  (shared types: PlayerOrder, TimestampedOrder)
 ```
 
 **Critical boundary:** `ic-sim` never imports from `ic-net`. `ic-net` never imports from `ic-sim`. They only share `ic-protocol`. `ic-game` never imports from `ic-editor` — the game and SDK are separate binaries that share library crates.
+
+**Bevy ECS dependency:** `ic-sim` depends on `bevy_ecs` as a **public** dependency — `Simulation` wraps a Bevy `World`, and the `GameModule` trait exposes `&mut World` in `register_components()` and returns `Box<dyn System>` from `system_pipeline()`. Callers (`ic-game`, `ic-editor`, `ic-render`) already depend on Bevy directly, so the leaked types create no additional coupling. `ic-net` and `ic-protocol` have zero Bevy dependency.
 
 **Storage boundary:** `ic-sim` never reads or writes SQLite (invariant #1). Three crates are read-only consumers of the client-side SQLite database: `ic-ui` (post-game stats, career page, campaign dashboard), `ic-llm` (personalized missions, adaptive briefings, coaching), `ic-ai` (difficulty scaling, counter-strategy selection). Gameplay events are written by a Bevy observer system in `ic-game`, outside the deterministic sim. See D034 in `decisions/09e-community.md`.
 

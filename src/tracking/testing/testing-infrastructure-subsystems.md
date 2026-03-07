@@ -6,7 +6,7 @@ A dedicated crate providing:
 
 ```rust
 /// Run a deterministic sim scenario and return the final state hash.
-pub fn run_scenario(scenario: &Scenario, seed: u64) -> SimStateHash;
+pub fn run_scenario(scenario: &Scenario, seed: u64) -> SyncHash;
 
 /// Run the same scenario N times and assert all hashes match.
 pub fn assert_deterministic(scenario: &Scenario, seed: u64, runs: usize);
@@ -29,8 +29,8 @@ pub fn assert_zero_alloc_hot_path(scenario: &Scenario, ticks: usize);
 /// Run a scenario with a sandbox module and assert all escape vectors are blocked.
 pub fn assert_sandbox_contained(module: &WasmModule, escape_vectors: &[EscapeVector]);
 
-/// Run order validation and assert sim state is unchanged (purity check).
-pub fn assert_validation_pure(state: &SimState, orders: &[PlayerOrder]);
+/// Run order validation and assert sim state hash is unchanged (purity check).
+pub fn assert_validation_pure(snap: &SimCoreSnapshot, orders: &[PlayerOrder]);
 
 /// Run two sim instances with identical input and assert hash match at every tick.
 pub fn assert_twin_determinism(scenario: &Scenario, seed: u64, ticks: usize);
@@ -39,8 +39,10 @@ pub fn assert_twin_determinism(scenario: &Scenario, seed: u64, ticks: usize);
 /// a stored cross-platform reference hash.
 pub fn assert_cross_platform_hash(scenario: &Scenario, reference: &HashFile);
 
-/// Run snapshot round-trip and assert byte-exact reconstruction.
-pub fn assert_snapshot_roundtrip(state: &SimState) -> RoundTripResult;
+/// Run snapshot round-trip and assert state identity via hash comparison.
+/// Takes a snapshot, restores it into a fresh sim, and verifies that
+/// `state_hash()` matches the original — state identity, not byte-exactness.
+pub fn assert_snapshot_roundtrip(snap: &SimCoreSnapshot);
 
 /// Run a campaign mission sequence and verify roster carryover.
 pub fn assert_roster_carryover(campaign: &CampaignGraph, mission_sequence: &[MissionId]);
@@ -161,12 +163,12 @@ Detailed test specifications organized by subsystem. Each entry defines: what is
 
 ### Order Validation Matrix (D012)
 
-| Test                        | Method                                                                                                                                                                                                                                                                                            | Pass Criteria                                                            | Tier |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ---- |
-| Exhaustive rejection matrix | For each order type (Move, Attack, Build, etc.) × each of the 8 rejection categories (ownership, unit-type mismatch, out-of-range, insufficient resources, tech prerequisite, placement invalid, budget exceeded, unsupported-for-phase): construct an order that triggers exactly that rejection | Correct `OrderRejection` variant returned for every cell in the matrix   | T1   |
-| Random order validation     | Proptest generates random `PlayerOrder` values with arbitrary fields                                                                                                                                                                                                                              | Validation never panics; always returns a valid `OrderValidity` variant  | T3   |
-| Validation purity           | Run `validate_order_checked` with debug assertions enabled; verify sim state hash before and after validation                                                                                                                                                                                     | State hash unchanged — validation has zero side effects                  | T1   |
-| Rejection telemetry         | Submit 50 invalid orders from one player across 10 ticks                                                                                                                                                                                                                                          | All 50 rejections appear in anti-cheat telemetry with correct categories | T2   |
+| Test                        | Method                                                                                                                                                                                                                                                                                            | Pass Criteria                                                                                                                                  | Tier |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| Exhaustive rejection matrix | For each order type (Move, Attack, Build, etc.) × each of the 8 rejection categories (ownership, unit-type mismatch, out-of-range, insufficient resources, tech prerequisite, placement invalid, budget exceeded, unsupported-for-phase): construct an order that triggers exactly that rejection | Correct `OrderRejectionCategory` (D012) returned for every cell in the matrix; concrete variant within each category is implementation-defined | T1   |
+| Random order validation     | Proptest generates random `PlayerOrder` values with arbitrary fields                                                                                                                                                                                                                              | Validation never panics; always returns a valid `OrderValidity` variant                                                                        | T3   |
+| Validation purity           | Run `validate_order_checked` with debug assertions enabled; verify sim state hash before and after validation                                                                                                                                                                                     | State hash unchanged — validation has zero side effects                                                                                        | T1   |
+| Rejection telemetry         | Submit 50 invalid orders from one player across 10 ticks                                                                                                                                                                                                                                          | All 50 rejections appear in anti-cheat telemetry with correct categories                                                                       | T2   |
 
 ### Merkle Tree Desync Localization
 

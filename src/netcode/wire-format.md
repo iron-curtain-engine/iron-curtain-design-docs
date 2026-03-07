@@ -94,7 +94,8 @@ pub struct AckVector {
     /// Sequence number of the most recently received packet (bit 0).
     pub latest_recv_seq: u32,
     /// Bitmask: bit N = 1 means we received (latest_recv_seq - N).
-    /// 64 bits covers the last 64 packets at 30 tps ≈ ~2 seconds of history.
+    /// 64 bits covers the last 64 packets at one packet per tick
+    /// (≈4 seconds at the Slower default of ~15 tps).
     pub received_mask: u64,
 }
 ```
@@ -147,7 +148,7 @@ pub struct OrderBatcher {
 }
 ```
 
-Unlike TCP's Nagle algorithm (which flushes on receiving an ACK — coupling send timing to network conditions), IC flushes on a fixed tick cadence. This gives deterministic, predictable send timing: all orders within a tick window are batched and flushed at the tick boundary — small ticks fit a single packet; larger batches are split across multiple MTU-sized packets. At 30 tps, this means at most ~33ms of batching delay — well within the adaptive run-ahead window and invisible to the player. The technique is validated by Valve's GNS batching strategy (see `research/valve-github-analysis.md` § 1.7).
+Unlike TCP’s Nagle algorithm (which flushes on receiving an ACK — coupling send timing to network conditions), IC flushes on a fixed tick cadence. This gives deterministic, predictable send timing: all orders within a tick window are batched and flushed at the tick boundary — small ticks fit a single packet; larger batches are split across multiple MTU-sized packets. Batching delay equals one tick interval (67ms at Slower default, 50ms at Normal — see D060) — well within the adaptive run-ahead window and invisible to the player. The technique is validated by Valve’s GNS batching strategy (see `research/valve-github-analysis.md` § 1.7).
 
 ### Wire Format: Delta-Compressed TLV (from C&C Generals)
 

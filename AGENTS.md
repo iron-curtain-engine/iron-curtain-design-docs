@@ -142,13 +142,16 @@ These are settled. Don't re-litigate unless the user explicitly wants to revisit
 
 ## Pending Decisions
 
-| ID       | Topic                                                                                                                                                                                                | Needs Resolution By |
-| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| ~~P002~~ | ~~Fixed-point scale~~ — **RESOLVED: 1024** (matches OpenRA). See `research/fixed-point-math-design.md`                                                                                               | Resolved            |
-| ~~P003~~ | ~~Audio library choice + music integration design~~ — **RESOLVED: Kira via `bevy_kira_audio`**. See `research/audio-library-music-integration-design.md`                                             | Resolved            |
-| ~~P004~~ | ~~Lobby/matchmaking wire format details~~ — **RESOLVED:** Complete wire protocol (CBOR, 40+ messages, discovery, matchmaking, credentials). See `research/lobby-matchmaking-wire-protocol-design.md` | Resolved            |
-| ~~P005~~ | ~~Map editor architecture~~ — RESOLVED: Scenario editor in SDK (D038+D040)                                                                                                                           | Resolved            |
-| ~~P006~~ | ~~License choice~~ — RESOLVED: GPL v3 with modding exception (D051)                                                                                                                                  | Resolved            |
+| ID       | Topic                                                                                                                                                                                                                                                  | Needs Resolution By |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------- |
+| ~~P002~~ | ~~Fixed-point scale~~ — **RESOLVED: 1024** (matches OpenRA). See `research/fixed-point-math-design.md`                                                                                                                                                 | Resolved            |
+| ~~P003~~ | ~~Audio library choice + music integration design~~ — **RESOLVED: Kira via `bevy_kira_audio`**. See `research/audio-library-music-integration-design.md`                                                                                               | Resolved            |
+| ~~P004~~ | ~~Lobby/matchmaking wire format details~~ — **RESOLVED:** Complete wire protocol (CBOR, 40+ messages, discovery, matchmaking, credentials). See `research/lobby-matchmaking-wire-protocol-design.md`                                                   | Resolved            |
+| ~~P005~~ | ~~Map editor architecture~~ — RESOLVED: Scenario editor in SDK (D038+D040)                                                                                                                                                                             | Resolved            |
+| ~~P006~~ | ~~License choice~~ — RESOLVED: GPL v3 with modding exception (D051)                                                                                                                                                                                    | Resolved            |
+| P007     | Non-lockstep client game loop strategy — keep lockstep-only `GameLoop` and add separate `FogAuthGameLoop`/`RollbackGameLoop` later, or generalize the client/game-loop boundary now? See `architecture/game-loop.md`, `netcode/network-model-trait.md` | M11 (Phase 7)       |
+| P008     | Workshop P2P transport: uTP (BT interop), QUIC (modern TLS + multiplexing), or dual-stack? See `decisions/09b/D074-community-server-bundle.md`                                                                                                         | Phase 4 (M8)        |
+| P009     | Official ranked speed policy — one canonical speed for all ranked, or community/queue-specific with normalization? See `decisions/09b/D060-netcode-params.md`                                                                                          | Phase 5 (M7)        |
 
 ## Development Roadmap (36 Months)
 

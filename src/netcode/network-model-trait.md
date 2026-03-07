@@ -143,8 +143,9 @@ impl NetworkModel for LocalNetwork {
     fn poll_tick(&mut self) -> Option<TickOrders> {
         // Accumulator-based: tracks how much real time has elapsed and
         // emits one tick per TICK_DURATION of accumulated time. TICK_DURATION
-        // is set by the game speed preset (67ms at Slower default, 33ms at
-        // Normal, 20ms at Fastest). This preserves a stable scheduling rate
+        // is set by the game speed preset (80ms at Slowest, 67ms at Slower
+        // default, 50ms at Normal, 35ms at Faster, 20ms at Fastest — see
+        // D060). This preserves a stable scheduling rate
         // independent of frame rate — if a frame arrives late, multiple
         // ticks are available on the next calls (bounded by GameLoop's
         // MAX_TICKS_PER_FRAME cap).
@@ -186,17 +187,33 @@ During live games, the replay file is written by a **background writer** using a
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Duration;
 
-/// Bounded-latency replay recorder. The sim thread pushes tick frames
-/// into a bounded channel; a background thread drains and writes.
+/// Bounded-latency replay recorder. The game thread pushes tick frames
+/// and keyframe blobs into a bounded channel; a background thread drains,
+/// compresses, and writes to the `.icrep` file.
 pub struct BackgroundReplayWriter {
-    queue: crossbeam::channel::Sender<ReplayTickFrame>,
+    queue: crossbeam::channel::Sender<ReplayWriterMsg>,
     handle: std::thread::JoinHandle<()>,
-    /// Counts frames lost due to channel backpressure (V45).
+    /// Counts frames/keyframes lost due to channel backpressure (V45).
     lost_frame_count: AtomicU32,
 }
 
+/// Message sent from the game thread to the background writer.
+enum ReplayWriterMsg {
+    /// Per-tick order frame (every tick).
+    Tick(ReplayTickFrame),
+    /// Keyframe snapshot blob (every 300 ticks, mandatory).
+    /// Pre-serialized by ic-game on the game thread; the background
+    /// writer performs LZ4 compression and file append.
+    Keyframe {
+        tick: u64,
+        is_full: bool,          // true = SimSnapshot, false = DeltaSnapshot
+        uncompressed_len: u32,
+        blob: Vec<u8>,          // bincode-serialized snapshot bytes
+    },
+}
+
 impl BackgroundReplayWriter {
-    /// Called from the sim thread after each tick. Blocks at most 5ms
+    /// Called from the game thread after each tick. Blocks at most 5ms
     /// (send_timeout) — bounded latency, not lock-free.
     pub fn record_tick(&self, frame: ReplayTickFrame) {
         // crossbeam bounded channel sized for ~10 seconds of ticks
@@ -205,7 +222,28 @@ impl BackgroundReplayWriter {
         // the sim thread while giving the writer a chance to drain.
         // If the timeout expires, the frame is lost — tracked in the
         // replay header (see V45 mitigations below).
-        match self.queue.send_timeout(frame, Duration::from_millis(5)) {
+        match self.queue.send_timeout(
+            ReplayWriterMsg::Tick(frame),
+            Duration::from_millis(5),
+        ) {
+            Ok(()) => {},
+            Err(_) => self.lost_frame_count.fetch_add(1, Ordering::Relaxed),
+        }
+    }
+
+    /// Called from the game thread every 300 ticks (keyframe cadence).
+    /// `blob` is the bincode-serialized SimSnapshot or DeltaSnapshot,
+    /// already composed by `ic-game` (sim core + campaign/script state).
+    /// The background thread LZ4-compresses and appends to the keyframe
+    /// section. Uses the same bounded-latency send_timeout as record_tick.
+    pub fn record_keyframe(&self, tick: u64, is_full: bool, blob: Vec<u8>) {
+        let msg = ReplayWriterMsg::Keyframe {
+            tick,
+            is_full,
+            uncompressed_len: blob.len() as u32,
+            blob,
+        };
+        match self.queue.send_timeout(msg, Duration::from_millis(5)) {
             Ok(()) => {},
             Err(_) => self.lost_frame_count.fetch_add(1, Ordering::Relaxed),
         }
@@ -225,7 +263,7 @@ The `NetworkModel` trait enables fundamentally different networking approaches b
 
 Server runs full sim, sends each client only visible entities. Eliminates maphack architecturally. Requires server compute per game. An operator enables it per-room or per-match-type via `ic-server` capability flags (D074) — it is not a separate product. See `06-SECURITY.md` § Vulnerability 1, `decisions/09b/D074-community-server-bundle.md`, and `research/fog-authoritative-server-design.md` for the full design. Implementation milestone: `M11` (`P-Optional`).
 
-**Trait fit caveat:** FogAuth does not drop-in under the current `GameLoop` / `NetworkModel` contract. The lockstep game loop owns a full `Simulation` and calls `sim.apply_tick()` — but FogAuth clients do not run the full sim. They maintain a partial world and consume server-sent entity state deltas via a reconciler (see `research/fog-authoritative-server-design.md` § 7). The research design maps `FogAuthClientNetwork` onto the `NetworkModel` trait by side-channeling state deltas and returning mostly-empty `TickOrders` from `poll_tick()`, but this means the game loop's `sim.apply_tick()` call does no useful work. In practice, FogAuth requires either a separate client loop variant (`FogAuthGameLoop` that drives a partial-world reconciler instead of a `Simulation`) or trait extension (e.g., `poll_tick()` returning an enum of `TickOrders | StateDeltas`). The `NetworkModel` trait boundary and `ic-server` capability infrastructure are designed to support FogAuth from day one; the client-side game loop extension is the `M11` design work.
+**Trait fit caveat:** FogAuth does not drop-in under the current `GameLoop` / `NetworkModel` contract. The lockstep game loop owns a full `Simulation` and calls `sim.apply_tick()` — but FogAuth clients do not run the full sim. They maintain a partial world and consume server-sent entity state deltas via a reconciler (see `research/fog-authoritative-server-design.md` § 7). The research design maps `FogAuthClientNetwork` onto the `NetworkModel` trait by side-channeling state deltas and returning mostly-empty `TickOrders` from `poll_tick()`, but this means the game loop's `sim.apply_tick()` call does no useful work. In practice, FogAuth requires either a separate client loop variant (`FogAuthGameLoop` that drives a partial-world reconciler instead of a `Simulation`) or trait extension (e.g., `poll_tick()` returning an enum of `TickOrders | StateDeltas`). The `NetworkModel` trait boundary and `ic-server` capability infrastructure are designed to support FogAuth from day one; the client-side game loop extension is the `M11` design work (pending decision `P007`).
 
 ### Rollback / GGPO-Style (`P-Optional` / `M11`)
 

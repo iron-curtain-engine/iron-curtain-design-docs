@@ -264,6 +264,37 @@ struct LlmMeta {
 }
 ```
 
+### Rule Hydration: UnitDef → ECS Components
+
+Deserialized `UnitDef` structs are intermediate data — not ECS components. The **rule hydration** step converts YAML rule data into spawned ECS entities with the game module's components:
+
+```rust
+/// Spawns a unit entity from a deserialized UnitDef.
+/// Called by the sim during map loading and production completion.
+fn spawn_unit(world: &mut World, def: &UnitDef, pos: WorldPos) -> UnitTag {
+    let tag = world.resource_mut::<UnitPool>().allocate();
+    let mut entity = world.spawn((
+        tag,
+        Position(pos),
+        Health { current: def.health.max, max: def.health.max },
+    ));
+    if let Some(ref mobile) = def.mobile {
+        entity.insert(Mobile { speed: mobile.speed, locomotor: mobile.locomotor.clone() });
+    }
+    if let Some(ref combat) = def.combat {
+        entity.insert(Combat { weapon: combat.weapon.clone(), range: combat.range });
+    }
+    if let Some(ref buildable) = def.buildable {
+        entity.insert(Buildable { cost: buildable.cost, build_time: buildable.build_time });
+    }
+    tag
+}
+```
+
+The hydration function is game-module-specific — RA1's module maps `UnitDef.combat` to RA1 combat components, while an RA2 module would additionally map shield and garrison fields to their respective components. The `GameModule::register_components()` method (see `architecture/multi-game.md`) ensures all required component types are registered in the ECS `World` before hydration occurs.
+
+**Full pipeline:** YAML file → `serde_yaml` / MiniYAML auto-convert → `UnitDef` struct → inheritance resolution → rule hydration → ECS entity with components. The first three steps are documented above; inheritance resolution is load-time (see § Inheritance below); rule hydration is the bridge from data to simulation.
+
 ### MiniYAML Migration & Runtime Loading
 
 **Converter tool:** `ra-formats` includes a `miniyaml2yaml` CLI converter that translates existing OpenRA mod data to standard YAML. Available for permanent, clean migration.

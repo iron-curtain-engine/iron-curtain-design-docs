@@ -317,10 +317,10 @@ glicko2:
   inactivity_c: 34.6              # RD growth constant for inactive players
   rating_period_days: 0           # 0 = per-match updates (no batch periods)
 
-  # Match quality weighting
+  # Match quality weighting (tick-based: measures game progression, not wall time)
   match_duration_weight:
-    min_ticks: 3600               # 2 minutes at 30 tps — below this, reduced weight
-    full_weight_ticks: 18000      # 10 minutes — at or above this, full weight
+    min_ticks: 3600               # ~3 min at Normal ~20 tps — below this, reduced weight
+    full_weight_ticks: 18000      # ~15 min at Normal ~20 tps — at or above this, full weight
     short_game_factor: 300        # 0-1000 fixed-point weight for games < min_ticks
 
   # Team game handling (2v2, 3v3)
@@ -408,6 +408,6 @@ For other game modules, the rank names change to match the theme — Tiberian Da
 
 ## Sub-Pages
 
-| Section | Topic | File |
-| --- | --- | --- |
+| Section               | Topic                                                                                                                                                                                                                       | File                                                            |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
 | Seasons & Matchmaking | Season structure, soft reset, placement matches, inactivity decay, faction-specific ratings, small-population degradation, matchmaking queue, rating details panel, community customization, rationale, alternatives, phase | [D055-seasons-matchmaking.md](D055/D055-seasons-matchmaking.md) |

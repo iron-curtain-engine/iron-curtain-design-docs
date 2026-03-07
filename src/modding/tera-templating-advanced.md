@@ -70,7 +70,7 @@ layers:
     bounds: { x: 0, y: 64, w: 96, h: 48 }
     active: false
     activation_shroud: dissolve
-    activation_camera: { pan_to: { x: 48, y: 88 }, duration: 90 }  # 3 seconds at 30 tps
+    activation_camera: { pan_to: { x: 48, y: 88 }, duration: 90 }  # ~4.5 seconds at Normal ~20 tps
   phase_3_base:
     bounds: { x: 96, y: 0, w: 64, h: 112 }
     active: false
