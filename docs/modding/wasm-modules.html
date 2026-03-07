@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -271,6 +271,15 @@ impl Default for WasmExecutionLimits {
 <span class="boring">}</span></code></pre>
 <p><strong>Why this matters for multiplayer:</strong> In deterministic lockstep, all clients run the same mods. A mod that consumes excessive CPU causes tick overruns on slower machines, triggering adaptive run-ahead increases for everyone. A mod that spawns hundreds of entities per tick inflates state size and network traffic. The execution limits prevent a single mod from degrading the experience — and because the limits are deterministic (same fuel budget, same cutoff point), all clients agree on when a mod is throttled.</p>
 <p><strong>Mod authors can request higher limits</strong> via their mod manifest. The lobby displays requested limits and players can accept or reject. Tournament/ranked play enforces stricter defaults.</p>
+<h3 id="wasm-float-determinism"><a class="header" href="#wasm-float-determinism">WASM Float Determinism</a></h3>
+<p>WASM’s IEEE 754 float arithmetic (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>sqrt</code>) is bit-exact per spec. The determinism risks are <strong>NaN bit patterns</strong> (different hosts may produce different NaN payloads) and <strong>FMA fusion</strong> (a JIT may fuse <code>f32.mul</code> + <code>f32.add</code> into a single FMA instruction on hardware that supports it, changing the rounding result).</p>
+<p><strong>Engine-level enforcement (sim-context WASM only):</strong></p>
+<ol>
+<li><strong>NaN canonicalization:</strong> <code>Config::cranelift_nan_canonicalization(true)</code> — all NaN outputs are rewritten to the canonical bit pattern, ensuring identical results across x86_64, aarch64, and any future target.</li>
+<li><strong>FMA prevention:</strong> <code>Config::cranelift_enable_nan_canonicalization</code> implicitly prevents FMA fusion because the inserted canonicalization barriers between float operations block instruction combining. This is a property of Cranelift’s current compilation pipeline — if a future Cranelift version changes this behavior, IC will pin the Cranelift version or add an explicit FMA-disable flag. The <code>ic mod test --determinism</code> cross-platform gate (see below) catches any regression.</li>
+<li><strong>Render/audio-only WASM</strong> does not run in sim context and has neither enforcement applied — floats are permitted freely.</li>
+</ol>
+<p><strong>Practical guidance for mod authors:</strong> Sim-affecting WASM mods should use integer/fixed-point arithmetic (the <code>fixed-game-math</code> crate from D076 is available as a WASM dependency). Float operations are permitted but the mod must pass <code>ic mod test --determinism</code> on the CI cross-platform matrix (x86_64 + aarch64) before Workshop publication. This test runs the mod’s registered test scenarios on both platforms and compares sim hashes tick-by-tick — any divergence fails the check.</p>
 <h3 id="wasm-rendering-api-surface"><a class="header" href="#wasm-rendering-api-surface">WASM Rendering API Surface</a></h3>
 <p>Tier 3 WASM mods that replace the visual presentation (e.g., a 3D render mod) need a well-defined rendering API surface. These are the WASM host functions exposed for render mods — they are the <em>only</em> way a WASM mod can draw to the screen.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -662,197 +671,8 @@ ic mod test --conformance all
 <p><strong>Ranked / certification linkage (D045):</strong> Passing conformance is the minimum requirement for community pathfinder certification. Ranked queues may additionally require <code>ic mod perf-test --conformance pathfinder</code> on the baseline hardware tier. Uncertified pathfinders remain available in single-player/skirmish/custom by default.</p>
 <p>This makes D013’s open <code>Pathfinder</code> seam practical: experimentation stays easy while deterministic multiplayer and ranked integrity remain protected.</p>
 <p><strong>Phase:</strong> Conformance suites ship in Phase 6a (with WASM pathfinder support); performance conformance hooks integrate with <code>ic mod perf-test</code> in Phase 6b.</p>
-<h3 id="3d-rendering-mods-tier-3-showcase"><a class="header" href="#3d-rendering-mods-tier-3-showcase">3D Rendering Mods (Tier 3 Showcase)</a></h3>
-<p>The most powerful example of Tier 3 modding: replacing the entire visual presentation with 3D rendering. A “3D Red Alert” mod swaps sprites for GLTF meshes and the isometric camera for a free-rotating 3D camera — while the simulation, networking, pathfinding, and rules are completely unchanged.</p>
-<p>This works because Bevy already ships a full 3D pipeline. The mod doesn’t build a 3D engine — it uses Bevy’s existing 3D renderer through the WASM mod API.</p>
-<p><strong>A 3D render mod implements:</strong></p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// WASM mod: replaces the default sprite renderer
-impl Renderable for MeshRenderer {
-    fn render(&amp;self, entity: EntityId, state: &amp;RenderState, ctx: &amp;mut RenderContext) {
-        let model = self.models.get(entity.unit_type);
-        let animation = match state.activity {
-            Activity::Idle =&gt; &amp;model.idle,
-            Activity::Moving =&gt; &amp;model.walk,
-            Activity::Attacking =&gt; &amp;model.attack,
-        };
-        ctx.draw_mesh(model.mesh, state.world_pos, state.facing, animation);
-    }
-}
-
-impl ScreenToWorld for FreeCam3D {
-    fn screen_to_world(&amp;self, screen_pos: Vec2, terrain: &amp;TerrainData) -&gt; WorldPos {
-        // 3D raycast against terrain mesh → world position
-        let ray = self.camera.screen_to_ray(screen_pos);
-        terrain.raycast(ray).to_world_pos()
-    }
-}
-<span class="boring">}</span></code></pre>
-<p><strong>Assets are mapped in YAML (mod overrides unit render definitions):</strong></p>
-<pre><code class="language-yaml"># 3d_mod/render_overrides.yaml
-rifle_infantry:
-  render:
-    type: mesh
-    model: models/infantry/rifle.glb
-    animations:
-      idle: Idle
-      move: Run
-      attack: Shoot
-      death: Death
-
-medium_tank:
-  render:
-    type: mesh
-    model: models/vehicles/medium_tank.glb
-    turret: models/vehicles/medium_tank_turret.glb
-    animations:
-      idle: Idle
-      move: Drive
-</code></pre>
-<p><strong>Cross-view multiplayer is a natural consequence.</strong> Since the mod only changes rendering, a player using the 3D mod can play against a player using classic isometric sprites. The sim produces identical state; each client just draws it differently. Replays are viewable in either mode.</p>
-<p>See <code>02-ARCHITECTURE.md</code> § “3D Rendering as a Mod” for the full architectural rationale.</p>
-<h3 id="custom-pathfinding-mods-tier-3-showcase"><a class="header" href="#custom-pathfinding-mods-tier-3-showcase">Custom Pathfinding Mods (Tier 3 Showcase)</a></h3>
-<p>The second major Tier 3 showcase: replacing how units navigate the battlefield. Just as 3D render mods replace the visual presentation, pathfinder mods replace the movement algorithm — while combat, building, harvesting, and everything else remain unchanged.</p>
-<p><strong>Why this matters:</strong> The original C&amp;C Generals uses a layered grid pathfinder with surface bitmasks and bridge layers — fundamentally different from Red Alert’s approach. A Generals-clone mod needs Generals-style pathfinding. A naval mod needs flow routing. A tower defense mod needs waypoint constraint pathfinding. No single algorithm fits every RTS — the <code>Pathfinder</code> trait (D013) lets modders bring their own.</p>
-<p><strong>A pathfinder mod implements:</strong></p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// WASM mod: Generals-style layered grid pathfinder
-// (See research/pathfinding-ic-default-design.md § "C&amp;C Generals / Zero Hour")
-struct LayeredGridPathfinder {
-    grid: Vec&lt;CellLayer&gt;,          // 10-unit cells with bridge layers
-    zones: ZoneMap,                // flood-fill reachability zones
-    surface_bitmask: SurfaceMask,  // ground | water | cliff | air | rubble
-}
-
-impl Pathfinder for LayeredGridPathfinder {
-    fn request_path(&amp;mut self, origin: WorldPos, dest: WorldPos, locomotor: LocomotorType) -&gt; PathId {
-        // 1. Check zone connectivity (instant reject if unreachable)
-        // 2. Surface bitmask check for locomotor compatibility
-        // 3. A* over layered grid (bridges are separate layers)
-        // 4. Path smoothing pass
-        // ...
-    }
-    fn get_path(&amp;self, id: PathId) -&gt; Option&lt;&amp;[WorldPos]&gt; { /* ... */ }
-    fn is_passable(&amp;self, pos: WorldPos, locomotor: LocomotorType) -&gt; bool {
-        let cell = self.grid.cell_at(pos);
-        cell.surface_bitmask.allows(locomotor)
-    }
-    fn invalidate_area(&amp;mut self, center: WorldPos, radius: SimCoord) {
-        // Rebuild affected zones, recalculate bridge connectivity
-    }
-}
-<span class="boring">}</span></code></pre>
-<p><strong>Mod manifest and config:</strong></p>
-<pre><code class="language-yaml"># generals_pathfinder/mod.yaml
-mod:
-  name: "Generals Pathfinder"
-  type: pathfinder
-  pathfinder_id: layered-grid-generals
-  display_name: "Generals (Layered Grid)"
-  version: "1.0.0"
-  capabilities:
-    pathfinding: true
-  config:
-    zone_block_size: 10
-    bridge_clearance: 10.0
-    surface_types: [ground, water, cliff, air, rubble]
-</code></pre>
-<p><strong>How other mods use it:</strong></p>
-<pre><code class="language-yaml"># desert_strike_mod/mod.yaml — a total conversion using the Generals pathfinder
-mod:
-  name: "Desert Strike"
-  pathfinder: layered-grid-generals
-  depends:
-    - community/generals-pathfinder@^1.0
-</code></pre>
-<p><strong>Multiplayer sync:</strong> All players must use the same pathfinder — the WASM binary hash/version/config profile is validated in the lobby, same as any sim-affecting mod. If a player is missing the pathfinder mod, the engine auto-downloads it from the Workshop (CS:GO-style, per D030).</p>
-<p><strong>Performance contract:</strong> Pathfinder mods use a dedicated <code>pathfinder_fuel_per_tick</code> budget (separate from general WASM fuel). The engine monitors per-tick pathfinding time and deferred-request rates. The engine never falls back silently to a different pathfinder — determinism means all clients must agree on every path. If a WASM pathfinder exhausts its pathfinding fuel for the tick, remaining requests return <code>PathResult::Deferred</code> and are re-queued deterministically for subsequent ticks. Community pathfinders targeting ranked certification are expected to pass <code>PathfinderConformanceTest</code> and <code>ic mod perf-test --conformance pathfinder</code> on the baseline hardware tier (D045 policy).</p>
-<p><strong>Ranked policy:</strong> Community pathfinders are available by default in single-player/skirmish/custom lobbies, but ranked/community competitive queues reject them unless the exact hash/version/config profile has been certified and explicitly whitelisted.</p>
-<p><strong>Phase:</strong> WASM pathfinder mods in Phase 6a. The three built-in pathfinder presets (D045) ship as native Rust in Phase 2.</p>
-<h3 id="custom-ai-mods-tier-3-showcase"><a class="header" href="#custom-ai-mods-tier-3-showcase">Custom AI Mods (Tier 3 Showcase)</a></h3>
-<p>The third major Tier 3 showcase: replacing how AI opponents think. Just as render mods replace visual presentation and pathfinder mods replace navigation algorithms, AI mods replace the decision-making engine — while the simulation rules, damage pipeline, and everything else remain unchanged.</p>
-<p><strong>Why this matters:</strong> The built-in <code>PersonalityDrivenAi</code> uses behavior trees tuned by YAML personality parameters. This works well for most players. But the RTS AI community spans decades of research — GOAP planners, Monte Carlo tree search, influence map systems, neural networks, evolutionary strategies (see <code>research/rts-ai-extensibility-survey.md</code>). The <code>AiStrategy</code> trait (D041) lets modders bring any algorithm to Iron Curtain, and the two-axis difficulty system (D043) lets any AI scale from Sandbox to Nightmare.</p>
-<p><strong>A custom AI mod implements:</strong></p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// WASM mod: GOAP (Goal-Oriented Action Planning) AI
-struct GoapPlannerAi {
-    goals: Vec&lt;Goal&gt;,         // Expand, Attack, Defend, Tech, Harass
-    plan: Option&lt;ActionPlan&gt;, // Current multi-step plan
-    world_model: WorldModel,  // Internal state tracking
-}
-
-impl AiStrategy for GoapPlannerAi {
-    fn decide(&amp;mut self, player: PlayerId, view: &amp;FogFilteredView, tick: u64) -&gt; Vec&lt;PlayerOrder&gt; {
-        // 1. Update world model from visible state
-        self.world_model.update(view);
-        // 2. Re-evaluate goal priorities
-        self.goals.sort_by_key(|g| -g.priority(&amp;self.world_model));
-        // 3. If plan invalidated or expired, re-plan
-        if self.plan.is_none() || tick % self.replan_interval == 0 {
-            self.plan = self.planner.search(
-                &amp;self.world_model, &amp;self.goals[0], self.search_depth
-            );
-        }
-        // 4. Execute next action in plan
-        self.plan.as_mut().map(|p| p.next_orders()).unwrap_or_default()
-    }
-
-    fn on_enemy_spotted(&amp;mut self, unit: EntityId, unit_type: &amp;str) {
-        // Scouting intel → update world model → may trigger re-plan
-        self.world_model.add_sighting(unit, unit_type);
-        if self.world_model.threat_level() &gt; self.defend_threshold {
-            self.plan = None; // force re-plan next tick
-        }
-    }
-
-    fn on_under_attack(&amp;mut self, _unit: EntityId, _attacker: EntityId) {
-        self.goals.iter_mut().find(|g| g.name == "Defend")
-            .map(|g| g.urgency += 30); // boost defense priority
-    }
-
-    fn get_parameters(&amp;self) -&gt; Vec&lt;ParameterSpec&gt; {
-        vec![
-            ParameterSpec { name: "search_depth".into(), min: 1, max: 10, default: 5, .. },
-            ParameterSpec { name: "replan_interval".into(), min: 10, max: 120, default: 30, .. },
-            ParameterSpec { name: "defend_threshold".into(), min: 0, max: 100, default: 40, .. },
-        ]
-    }
-
-    fn uses_engine_difficulty_scaling(&amp;self) -&gt; bool { false }
-    // This AI handles difficulty via search_depth and replan_interval
-}
-<span class="boring">}</span></code></pre>
-<p><strong>Mod manifest:</strong></p>
-<pre><code class="language-yaml"># goap_ai/mod.yaml
-mod:
-  name: "GOAP Planner AI"
-  type: ai_strategy
-  ai_strategy_id: goap-planner
-  display_name: "GOAP Planner"
-  description: "Goal-oriented action planning — multi-step strategic reasoning"
-  version: "2.1.0"
-  wasm_module: goap_planner.wasm
-  capabilities:
-    read_visible_state: true
-    issue_orders: true
-    ai_strategy: true
-  config:
-    search_depth: 5
-    replan_interval: 30
-</code></pre>
-<p><strong>How other mods use it:</strong></p>
-<pre><code class="language-yaml"># zero_hour_mod/mod.yaml — a total conversion using the GOAP AI
-mod:
-  name: "Zero Hour Remake"
-  default_ai: goap-planner
-  depends:
-    - community/goap-planner-ai@^2.0
-</code></pre>
-<p><strong>AI tournament community:</strong> Workshop can host AI tournament leaderboards — automated matches between community AI submissions, ranked by Elo/TrueSkill. This is directly inspired by BWAPI’s SSCAIT tournament (15+ years of StarCraft AI competition) and AoE2’s AI ladder (20+ years of community AI development). The <code>ic mod test</code> framework (above) provides headless match execution; the Workshop provides distribution and ranking.</p>
-<p><strong>Phase:</strong> WASM AI mods in Phase 6a. Built-in <code>PersonalityDrivenAi</code> + behavior presets (D043) ship as native Rust in Phase 4.</p>
+<hr>
+<p>For extended Tier 3 mod examples — 3D rendering, custom pathfinding, and custom AI mods — see <a href="wasm-showcases.html">Tier 3 WASM Mod Showcases</a>.</p>
 
                     </main>
 
@@ -862,7 +682,7 @@ mod:
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../modding/tera-templating.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../modding/wasm-showcases.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -876,7 +696,7 @@ mod:
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../modding/tera-templating.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../modding/wasm-showcases.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

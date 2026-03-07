@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -343,7 +343,9 @@ pub struct SpectatorConfig {
     /// Whether live spectating is allowed for this match.
     pub allow_live_spectators: bool,     // Default: true (casual), configurable (ranked)
     /// Delay in ticks before spectators see game state.
-    pub spectator_delay_ticks: u64,      // Default: 90 (~3 seconds casual), 3600 (~120s ranked, V59 floor)
+    /// The relay clamps this upward for ranked/tournament matches to enforce
+    /// V59's wall-time floor (120s ranked, 180s tournament) regardless of game speed.
+    pub spectator_delay_ticks: u64,      // Default: 60 (~3s casual at Normal ~20 tps); ranked/tournament: relay-computed from floor_secs × tps
     /// Maximum spectators per match (relay bandwidth management).
     pub max_spectators: u32,             // Default: 50 (relay), unlimited (local)
     /// Whether spectators can see both team's views (false = assigned perspective).
@@ -357,9 +359,9 @@ pub struct SpectatorConfig {
 <tr><th>Context</th><th>Default Delay</th><th>Rationale</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>Casual / unranked</strong></td><td>3 seconds (90 ticks)</td><td>Minimal delay — enough to prevent frame-perfect info leaks, short enough for engaging spectating</td></tr>
-<tr><td><strong>Ranked</strong></td><td>2 minutes (3,600 ticks)</td><td>Anti-stream-sniping. CS2 uses 90s-2min; SC2 uses 3min. 2 minutes is the sweet spot for RTS (long enough to prevent scouting info exploitation, short enough for spectators to follow the action)</td></tr>
-<tr><td><strong>Tournament</strong></td><td>Configurable (0s–10min)</td><td>Organizer controls. 0s delay for offline LAN events. 5-10 min for online tournaments with dedicated observer casters</td></tr>
+<tr><td><strong>Casual / unranked</strong></td><td>~3 seconds (60 ticks at Normal ~20 tps)</td><td>Minimal delay — enough to prevent frame-perfect info leaks, short enough for engaging spectating</td></tr>
+<tr><td><strong>Ranked</strong></td><td>120 seconds (V59 wall-time floor — relay computes ticks from speed: 2,400 at Normal, 6,000 at Fastest, etc.)</td><td>Anti-stream-sniping. CS2 uses 90s-2min; SC2 uses 3min. 120 seconds is the sweet spot for RTS (long enough to prevent scouting info exploitation, short enough for spectators to follow the action)</td></tr>
+<tr><td><strong>Tournament</strong></td><td>180 seconds minimum (V59 wall-time floor — relay computes ticks from speed: 3,600 at Normal, 9,000 at Fastest, etc.)</td><td>Tournament floor per V59. Server operator may increase for online tournaments with dedicated observer casters. Unranked exhibition matches may use 0s (see <code>security/vulns-edge-cases-infra.md</code> § Tiered delay policy)</td></tr>
 <tr><td><strong>Replay</strong></td><td>0s</td><td>No delay — the game is already finished</td></tr>
 </tbody>
 </table>
@@ -381,7 +383,7 @@ pub struct SpectatorConfig {
 </ul>
 </li>
 <li><strong>Rating update display.</strong> For ranked games, the rating change is shown within the post-game lobby: “Captain II → Captain I (+32 rating)”. The community server computes the new rating from <code>CertifiedMatchResult</code>, signs two SCRs (rating + match record), and the relay forwards them to the client as <code>Frame::RatingUpdate(Vec&lt;SignedCredentialRecord&gt;)</code> on <code>MessageLane::Orders</code> (reliable — the lane is idle post-game; see wire-format.md § Default lane configuration, D052 credential-store-validation.md). The client stores both SCRs in its local SQLite credential file.</li>
-<li><strong>Lobby timeout.</strong> After 5 minutes, the post-game lobby auto-closes. Resources are released.</li>
+<li><strong>Lobby timeout.</strong> After 5 minutes, the post-game lobby auto-closes. Resources are released — see <code>architecture/game-loop.md</code> § Match Cleanup &amp; World Reset for the drop-and-recreate strategy that guarantees zero state leakage between matches.</li>
 </ol>
 <h3 id="in-match-vote-framework-callvote-system"><a class="header" href="#in-match-vote-framework-callvote-system">In-Match Vote Framework (Callvote System)</a></h3>
 <p>The generic vote framework (surrender, kick, remake, draw, tactical polls, mod-extensible custom votes) is specified in the dedicated sub-page: <strong><a href="vote-framework.html">Vote Framework</a></strong>.</p>

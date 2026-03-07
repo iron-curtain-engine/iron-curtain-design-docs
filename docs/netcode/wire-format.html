@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -267,7 +267,8 @@ pub struct AckVector {
     /// Sequence number of the most recently received packet (bit 0).
     pub latest_recv_seq: u32,
     /// Bitmask: bit N = 1 means we received (latest_recv_seq - N).
-    /// 64 bits covers the last 64 packets at 30 tps ≈ ~2 seconds of history.
+    /// 64 bits covers the last 64 packets at one packet per tick
+    /// (≈4 seconds at the Slower default of ~15 tps).
     pub received_mask: u64,
 }
 <span class="boring">}</span></code></pre>
@@ -314,7 +315,7 @@ pub struct OrderBatcher {
     tick_rate: Duration,
 }
 <span class="boring">}</span></code></pre>
-<p>Unlike TCP’s Nagle algorithm (which flushes on receiving an ACK — coupling send timing to network conditions), IC flushes on a fixed tick cadence. This gives deterministic, predictable send timing: all orders within a tick window are batched and flushed at the tick boundary — small ticks fit a single packet; larger batches are split across multiple MTU-sized packets. At 30 tps, this means at most ~33ms of batching delay — well within the adaptive run-ahead window and invisible to the player. The technique is validated by Valve’s GNS batching strategy (see <code>research/valve-github-analysis.md</code> § 1.7).</p>
+<p>Unlike TCP’s Nagle algorithm (which flushes on receiving an ACK — coupling send timing to network conditions), IC flushes on a fixed tick cadence. This gives deterministic, predictable send timing: all orders within a tick window are batched and flushed at the tick boundary — small ticks fit a single packet; larger batches are split across multiple MTU-sized packets. Batching delay equals one tick interval (67ms at Slower default, 50ms at Normal — see D060) — well within the adaptive run-ahead window and invisible to the player. The technique is validated by Valve’s GNS batching strategy (see <code>research/valve-github-analysis.md</code> § 1.7).</p>
 <h3 id="wire-format-delta-compressed-tlv-from-cc-generals"><a class="header" href="#wire-format-delta-compressed-tlv-from-cc-generals">Wire Format: Delta-Compressed TLV (from C&amp;C Generals)</a></h3>
 <blockquote>
 <p><strong>Wire protocol status:</strong> <code>research/relay-wire-protocol-design.md</code> is the detailed protocol design draft. Normative policy bounds/defaults live in this chapter and <code>decisions/09b/D060-netcode-params.md</code>. If there is any mismatch, the decision docs are authoritative until the protocol draft is refreshed.</p>

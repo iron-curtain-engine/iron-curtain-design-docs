@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-194dde15.js"></script>
+        <script src="../../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -191,18 +191,18 @@
 <tr><td>Pluggable network model (Invariant #2)</td><td>T2</td><td>Integration tests with mock network</td></tr>
 <tr><td>Tiered modding (Invariant #3)</td><td>T1 + T3</td><td>Sandbox smoke + escape vector suite</td></tr>
 <tr><td>Fog-authoritative server</td><td>T2 + T3</td><td>Anti-cheat detection + desync injection</td></tr>
-<tr><td>Ed25519 session auth</td><td>T2</td><td>Protocol handshake + replay signing</td></tr>
+<tr><td>Ed25519 session auth</td><td>T2</td><td>Protocol handshake verification (challenge-response, nonce freshness, session establishment)</td></tr>
 <tr><td>Workshop package integrity</td><td>T2 + T4</td><td>Sign/verify chain + ecosystem lifecycle</td></tr>
 <tr><td>RTL/BiDi text handling</td><td>T3</td><td>QA corpus regression suite</td></tr>
 <tr><td>Display name validation (V46)</td><td>T3</td><td>UTS #39 confusable corpus</td></tr>
-<tr><td>Key rotation (V47)</td><td>T4</td><td>Full rotation exercise</td></tr>
+<tr><td>Key rotation (V47)</td><td>T2 + T4</td><td>T2: rotation sequence monotonicity, cooldown enforcement, emergency recovery (at M5). T4: full lifecycle exercise (at M9)</td></tr>
 <tr><td>Anti-cheat behavioral detection</td><td>T3 + T4</td><td>Labeled replay corpus evaluation</td></tr>
 <tr><td>Desync classification (V55)</td><td>T4</td><td>Injected bug vs cheat classification</td></tr>
 <tr><td>Performance budgets</td><td>T3</td><td>criterion benchmarks with regression gates</td></tr>
 <tr><td>Save/load integrity</td><td>T3</td><td>Round-trip hash comparison</td></tr>
 <tr><td>Path security (<code>strict-path</code>)</td><td>T1 + T3</td><td>Unit tests + fuzz testing</td></tr>
-<tr><td>WASM inter-module isolation (V50)</td><td>T3</td><td>Cross-module probe attempts → all blocked</td></tr>
-<tr><td>P2P replay attestation (V53)</td><td>T4</td><td>Multi-peer verification exercise</td></tr>
+<tr><td>WASM inter-module isolation (V50)</td><td>T3 (planned)</td><td>Basic cross-module probe attempts → all blocked (M6); expanded cross-module integration coverage including shared-host-resource leaks and memory growth fuzzing (M7–M8) — see api-misuse-patterns.md gap table for the M7 integration scenario</td></tr>
+<tr><td>P2P replay attestation (V53)</td><td>T2 + T4</td><td>T2: basic signed-hash exchange smoke test (at M4). T4: full multi-peer verification exercise (at M9)</td></tr>
 <tr><td>Campaign completion</td><td>T4</td><td>Automated playthrough</td></tr>
 <tr><td>Visual UI consistency</td><td>T4</td><td>Pixel-diff regression</td></tr>
 <tr><td>Sub-tick ordering fairness (D008)</td><td>T2 + T3</td><td>Simultaneous-order scenarios; timestamp tiebreak verification</td></tr>
@@ -241,6 +241,7 @@
 <li><strong>Fuzz testing has run ≥1M iterations</strong> per target with no new crashes</li>
 <li><strong>Anti-cheat false-positive rate</strong> meets V54 thresholds on the labeled corpus</li>
 <li><strong>Cross-platform determinism</strong> verified (Linux ↔ Windows ↔ macOS)</li>
+<li><strong>Manual review gates pass</strong> for any exit criteria flagged as non-automatable (per testing-strategy.md Principle 2). Both CI and manual gates must pass — neither alone is sufficient.</li>
 </ol>
 <h2 id="phase-rollout"><a class="header" href="#phase-rollout">Phase Rollout</a></h2>
 <div class="table-wrapper">
@@ -251,11 +252,11 @@
 <tbody>
 <tr><td>M0–M1</td><td>Tier 1 pipeline, determinism harness, <code>strict-path</code> tests, clippy/fmt gates</td></tr>
 <tr><td>M2</td><td>Tier 2 pipeline, replay round-trip, <code>ra-formats</code> fuzz targets, Merkle tree unit tests, order validation matrix</td></tr>
-<tr><td>M3</td><td>Performance benchmark suite (incl. pathfinding LOD, spatial hash, flowfield, stagger schedule, ECS cache benchmarks), zero-alloc assertions, save/load tests</td></tr>
-<tr><td>M4</td><td>Network protocol tests, desync injection, Lua sandbox escape suite, sub-tick fairness scenarios, relay timestamp clamping, reconnection snapshot verification, order rate limiting</td></tr>
-<tr><td>M5</td><td>Anti-cheat calibration corpus, false-positive evaluation, ranked tests, SCR sequence enforcement, command permission tests, cvar bounds tests, AI determinism (cross-platform)</td></tr>
-<tr><td>M6</td><td>RTL/BiDi QA corpus regression, display name validation, visual regression</td></tr>
-<tr><td>M7–M8</td><td>Workshop ecosystem tests (dependency cycle detection, version immutability), WASM escape vectors, cross-module isolation, WASM memory growth fuzzing, mod profile fingerprint stability, balance preset validation, weather determinism, D059 RTL chat/marker text safety tests, <code>p2p-distribute</code> fuzz suite (bencode/wire/metadata ≥1M iterations each), P2P interop tests (tracker announce/scrape, DHT routing, piece verification, multi-peer swarm), P2P profile switching (embedded→desktop→seedbox), <code>ic-server</code> Workshop seeder integration smoke tests</td></tr>
+<tr><td>M3</td><td>Performance benchmark suite (incl. pathfinding LOD, spatial hash, flowfield, stagger schedule, ECS cache benchmarks), zero-alloc assertions, save/load tests, display name validation (V46 — UTS #39 confusable corpus, aligned with M3.SEC.DISPLAY_NAME_VALIDATION cluster)</td></tr>
+<tr><td>M4</td><td>Network protocol tests, desync injection, Lua sandbox escape suite, sub-tick fairness scenarios, relay timestamp clamping, reconnection snapshot verification, order rate limiting, P2P replay attestation smoke tests (V53 — basic signed-hash exchange, aligned with M4.SEC.P2P_REPLAY_ATTESTATION; full multi-peer exercise deferred to T4 at M9)</td></tr>
+<tr><td>M5</td><td>Anti-cheat calibration corpus, false-positive evaluation, ranked tests, SCR sequence enforcement, command permission tests, cvar bounds tests, AI determinism (cross-platform), key rotation protocol tests (V47 — rotation sequence, cooldown, emergency recovery, aligned with M5.SEC.KEY_ROTATION_AND_REVOCATION; full lifecycle exercise deferred to T4 at M9)</td></tr>
+<tr><td>M6</td><td>RTL/BiDi QA corpus regression, WASM inter-module isolation (V50 — basic cross-module probe attempts, aligned with M6.SEC.WASM_INTERMODULE_ISOLATION cluster), visual regression</td></tr>
+<tr><td>M7–M8</td><td>Workshop ecosystem tests (dependency cycle detection, version immutability), WASM escape vectors, expanded cross-module isolation integration (shared-host-resource leak scenarios beyond M6’s basic probes), WASM memory growth fuzzing, mod profile fingerprint stability, balance preset validation, weather determinism, D059 RTL chat/marker text safety tests, <code>p2p-distribute</code> fuzz suite (bencode/wire/metadata ≥1M iterations each), P2P interop tests (tracker announce/scrape, DHT routing, piece verification, multi-peer swarm), P2P profile switching (embedded→desktop→seedbox), <code>ic-server</code> Workshop seeder integration smoke tests</td></tr>
 <tr><td>M9</td><td>Full Tier 4 weekly suite, release criteria enforcement, campaign DAG validation, roster carryover tests, LLM content validation</td></tr>
 <tr><td>M10–M11</td><td>Campaign playthrough automation, extended fuzz campaigns, cross-engine map exchange, full WASM memory growth fuzzing</td></tr>
 </tbody>

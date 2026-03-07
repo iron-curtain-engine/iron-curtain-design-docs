@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -318,8 +318,9 @@ impl&lt;B: ProtocolBridge&gt; NetworkModel for NetcodeBridgeModel&lt;B&gt; {
     fn poll_tick(&amp;mut self) -&gt; Option&lt;TickOrders&gt; {
         // Accumulator-based: tracks how much real time has elapsed and
         // emits one tick per TICK_DURATION of accumulated time. TICK_DURATION
-        // is set by the game speed preset (67ms at Slower default, 33ms at
-        // Normal, 20ms at Fastest). This preserves a stable scheduling rate
+        // is set by the game speed preset (80ms at Slowest, 67ms at Slower
+        // default, 50ms at Normal, 35ms at Faster, 20ms at Fastest — see
+        // D060). This preserves a stable scheduling rate
         // independent of frame rate — if a frame arrives late, multiple
         // ticks are available on the next calls (bounded by GameLoop's
         // MAX_TICKS_PER_FRAME cap).
@@ -353,17 +354,33 @@ Playback = feed TickOrders through Simulation via ReplayPlayback NetworkModel
 </span>use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::Duration;
 
-/// Bounded-latency replay recorder. The sim thread pushes tick frames
-/// into a bounded channel; a background thread drains and writes.
+/// Bounded-latency replay recorder. The game thread pushes tick frames
+/// and keyframe blobs into a bounded channel; a background thread drains,
+/// compresses, and writes to the `.icrep` file.
 pub struct BackgroundReplayWriter {
-    queue: crossbeam::channel::Sender&lt;ReplayTickFrame&gt;,
+    queue: crossbeam::channel::Sender&lt;ReplayWriterMsg&gt;,
     handle: std::thread::JoinHandle&lt;()&gt;,
-    /// Counts frames lost due to channel backpressure (V45).
+    /// Counts frames/keyframes lost due to channel backpressure (V45).
     lost_frame_count: AtomicU32,
 }
 
+/// Message sent from the game thread to the background writer.
+enum ReplayWriterMsg {
+    /// Per-tick order frame (every tick).
+    Tick(ReplayTickFrame),
+    /// Keyframe snapshot blob (every 300 ticks, mandatory).
+    /// Pre-serialized by ic-game on the game thread; the background
+    /// writer performs LZ4 compression and file append.
+    Keyframe {
+        tick: u64,
+        is_full: bool,          // true = SimSnapshot, false = DeltaSnapshot
+        uncompressed_len: u32,
+        blob: Vec&lt;u8&gt;,          // bincode-serialized snapshot bytes
+    },
+}
+
 impl BackgroundReplayWriter {
-    /// Called from the sim thread after each tick. Blocks at most 5ms
+    /// Called from the game thread after each tick. Blocks at most 5ms
     /// (send_timeout) — bounded latency, not lock-free.
     pub fn record_tick(&amp;self, frame: ReplayTickFrame) {
         // crossbeam bounded channel sized for ~10 seconds of ticks
@@ -372,7 +389,28 @@ impl BackgroundReplayWriter {
         // the sim thread while giving the writer a chance to drain.
         // If the timeout expires, the frame is lost — tracked in the
         // replay header (see V45 mitigations below).
-        match self.queue.send_timeout(frame, Duration::from_millis(5)) {
+        match self.queue.send_timeout(
+            ReplayWriterMsg::Tick(frame),
+            Duration::from_millis(5),
+        ) {
+            Ok(()) =&gt; {},
+            Err(_) =&gt; self.lost_frame_count.fetch_add(1, Ordering::Relaxed),
+        }
+    }
+
+    /// Called from the game thread every 300 ticks (keyframe cadence).
+    /// `blob` is the bincode-serialized SimSnapshot or DeltaSnapshot,
+    /// already composed by `ic-game` (sim core + campaign/script state).
+    /// The background thread LZ4-compresses and appends to the keyframe
+    /// section. Uses the same bounded-latency send_timeout as record_tick.
+    pub fn record_keyframe(&amp;self, tick: u64, is_full: bool, blob: Vec&lt;u8&gt;) {
+        let msg = ReplayWriterMsg::Keyframe {
+            tick,
+            is_full,
+            uncompressed_len: blob.len() as u32,
+            blob,
+        };
+        match self.queue.send_timeout(msg, Duration::from_millis(5)) {
             Ok(()) =&gt; {},
             Err(_) =&gt; self.lost_frame_count.fetch_add(1, Ordering::Relaxed),
         }
@@ -387,7 +425,7 @@ impl BackgroundReplayWriter {
 <p>The <code>NetworkModel</code> trait enables fundamentally different networking approaches beyond the default relay lockstep. IC ships relay-assisted deterministic lockstep with sub-tick ordering as the default. Everything above this section — sub-tick, QoS calibration, timing feedback, adaptive run-ahead, never-stall relay, visual prediction — is part of that default lockstep system.</p>
 <h3 id="fog-authoritative-server-anti-maphack"><a class="header" href="#fog-authoritative-server-anti-maphack">Fog-Authoritative Server (anti-maphack)</a></h3>
 <p>Server runs full sim, sends each client only visible entities. Eliminates maphack architecturally. Requires server compute per game. An operator enables it per-room or per-match-type via <code>ic-server</code> capability flags (D074) — it is not a separate product. See <code>06-SECURITY.md</code> § Vulnerability 1, <code>decisions/09b/D074-community-server-bundle.md</code>, and <code>research/fog-authoritative-server-design.md</code> for the full design. Implementation milestone: <code>M11</code> (<code>P-Optional</code>).</p>
-<p><strong>Trait fit caveat:</strong> FogAuth does not drop-in under the current <code>GameLoop</code> / <code>NetworkModel</code> contract. The lockstep game loop owns a full <code>Simulation</code> and calls <code>sim.apply_tick()</code> — but FogAuth clients do not run the full sim. They maintain a partial world and consume server-sent entity state deltas via a reconciler (see <code>research/fog-authoritative-server-design.md</code> § 7). The research design maps <code>FogAuthClientNetwork</code> onto the <code>NetworkModel</code> trait by side-channeling state deltas and returning mostly-empty <code>TickOrders</code> from <code>poll_tick()</code>, but this means the game loop’s <code>sim.apply_tick()</code> call does no useful work. In practice, FogAuth requires either a separate client loop variant (<code>FogAuthGameLoop</code> that drives a partial-world reconciler instead of a <code>Simulation</code>) or trait extension (e.g., <code>poll_tick()</code> returning an enum of <code>TickOrders | StateDeltas</code>). The <code>NetworkModel</code> trait boundary and <code>ic-server</code> capability infrastructure are designed to support FogAuth from day one; the client-side game loop extension is the <code>M11</code> design work.</p>
+<p><strong>Trait fit caveat:</strong> FogAuth does not drop-in under the current <code>GameLoop</code> / <code>NetworkModel</code> contract. The lockstep game loop owns a full <code>Simulation</code> and calls <code>sim.apply_tick()</code> — but FogAuth clients do not run the full sim. They maintain a partial world and consume server-sent entity state deltas via a reconciler (see <code>research/fog-authoritative-server-design.md</code> § 7). The research design maps <code>FogAuthClientNetwork</code> onto the <code>NetworkModel</code> trait by side-channeling state deltas and returning mostly-empty <code>TickOrders</code> from <code>poll_tick()</code>, but this means the game loop’s <code>sim.apply_tick()</code> call does no useful work. In practice, FogAuth requires either a separate client loop variant (<code>FogAuthGameLoop</code> that drives a partial-world reconciler instead of a <code>Simulation</code>) or trait extension (e.g., <code>poll_tick()</code> returning an enum of <code>TickOrders | StateDeltas</code>). The <code>NetworkModel</code> trait boundary and <code>ic-server</code> capability infrastructure are designed to support FogAuth from day one; the client-side game loop extension is the <code>M11</code> design work (pending decision <code>P007</code>).</p>
 <h3 id="rollback--ggpo-style-p-optional--m11"><a class="header" href="#rollback--ggpo-style-p-optional--m11">Rollback / GGPO-Style (<code>P-Optional</code> / <code>M11</code>)</a></h3>
 <p>Client predicts with local input, rolls back on misprediction. Requires snapshottable sim (D010 — already designed). Rollback and lockstep are <strong>alternative architectures, never mixed</strong> — none of the lockstep features above (sub-tick, calibration, timing feedback, run-ahead) would exist in a rollback <code>NetworkModel</code>. The current <code>NetworkModel</code> trait is lockstep-shaped (<code>poll_tick()</code> returns confirmed-or-nothing); rollback would need trait extension or game loop restructuring in <code>ic-game</code>. <code>ic-sim</code> stays untouched (invariant #2). Stormgate (2024) proved RTS rollback is production-viable at 64 tps; delta rollback (Dehaene, 2024) reduces snapshot cost to ~5% via Bevy <code>Changed&lt;T&gt;</code> change detection. Full analysis in <code>research/stormgate-rollback-relay-landscape-analysis.md</code>.</p>
 <h3 id="cross-engine-protocol-adapter"><a class="header" href="#cross-engine-protocol-adapter">Cross-Engine Protocol Adapter</a></h3>

@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -190,7 +190,7 @@ deterministic-rng   (seedable platform-identical PRNG: range sampling, weighted 
 <h3 id="ic-monorepo-crates-gpl-v3-with-modding-exception"><a class="header" href="#ic-monorepo-crates-gpl-v3-with-modding-exception">IC Monorepo Crates (GPL v3 with modding exception)</a></h3>
 <pre><code>ic-protocol  (shared types: PlayerOrder, TimestampedOrder)
     ↑         (depends on: fixed-game-math)
-    ├── ic-sim      (depends on: ic-protocol, ra-formats, fixed-game-math, deterministic-rng)
+    ├── ic-sim      (depends on: ic-protocol, ra-formats, fixed-game-math, deterministic-rng, bevy_ecs [public])
     ├── ic-net      (depends on: ic-protocol; contains RelayCore library + ic-server binary)
     ├── ra-formats  (wraps cnc-formats + EA-derived constants — .mix, .shp, .pal, YAML)
     ├── ic-render   (depends on: ic-sim for reading state)
@@ -204,6 +204,7 @@ deterministic-rng   (seedable platform-identical PRNG: range sampling, weighted 
     └── ic-game     (depends on: everything above EXCEPT ic-editor)
 </code></pre>
 <p><strong>Critical boundary:</strong> <code>ic-sim</code> never imports from <code>ic-net</code>. <code>ic-net</code> never imports from <code>ic-sim</code>. They only share <code>ic-protocol</code>. <code>ic-game</code> never imports from <code>ic-editor</code> — the game and SDK are separate binaries that share library crates.</p>
+<p><strong>Bevy ECS dependency:</strong> <code>ic-sim</code> depends on <code>bevy_ecs</code> as a <strong>public</strong> dependency — <code>Simulation</code> wraps a Bevy <code>World</code>, and the <code>GameModule</code> trait exposes <code>&amp;mut World</code> in <code>register_components()</code> and returns <code>Box&lt;dyn System&gt;</code> from <code>system_pipeline()</code>. Callers (<code>ic-game</code>, <code>ic-editor</code>, <code>ic-render</code>) already depend on Bevy directly, so the leaked types create no additional coupling. <code>ic-net</code> and <code>ic-protocol</code> have zero Bevy dependency.</p>
 <p><strong>Storage boundary:</strong> <code>ic-sim</code> never reads or writes SQLite (invariant #1). Three crates are read-only consumers of the client-side SQLite database: <code>ic-ui</code> (post-game stats, career page, campaign dashboard), <code>ic-llm</code> (personalized missions, adaptive briefings, coaching), <code>ic-ai</code> (difficulty scaling, counter-strategy selection). Gameplay events are written by a Bevy observer system in <code>ic-game</code>, outside the deterministic sim. See D034 in <code>decisions/09e-community.md</code>.</p>
 <h3 id="binary-architecture-gui-first-design"><a class="header" href="#binary-architecture-gui-first-design">Binary Architecture: GUI-First Design</a></h3>
 <p>The crate graph produces four ship binaries. Each targets a distinct audience with an interface appropriate to that audience’s workflow:</p>

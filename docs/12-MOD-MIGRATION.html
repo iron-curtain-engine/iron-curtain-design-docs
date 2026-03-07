@@ -35,10 +35,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-194dde15.js"></script>
+        <script src="toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -574,29 +574,30 @@ overrides:
 </span>pub struct RemasteredModule;
 
 impl GameModule for RemasteredModule {
-    fn name(&amp;self) -&gt; &amp;str { "C&amp;C Remastered" }
-
-    fn register_systems(&amp;self, app: &amp;mut App) {
+    fn register_components(&amp;self, world: &amp;mut World) {
         // Everything from RA1Module, plus:
-        app.add_systems(Update, toggle_render_quality);
-        app.add_systems(Update, camera_zoom);
-
-        // Register HD asset loaders alongside classic ones
-        app.add_plugins(HdSpritePlugin);
-        app.add_plugins(HdAudioPlugin);
-
-        // Remastered UI theme
-        app.insert_resource(UiTheme::Remastered);
-
-        // Balance preset
-        app.insert_resource(BalancePreset::Remastered);
+        world.insert_resource(UiTheme::Remastered);
+        world.insert_resource(BalancePreset::Remastered);
     }
 
-    fn register_assets(&amp;self, server: &amp;AssetServer) {
-        // Load both classic and HD asset sets
-        server.register_loader::&lt;ShpLoader&gt;();   // Classic
-        server.register_loader::&lt;HdPngLoader&gt;(); // HD
+    fn system_pipeline(&amp;self) -&gt; Vec&lt;Box&lt;dyn System&gt;&gt; {
+        let mut pipeline = Ra1Module.system_pipeline();
+        pipeline.push(Box::new(toggle_render_quality));
+        pipeline.push(Box::new(camera_zoom));
+        pipeline
     }
+
+    fn register_format_loaders(&amp;self, registry: &amp;mut FormatRegistry) {
+        Ra1Module.register_format_loaders(registry); // Classic .shp/.mix
+        registry.register::&lt;HdPngLoader&gt;();           // HD sprites
+        registry.register::&lt;HdAudioLoader&gt;();         // HD audio
+    }
+
+    fn render_modes(&amp;self) -&gt; Vec&lt;RenderMode&gt; {
+        vec![RenderMode::Classic, RenderMode::Hd]
+    }
+
+    // ... remaining trait methods delegate to Ra1Module
 }
 <span class="boring">}</span></code></pre>
 <h3 id="verdict-1"><a class="header" href="#verdict-1">Verdict</a></h3>

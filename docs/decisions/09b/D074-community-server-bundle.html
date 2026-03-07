@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-194dde15.js"></script>
+        <script src="../../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -475,7 +475,7 @@ Workshop Server (ic-server with workshop capability)
 <li><strong>Workshop registry integration:</strong> Manifest lookup, dependency resolution, and version checking happen before the BT transfer begins. Standard BT distributes raw bytes with no semantic awareness.</li>
 <li><strong>Peer scoring with domain knowledge (D049):</strong> <code>PeerScore = Capacity(0.4) + Locality(0.3) + SeedStatus(0.2) + LobbyContext(0.1)</code>. IC knows lobby membership, geographic proximity, and content popularity — producing better peer selection than generic BT.</li>
 </ul>
-<p><strong>Open design question (uTP vs. QUIC):</strong> Standard BT uses uTP (BEP 29) for UDP transport. QUIC (<code>quinn</code> crate, pure Rust, mature) provides similar congestion control with modern TLS and multiplexing. IC could speak uTP for BT interop and QUIC for IC-to-IC optimized transfers. Decision deferred to Phase 4 implementation — both are viable.</p>
+<p><strong>Open design question (uTP vs. QUIC):</strong> Standard BT uses uTP (BEP 29) for UDP transport. QUIC (<code>quinn</code> crate, pure Rust, mature) provides similar congestion control with modern TLS and multiplexing. IC could speak uTP for BT interop and QUIC for IC-to-IC optimized transfers. Decision deferred to Phase 4 implementation — both are viable (pending decision <code>P008</code>).</p>
 <h4 id="relationship-to-d049"><a class="header" href="#relationship-to-d049">Relationship to D049</a></h4>
 <p>D049 defines the P2P distribution protocol, piece selection strategies, peer scoring, and seeding configuration. D074 does not change any of that. D074 establishes that:</p>
 <ul>

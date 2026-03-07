@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -191,7 +191,7 @@
 </span>pub struct PeerAttestation {
     pub tick: SimTick,
     pub peer_id: PlayerId,
-    pub state_hash: SimStateHash,
+    pub state_hash: SyncHash,
     pub peer_signature: Ed25519Signature,
 }
 <span class="boring">}</span></code></pre>
@@ -354,7 +354,8 @@
 <h3 id="defense-2"><a class="header" href="#defense-2">Defense</a></h3>
 <p><strong>Mandatory minimum observer delay for ranked matches:</strong></p>
 <ul>
-<li>Ranked matches enforce a <strong>minimum 120-second (3,600-tick at 30 tps) observer delay</strong>. This is a <code>ProtocolLimits</code>-style hard floor — not configurable below 120s by lobby settings, server config, or console commands.</li>
+<li>Ranked matches enforce a <strong>minimum 120-second observer delay</strong>. This is a <code>ProtocolLimits</code>-style hard floor — not configurable below 120s by lobby settings, server config, or console commands.</li>
+<li><strong>Enforcement is in wall-clock seconds, not fixed ticks.</strong> The relay computes the minimum tick count at match start from the match’s game speed: <code>min_delay_ticks = floor_secs × tps_for_speed_preset</code> (e.g., 120s × 20 tps = 2,400 ticks at Normal; 120s × 50 tps = 6,000 ticks at Fastest). If the operator’s configured <code>spectator.delay_ticks</code> falls below this computed minimum, the relay clamps it upward. This ensures the wall-time floor holds regardless of game speed preset (D060).</li>
 <li>Implementation: The relay server buffers observer-bound state updates and releases them only after the delay window. The buffer is per-observer, not shared — each observer’s view is independently delayed.</li>
 <li>The 120-second floor is chosen because it exceeds the tactical relevance window for most RTS engagements (build order scouting is revealed by 2 minutes anyway, and active combat decisions have ~5-10 second relevance).</li>
 </ul>
@@ -481,7 +482,7 @@
 <tr><td>Path traversal</td><td><code>strict-path</code> boundary enforcement</td><td>Path security infrastructure</td></tr>
 <tr><td>Name impersonation</td><td>UTS #39 skeleton + mixed-script ban + BiDi strip</td><td>Display name validation (V46)</td></tr>
 <tr><td>Key compromise</td><td>Dual-signed rotation + BIP-39 emergency recovery</td><td>Identity key rotation (V47)</td></tr>
-<tr><td>Server impersonation</td><td>Cert chain + CRL + OCSP-style fast revocation</td><td>Community server auth (V48)</td></tr>
+<tr><td>Server impersonation</td><td>TOFU key pinning + RK emergency rotation + seed list curation</td><td>Community server auth (V48)</td></tr>
 <tr><td>Package forgery</td><td>Author Ed25519 signing + registry counter-sign</td><td>Workshop package integrity (V49)</td></tr>
 <tr><td>Mod cross-probing</td><td>Namespace isolation + capability-gated IPC</td><td>WASM module isolation (V50)</td></tr>
 <tr><td>Supply chain update</td><td>Popularity quarantine + diff review + rollback</td><td>Workshop package quarantine (V51)</td></tr>

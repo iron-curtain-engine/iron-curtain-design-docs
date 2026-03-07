@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-194dde15.js"></script>
+        <script src="../../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -239,7 +239,7 @@
 </tbody>
 </table>
 </div>
-<p>One setting. Game speed is the only parameter where player preference is legitimate (“I like slower, more strategic games” vs. “I prefer fast-paced gameplay”). In ranked play, game speed is server-enforced and not configurable.</p>
+<p>One setting. Game speed is the only parameter where player preference is legitimate (“I like slower, more strategic games” vs. “I prefer fast-paced gameplay”). In ranked play, game speed is server-enforced and not configurable (pending decision <code>P009</code> — whether one canonical speed applies globally or communities may choose with rating normalization).</p>
 <p>Game speed affects only the interval between sim ticks — system behavior is tick-count-based, so all game logic works identically at any speed. Single-player can change speed mid-game; multiplayer sets it in lobby. This matches how every C&amp;C game handled speed (see <code>02-ARCHITECTURE.md</code> § Game Speed).</p>
 <p><strong>Mobile tempo advisor compatibility (D065):</strong> Touch-specific “tempo comfort” recommendations are <strong>client/UI advisory only</strong>. They may highlight a recommended band (<code>slower</code>-<code>normal</code>, etc.) or warn a host that touch players may be overloaded, but they do not create a new authority path for speed selection. The host/queue-selected game speed remains the only synced value, and ranked speed remains server-enforced.</p>
 <h4 id="tier-2-advanced--console-power-users-d058"><a class="header" href="#tier-2-advanced--console-power-users-d058">Tier 2: Advanced / Console (Power Users, D058)</a></h4>

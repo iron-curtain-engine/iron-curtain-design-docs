@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-194dde15.js"></script>
+        <script src="../../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -197,52 +197,43 @@
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>pub trait GameModule: Send + Sync + 'static {
-    /// Human-readable name ("Red Alert", "Tiberian Dawn")
-    fn name(&amp;self) -&gt; &amp;str;
+    /// Register ECS components (unit types, mechanics) into the world.
+    fn register_components(&amp;self, world: &amp;mut World);
 
-    /// Register ECS components, systems, and system ordering
-    fn register_systems(&amp;self, app: &amp;mut App);
+    /// Return the ordered system pipeline for this game's simulation tick.
+    fn system_pipeline(&amp;self) -&gt; Vec&lt;Box&lt;dyn System&gt;&gt;;
 
-    /// Provide the module's Pathfinder implementation
+    /// Provide the pathfinding implementation (selected by lobby/experience profile, D045).
     fn pathfinder(&amp;self) -&gt; Box&lt;dyn Pathfinder&gt;;
 
-    /// Provide the module's SpatialIndex implementation
+    /// Provide the spatial index implementation (spatial hash, BVH, etc.).
     fn spatial_index(&amp;self) -&gt; Box&lt;dyn SpatialIndex&gt;;
 
-    /// Provide the module's FogProvider implementation (D041)
+    /// Provide the fog of war implementation (D041).
     fn fog_provider(&amp;self) -&gt; Box&lt;dyn FogProvider&gt;;
 
-    /// Provide the module's DamageResolver implementation (D041)
+    /// Provide the damage resolution algorithm (D041).
     fn damage_resolver(&amp;self) -&gt; Box&lt;dyn DamageResolver&gt;;
 
-    /// Provide the module's OrderValidator implementation (D041)
+    /// Provide order validation logic (D041).
     fn order_validator(&amp;self) -&gt; Box&lt;dyn OrderValidator&gt;;
 
-    /// Provide the module's render plugin (sprite, voxel, 3D, etc.)
-    fn render_plugin(&amp;self) -&gt; Box&lt;dyn RenderPlugin&gt;;
+    /// Register format loaders (e.g., .vxl for RA2, .shp for RA1).
+    fn register_format_loaders(&amp;self, registry: &amp;mut FormatRegistry);
 
-    /// List available render modes — Classic, HD, 3D, etc. (D048)
+    /// Register render backends (sprite renderer, voxel renderer, etc.).
+    fn register_renderers(&amp;self, registry: &amp;mut RenderRegistry);
+
+    /// List available render modes — Classic, HD, 3D, etc. (D048).
     fn render_modes(&amp;self) -&gt; Vec&lt;RenderMode&gt;;
-
-    /// Provide the module's UI layout (sidebar style, build queue, etc.)
-    fn ui_layout(&amp;self) -&gt; UiLayout;
-
-    /// Provide format loaders for this module's asset types
-    fn format_loaders(&amp;self) -&gt; Vec&lt;Box&lt;dyn FormatLoader&gt;&gt;;
 
     /// Register game-module-specific commands into the Brigadier command tree (D058).
     /// RA1 registers `/sell`, `/deploy`, `/stance`, etc. A total conversion registers
     /// its own novel commands. Engine built-in commands are pre-registered before this.
     fn register_commands(&amp;self, dispatcher: &amp;mut CommandDispatcher);
 
-    /// List available balance presets (D019)
-    fn balance_presets(&amp;self) -&gt; Vec&lt;BalancePreset&gt;;
-
-    /// List available experience profiles (D019 + D032 + D033 + D043 + D045 + D048)
-    fn experience_profiles(&amp;self) -&gt; Vec&lt;ExperienceProfile&gt;;
-
-    /// Default experience profile name
-    fn default_profile(&amp;self) -&gt; &amp;str;
+    /// YAML rule schema for this game's unit definitions.
+    fn rule_schema(&amp;self) -&gt; RuleSchema;
 }
 <span class="boring">}</span></code></pre>
 <p><strong>Game module capability matrix:</strong></p>

@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -311,7 +311,7 @@ impl EwmaTrafficMonitor {
 <p><strong>Cap <code>ticks_since_sync</code>:</strong></p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>const MAX_TICKS_SINCE_SYNC: u64 = 300; // 10 seconds at 30 tps
+</span>const MAX_TICKS_SINCE_SYNC: u64 = 300; // ~20 seconds at Slower default ~15 tps
 
 fn is_sane_correction(correction: &amp;EntityCorrection, ticks_since_sync: u64) -&gt; bool {
     let capped_ticks = ticks_since_sync.min(MAX_TICKS_SINCE_SYNC);

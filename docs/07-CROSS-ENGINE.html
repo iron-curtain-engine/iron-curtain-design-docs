@@ -35,10 +35,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-194dde15.js"></script>
+        <script src="toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -482,7 +482,7 @@ pub enum CrossEngineAuthorityMode {
     /// Foreign clients reconcile TO IC's state. IC never accepts external corrections.
     IcAuthority {
         /// Ticks between authoritative hash broadcasts.
-        hash_interval_ticks: u64,          // default: 30 (1 second at 30 tps)
+        hash_interval_ticks: u64,          // default: 30 (~2 seconds at Slower ~15 tps)
         /// Maximum entity correction magnitude IC will instruct foreign clients to apply.
         max_correction_magnitude: FixedPoint,
     },
@@ -649,7 +649,7 @@ pub enum ReconcileAction {
 </span><span class="boring">fn main() {
 </span>/// Maximum ticks since last sync before bounds stop growing.
 /// Prevents unbounded drift acceptance if sync messages stop arriving.
-const MAX_TICKS_SINCE_SYNC: u64 = 300; // 10 seconds at 30 tps
+const MAX_TICKS_SINCE_SYNC: u64 = 300; // ~20 seconds at Slower default ~15 tps
 
 /// Maximum resource correction per sync cycle (one harvester full load).
 const MAX_CREDIT_DELTA: i64 = 5000;

@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -219,10 +219,10 @@
 <tr><td>Order batching interval</td><td>Every N frames (<code>NetFrameInterval</code>)</td><td>Every tick</td><td>No batching delay</td></tr>
 <tr><td>Order scheduling delay</td><td>+<code>OrderLatency</code> ticks</td><td>+1 tick (next relay broadcast)</td><td>Fewer ticks of delay</td></tr>
 <tr><td>Tick processing time</td><td>Estimated 30-60ms (limits tick rate)</td><td>~8ms (allows higher tick rate)</td><td>4-8x faster per tick</td></tr>
-<tr><td>Achievable tick rate</td><td>~15 tps</td><td>30+ tps</td><td>2x shorter lockstep window</td></tr>
+<tr><td>Achievable tick rate</td><td>~15 tps</td><td>30+ tps (at Faster/Fastest presets; default Slower = ~15 tps)</td><td>Higher speed presets viable (shorter lockstep window at Faster+)</td></tr>
 <tr><td>GC pauses during processing</td><td>C# GC characteristic</td><td>0ms</td><td>Eliminates unpredictable hitches</td></tr>
 <tr><td>Visual feedback on click</td><td>Waits for order confirmation</td><td>Immediate (cosmetic prediction)</td><td>Perceived lag drops to near-zero</td></tr>
-<tr><td>Single-player order delay</td><td>1 projected frame (~66ms at 15 tps)</td><td>0 frames (<code>LocalNetwork</code> = next tick)</td><td>Zero delay</td></tr>
+<tr><td>Single-player order delay</td><td>1 projected frame (~66ms at 15 tps)</td><td>Next tick, zero scheduling delay (<code>LocalNetwork</code> — no network round-trip, order applied on the very next sim tick)</td><td>~50ms at Normal speed (tick wait only)</td></tr>
 <tr><td>Worst connection impact</td><td>Freezes all players</td><td>Only affects the lagging player</td><td>Architectural fairness</td></tr>
 <tr><td>Architectural headroom</td><td>No sim snapshots</td><td>Snapshottable sim (D010) enables optional rollback/GGPO experiments (<code>M11</code>, <code>P-Optional</code>)</td><td>Path to eliminating perceived MP delay</td></tr>
 </tbody>

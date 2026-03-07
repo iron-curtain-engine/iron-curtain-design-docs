@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -410,6 +410,33 @@ struct LlmMeta {
     countered_by: Vec&lt;String&gt;,          // unit types that counter this
 }
 <span class="boring">}</span></code></pre>
+<h3 id="rule-hydration-unitdef--ecs-components"><a class="header" href="#rule-hydration-unitdef--ecs-components">Rule Hydration: UnitDef → ECS Components</a></h3>
+<p>Deserialized <code>UnitDef</code> structs are intermediate data — not ECS components. The <strong>rule hydration</strong> step converts YAML rule data into spawned ECS entities with the game module’s components:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Spawns a unit entity from a deserialized UnitDef.
+/// Called by the sim during map loading and production completion.
+fn spawn_unit(world: &amp;mut World, def: &amp;UnitDef, pos: WorldPos) -&gt; UnitTag {
+    let tag = world.resource_mut::&lt;UnitPool&gt;().allocate();
+    let mut entity = world.spawn((
+        tag,
+        Position(pos),
+        Health { current: def.health.max, max: def.health.max },
+    ));
+    if let Some(ref mobile) = def.mobile {
+        entity.insert(Mobile { speed: mobile.speed, locomotor: mobile.locomotor.clone() });
+    }
+    if let Some(ref combat) = def.combat {
+        entity.insert(Combat { weapon: combat.weapon.clone(), range: combat.range });
+    }
+    if let Some(ref buildable) = def.buildable {
+        entity.insert(Buildable { cost: buildable.cost, build_time: buildable.build_time });
+    }
+    tag
+}
+<span class="boring">}</span></code></pre>
+<p>The hydration function is game-module-specific — RA1’s module maps <code>UnitDef.combat</code> to RA1 combat components, while an RA2 module would additionally map shield and garrison fields to their respective components. The <code>GameModule::register_components()</code> method (see <code>architecture/multi-game.md</code>) ensures all required component types are registered in the ECS <code>World</code> before hydration occurs.</p>
+<p><strong>Full pipeline:</strong> YAML file → <code>serde_yaml</code> / MiniYAML auto-convert → <code>UnitDef</code> struct → inheritance resolution → rule hydration → ECS entity with components. The first three steps are documented above; inheritance resolution is load-time (see § Inheritance below); rule hydration is the bridge from data to simulation.</p>
 <h3 id="miniyaml-migration--runtime-loading"><a class="header" href="#miniyaml-migration--runtime-loading">MiniYAML Migration &amp; Runtime Loading</a></h3>
 <p><strong>Converter tool:</strong> <code>ra-formats</code> includes a <code>miniyaml2yaml</code> CLI converter that translates existing OpenRA mod data to standard YAML. Available for permanent, clean migration.</p>
 <p><strong>Runtime loading (D025):</strong> MiniYAML files also load directly at runtime — no pre-conversion required. When <code>ra-formats</code> detects tab-indented content with <code>^</code> inheritance or <code>@</code> suffixes, it auto-converts in memory. The result is identical to what the converter would produce. This means existing OpenRA mods can be dropped into IC and played immediately.</p>

@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -195,7 +195,7 @@
 <tr><td>F1</td><td>HIGH</td><td>CLOSED — Pipeline-wide NaN guards with fail-closed semantics</td><td>V34 amended, proptest added</td></tr>
 <tr><td>F2</td><td>HIGH</td><td>CLOSED — New vulnerability entry with origin validation + challenge secret</td><td>V57 added</td></tr>
 <tr><td>F3</td><td>HIGH</td><td>CLOSED — Monotonic sequence number + cooldown + conflict resolution</td><td>V47 amended</td></tr>
-<tr><td>F4</td><td>HIGH</td><td>CLOSED — Tiered hard-fail/grace/soft-fail CRL policy</td><td>V48 amended</td></tr>
+<tr><td>F4</td><td>HIGH</td><td>CLOSED — V48 model resolved: TOFU + RK rotation (no CRL needed)</td><td>V48 rewritten</td></tr>
 <tr><td>F5</td><td>MEDIUM</td><td>CLOSED — Pre-filter by fog + constant-time padding</td><td>V5 amended, proptest added</td></tr>
 <tr><td>F6</td><td>MEDIUM</td><td>CLOSED — External URL blocking during replay playback</td><td>V41 amended, proptest added</td></tr>
 <tr><td>F7</td><td>MEDIUM</td><td>CLOSED — 120-second minimum observer delay floor for ranked</td><td>V59 added</td></tr>
@@ -288,22 +288,12 @@
 </ul>
 <p><strong>Milestone:</strong> M8 (identity key management ships Phase 5)</p>
 <hr>
-<h3 id="finding-4-v48-crl-revocation--unknown-status-behavior-unspecified"><a class="header" href="#finding-4-v48-crl-revocation--unknown-status-behavior-unspecified">Finding 4: V48 CRL Revocation — Unknown-Status Behavior Unspecified</a></h3>
+<h3 id="finding-4-v48-server-trust-model--resolved-by-tofu-canonicalization"><a class="header" href="#finding-4-v48-server-trust-model--resolved-by-tofu-canonicalization">Finding 4: V48 Server Trust Model — Resolved by TOFU Canonicalization</a></h3>
 <p><strong>Severity: HIGH</strong><br><strong>Affected:</strong> V48 (06-SECURITY.md)</p>
-<p>CRL cache TTL is 1 hour. OCSP fast-check has a 50ms timeout. The doc doesn’t specify behavior when <strong>both</strong> fail (cache expired AND OCSP unreachable):</p>
-<ul>
-<li>If the client proceeds anyway (soft-fail), a revoked server operates indefinitely when the CRL distribution point is down</li>
-<li>If the client blocks (hard-fail), network issues at the CRL endpoint prevent all community server connections — a denial-of-service via CRL infrastructure</li>
-</ul>
-<p>This is the same “soft-fail vs hard-fail” debate from the TLS certificate revocation world. Neither extreme is acceptable.</p>
-<p><strong>Recommendation:</strong></p>
-<ul>
-<li>Specify a <strong>hard-fail with grace period</strong>: if CRL is expired AND OCSP fails, accept the cached CRL for an additional 24 hours, then hard-fail. This gives operators time to fix CRL distribution while bounding the vulnerability window.</li>
-<li>For ranked matches specifically: hard-fail immediately when revocation status is unknown (competitive integrity &gt; availability)</li>
-<li>For unranked: soft-fail with a visible warning (“Server certificate status could not be verified”)</li>
-<li>Add this decision to the Competitive Integrity Summary table</li>
-</ul>
-<p><strong>Milestone:</strong> M9+ (community server auth ships Phase 7)</p>
+<p><strong>Original finding:</strong> V48 specified a CRL/OCSP certificate revocation model without defining unknown-status behavior (soft-fail vs hard-fail). This was a genuine gap.</p>
+<p><strong>Resolution:</strong> The V48 trust model has been rewritten to align with D052’s canonical TOFU + SK/RK two-key hierarchy. IC does not use a CA/CRL/OCSP infrastructure — community servers are self-sovereign with SSH/PGP-style trust-on-first-use. This eliminates the CRL unknown-status problem entirely: there is no CRL to go stale and no OCSP endpoint to become unreachable.</p>
+<p>The equivalent ambiguity in the TOFU model (“what happens when key state is ambiguous?”) is now resolved by V48’s connection policy table: key match → proceed, valid rotation chain → update and proceed, no valid chain → reject for ranked / warn for unranked / warn-only for LAN. First ranked connections require seed list or manual trust verification.</p>
+<p><strong>Milestone:</strong> M5 (identity key management ships Phase 5)</p>
 <hr>
 <h3 id="finding-5-wasm-timing-side-channel-maphack"><a class="header" href="#finding-5-wasm-timing-side-channel-maphack">Finding 5: WASM Timing Side-Channel Maphack</a></h3>
 <p><strong>Severity: MEDIUM</strong><br><strong>Affected:</strong> V5 (06-SECURITY.md), 04-MODDING.md WASM Sandbox</p>
@@ -354,7 +344,7 @@ custom_sprite: "https://evil.com/exploit.shp"
 <p>In fog-authoritative mode, spectators see the full game state. Without a mandatory minimum delay, a spectator could relay fogged information to a player via out-of-band channels (Discord, phone) with trivial latency.</p>
 <p><strong>Recommendation:</strong></p>
 <ul>
-<li>Define a <strong>minimum observer delay floor</strong> for ranked matches (e.g., 120 seconds / 3600 ticks — enough that tactical information is stale)</li>
+<li>Define a <strong>minimum observer delay floor</strong> for ranked matches (e.g., 120 seconds / 2,400 ticks at Normal ~20 tps — enough that tactical information is stale). The floor is enforced in wall-clock seconds; the relay computes the minimum tick count from the match’s game speed preset (V59).</li>
 <li>Make this a <code>ProtocolLimits</code>-style hard floor that community servers cannot reduce below for ranked games</li>
 <li>Document this in the Competitive Integrity Summary table</li>
 <li>Add to D055’s ranked exit criteria</li>

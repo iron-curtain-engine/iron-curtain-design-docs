@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -230,7 +230,7 @@
 <p>If the background writer thread falls behind (disk I/O spike, system memory pressure, antivirus scan), frames are silently lost. The consequences:</p>
 <ol>
 <li>
-<p><strong>Broken signature chain:</strong> The relay-signed tick hash chain (<code>TickSignature</code> in <code>formats/save-replay-formats.md</code>) links each tick’s signature to the previous tick’s hash. A gap in the frame sequence breaks the chain — the replay appears complete but fails cryptographic verification.</p>
+<p><strong>Broken signature chain:</strong> The relay-signed tick hash chain (<code>TickSignature</code> in <code>formats/save-replay-formats.md</code>) links each signed boundary’s signature to the previous signed boundary’s hash. If a signing-cadence tick’s frame is lost, the chain has a gap — the replay appears complete but fails cryptographic verification.</p>
 </li>
 <li>
 <p><strong>Silent data loss:</strong> No log message, no metric, no metadata flag indicates frames were lost. The replay file looks valid but is missing data.</p>
@@ -241,7 +241,7 @@
 </ol>
 <h3 id="mitigation-2"><a class="header" href="#mitigation-2">Mitigation</a></h3>
 <p><strong>Frame loss tracking:</strong> <code>BackgroundReplayWriter</code> maintains a <code>lost_frame_count: AtomicU32</code> counter. When <code>send_timeout</code> expires, the counter increments. The final replay header records the total lost frame count. Playback tools display a warning: “This replay has N missing frames.”</p>
-<p><strong><code>send_timeout</code> instead of <code>try_send</code>:</strong> Replace <code>try_send</code> with <code>send_timeout(frame, Duration::from_millis(5))</code>. This gives the writer a brief window to drain the channel during I/O spikes without blocking the sim thread for perceptible time. 5 ms is well within a 33 ms tick budget.</p>
+<p><strong><code>send_timeout</code> instead of <code>try_send</code>:</strong> Replace <code>try_send</code> with <code>send_timeout(frame, Duration::from_millis(5))</code>. This gives the writer a brief window to drain the channel during I/O spikes without blocking the sim thread for perceptible time. 5 ms is well within the 67 ms tick budget (Slower default).</p>
 <p><strong>Incomplete replay marking:</strong> If any frames are lost, the replay header’s <code>INCOMPLETE</code> flag (bit 4) is set and <code>lost_frame_count</code> records the total. Incomplete replays are playable up to the last recorded frame — playback simply ends early when the order stream is exhausted. They cannot be submitted for ranked verification or used as evidence in anti-cheat disputes.</p>
 <p><strong>Signature chain gap handling:</strong> The hash chain must account for frame gaps explicitly. Each <code>TickSignature</code> carries a <code>skipped_ticks: u32</code> field (0 when contiguous). When frames are lost, the next signature includes the gap count: <code>hash(prev_sig_hash, skipped_ticks, tick, state_hash)</code>. The relay co-signs <code>(skipped_ticks, tick, state_hash, prev_sig_hash)</code>. Verifiers reconstruct the chain by incorporating <code>skipped_ticks</code> into the hash — gaps are accounted for rather than treated as tampering. See <code>formats/save-replay-formats.md</code> § TickSignature for the schema.</p>
 <p><strong>Phase:</strong> Replay writer hardening ships with replay system (Phase 2). Frame loss tracking is a Phase 2 exit criterion.</p>
@@ -312,27 +312,51 @@ pub enum KeyRotationReason {
 <h2 id="vulnerability-48-community-server-key-revocation-gap"><a class="header" href="#vulnerability-48-community-server-key-revocation-gap">Vulnerability 48: Community Server Key Revocation Gap</a></h2>
 <h3 id="the-problem-5"><a class="header" href="#the-problem-5">The Problem</a></h3>
 <p><strong>Severity: HIGH</strong></p>
-<p>Community servers authenticate via Ed25519 key pairs (D060), but there is no revocation mechanism. A compromised community server key allows an attacker to impersonate the server, intercept player sessions, and potentially inject malicious match results or replay data until the key naturally expires (if it ever does).</p>
+<p>Community servers authenticate via Ed25519 key pairs (D052), but what happens when a community server’s Signing Key (SK) is compromised and the operator is slow to respond? The attacker can impersonate the server, forge SCRs, and manipulate match results until the operator performs an RK-signed emergency rotation.</p>
 <h3 id="mitigation-5"><a class="header" href="#mitigation-5">Mitigation</a></h3>
-<p><strong>Server key certificate chain:</strong> Community servers obtain signed certificates from a federation authority (relay master server or community trust anchor). Certificates have a bounded validity period (default: 90 days, max: 1 year).</p>
-<p><strong>Certificate revocation list (CRL):</strong> The federation authority maintains a CRL distributed via a signed, timestamped manifest. Clients check the CRL before establishing sessions with community servers. CRL checks use a cached-with-TTL model (TTL: 1 hour) to avoid blocking on every connection.</p>
-<p><strong>OCSP-style fast revocation:</strong> For urgent revocations, a lightweight online check endpoint returns revocation status for a single server key. Clients try the fast check first (50ms timeout) and fall back to the cached CRL.</p>
-<p><strong>Operator-initiated revocation:</strong> Server operators can revoke their own key via a signed revocation request to the federation authority. This is useful for planned key rotation or suspected compromise.</p>
-<p><strong>Unknown-status policy (F4 closure):</strong> When both CRL cache is expired AND OCSP fast-check is unreachable, the client must choose between soft-fail (proceed despite unknown revocation status) and hard-fail (block connection). Neither extreme is acceptable:</p>
+<p><strong>Canonical trust model: TOFU + SK/RK two-key hierarchy (D052).</strong> IC uses an SSH/PGP-style trust model — not a TLS-style certificate authority. There is no central federation authority, no CRL, and no OCSP infrastructure. Community servers are self-sovereign: they generate their own key pairs and clients trust them on first use (TOFU). This is an explicit architectural choice — see <code>D052-keys-operations-integration.md</code> § Key Expiry Policy for the rationale.</p>
+<p><strong>Defense layers within the TOFU model:</strong></p>
+<ol>
+<li>
+<p><strong>RK emergency rotation (primary mechanism, D052):</strong> The operator revokes the compromised SK via the offline Recovery Key: <code>ic community emergency-rotate --recovery-key &lt;rk&gt;</code>. Clients that receive the RK-signed rotation record immediately reject the old SK with zero grace period. The attacker has the SK but not the RK — they cannot forge rotation records.</p>
+</li>
+<li>
+<p><strong>SCR expiry bounds the blast radius:</strong> Rating SCRs expire in 7 days (default <code>expires_at</code>). A compromised server can forge ratings for at most one week before they go stale. Match/achievement SCRs with <code>expires_at: never</code> signed during the compromise window are flagged as “potentially compromised” per D052’s recovery flow (⚠️ in UI for SCRs signed by the old key after the <code>effective_at</code> timestamp).</p>
+</li>
+<li>
+<p><strong>Client TOFU rejection protects existing members:</strong> Clients cache the community’s SK public key on first join. If an attacker stands up a server using the stolen SK with a different endpoint, existing members’ clients will connect to the real server URL (pinned at join). If the attacker hijacks the real endpoint, they present the same cached key — this is one scenario TOFU cannot defend against, but the RK rotation terminates it.</p>
+</li>
+<li>
+<p><strong>Seed list curation (social-layer defense):</strong> The <code>iron-curtain/community-servers</code> repository (D074) can delist compromised communities. This is not cryptographic revocation — it is community-level advisory. New players won’t discover the compromised server; existing members receive a warning on next seed list sync.</p>
+</li>
+<li>
+<p><strong>Client-side trust removal (D053):</strong> Players who suspect compromise remove the community from their trusted list. The community appears as ⚠️ Untrusted in other players’ profiles.</p>
+</li>
+</ol>
+<p><strong>Connection policy when key state is ambiguous:</strong></p>
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>Mode</th><th>Policy</th><th>Rationale</th></tr>
+<tr><th>Scenario</th><th>Ranked</th><th>Unranked</th><th>LAN / private</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>Ranked matches</strong></td><td>Hard-fail immediately</td><td>Competitive integrity &gt; availability. A revoked server must not host ranked games.</td></tr>
-<tr><td><strong>Unranked matches</strong></td><td>Hard-fail with 24-hour grace period</td><td>Accept the cached CRL for an additional 24 hours after TTL expiry, then hard-fail. Gives operators time to fix CRL distribution. Display warning: “Server certificate status could not be verified.”</td></tr>
-<tr><td><strong>LAN / private</strong></td><td>Soft-fail with warning</td><td>Local trust, no revocation infrastructure expected. Always display warning.</td></tr>
+<tr><td>Key matches cached TOFU key</td><td>Proceed</td><td>Proceed</td><td>Proceed</td></tr>
+<tr><td>Key mismatch, valid rotation chain</td><td>Proceed (update cache)</td><td>Proceed (update cache)</td><td>Proceed</td></tr>
+<tr><td>Key mismatch, no valid rotation chain</td><td>Reject</td><td>Reject + warn</td><td>Warn only</td></tr>
+<tr><td>First connection (no cached key)</td><td>Require seed list or manual trust</td><td>TOFU accept + warn</td><td>TOFU accept</td></tr>
+<tr><td>Community delisted from seed list</td><td>Reject</td><td>Warn</td><td>N/A</td></tr>
 </tbody>
 </table>
 </div>
-<p>This mirrors the TLS revocation world’s pragmatic compromise: strict for high-stakes contexts, lenient for casual contexts, always transparent about the status. The 24-hour grace period bounds the vulnerability window while preventing CRL infrastructure outages from becoming denial-of-service against all community server connections.</p>
-<p><strong>Phase:</strong> Community server key revocation ships with community server support (Phase 7). CRL distribution is a Phase 7 exit criterion. Unknown-status policy is documented in the Competitive Integrity Summary table.</p>
+<p>For ranked play, first connections to a community require the server to be present in a trusted seed list OR the player to have manually verified the key fingerprint (SSH <code>known_hosts</code> model). This prevents a smurf from standing up a fake “community” to farm ranked results.</p>
+<p><strong>Residual risk:</strong> If the operator loses both the SK AND the RK, the community is dead — no recovery is possible. This is intentional: it prevents key selling and ensures operators take backup seriously. The mnemonic seed recovery path (D061) applies to player keys, not community keys — community keys use file-based backup (<code>ic community export-signing-key</code>) and offline RK storage.</p>
+<p><strong>What this model does NOT provide:</strong></p>
+<ul>
+<li>Third-party revocation (“someone reported community X is compromised”) — only the RK holder can revoke. This matches PGP.</li>
+<li>Centralized trust infrastructure — no CA, no CRL, no OCSP. The tradeoff is that compromise propagation depends on operator responsiveness. This is acceptable for IC’s target audience (hobbyist operators who are already reachable via Discord/email/their website).</li>
+<li>Key expiry — community keys do not expire. Voluntary rotation is nudged via server warnings (12 months) and client indicators (24 months). See D052 § Key Expiry Policy.</li>
+</ul>
+<p><strong>Phase:</strong> Community server key revocation ships with the community server (Phase 5, per D074). RK emergency rotation is a Phase 5 exit criterion — ranked play requires recoverable server keys from initial deployment.</p>
 <h2 id="vulnerability-49-workshop-package-author-signing-absence"><a class="header" href="#vulnerability-49-workshop-package-author-signing-absence">Vulnerability 49: Workshop Package Author Signing Absence</a></h2>
 <h3 id="the-problem-6"><a class="header" href="#the-problem-6">The Problem</a></h3>
 <p><strong>Severity: HIGH</strong></p>

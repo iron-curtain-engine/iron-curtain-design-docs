@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -225,9 +225,50 @@ pub trait GameModule {
     fn register_commands(&amp;self, dispatcher: &amp;mut CommandDispatcher);
 
     /// YAML rule schema for this game's unit definitions.
+    /// Used by the editor for validation/autocomplete and by `ic mod lint` for checking.
     fn rule_schema(&amp;self) -&gt; RuleSchema;
 }
+
+/// Describes the YAML rule structure for a game module.
+/// Maps top-level YAML keys to expected field types, marks required vs optional fields,
+/// and declares valid enum values. Used by the scenario editor (D038) for autocomplete,
+/// `ic mod lint` for validation, and LLM generation (D016) for schema-aware output.
+struct RuleSchema {
+    /// Top-level actor categories (e.g., "infantry", "vehicle", "building", "aircraft").
+    actor_categories: Vec&lt;CategoryDef&gt;,
+    /// Weapon definition schema.
+    weapon_schema: FieldMap,
+    /// Projectile/warhead schemas.
+    warhead_schema: FieldMap,
+}
 <span class="boring">}</span></code></pre>
+<h3 id="bevy-app-construction-ic-game"><a class="header" href="#bevy-app-construction-ic-game">Bevy App Construction (ic-game)</a></h3>
+<p>The <code>GameModule</code> trait provides the pieces; the <code>ic-game</code> binary assembles them into a Bevy <code>App</code>. Each IC crate exposes a Bevy <code>Plugin</code> that accepts game-module-provided configuration:</p>
+<pre class="playground"><code class="language-rust">// ic-game/src/main.rs (simplified)
+fn main() {
+    let module: Box&lt;dyn GameModule&gt; = select_game_module(); // CLI flag, config, or lobby selection
+
+    let mut app = App::new();
+    app.add_plugins(DefaultPlugins);                    // Bevy: windowing, input, asset server
+    app.add_plugins(SimPlugin::new(&amp;*module));           // ic-sim: ECS components + system pipeline
+    app.add_plugins(NetPlugin);                          // ic-net: NetworkModel, relay client
+    app.add_plugins(RenderPlugin::new(&amp;*module));        // ic-render: sprite/voxel backends
+    app.add_plugins(AudioPlugin);                        // ic-audio: .aud, EVA, music
+    app.add_plugins(UiPlugin);                           // ic-ui: sidebar, minimap, build queue
+    app.add_plugins(ScriptPlugin);                       // ic-script: Lua + WASM runtimes
+    app.add_plugins(AiPlugin);                           // ic-ai: skirmish AI
+    app.run();
+}</code></pre>
+<p><strong>What <code>SimPlugin::new()</code> does internally:</strong></p>
+<ol>
+<li>Calls <code>module.register_components(world)</code> — inserts game-specific ECS components</li>
+<li>Stores the system pipeline from <code>module.system_pipeline()</code> as a resource — <code>Simulation::apply_tick()</code> runs these in order</li>
+<li>Inserts trait objects as Bevy resources: <code>module.pathfinder()</code> → <code>Res&lt;Box&lt;dyn Pathfinder&gt;&gt;</code>, <code>module.spatial_index()</code> → <code>Res&lt;Box&lt;dyn SpatialIndex&gt;&gt;</code>, etc.</li>
+<li>Calls <code>module.register_format_loaders(registry)</code> — registers <code>.shp</code>, <code>.mix</code>, etc. with Bevy’s <code>AssetServer</code></li>
+<li>Stores <code>module.rule_schema()</code> for validation and editor integration</li>
+</ol>
+<p><strong>Plugin registration order matters:</strong> <code>SimPlugin</code> must register before <code>RenderPlugin</code> (render reads sim state). <code>NetPlugin</code> provides the <code>NetworkModel</code> resource that <code>GameLoop</code> depends on. <code>ScriptPlugin</code> registers after <code>SimPlugin</code> because Lua/WASM scripts interact with already-registered components.</p>
+<p><strong>Module selection:</strong> <code>select_game_module()</code> returns a <code>Box&lt;dyn GameModule&gt;</code> based on launch context — defaulting to RA1, switchable via <code>--mod td</code> CLI flag or lobby selection. The module choice is fixed for the lifetime of a match; switching modules between matches uses the drop-and-recreate strategy (see <code>game-loop.md</code> § Match Cleanup).</p>
 <p><strong>Validation from OpenRA mod ecosystem:</strong> Analysis of six major OpenRA community mods (see <code>research/openra-mod-architecture-analysis.md</code>) confirms that every <code>GameModule</code> trait method addresses a real extension need:</p>
 <ul>
 <li><strong><code>register_format_loaders()</code></strong> — OpenKrush (KKnD on OpenRA) required 15+ custom binary format decoders (<code>.blit</code>, <code>.mobd</code>, <code>.mapd</code>, <code>.lvl</code>, <code>.son</code>, <code>.vbc</code>) that bear no resemblance to C&amp;C formats. TiberianDawnHD needed <code>RemasterSpriteSequence</code> for 128×128 HD tiles. Format extensibility is not optional for non-C&amp;C games.</li>

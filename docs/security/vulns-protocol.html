@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -399,7 +399,7 @@ impl RelaySessionAuth {
 <li><strong>Ephemeral session keys.</strong> Generated fresh for each game. Distinct from D052 long-lived identity keys (see <code>decisions/09b/D052/D052-keys-operations-integration.md</code>). No long-lived keys to steal. Key exchange happens during lobby setup over the encrypted channel (Vulnerability 14).</li>
 <li><strong>Defense in depth.</strong> Relay validates signatures AND stamps orders. Sim validates order legality (D012).</li>
 <li><strong>Overhead is minimal.</strong> Ed25519 signing is ~15,000 ops/second on a single core. At peak RTS APM (~300 orders/minute = 5/second), signature overhead is negligible.</li>
-<li><strong>Replays include the relay-signed tick hash chain.</strong> Each tick’s <code>state_hash</code> is signed by the relay via <code>TickSignature</code> (see <code>formats/save-replay-formats.md</code> § Signature Chain). This chain allows post-hoc verification that no tick outcomes were tampered with — useful for tournament dispute resolution. Per-order session signatures are NOT stored in replays; the replay verification model is tick-level, not order-level.</li>
+<li><strong>Replays include the relay-signed tick hash chain.</strong> State hashes at signing cadence boundaries (every N ticks, default 30) are signed by the relay via <code>TickSignature</code> (see <code>formats/save-replay-formats.md</code> § Signature Chain). This sparse chain allows post-hoc verification that no tick outcomes were tampered with — useful for tournament dispute resolution. Per-order session signatures are NOT stored in replays; the replay verification model is tick-level, not order-level.</li>
 </ul>
 <h2 id="vulnerability-17-state-saturation-order-flooding"><a class="header" href="#vulnerability-17-state-saturation-order-flooding">Vulnerability 17: State Saturation (Order Flooding)</a></h2>
 <h3 id="the-problem-3"><a class="header" href="#the-problem-3">The Problem</a></h3>

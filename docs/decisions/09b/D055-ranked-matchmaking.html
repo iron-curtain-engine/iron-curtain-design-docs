@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-194dde15.js"></script>
+        <script src="../../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -491,10 +491,10 @@ glicko2:
   inactivity_c: 34.6              # RD growth constant for inactive players
   rating_period_days: 0           # 0 = per-match updates (no batch periods)
 
-  # Match quality weighting
+  # Match quality weighting (tick-based: measures game progression, not wall time)
   match_duration_weight:
-    min_ticks: 3600               # 2 minutes at 30 tps — below this, reduced weight
-    full_weight_ticks: 18000      # 10 minutes — at or above this, full weight
+    min_ticks: 3600               # ~3 min at Normal ~20 tps — below this, reduced weight
+    full_weight_ticks: 18000      # ~15 min at Normal ~20 tps — at or above this, full weight
     short_game_factor: 300        # 0-1000 fixed-point weight for games &lt; min_ticks
 
   # Team game handling (2v2, 3v3)

@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-194dde15.js"></script>
+        <script src="../../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -186,7 +186,7 @@
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>/// Run a deterministic sim scenario and return the final state hash.
-pub fn run_scenario(scenario: &amp;Scenario, seed: u64) -&gt; SimStateHash;
+pub fn run_scenario(scenario: &amp;Scenario, seed: u64) -&gt; SyncHash;
 
 /// Run the same scenario N times and assert all hashes match.
 pub fn assert_deterministic(scenario: &amp;Scenario, seed: u64, runs: usize);
@@ -209,8 +209,8 @@ pub fn assert_zero_alloc_hot_path(scenario: &amp;Scenario, ticks: usize);
 /// Run a scenario with a sandbox module and assert all escape vectors are blocked.
 pub fn assert_sandbox_contained(module: &amp;WasmModule, escape_vectors: &amp;[EscapeVector]);
 
-/// Run order validation and assert sim state is unchanged (purity check).
-pub fn assert_validation_pure(state: &amp;SimState, orders: &amp;[PlayerOrder]);
+/// Run order validation and assert sim state hash is unchanged (purity check).
+pub fn assert_validation_pure(snap: &amp;SimCoreSnapshot, orders: &amp;[PlayerOrder]);
 
 /// Run two sim instances with identical input and assert hash match at every tick.
 pub fn assert_twin_determinism(scenario: &amp;Scenario, seed: u64, ticks: usize);
@@ -219,8 +219,10 @@ pub fn assert_twin_determinism(scenario: &amp;Scenario, seed: u64, ticks: usize)
 /// a stored cross-platform reference hash.
 pub fn assert_cross_platform_hash(scenario: &amp;Scenario, reference: &amp;HashFile);
 
-/// Run snapshot round-trip and assert byte-exact reconstruction.
-pub fn assert_snapshot_roundtrip(state: &amp;SimState) -&gt; RoundTripResult;
+/// Run snapshot round-trip and assert state identity via hash comparison.
+/// Takes a snapshot, restores it into a fresh sim, and verifies that
+/// `state_hash()` matches the original — state identity, not byte-exactness.
+pub fn assert_snapshot_roundtrip(snap: &amp;SimCoreSnapshot);
 
 /// Run a campaign mission sequence and verify roster carryover.
 pub fn assert_roster_carryover(campaign: &amp;CampaignGraph, mission_sequence: &amp;[MissionId]);
@@ -366,7 +368,7 @@ pub struct TickStats {
 <tr><th>Test</th><th>Method</th><th>Pass Criteria</th><th>Tier</th></tr>
 </thead>
 <tbody>
-<tr><td>Exhaustive rejection matrix</td><td>For each order type (Move, Attack, Build, etc.) × each of the 8 rejection categories (ownership, unit-type mismatch, out-of-range, insufficient resources, tech prerequisite, placement invalid, budget exceeded, unsupported-for-phase): construct an order that triggers exactly that rejection</td><td>Correct <code>OrderRejection</code> variant returned for every cell in the matrix</td><td>T1</td></tr>
+<tr><td>Exhaustive rejection matrix</td><td>For each order type (Move, Attack, Build, etc.) × each of the 8 rejection categories (ownership, unit-type mismatch, out-of-range, insufficient resources, tech prerequisite, placement invalid, budget exceeded, unsupported-for-phase): construct an order that triggers exactly that rejection</td><td>Correct <code>OrderRejectionCategory</code> (D012) returned for every cell in the matrix; concrete variant within each category is implementation-defined</td><td>T1</td></tr>
 <tr><td>Random order validation</td><td>Proptest generates random <code>PlayerOrder</code> values with arbitrary fields</td><td>Validation never panics; always returns a valid <code>OrderValidity</code> variant</td><td>T3</td></tr>
 <tr><td>Validation purity</td><td>Run <code>validate_order_checked</code> with debug assertions enabled; verify sim state hash before and after validation</td><td>State hash unchanged — validation has zero side effects</td><td>T1</td></tr>
 <tr><td>Rejection telemetry</td><td>Submit 50 invalid orders from one player across 10 ticks</td><td>All 50 rejections appear in anti-cheat telemetry with correct categories</td><td>T2</td></tr>

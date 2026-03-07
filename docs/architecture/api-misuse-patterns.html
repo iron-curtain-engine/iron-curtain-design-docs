@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -323,12 +323,13 @@
 <tr><th>Gap</th><th>Current State</th><th>Recommended Action</th><th>Priority</th></tr>
 </thead>
 <tbody>
-<tr><td><code>DeltaSnapshot</code> baseline validation</td><td>Defined (S10) but no subsystem test spec</td><td>Add to Reconnection Snapshot test table</td><td>M4</td></tr>
+<tr><td><code>DeltaSnapshot</code> baseline validation</td><td>Covered: S10 runtime test in <code>testing-properties-misuse-integration.md</code> (divergent-baseline delta → <code>Err(BaselineMismatch)</code>, sim state unchanged). Delta baselines matter for replay <code>apply_full_delta()</code> and autosave I/O-thread reconstruction — reconnection uses full <code>SimSnapshot</code>, not deltas.</td><td><del>Resolved</del> — S10 test spec exists. Verify implementation during M2.QA.SIM_API_DEFENSE_TESTS.</td><td>M2</td></tr>
+<tr><td>Composite restore/apply integration</td><td>Property tests cover <code>GameRunner::restore_full()</code> / <code>apply_full_delta()</code> round-trips and autosave fidelity (<code>testing-properties-misuse-integration.md</code>) — this validates the <em>testing contract</em> (correct types, correct assertions, correct metric). Remaining open gap: integration tests exercising campaign graph mutation + Lua VM rehydration + script <code>on_deserialize()</code> correctness across save-load and replay seeking paths. The property tests prove the sim-core round-trip; the integration gap is the campaign/script layer behavior under real orchestration.</td><td>Add integration test scenarios: (1) save-load with active campaign branching + Lua globals, (2) replay seek across a campaign branch point, (3) autosave round-trip with WASM persistent memory</td><td>M4</td></tr>
 <tr><td>Lua timer recursion depth bound</td><td>Designed (L6) but not in any fuzz target</td><td>Add <code>lua_timer_chain</code> fuzz target</td><td>M7</td></tr>
 <tr><td><code>UnitTag</code> generation wraparound</td><td>Handled by slot retirement (U3) but rare to trigger</td><td>Add T4 stress test for wraparound</td><td>M9</td></tr>
 <tr><td>Config hot-reload atomicity</td><td>Designed (F5) but not in subsystem test specs</td><td>Add to Console Command or Server Config test table</td><td>M5</td></tr>
 <tr><td>Foreign replay order rejection (R5)</td><td><code>ForeignDivergence</code> logging defined but no labeled corpus</td><td>Add foreign replay test corpus (10 replays minimum)</td><td>M10</td></tr>
-<tr><td>Cross-module WASM communication</td><td>Blocked by type system, but inter-module data leaks via shared host resources (e.g., global ECS) need integration testing</td><td>Add WASM inter-module integration scenario</td><td>M7</td></tr>
+<tr><td>Cross-module WASM communication</td><td>Blocked by type system; basic cross-module probe tests spec’d at M6 (V50 — <code>testing-coverage-release.md</code>). Remaining gap: inter-module data leaks via shared host resources (e.g., global ECS) need expanded integration testing beyond M6’s probe coverage.</td><td>Add WASM shared-host-resource integration scenarios (beyond M6 probes)</td><td>M7</td></tr>
 <tr><td>Ping/draw rate recovery timing</td><td>Budget recovery is tested but exact tick-level recovery rate is not asserted</td><td>Add specific tick-count assertion for rate recovery</td><td>M6</td></tr>
 </tbody>
 </table>
@@ -341,7 +342,7 @@
 <tr><th>API Surface</th><th>Misuse Vectors</th><th>Compile-Time Defenses</th><th>Runtime Defenses</th><th>Tests Required</th></tr>
 </thead>
 <tbody>
-<tr><td>Simulation</td><td>10</td><td>3 (borrow checker, <code>!Sync</code>, <code>ReconcilerToken</code>)</td><td>7 (hash check, validation, bounds)</td><td>8 runtime tests</td></tr>
+<tr><td>Simulation</td><td>10</td><td>3 (borrow checker, <code>!Sync</code> via Bevy <code>World</code>, <code>ReconcilerToken</code>)</td><td>8 (hash check, validation, bounds, dedup)</td><td>8 runtime tests</td></tr>
 <tr><td>Order Pipeline</td><td>8</td><td>3 (<code>Verified</code>, <code>_private</code>, <code>BoundedVec</code>)</td><td>5 (validation, budget, clamping)</td><td>6 runtime tests</td></tr>
 <tr><td>Network/Relay</td><td>8</td><td>2 (<code>FromClient</code>/<code>FromServer</code>, <code>SyncHash</code>≠<code>StateHash</code>)</td><td>6 (challenge, hash, typestate)</td><td>6 runtime tests</td></tr>
 <tr><td>WASM Sandbox</td><td>9</td><td>4 (typestate, <code>_private</code>, capability tokens, type rejection)</td><td>5 (fuel, memory cap, timeout)</td><td>7 runtime tests</td></tr>
@@ -359,7 +360,7 @@
 </tbody>
 </table>
 </div>
-<p>The type system eliminates 27 misuse vectors at compile time (31%). The remaining 61 require runtime checks with automated test coverage. Every runtime defense has a corresponding test in the CI pipeline.</p>
+<p>The type system eliminates 27 misuse vectors at compile time (31%). The remaining 61 require runtime checks. Most runtime defenses have corresponding tests spec’d in <code>testing-properties-misuse-integration.md</code>; the gap table above tracks the remaining coverage work (composite integration, Lua timer fuzz, config atomicity, foreign replay corpus, WASM inter-module isolation, ping rate recovery).</p>
 
                     </main>
 

@@ -35,10 +35,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-194dde15.js"></script>
+        <script src="toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -299,6 +299,9 @@
 <tr><td><del>P002</del></td><td><del>Fixed-point scale</del> → <strong>Resolved: 1024</strong> (matches OpenRA WDist/WPos/WAngle). See <code>research/fixed-point-math-design.md</code></td><td>Resolved</td></tr>
 <tr><td><del>P003</del></td><td><del>Audio library choice + music integration design</del> → <strong>Resolved: Kira via <code>bevy_kira_audio</code></strong> — four-bus mixer (Music/SFX/Voice/Ambient), dynamic music FSM, EVA priority queue, sound pooling. See <code>research/audio-library-music-integration-design.md</code></td><td>Resolved</td></tr>
 <tr><td><del>P004</del></td><td><del>Lobby/matchmaking wire format details</del> → <strong>Resolved:</strong> Complete lobby/matchmaking/discovery wire protocol — CBOR framing, 40+ message types, server discovery (HTTPS seed + mDNS), matchmaking queue, SCR credential exchange, lobby→game transition. See <code>research/lobby-matchmaking-wire-protocol-design.md</code></td><td>Resolved</td></tr>
+<tr><td>P007</td><td>Non-lockstep client game loop strategy — keep lockstep-only <code>GameLoop</code> and add separate <code>FogAuthGameLoop</code>/<code>RollbackGameLoop</code> later, or generalize the client/game-loop boundary now? See <code>architecture/game-loop.md</code> § FogAuth/Rollback, <code>netcode/network-model-trait.md</code> § Additional NetworkModel Architectures</td><td>M11 (Phase 7)</td></tr>
+<tr><td>P008</td><td>Workshop P2P transport: uTP (BT interop, NAT-friendly), QUIC (modern TLS + multiplexing), or dual-stack? Affects tracker behavior, NAT assumptions, dependency surface, operational tooling. See <code>decisions/09b/D074-community-server-bundle.md</code> § P2P transport</td><td>Phase 4 (M8)</td></tr>
+<tr><td>P009</td><td>Official ranked speed policy — one globally canonical speed preset for all ranked queues (cross-community rating comparability), or community/queue-specific with rating-weight normalization? Affects spectator-delay defaults, tick-threshold consistency, cross-community Glicko-2 portability. See <code>decisions/09b/D060-netcode-params.md</code> § Tier 1</td><td>Phase 5 (M7)</td></tr>
 </tbody>
 </table>
 </div>

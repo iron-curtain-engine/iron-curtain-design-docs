@@ -35,10 +35,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-194dde15.js"></script>
+        <script src="toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -207,7 +207,7 @@
 <h2 id="quick-start"><a class="header" href="#quick-start">Quick Start</a></h2>
 <h3 id="running-a-relay-server-with-defaults"><a class="header" href="#running-a-relay-server-with-defaults">Running a Relay Server with Defaults</a></h3>
 <p>Every parameter has a sane default. A bare relay server works without any configuration file:</p>
-<pre><code class="language-bash">./relay-server
+<pre><code class="language-bash">./ic-server
 </code></pre>
 <p>This starts a relay on the default port with:</p>
 <ul>
@@ -225,7 +225,7 @@ max_games = 50
 </code></pre>
 <p>Any parameter you omit uses its compiled default. You never need to specify the full schema — only your overrides.</p>
 <p>Start the server with a specific config file:</p>
-<pre><code class="language-bash">./relay-server --config /path/to/server_config.toml
+<pre><code class="language-bash">./ic-server --config /path/to/server_config.toml
 </code></pre>
 <h3 id="validating-a-configuration"><a class="header" href="#validating-a-configuration">Validating a Configuration</a></h3>
 <p>Before deploying a new config, validate it without starting the server:</p>
@@ -491,25 +491,26 @@ max_games = 50
 </thead>
 <tbody>
 <tr><td><code>spectator.allow_live</code></td><td>true</td><td>true</td><td>Whether live spectating is enabled at all</td></tr>
-<tr><td><code>spectator.delay_ticks</code></td><td>90 (3s)</td><td>3600 (2min)</td><td>Feed delay in ticks (at 30 tps)</td></tr>
+<tr><td><code>spectator.delay_ticks</code></td><td>60 (3s†)</td><td>2400 (120s†)</td><td>Feed delay in ticks (†at Normal ~20 tps). For ranked/tournament, the relay clamps this upward to enforce V59’s wall-time floor (120s/180s) regardless of game speed — see below</td></tr>
 <tr><td><code>spectator.max_per_match</code></td><td>50</td><td>50</td><td>Maximum spectators per match</td></tr>
 <tr><td><code>spectator.full_visibility</code></td><td>true</td><td>false</td><td>Whether spectators see both teams</td></tr>
 <tr><td><code>spectator.allow_player_disable</code></td><td>true</td><td>false</td><td>Whether players can opt out of being spectated</td></tr>
 </tbody>
 </table>
 </div>
-<p><strong>Common delay values</strong> (at 30 ticks per second):</p>
+<p><strong>V59 wall-time floor enforcement:</strong> The security floor for ranked (120s) and tournament (180s) is defined in wall-clock seconds, not ticks. The relay computes the minimum tick count at match start: <code>min_delay_ticks = floor_secs × tps_for_speed_preset</code>. If <code>spectator.delay_ticks</code> falls below this computed minimum, the relay clamps it upward. This ensures the floor holds at any game speed (D060). The tick values below assume Normal (~20 tps); at other speeds the relay adjusts automatically.</p>
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>Ticks</th><th>Real Time</th><th>Use Case</th></tr>
+<tr><th>Ticks (Normal ~20 tps)</th><th>Real Time</th><th>Use Case</th></tr>
 </thead>
 <tbody>
-<tr><td>0</td><td>No delay</td><td>LAN tournaments (no stream sniping risk)</td></tr>
-<tr><td>90</td><td>3 seconds</td><td>Casual viewing</td></tr>
-<tr><td>3600</td><td>2 minutes</td><td>Ranked default (anti-stream-sniping)</td></tr>
-<tr><td>9000</td><td>5 minutes</td><td>Competitive league (stricter anti-sniping)</td></tr>
-<tr><td>18000</td><td>10 minutes</td><td>Maximum supported delay</td></tr>
+<tr><td>0</td><td>No delay</td><td>Unranked practice / training (not ranked or tournament — see V59 floors)</td></tr>
+<tr><td>60</td><td>3 seconds</td><td>Casual viewing</td></tr>
+<tr><td>2400</td><td>2 minutes</td><td>Ranked minimum (V59 floor — relay enforces 120s at any speed)</td></tr>
+<tr><td>3600</td><td>3 minutes</td><td>Tournament minimum (V59 floor — relay enforces 180s at any speed)</td></tr>
+<tr><td>9000</td><td>7.5 min</td><td>Competitive league (stricter anti-sniping)</td></tr>
+<tr><td>18000</td><td>15 min</td><td>Maximum supported delay</td></tr>
 </tbody>
 </table>
 </div>
@@ -593,7 +594,7 @@ max_games = 50
 <tr><td><code>protocol.max_chat_length</code></td><td>512</td><td>Maximum chat message characters</td></tr>
 <tr><td><code>protocol.max_file_transfer_size</code></td><td>65536</td><td>Maximum file transfer size (bytes)</td></tr>
 <tr><td><code>protocol.max_pending_per_peer</code></td><td>262144</td><td>Maximum buffered data per peer (bytes)</td></tr>
-<tr><td><code>protocol.max_voice_packets_per_sec</code></td><td>50</td><td>VoIP packet rate limit</td></tr>
+<tr><td><code>protocol.max_voice_packets_per_second</code></td><td>50</td><td>VoIP packet rate limit</td></tr>
 <tr><td><code>protocol.max_voice_packet_size</code></td><td>256</td><td>VoIP packet size limit (bytes)</td></tr>
 <tr><td><code>protocol.max_pings_per_interval</code></td><td>3</td><td>Contextual pings per 5-second window</td></tr>
 <tr><td><code>protocol.max_minimap_draw_points</code></td><td>32</td><td>Points per minimap drawing</td></tr>
@@ -608,7 +609,7 @@ max_games = 50
 <p><strong>When to change these:</strong></p>
 <ul>
 <li><strong>Large team games (8v8):</strong> You may want to raise <code>max_markers_per_team</code> to 50–60 for more tactical coordination.</li>
-<li><strong>VoIP quality:</strong> Raising <code>max_voice_packets_per_sec</code> beyond 50 is unlikely to improve quality — the Opus codec is efficient. Consider raising <code>chat.voip_bitrate_kbps</code> instead.</li>
+<li><strong>VoIP quality:</strong> Raising <code>max_voice_packets_per_second</code> beyond 50 is unlikely to improve quality — the Opus codec is efficient. Consider raising <code>chat.voip_bitrate_kbps</code> instead.</li>
 <li><strong>Mod development:</strong> Mods that use very large orders might need <code>max_order_size</code> raised to 8192 or 16384.</li>
 </ul>
 <hr>

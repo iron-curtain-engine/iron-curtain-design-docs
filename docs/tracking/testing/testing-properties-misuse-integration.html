@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-194dde15.js"></script>
+        <script src="../../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -192,7 +192,10 @@
 <tr><td>Order validation purity</td><td>Random <code>PlayerOrder</code> × random <code>SimState</code></td><td><code>validate_order()</code> never mutates sim state (hash before == hash after)</td><td>Minimal order type that causes mutation</td><td>T3</td></tr>
 <tr><td>Order validation totality</td><td>Random <code>PlayerOrder</code> with arbitrary field values</td><td><code>validate_order()</code> always returns <code>OrderValidity</code> — never panics, never hangs</td><td>Minimal panicking order</td><td>T3</td></tr>
 <tr><td>Snapshot round-trip identity</td><td>Random sim state after N random ticks</td><td><code>restore(snapshot(state))</code> produces <code>state_hash()</code> identical to original</td><td>Minimal divergent component</td><td>T3</td></tr>
-<tr><td>Delta snapshot correctness</td><td>Random sim state + random mutations</td><td><code>apply_delta(delta_snapshot(baseline, current))</code> to baseline equals current state</td><td>Minimal mutation set that breaks delta</td><td>T3</td></tr>
+<tr><td>Delta snapshot correctness</td><td>Random sim state + random mutations</td><td><code>sim.apply_delta(&amp;sim.delta_snapshot(&amp;baseline))</code> on a clone restored from <code>baseline</code> produces <code>state_hash()</code> identical to current state</td><td>Minimal mutation set that breaks delta</td><td>T3</td></tr>
+<tr><td>Composite snapshot round-trip (GameRunner)</td><td>Random sim state + random <code>CampaignState</code> + random <code>ScriptState</code> after N ticks</td><td><code>GameRunner::restore_full(SimSnapshot { core, campaign, script })</code> produces identical <code>state_hash()</code>, identical campaign graph, and script VMs return same values via <code>on_serialize()</code></td><td>Minimal divergent composite field (campaign flag, Lua variable)</td><td>T3</td></tr>
+<tr><td>Composite delta round-trip (GameRunner)</td><td>Random sim state + random campaign/script mutations across tick ranges</td><td><code>GameRunner::apply_full_delta(DeltaSnapshot { core, campaign, script })</code> on top of a restored full snapshot produces state identical to the original — verified across all three sub-states</td><td>Minimal composite delta that fails to reconstruct</td><td>T3</td></tr>
+<tr><td>Autosave composite fidelity</td><td>Random game state with active campaign + Lua scripts, autosave triggered</td><td><code>.icsave</code> file loaded via <code>GameRunner::restore_full()</code> produces identical sim hash, campaign state, and script state as the game thread at the autosave tick</td><td>Minimal campaign/script state that diverges after save-load</td><td>T2</td></tr>
 <tr><td>Fixed-point arithmetic closure</td><td>Random <code>FixedPoint</code> × <code>FixedPoint</code> for add/sub/mul/div</td><td>Result stays within <code>i32</code> range; no silent overflow; division by zero returns error</td><td>Minimal overflow pair</td><td>T3</td></tr>
 <tr><td>Pathfinding completeness</td><td>Random map topology × random start/end where path exists</td><td>Pathfinder always returns a path if one exists (checked against BFS ground truth)</td><td>Minimal topology where pathfinder fails</td><td>T3</td></tr>
 <tr><td>Pathfinding determinism</td><td>Random map × random start/end × two runs</td><td>Identical path output for identical input</td><td>Minimal map where paths diverge</td><td>T3</td></tr>
@@ -205,10 +208,10 @@
 <tr><td>Merkle tree consistency</td><td>Random component mutations × tree rebuild</td><td>Root hash changes iff at least one leaf changed; unchanged leaves produce same hash</td><td>Minimal mutation where root hash is wrong</td><td>T3</td></tr>
 <tr><td>Weather schedule determinism</td><td>Random weather configurations × two sim instances</td><td>Weather state identical at every tick across instances with same seed</td><td>Minimal divergent config</td><td>T2</td></tr>
 <tr><td>Anti-cheat NaN pipeline guard</td><td>Random f64 sequences (incl. NaN, Inf, subnormal) fed to all anti-cheat scoring paths (EWMA, behavioral_score, TrustFactors, PopulationBaseline)</td><td>No output field is ever NaN or Inf; NaN inputs produce fail-closed sentinel values (1.0 for suspicion scores, population median for trust factors)</td><td>Minimal input that produces NaN in any output field</td><td>T3</td></tr>
-<tr><td>WASM timing oracle resistance</td><td>Random spatial query inputs × random fog configurations (0–100% fogged entities in query region)</td><td><code>ic_query_units_in_range()</code> execution time does not vary beyond ±10% based on fogged entity count (measured over 1000 iterations per configuration; timer resolution ≥ microsecond)</td><td>Minimal fog configuration where timing variance exceeds threshold</td><td>T3</td></tr>
+<tr><td>WASM timing oracle resistance</td><td>Random spatial query inputs × random fog configurations (0–100% fogged entities in query region)</td><td><code>ic_query_units_in_range()</code> execution time does not vary beyond ±5% based on fogged entity count (measured over 1000 iterations per configuration; timer resolution ≥ microsecond)</td><td>Minimal fog configuration where timing variance exceeds threshold</td><td>T3</td></tr>
 <tr><td>Replay network isolation</td><td>Random replay file × random embedded YAML with external URLs</td><td>During <code>SelfContained</code> replay playback, zero network I/O syscalls are issued; all external asset references resolve to placeholder</td><td>Minimal replay content that triggers network access</td><td>T2</td></tr>
 <tr><td>Key rotation sequence monotonicity</td><td>Random concurrent rotation attempts × random timing</td><td><code>rotation_sequence_number</code> is strictly monotonically increasing; no two rotations share a sequence number; cooldown-violating rotations are rejected except Emergency</td><td>Minimal concurrent rotation pair that violates monotonicity</td><td>T2</td></tr>
-<tr><td>CRL tiered policy correctness</td><td>Random credential status × random match context (ranked/unranked/LAN)</td><td>Ranked context hard-fails on unknown CRL status; unranked grace-period allows 24h; LAN soft-fails with warning; no context allows revoked credentials</td><td>Minimal context where wrong policy is applied</td><td>T2</td></tr>
+<tr><td>TOFU connection policy correctness</td><td>Random key state (match/mismatch/first-connect/rotation-chain) × random match context (ranked/unranked/LAN)</td><td>Ranked rejects key mismatch without valid rotation chain; ranked first-connect requires seed list or manual trust; unranked TOFU-accepts with warning; LAN always warns; valid rotation chain updates cache</td><td>Minimal context where wrong connection policy is applied</td><td>T2</td></tr>
 </tbody>
 </table>
 </div>
@@ -216,7 +219,7 @@
 <h2 id="api-misuse-test-matrix"><a class="header" href="#api-misuse-test-matrix">API Misuse Test Matrix</a></h2>
 <p>Systematic tests derived from the API misuse analysis in <code>architecture/api-misuse-defense.md</code>. Each test verifies that a specific misuse vector is blocked by either the type system (compile-time) or runtime validation.</p>
 <h3 id="compile-time-defense-verification"><a class="header" href="#compile-time-defense-verification">Compile-Time Defense Verification</a></h3>
-<p>These defenses are verified by the type system — no runtime test needed. They are verified during code review and tracked here for completeness. If a refactor accidentally removes the defense, <code>cargo check</code> will catch it.</p>
+<p>These defenses do not require runtime tests. Some are enforced directly by the Rust type system (borrow checker, <code>!Sync</code> auto-trait); others rely on <strong>code review and monitoring</strong> to ensure invariants are not weakened by a refactor. The “Monitoring” column specifies how each defense is maintained — only defenses monitored by <code>cargo check</code> or <code>clippy</code> will produce automatic CI failures if removed.</p>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -224,7 +227,7 @@
 </thead>
 <tbody>
 <tr><td>S5: <code>ReconcilerToken</code> prevents unauthorized corrections</td><td><code>_private: ()</code> field</td><td>Making field <code>pub</code> or adding <code>Default</code> derive</td><td>Code review checklist</td></tr>
-<tr><td>S8: <code>Simulation</code> is <code>!Sync</code></td><td><code>&amp;mut self</code> on all mutation methods</td><td>Adding <code>unsafe impl Sync</code></td><td><code>clippy</code> + code review</td></tr>
+<tr><td>S8: <code>Simulation</code> is <code>!Sync</code></td><td>Contains Bevy <code>World</code> (<code>!Sync</code> via <code>UnsafeCell</code>)</td><td>Adding <code>unsafe impl Sync</code> or replacing <code>World</code> with a <code>Sync</code> container</td><td><code>clippy</code> + code review</td></tr>
 <tr><td>O6: <code>OrderBudget</code> unconstructible externally</td><td><code>_private: ()</code> field</td><td>Making inner fields <code>pub</code></td><td>Code review checklist</td></tr>
 <tr><td>O7: <code>Verified&lt;PlayerOrder&gt;</code> restricted construction</td><td><code>pub(crate)</code> on <code>new_verified()</code></td><td>Changing to <code>pub</code></td><td>Code review checklist</td></tr>
 <tr><td>W1: <code>WasmTerminated</code> has no <code>execute()</code></td><td>Typestate pattern</td><td>Adding <code>execute()</code> to terminated state</td><td>Code review + trait audit</td></tr>
@@ -245,16 +248,18 @@
 <tr><th>ID</th><th>Misuse Vector</th><th>Test Method</th><th>Exact Assertion</th><th>Measurement Metric</th><th>Tier</th></tr>
 </thead>
 <tbody>
-<tr><td>S1</td><td>Future-tick orders</td><td>Call <code>apply_tick(tick=N+2)</code> when sim is at tick N</td><td>Returns <code>TickMismatchError { expected: N, got: N+2 }</code></td><td>Error variant + field values match</td><td>T1</td></tr>
-<tr><td>S3</td><td>Cross-game snapshot restore</td><td><code>Simulation::restore()</code> with snapshot from different seed</td><td>Returns <code>SnapshotError::ConfigMismatch { field: "game_seed" }</code></td><td>Error variant, sim state_hash unchanged</td><td>T2</td></tr>
-<tr><td>S4</td><td>Corrupted snapshot</td><td>Flip random byte in serialized snapshot, call <code>restore()</code></td><td>Returns <code>SnapshotError::IntegrityCheckFailed</code></td><td>100 random bit-flips, 100% detection rate</td><td>T3</td></tr>
-<tr><td>S6</td><td>Float injection via snapshot</td><td>Embed <code>f32</code> bytes in snapshot where <code>FixedPoint</code> expected</td><td><code>serde</code> deserialization returns type error</td><td>Error type is <code>DeserializationError</code>, not panic</td><td>T3</td></tr>
-<tr><td>S7</td><td>Unknown player order</td><td><code>inject_orders()</code> with non-existent <code>PlayerId(999)</code></td><td><code>OrderRejection::UnknownPlayer { id: 999 }</code></td><td>Rejection logged in telemetry with player ID</td><td>T1</td></tr>
-<tr><td>S9</td><td>Out-of-bounds coordinates</td><td>Move order to <code>WorldPos { x: 999999, y: 999999, z: 0 }</code></td><td><code>OrderRejection::OutOfBounds { pos, map_bounds }</code></td><td>Both position and bounds included in error</td><td>T1</td></tr>
-<tr><td>O1</td><td>Stale UnitTag after death</td><td>Kill unit, send attack order targeting dead unit’s tag</td><td><code>OrderRejection::StaleTarget { tag, current_generation }</code></td><td>Generation mismatch detected</td><td>T1</td></tr>
-<tr><td>O2</td><td>Order rate limit</td><td>Send 201 orders in one tick (budget=200)</td><td>First 200 accepted, 201st returns <code>BudgetExhausted</code></td><td>Exact count: accepted=200, rejected=1</td><td>T2</td></tr>
+<tr><td>S1</td><td>Future-tick orders</td><td>Call <code>apply_tick(tick=N+2)</code> when sim is at tick N</td><td>Debug: panics (<code>debug_assert</code>). Release: returns <code>Err(SimError::TickMismatch { expected: N, got: N+2 })</code></td><td>Panic in debug build; <code>Err</code> variant + field values in release</td><td>T1</td></tr>
+<tr><td>S2</td><td>Duplicate orders in one tick</td><td>Replay with same order injected twice in one <code>TickOrders</code> batch</td><td>Second copy rejected by in-sim order validation (e.g., duplicate build on same cell); <code>ValidatedOrder</code> consumed once</td><td>Second order has no effect; sim state identical to single-order run</td><td>T2</td></tr>
+<tr><td>S3</td><td>Cross-game snapshot restore</td><td><code>Simulation::restore()</code> with snapshot from different seed</td><td>Returns <code>Err(SimError::ConfigMismatch)</code> — <code>game_seed</code> or <code>map_hash</code> don’t match</td><td><code>Err</code> variant returned, sim <code>state_hash()</code> unchanged</td><td>T2</td></tr>
+<tr><td>S4</td><td>Corrupted save file</td><td>Flip random byte in serialized <code>.icsave</code> payload, load via <code>GameRunner</code>’s file-loading layer</td><td>File-loading layer detects <code>payload_hash</code> mismatch, returns <code>Err</code> before reaching <code>Simulation::restore()</code></td><td>100 random bit-flips, 100% detection rate at file-loading layer</td><td>T3</td></tr>
+<tr><td>S6</td><td>Float field in sim crate</td><td>Attempt to add <code>f32</code>/<code>f64</code> field to any <code>ic-sim</code> struct</td><td><code>clippy::disallowed_types</code> lint fails CI; post-deser range validation rejects out-of-bounds <code>FixedPoint</code> values</td><td>CI lint blocks compilation; fuzz: no panics from random bytes</td><td>T3</td></tr>
+<tr><td>S7</td><td>Unknown player order</td><td><code>inject_orders()</code> with non-existent <code>PlayerId(999)</code></td><td>Order rejected with <code>OrderRejectionCategory::Ownership</code> (D012); specific variant is implementation-defined</td><td>Rejection fires; telemetry includes player ID</td><td>T1</td></tr>
+<tr><td>S9</td><td>Out-of-bounds coordinates</td><td>Move order to <code>WorldPos { x: 999999, y: 999999, z: 0 }</code></td><td>Order rejected with <code>OrderRejectionCategory::Placement</code> (D012); error includes position and map bounds</td><td>Rejection fires; position and bounds available in error</td><td>T1</td></tr>
+<tr><td>S10</td><td>Divergent-baseline delta</td><td><code>Simulation::apply_delta()</code> with delta whose <code>baseline_tick</code>/<code>baseline_hash</code> don’t match current state</td><td>Returns <code>Err(SimError::BaselineMismatch)</code>; sim state unchanged</td><td><code>Err</code> variant returned, sim <code>state_hash()</code> unchanged</td><td>T2</td></tr>
+<tr><td>O1</td><td>Stale UnitTag after death</td><td>Kill unit, send attack order targeting dead unit’s tag</td><td>Order rejected with <code>OrderRejectionCategory::Targeting</code> (D012); error includes stale tag and current generation</td><td>Generation mismatch detected; stale tag not resolved</td><td>T1</td></tr>
+<tr><td>O2</td><td>Order rate limit</td><td>Send 201 orders in one tick (budget=200)</td><td>First 200 accepted, 201st returns <code>Err(BudgetExhausted)</code></td><td>Exact count: accepted=200, rejected=1</td><td>T2</td></tr>
 <tr><td>O3</td><td>Timestamp manipulation</td><td><code>sub_tick_time = 999999999</code> (far future)</td><td>Relay clamps to envelope max (e.g., 66667µs)</td><td>Clamped value ≤ tick_window_us; telemetry event fires</td><td>T2</td></tr>
-<tr><td>O8</td><td>Oversized unit selection</td><td>Move order with 100 UnitTags (max=40)</td><td><code>OrderRejection::SelectionTooLarge { count: 100, max: 40 }</code></td><td>Both count and max in error</td><td>T1</td></tr>
+<tr><td>O8</td><td>Oversized unit selection</td><td>Move order with 100 UnitTags (max=40)</td><td>Order rejected with <code>OrderRejectionCategory::Custom</code> (D012, game-module-defined selection cap); error includes count and max</td><td>Both count and max available in error</td><td>T1</td></tr>
 <tr><td>N2</td><td>Handshake replay</td><td>Capture challenge response, replay on new connection</td><td>Connection terminated with <code>AuthError::NonceReused</code></td><td>Connection drops within 100ms of replay</td><td>T2</td></tr>
 <tr><td>N6</td><td>Half-open connection flood</td><td>Open 10,000 TCP connections, don’t complete handshake</td><td>All timeout within configured window (default: 5s); relay accepts new connections after cleanup</td><td>Peak memory &lt; 50MB during flood; recovery &lt; 1s</td><td>T3</td></tr>
 <tr><td>W3</td><td>WASM memory bomb</td><td><code>memory.grow(65536)</code> from WASM module</td><td>Growth denied; module receives trap; host continues</td><td>Host memory unchanged; module terminated cleanly</td><td>T3</td></tr>
@@ -324,10 +329,10 @@
 <tr><td>Determinism violations</td><td>Hash comparison failures across repeated runs</td><td>Test result DB</td><td>Any violation is a P0 bug</td></tr>
 <tr><td>False positive rate (anti-cheat)</td><td><code>flagged_clean / total_clean</code> on labeled corpus</td><td>Corpus evaluation log</td><td>&gt; 0.1% (V54 threshold)</td></tr>
 <tr><td>False negative rate (anti-cheat)</td><td><code>missed_cheat / total_cheat</code> on labeled corpus</td><td>Corpus evaluation log</td><td>&gt; 5% (V54 threshold)</td></tr>
-<tr><td>Order rejection accuracy</td><td>Correct rejection variant rate across exhaustive matrix</td><td>Test result DB</td><td>&lt; 100% is a bug</td></tr>
+<tr><td>Order rejection accuracy</td><td>Correct rejection category rate across exhaustive matrix</td><td>Test result DB</td><td>&lt; 100% is a bug (categories per D012)</td></tr>
 <tr><td>Fuzz coverage (edge/line)</td><td><code>cargo-fuzz</code> with <code>--sanitizer=coverage</code></td><td>Fuzz coverage report</td><td>&lt; 80% line coverage in target module</td></tr>
 <tr><td>Property test case count</td><td>proptest runner statistics</td><td>Test log</td><td>&lt; configured minimum (256 for T1, 10K for T3)</td></tr>
-<tr><td>Snapshot round-trip bit-exactness</td><td>Byte comparison of snapshot → restore → snapshot</td><td>Test result DB</td><td>Any byte difference is a P0 bug</td></tr>
+<tr><td>Snapshot round-trip state identity</td><td><code>state_hash()</code> comparison: snapshot → restore → <code>state_hash()</code></td><td>Test result DB</td><td>Any hash difference is a P0 bug</td></tr>
 </tbody>
 </table>
 </div>

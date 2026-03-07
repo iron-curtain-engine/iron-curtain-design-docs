@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -187,7 +187,7 @@
 <p>Every tick, each client hashes their sim state. But a full <code>state_hash()</code> over the entire ECS world is expensive. We use a two-tier approach (validated by both OpenTTD and 0 A.D.):</p>
 <ul>
 <li><strong>Primary: Fast sync hash (<code>SyncHash</code>, per tick).</strong> Every sync frame, clients submit a <code>SyncHash(u64)</code> — the Merkle root truncated to 64 bits (see <code>type-safety.md</code>). Because the deterministic RNG state is included in the Merkle tree, any RNG divergence contaminates the root — this catches ~99% of desyncs at near-zero cost per tick. The RNG is advanced by every stochastic sim operation (combat rolls, scatter patterns, AI decisions), so state divergence quickly propagates.</li>
-<li><strong>Fallback: Full state hash (<code>StateHash</code>, periodic).</strong> Every N ticks (configurable — default 30, ~1 second at 30 tps), clients also submit a <code>StateHash([u8; 32])</code> — the full SHA-256 Merkle root. This provides collision-resistant verification and doubles as the input for the relay’s replay <code>TickSignature</code> chain (see <code>formats/save-replay-formats.md</code>). The higher cadence versus the old 120-tick default reflects the dual use: desync fallback AND replay signing.</li>
+<li><strong>Fallback: Full state hash (<code>StateHash</code>, periodic).</strong> Every <code>SIGNING_CADENCE</code> ticks (default 30 — approximately 2 seconds at the Slower default of ~15 tps), clients compute and submit a <code>StateHash([u8; 32])</code> — the full SHA-256 Merkle root. The cadence is a fixed constant set at match start, not adaptive. This provides collision-resistant verification and doubles as the input for the relay’s replay <code>TickSignature</code> chain (see <code>formats/save-replay-formats.md</code>). The relay signs and stores every report as a <code>TickSignature</code> entry regardless of game phase. Desync <em>comparison</em> frequency is adaptive (see below), but reporting cadence is not.</li>
 </ul>
 <p>The relay authority compares hashes. On mismatch → desync detected at a specific tick. Because the sim is snapshottable (D010), dump full state and diff to pinpoint exact divergence — entity by entity, component by component.</p>
 <h4 id="merkle-tree-state-hashing-phase-2"><a class="header" href="#merkle-tree-state-hashing-phase-2">Merkle Tree State Hashing (Phase 2+)</a></h4>
@@ -295,12 +295,12 @@ impl DualSimVerifier {
 }
 <span class="boring">}</span></code></pre>
 <p>This catches non-determinism immediately — no need to wait for a multiplayer desync report. Particularly valuable during development of new sim systems. The shadow sim doubles memory usage and CPU time, so this is <strong>never</strong> enabled in release builds or production. Running the test suite under dual-sim mode is a CI gate for Phase 2+.</p>
-<h4 id="adaptive-sync-frequency"><a class="header" href="#adaptive-sync-frequency">Adaptive Sync Frequency</a></h4>
-<p>The full state hash comparison frequency adapts based on game phase stability (inspired by the adaptive snapshot rate patterns observed across multiple engines):</p>
+<h4 id="adaptive-sync-comparison-frequency"><a class="header" href="#adaptive-sync-comparison-frequency">Adaptive Sync Comparison Frequency</a></h4>
+<p>Clients always report <code>StateHash</code> at the fixed <code>SIGNING_CADENCE</code> (default every 30 ticks). The relay stores and signs every report as a <code>TickSignature</code> entry. However, the relay’s <em>comparison</em> of hashes across clients adapts based on game phase stability — comparing every report during sensitive periods and sampling during steady-state play (inspired by the adaptive snapshot rate patterns observed across multiple engines):</p>
 <ul>
-<li><strong>High frequency (every 30 ticks, ~1 second):</strong> During the first 60 seconds of a match and immediately after any player reconnects — state divergence is most likely during transitions.</li>
-<li><strong>Normal frequency (every 120 ticks, ~4 seconds):</strong> Standard play. Sufficient to catch divergence within a few seconds.</li>
-<li><strong>Low frequency (every 300 ticks, ~10 seconds):</strong> Late-game with large unit counts, where the hash computation cost is non-trivial. The RNG sync check (near-zero cost) still runs every tick.</li>
+<li><strong>High frequency (every 30 ticks, ≈2s at Slower):</strong> During the first 60 seconds of a match and immediately after any player reconnects — state divergence is most likely during transitions. The relay compares every <code>StateHash</code> report.</li>
+<li><strong>Normal frequency (every 120 ticks, ≈8s at Slower):</strong> Standard play. The relay compares every 4th report. Sufficient to catch divergence within a few seconds.</li>
+<li><strong>Low frequency (every 300 ticks, ≈20s at Slower):</strong> Late-game with large unit counts. The relay compares every 10th report. The RNG sync check via <code>SyncHash</code> (near-zero cost) still runs every tick, catching most desyncs instantly — the <code>StateHash</code> comparison is a fallback for the rare cases where <code>SyncHash</code> truncation masks a divergence.</li>
 </ul>
 <p>The relay can also request an out-of-band sync check after specific events (e.g., a player reconnection completes, a mod hot-reloads script).</p>
 <h4 id="validation-purity-enforcement"><a class="header" href="#validation-purity-enforcement">Validation Purity Enforcement</a></h4>
@@ -328,8 +328,8 @@ fn validate_order_checked(&amp;mut self, player: PlayerId, order: &amp;PlayerOrd
 <li><strong>Reconnecting client contacts the relay authority</strong> (embedded or dedicated). The relay verifies identity via the session key established at game start.</li>
 <li><strong>Relay coordinates state transfer.</strong> The relay does <strong>not</strong> run the sim, so it selects a <strong>snapshot donor</strong> from active clients (typically a healthy, low-latency peer) and requests a transfer at a known tick boundary.</li>
 <li><strong>Donor creates snapshot</strong> of its current sim state and streams it (via relay in relay mode) to the reconnecting client. Any pending orders queued during the snapshot are sent alongside it (from OpenTTD: <code>NetworkSyncCommandQueue</code>), closing the gap between snapshot creation and delivery.</li>
-<li><strong>Snapshot verification before load.</strong> The reconnecting client verifies the snapshot tick/hash against relay-coordinated sync data (latest agreed sync hash, or an out-of-band sync check requested by the relay immediately before transfer). If verification fails, the relay retries with a different donor or aborts reconnection.</li>
-<li><strong>Client loads the snapshot</strong> and enters a catchup state, processing ticks at accelerated speed until it reaches the current tick.</li>
+<li><strong>Snapshot verification before load.</strong> The reconnecting client wraps the received snapshot as <code>Verified&lt;SimSnapshot&gt;</code> by checking its <code>StateHash</code> (full SHA-256, not just <code>SyncHash</code>) against the relay-coordinated state hash chain (see <code>api-misuse-defense.md</code> N3). The relay requests the donor’s <code>full_state_hash()</code> at the snapshot tick and distributes it to the reconnecting client as the verification target. If the <code>StateHash</code> does not match, the relay retries with a different donor or aborts reconnection.</li>
+<li><strong>Client loads the snapshot</strong> via <code>GameRunner::restore_full()</code> (see <code>02-ARCHITECTURE.md</code> § ic-game Integration) — restoring sim core, campaign state, and rehydrating script VMs — then enters a catchup state, processing ticks at accelerated speed until it reaches the current tick.</li>
 <li><strong>Client becomes active</strong> once it’s within one tick of the server. Orders resume flowing normally.</li>
 </ol>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]

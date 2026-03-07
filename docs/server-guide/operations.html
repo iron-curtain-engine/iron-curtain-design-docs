@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -194,8 +194,8 @@
 <tr><td><code>rank.rd_floor</code></td><td>45</td><td>Minimum deviation (maximum confidence)</td></tr>
 <tr><td><code>rank.rd_ceiling</code></td><td>350</td><td>Maximum deviation (maximum uncertainty)</td></tr>
 <tr><td><code>rank.inactivity_c</code></td><td>34.6</td><td>How fast deviation grows during inactivity</td></tr>
-<tr><td><code>rank.match_min_ticks</code></td><td>3600</td><td>Minimum ticks (2 min) for any rating weight</td></tr>
-<tr><td><code>rank.match_full_weight_ticks</code></td><td>18000</td><td>Ticks (10 min) at which the match gets full rating weight</td></tr>
+<tr><td><code>rank.match_min_ticks</code></td><td>3600</td><td>Minimum ticks for any rating weight (game progression, not wall time — see note below)</td></tr>
+<tr><td><code>rank.match_full_weight_ticks</code></td><td>18000</td><td>Ticks at which the match gets full rating weight (game progression, not wall time — see note below)</td></tr>
 <tr><td><code>rank.match_short_game_factor</code></td><td>300</td><td>Short-game duration weighting factor</td></tr>
 </tbody>
 </table>
@@ -206,7 +206,8 @@
 <li><strong>Default (0.5):</strong> Balanced. Works well for most deployments.</li>
 <li><strong>Higher tau (0.6–1.0):</strong> Ratings change quickly. Good for new communities where players are still finding their level, or for communities with high player turnover.</li>
 </ul>
-<p><strong>Match duration weighting:</strong> Short games (e.g., an early GG at 3 minutes) contribute less to rating changes than full-length matches. <code>match_min_ticks</code> is the minimum game length for any rating influence. Below that, the match does not affect ratings at all. <code>match_full_weight_ticks</code> is the length at which the match counts fully.</p>
+<p><strong>Match duration weighting:</strong> Short games (e.g., an early GG) contribute less to rating changes than full-length matches. <code>match_min_ticks</code> is the minimum game length for any rating influence. Below that, the match does not affect ratings at all. <code>match_full_weight_ticks</code> is the length at which the match counts fully.</p>
+<p><strong>Why ticks, not seconds:</strong> These thresholds measure game progression — the number of sim updates (orders processed, economy cycles, combat ticks) — not wall time. A 3,600-tick game has the same strategic depth at any speed preset. Wall-clock equivalents depend on the server’s ranked game speed (D060: server-enforced, not player-configurable): at Normal ~20 tps that’s ~3 min / ~15 min; at Slower ~15 tps it’s ~4 min / ~20 min. Since ranked speed is fixed per server, operators know the exact wall-time mapping for their community.</p>
 <p><strong>Recommendation for small communities (&lt; 200 active players):</strong> Raise <code>system_tau</code> to 0.7 and lower <code>rank.rd_floor</code> to 60. This lets ratings converge faster and better reflects the smaller, more volatile skill pool.</p>
 <h4 id="season-configuration-rankseason"><a class="header" href="#season-configuration-rankseason">Season Configuration (<code>rank.season.*</code>)</a></h4>
 <div class="table-wrapper">
@@ -251,7 +252,7 @@
 <tr><td><code>matchmaking.widen_step</code></td><td>50</td><td>Rating range expansion per interval</td></tr>
 <tr><td><code>matchmaking.widen_interval_secs</code></td><td>30</td><td>Time between range expansions</td></tr>
 <tr><td><code>matchmaking.max_range</code></td><td>500</td><td>Maximum rating search range</td></tr>
-<tr><td><code>matchmaking.desperation_timeout_secs</code></td><td>300</td><td>Time before accepting any available match</td></tr>
+<tr><td><code>matchmaking.desperation_timeout_secs</code></td><td>300</td><td>Time before relaxing range to max (requires ≥3 in queue, V31; <code>min_match_quality</code> still applies, V30)</td></tr>
 <tr><td><code>matchmaking.min_match_quality</code></td><td>0.3</td><td>Minimum match quality score (0.0–1.0)</td></tr>
 </tbody>
 </table>
@@ -263,7 +264,7 @@ Time = 60s:  Search ±200
 Time = 90s:  Search ±250
 ...
 Time = 240s: Search ±500 (max_range reached)
-Time = 300s: Accept any match (desperation)
+Time = 300s: Desperation mode (relaxes range, but requires ≥3 in queue and min_match_quality still blocks; see D055 V30/V31)
 </code></pre>
 <p><strong>Small community tuning:</strong> The most common issue is long queue times due to low population. Address this by:</p>
 <pre><code class="language-toml">[matchmaking]
@@ -271,8 +272,8 @@ initial_range = 200           # Wider initial search
 widen_step = 100              # Expand faster
 widen_interval_secs = 15      # Expand more often
 max_range = 1000              # Search much wider
-desperation_timeout_secs = 120   # Accept any match after 2 min
-min_match_quality = 0.1       # Accept lower quality matches
+desperation_timeout_secs = 120   # Relax range ceiling sooner (still requires ≥3 in queue, V31)
+min_match_quality = 0.1       # Accept lower quality matches (still enforced at desperation, V30)
 </code></pre>
 <p><strong>Competitive league tuning:</strong> Prioritize match quality over queue time:</p>
 <pre><code class="language-toml">[matchmaking]
@@ -415,12 +416,12 @@ workshop_level = "compact"     # maximize compression for distribution
 <ul>
 <li>High <code>max_connections_per_ip</code> (LAN: many players behind one router)</li>
 <li>Generous pauses (admin-mediated equipment issues)</li>
-<li>Zero spectator delay (no stream-sniping on LAN)</li>
+<li>Tournament-mode spectator delay (180 seconds for ranked — the security floor is non-negotiable even on LAN; see <code>security/vulns-edge-cases-infra.md</code> § Tiered delay policy. For unranked exhibition matches, set <code>spectator.delay_ticks: 0</code>)</li>
 <li>Large spectator count (audience)</li>
 <li>Surrender and remake votes disabled (admin decides)</li>
 <li>Sensitive anti-cheat (review all upsets)</li>
 </ul>
-<pre><code class="language-bash">./relay-server --config profiles/tournament-lan.toml
+<pre><code class="language-bash">./ic-server --config profiles/tournament-lan.toml
 </code></pre>
 <h3 id="casual-community"><a class="header" href="#casual-community">Casual Community</a></h3>
 <p><strong>Purpose:</strong> Relaxed rules for a friendly community. Fun-first. Generous timeouts.</p>
@@ -433,7 +434,7 @@ workshop_level = "compact"     # maximize compression for distribution
 <li>Longer seasons with fewer placement matches</li>
 <li>Wide matchmaking range (small population)</li>
 </ul>
-<pre><code class="language-bash">./relay-server --config profiles/casual-community.toml
+<pre><code class="language-bash">./ic-server --config profiles/casual-community.toml
 </code></pre>
 <h3 id="competitive-league"><a class="header" href="#competitive-league">Competitive League</a></h3>
 <p><strong>Purpose:</strong> Strict ranked play with custom rating parameters for the league’s skill distribution.</p>
@@ -447,7 +448,7 @@ workshop_level = "compact"     # maximize compression for distribution
 <li>Tight matchmaking with high quality floor</li>
 <li>Sensitive anti-cheat</li>
 </ul>
-<pre><code class="language-bash">./relay-server --config profiles/competitive-league.toml
+<pre><code class="language-bash">./ic-server --config profiles/competitive-league.toml
 </code></pre>
 <h3 id="training--practice"><a class="header" href="#training--practice">Training / Practice</a></h3>
 <p><strong>Purpose:</strong> For practice rooms, AI training, mod development, and debugging.</p>
@@ -460,7 +461,7 @@ workshop_level = "compact"     # maximize compression for distribution
 <li>Generous AI budget</li>
 <li>Large telemetry database, no auto-pruning</li>
 </ul>
-<pre><code class="language-bash">./relay-server --config profiles/training.toml
+<pre><code class="language-bash">./ic-server --config profiles/training.toml
 </code></pre>
 <hr>
 <h2 id="docker--container-deployment"><a class="header" href="#docker--container-deployment">Docker &amp; Container Deployment</a></h2>
@@ -470,7 +471,7 @@ workshop_level = "compact"     # maximize compression for distribution
 version: "3.8"
 services:
   relay:
-    image: ghcr.io/iron-curtain/relay-server:latest
+    image: ghcr.io/ironcurtain/ic-server:latest
     ports:
       - "7000:7000/udp"
       - "7001:7001/tcp"
@@ -503,7 +504,7 @@ services:
     environment:
       IC_MATCH_PAUSE_MAX_PER_PLAYER: "5"
       IC_MATCH_PAUSE_MAX_DURATION_SECS: "300"
-      IC_SPECTATOR_DELAY_TICKS: "0"
+      IC_SPECTATOR_DELAY_TICKS: "3600"  # 180s at Normal ~20 tps; relay clamps upward at faster speeds to enforce V59's 180s wall-time floor
       IC_SPECTATOR_MAX_PER_MATCH: "200"
       IC_SPECTATOR_FULL_VISIBILITY: "true"
       IC_VOTE_SURRENDER_ENABLED: "false"
@@ -532,7 +533,7 @@ data:
 spec:
   containers:
     - name: relay
-      image: ghcr.io/iron-curtain/relay-server:latest
+      image: ghcr.io/ironcurtain/ic-server:latest
       args: ["--config", "/etc/ic/server_config.toml"]
       volumeMounts:
         - name: config
@@ -616,7 +617,7 @@ chown icrelay:icrelay server_config.toml
 <tr><td>IP abuse</td><td><code>relay.max_connections_per_ip: 5</code></td></tr>
 <tr><td>Protocol abuse</td><td><code>protocol.max_orders_per_tick: 256</code>, all <code>protocol.*</code> limits</td></tr>
 <tr><td>Chat spam</td><td><code>chat.rate_limit_messages: 5</code>, <code>chat.rate_limit_window_secs: 3</code></td></tr>
-<tr><td>VoIP abuse</td><td><code>protocol.max_voice_packets_per_sec: 50</code></td></tr>
+<tr><td>VoIP abuse</td><td><code>protocol.max_voice_packets_per_second: 50</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -658,7 +659,7 @@ chown icrelay:icrelay server_config.toml
 <tr><th>Metric</th><th>Healthy Range</th><th>Action If Exceeded</th></tr>
 </thead>
 <tbody>
-<tr><td>Relay tick processing time</td><td>&lt; 33ms (at 30 tps)</td><td>Reduce <code>max_games</code> or add hardware</td></tr>
+<tr><td>Relay tick processing time</td><td>&lt; tick interval (67ms at Slower default, 50ms at Normal)</td><td>Reduce <code>max_games</code> or add hardware</td></tr>
 <tr><td>Connection count</td><td>&lt; 80% of <code>max_connections</code></td><td>Raise limit or add relay instances</td></tr>
 <tr><td>Order rate per player</td><td>&lt; <code>order_hard_ceiling</code></td><td>Check for bot/macro abuse</td></tr>
 <tr><td>Desync rate</td><td>0 per 10,000 ticks</td><td>Investigate mod compatibility</td></tr>
@@ -732,8 +733,8 @@ render_budget_pct = 10
 <tr><th>Command</th><th>Description</th></tr>
 </thead>
 <tbody>
-<tr><td><code>./relay-server</code></td><td>Start with defaults</td></tr>
-<tr><td><code>./relay-server --config &lt;path&gt;</code></td><td>Start with a specific config file</td></tr>
+<tr><td><code>./ic-server</code></td><td>Start with defaults</td></tr>
+<tr><td><code>./ic-server --config &lt;path&gt;</code></td><td>Start with a specific config file</td></tr>
 <tr><td><code>ic server validate-config &lt;path&gt;</code></td><td>Validate a config file without starting</td></tr>
 </tbody>
 </table>
@@ -775,7 +776,7 @@ render_budget_pct = 10
 <tr><th>Constant</th><th>Value</th><th>Why It’s Not Configurable</th></tr>
 </thead>
 <tbody>
-<tr><td>Sim tick rate</td><td>30 tps</td><td>Affects CPU cost, bandwidth, and sync timing. Game speed adjusts perceived speed.</td></tr>
+<tr><td>Sim tick rate</td><td>Set by game speed preset (D060)</td><td>Slower ~15 tps (default), Normal ~20 tps, Fastest 50 tps. Not independently tunable.</td></tr>
 <tr><td>Sub-tick ordering</td><td>Always on</td><td>Zero-cost fairness improvement (D008). No legitimate reason to disable.</td></tr>
 <tr><td>Adaptive run-ahead</td><td>Always on</td><td>Proven over 20+ years (Generals). Automatically adapts to latency.</td></tr>
 <tr><td>Anti-lag-switch</td><td>Always on</td><td>Non-negotiable for competitive integrity.</td></tr>

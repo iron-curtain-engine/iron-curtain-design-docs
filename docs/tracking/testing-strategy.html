@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -186,7 +186,7 @@
 <ol>
 <li><strong>Determinism is testable.</strong> If a system is deterministic (Invariant #1), its behavior can be reproduced exactly. Tests that rely on determinism are the strongest tests we have.</li>
 <li><strong>No untested exit criteria.</strong> Every milestone exit criterion (see 18-PROJECT-TRACKER.md) must have a corresponding automated test. If a criterion cannot be tested automatically, it must be flagged as a manual review gate.</li>
-<li><strong>CI is the authority.</strong> If CI passes, the code is shippable. If CI fails, the code does not merge. No exceptions, no “it works on my machine.”</li>
+<li><strong>CI is the automated authority.</strong> If CI fails, the code does not merge — no exceptions, no “it works on my machine.” When manual review gates exist (Principle 2), both CI and the manual gate must pass before the code is shippable.</li>
 <li><strong>Fast feedback, thorough verification.</strong> PR gates must complete in &lt;10 minutes. Nightly suites handle expensive verification. Weekly suites cover exhaustive/long-running scenarios.</li>
 </ol>
 <h2 id="cicd-pipeline-tiers"><a class="header" href="#cicd-pipeline-tiers">CI/CD Pipeline Tiers</a></h2>

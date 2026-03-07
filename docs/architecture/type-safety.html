@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -438,11 +438,12 @@ pub fn read_file(cap: &amp;FsReadCapability, relative: &amp;str) -&gt; Result&lt
 </span>pub struct FromClient&lt;T&gt;(pub T);
 pub struct FromServer&lt;T&gt;(pub T);
 
-// Server code accepts only FromClient messages
+// Relay accepts only FromClient messages
 fn handle_order(msg: FromClient&lt;PlayerOrder&gt;) { ... }
 
-// Client code accepts only FromServer messages
-fn handle_state_update(msg: FromServer&lt;SimSnapshot&gt;) { ... }
+// Client accepts only FromServer messages (TickOrders is the core
+// lockstep payload — see wire-format.md § Frame enum)
+fn handle_confirmed_orders(msg: FromServer&lt;TickOrders&gt;) { ... }
 <span class="boring">}</span></code></pre>
 <h3 id="bounded-collections-no-unbounded-growth-in-sim-state"><a class="header" href="#bounded-collections-no-unbounded-growth-in-sim-state">Bounded Collections: No Unbounded Growth in Sim State</a></h3>
 <p>Any collection in <code>ic-sim</code> that grows based on player input must have a compile-time or construction-time bound. Unbounded collections are a denial-of-service vector.</p>

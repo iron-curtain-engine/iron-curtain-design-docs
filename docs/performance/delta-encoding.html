@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -204,37 +204,34 @@ Delta snapshot: 1000 units × ~30 bytes avg  =  30 KB  (10x reduction)
 <span class="boring">}</span></code></pre>
 <p>The encoder iterates priority groups in order: changes-often fields first, then remaining fields. For a 1000-unit game where ~200 units are moving, the encoder finds the first dirty field within 1-2 checks for moving units (position is priority 0) and within 0 checks for stationary units (nothing dirty). Without priority ordering, the encoder would scan all fields equally, hitting cold fields first and wasting branch predictor entries.</p>
 <h3 id="entity-baselines-from-quake-3"><a class="header" href="#entity-baselines-from-quake-3">Entity Baselines (from Quake 3)</a></h3>
-<p>Quake 3’s networking introduced <strong>entity baselines</strong> — a default state for each entity type that serves as the base for delta encoding (see <code>research/quake3-netcode-analysis.md</code>). Instead of encoding deltas against the previous snapshot (which requires both sender and receiver to track full state history), deltas are encoded against a well-known baseline that both sides already have. This eliminates the need to retransmit reference frames on packet loss.</p>
-<p>IC applies this concept to snapshot deltas:</p>
+<p>Quake 3’s networking introduced <strong>entity baselines</strong> — a default state for each entity type that serves as a reference for delta encoding (see <code>research/quake3-netcode-analysis.md</code>). IC applies this concept as an <strong>internal optimization within</strong> the canonical snapshot-relative delta model:</p>
+<p>IC’s structural delta model is always anchored to a concrete prior full snapshot (<code>SimCoreDelta.baseline_tick</code> / <code>baseline_hash</code> — see <code>formats/replay-keyframes-analysis.md</code>). Entity baselines are a complementary optimization <em>within</em> that model: when computing a delta against a known prior snapshot, fields that match both the prior snapshot <strong>and</strong> their archetype’s default state can be omitted with a single-bit flag per field, because the receiver can reconstruct them from its own copy of the archetype baseline. This reduces delta size further without changing the structural requirement that every delta references a concrete prior snapshot.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>/// Per-archetype baseline state. Registered at game module initialization.
-/// All delta encoding uses baseline as the reference when no prior
-/// snapshot is available (e.g., reconnection, first snapshot after load).
+/// Used as an optimization within snapshot-relative deltas: fields matching
+/// both the prior snapshot and the baseline are encoded as "still at
+/// baseline" (1 bit) instead of "unchanged from prior" (field bytes).
+/// This complements — does NOT replace — the concrete-snapshot-relative
+/// delta model defined in replay-keyframes-analysis.md.
 pub struct EntityBaseline {
     pub archetype: ArchetypeLabel,
     pub default_components: Vec&lt;u8&gt;,  // Serialized default state for this archetype
 }
-
-/// When computing a delta:
-/// 1. If previous snapshot exists → delta against previous (normal case)
-/// 2. If no previous snapshot → delta against baseline
-///    Much smaller than a full snapshot because most fields
-///    (owner, unit_type, armor, max_health) match the baseline.
 <span class="boring">}</span></code></pre>
-<p><strong>Why baselines matter for reconnection:</strong> When a reconnecting client receives a snapshot, it has no previous state to delta against. Without baselines, the server must send a full uncompressed snapshot (~300KB for 1000 units). With baselines, the server sends deltas against the baseline — only fields that differ from the archetype’s default state (position, health, facing, orders). For a 1000-unit game, ~60% of fields match the baseline, reducing the reconnection snapshot to ~120KB.</p>
 <p><strong>Baseline registration:</strong> Each game module registers baselines for its archetypes during initialization (e.g., “Allied Rifle Infantry” has default health=50, armor=None, speed=4). The baseline is frozen at game start — it never changes during play. Both sides (sender and receiver) derive the same baseline from the same game module data.</p>
+<p><strong>Reconnection benefit:</strong> When a reconnecting client receives a full <code>SimSnapshot</code> (not a delta), the baseline optimization has no role — the full snapshot is self-contained. Entity baselines reduce the <em>internal representation cost</em> of deltas used in replay keyframes and the autosave game-thread handoff, not the reconnection snapshot itself.</p>
 <h3 id="performance-impact-by-use-case"><a class="header" href="#performance-impact-by-use-case">Performance Impact by Use Case</a></h3>
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>Use Case</th><th>Full Snapshot</th><th>Delta Snapshot</th><th>Improvement</th></tr>
+<tr><th>Use Case</th><th>Without Delta Encoding</th><th>With Delta Encoding</th><th>Notes</th></tr>
 </thead>
 <tbody>
-<tr><td>Autosave (every 30s)</td><td>300 KB per save</td><td>~30 KB per save</td><td>10x smaller</td></tr>
-<tr><td>Replay recording</td><td>4.5 MB/s</td><td>~450 KB/s</td><td>10x less IO</td></tr>
-<tr><td>Reconnection transfer</td><td>300 KB burst</td><td>30 KB + deltas</td><td>Faster join</td></tr>
-<tr><td>Desync diagnosis</td><td>Full state dump</td><td>Field-level diff</td><td>Pinpoints exact divergence</td></tr>
+<tr><td>Autosave (every 30s)</td><td>~300 KB game-thread snapshot</td><td>~30 KB game-thread delta</td><td>Game thread produces <code>SimCoreDelta</code> (~30 KB); I/O thread reconstructs full <code>SimSnapshot</code> for <code>.icsave</code> (~300 KB on disk). Savings are in game-thread cost.</td></tr>
+<tr><td>Replay keyframe (every 300 ticks)</td><td>~300 KB per keyframe</td><td>~30 KB per delta keyframe</td><td>9 of every 10 keyframes are deltas; 1 is a full snapshot. Order stream is separate (~1 KB/s continuous).</td></tr>
+<tr><td>Reconnection transfer</td><td>~300 KB full snapshot</td><td>~300 KB full snapshot</td><td>Reconnection sends a full <code>SimSnapshot</code> (not a delta) — the client has no prior state. Entity baselines reduce internal encoding overhead only.</td></tr>
+<tr><td>Desync diagnosis</td><td>Full state dump</td><td>Field-level diff</td><td>Pinpoints exact divergence — diff two <code>SimCoreDelta</code>s at a known tick.</td></tr>
 </tbody>
 </table>
 </div>
@@ -271,7 +268,7 @@ pub struct EntityBaseline {
 <tr><td>All SQLite writes on dedicated I/O thread</td><td><code>decisions/09e-community.md</code> D031</td><td>Ring buffer → batch transaction; game loop thread never touches SQLite</td></tr>
 <tr><td>I/O ring buffer ≥1024 entries</td><td><code>decisions/09e-community.md</code> D031</td><td>Absorbs 500 ms HDD checkpoint stall at 600 events/s peak with 3.4× headroom</td></tr>
 <tr><td>WAL checkpoint suppressed during gameplay (HDD)</td><td><code>decisions/09e-community.md</code> D034</td><td>Random I/O checkpoint on spinning disk takes 200–500 ms; defer to safe points</td></tr>
-<tr><td>Autosave fsync on I/O thread, never game thread</td><td><code>decisions/09a-foundation.md</code> D010</td><td>HDD fsync takes 50–200 ms; game thread only produces DeltaSnapshot bytes</td></tr>
+<tr><td>Autosave fsync on I/O thread, never game thread</td><td><code>decisions/09a-foundation.md</code> D010</td><td>HDD fsync takes 50–200 ms; game thread produces SimCoreDelta + changed campaign/script state, I/O thread reconstructs full SimSnapshot for .icsave</td></tr>
 <tr><td>Replay keyframe: snapshot on game thread, LZ4+I/O on background</td><td><code>05-FORMATS.md</code></td><td>~1 ms game thread cost every 300 ticks; compression + write async</td></tr>
 <tr><td>Weather quadrant rotation (1/4 map per tick)</td><td><code>decisions/09c-modding.md</code> D022</td><td>Sim-only amortization — no camera dependency in deterministic sim</td></tr>
 <tr><td><code>gameplay.db</code> mmap capped at 64 MB</td><td><code>decisions/09e-community.md</code> D034</td><td>1.6% of 4 GB min-spec RAM; scaled up on systems with ≥8 GB</td></tr>

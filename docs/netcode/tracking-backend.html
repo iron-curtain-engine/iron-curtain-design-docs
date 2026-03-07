@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -278,7 +278,7 @@ url = "https://cncnet.org/master"        # CnCNet shared browser (Level 0 compat
 <h3 id="design-principles"><a class="header" href="#design-principles">Design Principles</a></h3>
 <ol>
 <li>
-<p><strong>Just a binary.</strong> Each server is a single Rust executable with zero mandatory external dependencies. Run it directly (<code>./tracking-server</code> or <code>./relay-server</code>), as a systemd service, in Docker, or in Kubernetes — whatever suits the operator. No external database, no runtime, no JVM. Download, configure, run. Services that need persistent storage use an embedded SQLite database file (D034) — no separate database process to install or operate.</p>
+<p><strong>Just a binary.</strong> Each server is a single Rust executable with zero mandatory external dependencies. Run it directly (<code>./ic-server</code>), as a systemd service, in Docker, or in Kubernetes — whatever suits the operator. No external database, no runtime, no JVM. Download, configure, run. Services that need persistent storage use an embedded SQLite database file (D034) — no separate database process to install or operate.</p>
 </li>
 <li>
 <p><strong>Stateless or self-contained.</strong> The tracking server holds no critical state — listings live in memory with TTL expiry (for multi-instance: shared via Redis). The relay, workshop, and matchmaking servers persist data (match results, resource metadata, ratings) to an embedded SQLite file (D034). Killing a process loses only in-flight game sessions — persistent records survive in the <code>.db</code> file. Relay servers hold per-game session state in memory but games are short-lived; if a relay dies, recovery is <strong>mode-specific</strong>: casual/custom games may offer unranked continuation or fallback if supported, while ranked follows the degraded-certification / void policy (<code>06-SECURITY.md</code> V32) rather than silently switching authority paths.</p>
@@ -305,15 +305,14 @@ url = "https://cncnet.org/master"        # CnCNet shared browser (Level 0 compat
 <h3 id="deployment-options"><a class="header" href="#deployment-options">Deployment Options</a></h3>
 <p><strong>Option 1: Just run the binary (simplest)</strong></p>
 <pre><code class="language-bash"># Download and run — no Docker, no cloud, no dependencies
-./tracking-server --port 8080 --heartbeat-ttl 30s
-./relay-server --port 9090 --region home --max-games 50
+./ic-server --port 9090 --region home --max-games 50
 </code></pre>
 <p>Works on any machine: home PC, spare laptop, Raspberry Pi, VPS. The tracking server uses in-memory storage by default — no Redis needed for a single instance.</p>
 <p><strong>Option 2: Docker Compose (one-command setup)</strong></p>
 <pre><code class="language-yaml"># docker-compose.yaml (community self-hosting)
 services:
   tracking:
-    image: ghcr.io/iron-curtain/tracking-server:latest
+    image: ghcr.io/ironcurtain/ic-server:latest
     ports:
       - "8080:8080"
     environment:
@@ -325,7 +324,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
 
   relay:
-    image: ghcr.io/iron-curtain/relay-server:latest
+    image: ghcr.io/ironcurtain/ic-server:latest
     ports:
       - "9090:9090/udp"
       - "9090:9090/tcp"
@@ -394,7 +393,7 @@ relay:
 <p>The tracking server is a standalone Rust binary (not Bevy — no ECS needed). It shares <code>ic-protocol</code> for order serialization.</p>
 <p>The relay logic lives as a library (<code>RelayCore</code>) in <code>ic-net</code>. This library is used in two contexts:</p>
 <ul>
-<li><strong><code>relay-server</code> binary</strong> — standalone headless process that hosts multiple concurrent games. Not Bevy, no ECS. Uses <code>RelayCore</code> + async I/O (tokio). This is the “dedicated server” for community hosting, server rooms, and Raspberry Pis.</li>
+<li><strong><code>ic-server</code> binary</strong> — standalone headless process that hosts multiple concurrent games. Not Bevy, no ECS. Uses <code>RelayCore</code> + async I/O (tokio). This is the “dedicated server” for community hosting, server rooms, and Raspberry Pis.</li>
 <li><strong>Game client</strong> — <code>EmbeddedRelayNetwork</code> wraps <code>RelayCore</code> inside the game process. The host player runs the relay and plays simultaneously. Uses Bevy’s async task system for I/O. This is the “Host Game” button.</li>
 </ul>
 <p>Both share <code>ic-protocol</code> for order serialization. Both are developed in Phase 5 alongside the multiplayer client code. For the full async runtime architecture (tokio thread bridge for Bevy binaries, WASM portability, <code>IoBridge</code> trait), see <code>architecture/crate-graph.md</code> § “Async Architecture: Dual-Runtime with Channel Bridge.”</p>

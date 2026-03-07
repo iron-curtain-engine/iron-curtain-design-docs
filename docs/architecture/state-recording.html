@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-194dde15.js"></script>
+        <script src="../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -185,36 +185,36 @@
 <h3 id="staterecorder-recording-side"><a class="header" href="#staterecorder-recording-side">StateRecorder (Recording Side)</a></h3>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>/// Asynchronous background recording of game state.
-/// Records orders every tick and full/delta snapshots periodically.
-/// Runs on a background thread — zero impact on game loop latency.
+</span>/// Orchestrates background recording of game state to `.icrep` files.
+/// Tick-order frames and keyframe snapshot blobs are sent as separate
+/// messages to a `BackgroundReplayWriter` (see `network-model-trait.md`
+/// § Background Replay Writer). The game thread produces per-tick
+/// `ReplayTickFrame`s (cheap — just orders + hash) and periodic
+/// keyframe blobs (more expensive — see cost model below).
 ///
 /// Lives in ic-game (I/O concern, not sim concern — Invariant #1).
 pub struct StateRecorder {
-    /// Background thread that receives snapshots/orders via channel
-    /// and writes them to the replay file. Crash-safe: payload is
-    /// written first, header updated atomically after fsync (Fossilize
-    /// pattern — see D010).
-    writer: JoinHandle&lt;()&gt;,
-    /// Channel to send tick orders to the writer.
-    order_tx: Sender&lt;RecordedTick&gt;,
-    /// Interval for full snapshot keyframes (default: every 300 ticks).
-    snapshot_interval: u64,
-}
-
-pub struct RecordedTick {
-    pub tick: u64,
-    pub orders: TickOrders,
-    /// Full snapshot at keyframe intervals; delta snapshot otherwise.
-    /// Delta snapshots encode only changed components (see below).
-    pub snapshot: Option&lt;SnapshotType&gt;,
-}
-
-pub enum SnapshotType {
-    Full(SimSnapshot),
-    Delta(DeltaSnapshot),
+    /// Background writer that drains tick frames and keyframe blobs,
+    /// performs LZ4 compression, and appends to the `.icrep` file.
+    /// Crash-safe: Fossilize append-safe pattern (see D010).
+    writer: BackgroundReplayWriter,
+    /// Keyframe cadence: a keyframe blob is produced every this many ticks
+    /// (default: 300 — ~20 seconds at the Slower default of ~15 tps).
+    keyframe_interval: u64,
+    /// Full snapshot cadence: every Nth keyframe is a full `SimSnapshot`
+    /// instead of a `DeltaSnapshot` (default: N=10, i.e., every 3000 ticks).
+    full_keyframe_every_n: u64,
+    /// Baseline for delta keyframes — the last full SimCoreSnapshot.
+    last_full_snapshot: SimCoreSnapshot,
+    /// Last-known campaign state for delta comparison (None if no campaign active).
+    last_campaign_state: Option&lt;CampaignState&gt;,
+    /// Last-known script state for delta comparison (None before first keyframe).
+    last_script_state: Option&lt;ScriptState&gt;,
 }
 <span class="boring">}</span></code></pre>
+<p><strong>Per-tick recording</strong> (every tick): <code>ic-game</code> constructs a <code>ReplayTickFrame { tick, state_hash, orders }</code> and calls <code>writer.record_tick(frame)</code>. Cost: negligible (the frame is a small struct; the background writer handles serialization and I/O).</p>
+<p><strong>Keyframe recording</strong> (every <code>keyframe_interval</code> ticks): <code>ic-game</code> produces the keyframe on the game thread in two steps — (1) <code>Simulation::delta_snapshot(&amp;self.last_full_snapshot)</code> extracts a <code>SimCoreDelta</code>, (2) <code>ic-game</code> compares current campaign/script state against the recorder’s <code>last_campaign_state</code> / <code>last_script_state</code> baselines and composes the full <code>DeltaSnapshot</code> (or <code>SimSnapshot</code> at full-keyframe cadence), including campaign/script state only if changed since the respective baselines. The composed snapshot is serialized to <code>Vec&lt;u8&gt;</code> and passed to <code>writer.record_keyframe(tick, is_full, blob)</code>. LZ4 compression and file I/O happen asynchronously on the background writer thread. After recording, the recorder updates its baselines: on full keyframes, all three baselines reset; on delta keyframes, only <code>last_campaign_state</code> and <code>last_script_state</code> are updated if they were included.</p>
+<p><strong>Game-thread cost model:</strong> Keyframe production costs ~1–1.5 ms per delta keyframe (every 300 ticks / ~20 seconds at Slower default) and ~2–3 ms per full keyframe (every 3000 ticks / ~200 seconds at Slower default) for a 500-unit game. This is well within the 67 ms tick budget (Slower default). The per-tick <code>record_tick()</code> call adds &lt; 0.1 ms. LZ4 compression and disk I/O are fully async. See <code>formats/save-replay-formats.md</code> § Keyframe serialization threading for the full three-phase breakdown.</p>
 <h3 id="per-field-change-tracking-from-source-engine-cnetworkvar"><a class="header" href="#per-field-change-tracking-from-source-engine-cnetworkvar">Per-Field Change Tracking (from Source Engine CNetworkVar)</a></h3>
 <p>To support delta snapshots efficiently, the sim uses <strong>per-field change tracking</strong> — inspired by Source Engine’s <code>CNetworkVar</code> system (see <code>research/valve-github-analysis.md</code> § 2.2). Each ECS component that participates in snapshotting is annotated with a <code>#[track_changes]</code> derive macro. The macro generates a companion bitfield that records which fields changed since the last snapshot. Delta serialization then skips unchanged fields entirely.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -250,20 +250,38 @@ pub struct Mobile {
 <p>When a desync is detected (hash mismatch via <code>report_sync_hash()</code>), the system automatically captures a full state snapshot before any error handling or recovery:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>/// Called by NetworkModel when a sync hash mismatch is detected.
-/// Captures full state immediately — before the sim advances further —
-/// so the exact divergence point is preserved for offline analysis.
-fn on_desync_detected(sim: &amp;Simulation, tick: u64, local_hash: u64, remote_hash: u64) {
-    // 1. Immediate full snapshot
-    let snapshot = sim.snapshot();
-    // 2. Write to crash dump file (same Fossilize append-safe pattern)
-    write_crash_dump(tick, local_hash, remote_hash, &amp;snapshot);
-    // 3. If Merkle tree is available, capture the tree for
+</span>/// Called by ic-game when a sync hash mismatch is detected.
+/// Captures full composite state immediately — before the sim advances
+/// further — so the exact divergence point is preserved for offline
+/// analysis, including script-managed state that might be the root cause.
+fn on_desync_detected(
+    sim: &amp;Simulation,
+    script_engine: &amp;ScriptEngine,   // ic-script handle (owned by ic-game)
+    campaign: &amp;CampaignState,
+    tick: u64,
+    local_hash: u64,
+    remote_hash: u64,
+) {
+    // 1. Immediate sim core snapshot (SimCoreSnapshot — sim-internal state)
+    let core = sim.snapshot();
+    // 2. Collect external state so the dump includes script/campaign data.
+    //    This mirrors the full SimSnapshot composition path used by saves
+    //    and replay keyframes — if divergence is rooted in script state,
+    //    the dump captures it.
+    let script_state = script_engine.snapshot_all();
+    let full = SimSnapshot {
+        core,
+        campaign_state: Some(campaign.clone()),
+        script_state: Some(script_state),
+    };
+    // 3. Write to crash dump file (same Fossilize append-safe pattern)
+    write_crash_dump(tick, local_hash, remote_hash, &amp;full);
+    // 4. If Merkle tree is available, capture the tree for
     //    logarithmic desync localization (see 03-NETCODE.md)
     if let Some(tree) = sim.merkle_tree() {
         write_merkle_dump(tick, &amp;tree);
     }
-    // 4. Continue with normal desync handling (reconnect, notify user, etc.)
+    // 5. Continue with normal desync handling (reconnect, notify user, etc.)
 }
 <span class="boring">}</span></code></pre>
 <p>This ensures desync debugging always has a snapshot at the exact point of divergence — not N ticks later when the developer gets around to analyzing it. The pattern comes from Valve’s Fossilize (crash-safe state capture, see <code>research/valve-github-analysis.md</code> § 3.1) and OpenTTD’s periodic desync snapshot naming convention (<code>desync_{seed}_{tick}.snap</code>).</p>

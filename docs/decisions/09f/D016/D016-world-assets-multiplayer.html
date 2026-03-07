@@ -35,10 +35,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-a5b1fbe2.js";
+            window.path_to_searchindex_js = "../../../searchindex-8f315fcc.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-194dde15.js"></script>
+        <script src="../../../toc-02bd7aa6.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -393,7 +393,7 @@ campaign_parameters:
 </code></pre>
 <p><strong>How multiplayer save works (technically):</strong></p>
 <ul>
-<li><strong>Mid-mission save:</strong> Uses D010 — full sim snapshot. Both players receive the snapshot. Either player can host the resume session. The save file is a standard <code>.icsave</code> containing the sim snapshot and campaign state (embedded in <code>SimSnapshot.campaign_state</code>). No order history is stored — the snapshot is self-contained; the sim restores from it directly without replaying orders. See <code>formats/save-replay-formats.md</code> for the canonical <code>.icsave</code> layout.</li>
+<li><strong>Mid-mission save:</strong> Uses D010 — full sim snapshot. Both players receive the snapshot. Either player can host the resume session. The save file is a standard <code>.icsave</code> containing the full <code>SimSnapshot</code> (sim core + campaign state + script state). No order history is stored — the snapshot is self-contained; the game restores from it via <code>GameRunner::restore_full()</code> (see <code>02-ARCHITECTURE.md</code> § ic-game Integration) without replaying orders. See <code>formats/save-replay-formats.md</code> for the canonical <code>.icsave</code> layout.</li>
 <li><strong>Between-mission save:</strong> The natural pause point. Campaign state (D021) is serialized — roster, flags, mission graph position, world map state (if World Domination). No sim snapshot needed — the next mission hasn’t started yet.</li>
 <li><strong>Campaign ownership:</strong> The campaign is “owned” by the creating player but the save state is portable. If Player A disappears, Player B has a full local copy and can resume solo or with a new partner.</li>
 </ul>
