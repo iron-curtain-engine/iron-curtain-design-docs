@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-02bd7aa6.js"></script>
+        <script src="../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -462,6 +462,9 @@ impl RelayServer {
 </blockquote>
 <h4 id="ewma-traffic-scoring-relay-side"><a class="header" href="#ewma-traffic-scoring-relay-side">EWMA Traffic Scoring (Relay-Side)</a></h4>
 <p>Beyond hard rate caps, the relay maintains an <strong>exponential weighted moving average (EWMA)</strong> of each player’s order rate and bandwidth consumption. This catches sustained abuse patterns that stay just below the hard caps — a technique proven by DDNet’s anti-abuse infrastructure (see <code>research/veloren-hypersomnia-openbw-ddnet-netcode-analysis.md</code>):</p>
+<blockquote>
+<p><strong>NaN/Inf hazard:</strong> The <code>f64</code> fields below are vulnerable to NaN propagation under edge conditions (zero traffic, extreme bursts, denormalized floats). A NaN score silently disables abuse detection because <code>NaN &gt; threshold</code> is always <code>false</code>. See <strong>V34</strong> in <code>vulns-infrastructure.md</code> for the mandatory NaN guard pattern, fail-closed defaults, and <code>alpha</code> range validation. The defended implementation there supersedes this simplified sketch. See also <code>type-safety.md</code> § Finite Float Policy.</p>
+</blockquote>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>/// Exponential weighted moving average for traffic monitoring.

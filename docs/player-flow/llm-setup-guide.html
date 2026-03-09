@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-02bd7aa6.js"></script>
+        <script src="../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -183,21 +183,35 @@
                         <h2 id="llm-provider-setup-guide"><a class="header" href="#llm-provider-setup-guide">LLM Provider Setup Guide</a></h2>
 <pre><code>Settings → LLM → [+ Add Provider]
 </code></pre>
-<p>This page walks players through connecting an LLM provider. Iron Curtain does not include an AI model — you bring your own (BYOLLM). All LLM features are optional; the game is fully functional without one.</p>
+<p>This page walks players through enabling AI features. Iron Curtain ships with built-in CPU models that work with zero setup — just click [Enable Built-in AI →]. For higher quality, you can connect a cloud provider or a local server like Ollama. All LLM features are optional; the game is fully functional without one.</p>
 <h3 id="what-you-need"><a class="header" href="#what-you-need">What You Need</a></h3>
-<p>An LLM provider is a service that runs an AI model and answers questions. You have two options:</p>
+<p>Iron Curtain supports four provider tiers (D047). Pick whichever fits your situation:</p>
 <div class="table-wrapper">
 <table>
 <thead>
-<tr><th>Option</th><th>Cost</th><th>Speed</th><th>Privacy</th><th>Setup Difficulty</th></tr>
+<tr><th>Option</th><th>Cost</th><th>Speed</th><th>Privacy</th><th>Setup Difficulty</th><th>Notes</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>Local (Ollama)</strong></td><td>Free</td><td>Fast (your hardware)</td><td>Full — nothing leaves your machine</td><td>Medium (install one app)</td></tr>
-<tr><td><strong>Cloud (OpenAI, Claude, etc.)</strong></td><td>Pay-per-use</td><td>Fast (their hardware)</td><td>Prompts sent to provider</td><td>Easy (get an API key)</td></tr>
+<tr><td><strong>Built-in (IC Models)</strong></td><td>Free</td><td>Moderate (CPU)</td><td>Full — nothing leaves your machine</td><td>None (one click)</td><td>Uses your CPU — may affect game performance on lower-end hardware</td></tr>
+<tr><td><strong>Cloud Login (OAuth)</strong></td><td>Pay-per-use (free tiers available)</td><td>Fast (their hardware)</td><td>Prompts sent to provider</td><td>Easy (sign in with browser)</td><td>Stronger models, zero local resource usage</td></tr>
+<tr><td><strong>Cloud API Key</strong></td><td>Pay-per-use (free tiers available)</td><td>Fast (their hardware)</td><td>Prompts sent to provider</td><td>Easy (paste an API key)</td><td>Stronger models, zero local resource usage</td></tr>
+<tr><td><strong>Local (Ollama, etc.)</strong></td><td>Free</td><td>Fast (your hardware)</td><td>Full — nothing leaves your machine</td><td>Medium (install one app)</td><td>Best with a dedicated GPU; frees CPU for the game</td></tr>
 </tbody>
 </table>
 </div>
-<p>Both work identically in-game. You can use one for some tasks and another for others (task routing).</p>
+<p>All tiers work identically in-game. You can use one for some tasks and another for others (task routing).</p>
+<hr>
+<h3 id="quickest-start-built-in-ai-zero-setup"><a class="header" href="#quickest-start-built-in-ai-zero-setup">Quickest Start: Built-in AI (Zero Setup)</a></h3>
+<p>Iron Curtain includes optimized CPU models via Workshop model packs. No accounts, no downloads beyond the model pack, no configuration.</p>
+<ol>
+<li>Settings → LLM → [Enable Built-in AI →]</li>
+<li>IC downloads the default model pack (~850 MB)</li>
+<li>Done — all AI features are active</li>
+</ol>
+<p>The built-in models are designed for CPU inference. They provide good results for coaching, mission generation, and AI orchestration while requiring no GPU.</p>
+<blockquote>
+<p><strong>Why upgrade to a cloud or local-GPU provider?</strong> Built-in models share your CPU with the game. An external provider (cloud or Ollama with GPU) frees those resources — the game runs smoother, and the AI responds faster with stronger models. Cloud providers may charge per use (typically a few cents per session), but many offer free tiers. See the comparison table above to decide what fits your situation.</p>
+</blockquote>
 <hr>
 <h3 id="option-a-local-setup-with-ollama-free-private"><a class="header" href="#option-a-local-setup-with-ollama-free-private">Option A: Local Setup with Ollama (Free, Private)</a></h3>
 <p>Ollama runs AI models on your own computer. No account needed, no API key, no cost.</p>
@@ -416,7 +430,7 @@
 <h3 id="community-configs--skip-the-setup"><a class="header" href="#community-configs--skip-the-setup">Community Configs — Skip the Setup</a></h3>
 <p>Don’t want to configure everything yourself? Browse community-tested configurations:</p>
 <ol>
-<li>Settings → LLM → [Browse Community Configs]</li>
+<li>Settings → LLM → [Advanced →] → Browse Community Configs</li>
 <li>Browse by tag: <code>local-only</code>, <code>budget</code>, <code>high-quality</code>, <code>fast</code></li>
 <li>Click [Import] on a config you like</li>
 <li>The config pre-fills provider settings and task routing — you only need to add your own API keys</li>
@@ -430,6 +444,7 @@
 <tr><th>Problem</th><th>Solution</th></tr>
 </thead>
 <tbody>
+<tr><td>Built-in model download fails</td><td>Check internet connection. The model pack is ~850 MB. Retry via Settings → LLM → Model Packs → [Retry Download].</td></tr>
 <tr><td>“Connection refused” (Ollama)</td><td>Is Ollama running? Check <code>ollama list</code> in terminal. Restart Ollama if needed.</td></tr>
 <tr><td>“401 Unauthorized” (Cloud)</td><td>API key is wrong or expired. Generate a new one from the provider’s dashboard.</td></tr>
 <tr><td>“429 Too Many Requests”</td><td>You’ve hit the provider’s rate limit. Wait a minute, or switch to a different provider for high-frequency tasks.</td></tr>
@@ -437,9 +452,31 @@
 <tr><td>“Timeout”</td><td>The model is too slow for the timeout setting. Try a smaller/faster model, or increase timeout in provider settings.</td></tr>
 <tr><td>Responses are low quality</td><td>Try a larger model. <code>llama3.2:1b</code> is fast but basic; <code>gpt-4o</code> or <code>claude-sonnet-4</code> give much better strategic advice.</td></tr>
 <tr><td>High cloud costs</td><td>Switch AI Orchestrator to local (Ollama). Use cloud only for one-time tasks like mission generation.</td></tr>
+<tr><td>⚠ “Needs sign-in” badge</td><td>Your saved login for an AI provider couldn’t be read — see Credential Recovery below.</td></tr>
 </tbody>
 </table>
 </div>
+<hr>
+<h3 id="credential-recovery"><a class="header" href="#credential-recovery">Credential Recovery</a></h3>
+<p>If you see an <strong>“AI features need your attention”</strong> banner, or a provider card shows a ⚠ badge in Settings → LLM, it means IC can’t read the saved login for one or more AI providers. This typically happens when:</p>
+<ul>
+<li>You moved to a <strong>new computer</strong> (your login was protected by your old machine’s system keychain)</li>
+<li>You <strong>reinstalled your operating system</strong> (the OS keychain was reset)</li>
+<li>You <strong>cleared your system keychain</strong> (Windows Credential Manager, macOS Keychain, Linux Secret Service)</li>
+<li>You <strong>forgot your vault passphrase</strong> (if you were using passphrase-based protection)</li>
+</ul>
+<p><strong>Your provider settings are safe</strong> — name, endpoint, model, and task routing are all intact. Only the login (API key or sign-in token) needs to be re-entered.</p>
+<p><strong>To fix:</strong></p>
+<ol>
+<li>Click <strong>[Fix Now →]</strong> in the banner, or go to Settings → LLM</li>
+<li>Providers that need attention show a ⚠ badge and a <strong>[Sign In]</strong> button</li>
+<li>Click <strong>[Sign In]</strong> → the edit form opens with all your settings preserved</li>
+<li>Paste your API key (from your provider’s dashboard) or click Sign In to redo the login flow</li>
+<li>Click <strong>[Save]</strong> — the new login is encrypted with your current machine’s key</li>
+</ol>
+<p><strong>If you don’t want to fix it right now:</strong> Click <strong>[Use Built-in AI]</strong> to fall back to built-in models for this session, or <strong>[Not Now]</strong> to dismiss the banner. Features that need the affected provider will show a guidance panel with options to fix, switch to built-in, or cancel.</p>
+<p><strong>If you forgot your vault passphrase:</strong> Go to Settings → Data → Security → <strong>[Reset Vault Passphrase]</strong>. This clears all saved logins and lets you set a new passphrase. You’ll need to sign in to your AI providers again afterward. (Power users: <code>/vault reset</code> in the console does the same thing.)</p>
+<p><strong>This is by design:</strong> IC stores your logins encrypted, and the encryption key doesn’t travel with your data files. A stolen backup or copied database can’t expose your API keys. The trade-off is re-entering logins when the encryption key is unavailable.</p>
 <hr>
 <h3 id="related-docs"><a class="header" href="#related-docs">Related Docs</a></h3>
 <ul>

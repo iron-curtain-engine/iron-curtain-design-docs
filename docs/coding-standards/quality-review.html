@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-02bd7aa6.js"></script>
+        <script src="../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -545,6 +545,8 @@ disallowed-types = [
 <li><input disabled="" type="checkbox"> Are version constraints parsed into <code>VersionConstraint</code> enum at ingestion, never stored or compared as strings?</li>
 <li><input disabled="" type="checkbox"> Is <code>WasmInstanceId</code> used consistently, never bare <code>u32</code> or <code>usize</code> index?</li>
 <li><input disabled="" type="checkbox"> Is <code>Fingerprint</code> constructed only via <code>Fingerprint::compute()</code>, never from raw <code>[u8; 32]</code>?</li>
+<li><input disabled="" type="checkbox"> <strong>WASM boundary:</strong> Do host-side structs (e.g., <code>AiUnitInfo</code>, <code>AiEventEntry</code>) use newtypes? WASM FFI signatures use primitives (ABI constraint), but any Rust struct exchanging data with the engine must use <code>UnitTag</code>, <code>SimTick</code>, etc. See <code>type-safety.md</code> § WASM ABI Boundary Policy.</li>
+<li><input disabled="" type="checkbox"> <strong>Server-side floats:</strong> Do <code>f64</code> fields in anti-cheat/scoring code have NaN guards? See <code>type-safety.md</code> § Finite Float Policy.</li>
 </ul>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -601,6 +603,14 @@ impl From&lt;u32&gt; for PlayerId {  // blanket From = implicit conversion anywh
 <li><input disabled="" type="checkbox"> Are there any code paths that bypass verification and construct <code>Verified&lt;T&gt;</code> directly? (the <code>_private</code> field should prevent this)</li>
 <li><input disabled="" type="checkbox"> Does the verification function check ALL required properties before wrapping in <code>Verified</code>?</li>
 <li><input disabled="" type="checkbox"> Are <code>Verified</code> values passed through without re-verification? (re-verification is wasted work; the type already proves it)</li>
+</ul>
+<h3 id="structurallychecked-wrapper-review"><a class="header" href="#structurallychecked-wrapper-review">StructurallyChecked Wrapper Review</a></h3>
+<p>When reviewing relay-side code that processes orders before broadcast (see <code>cross-engine/relay-security.md</code> § StructurallyChecked):</p>
+<ul>
+<li><input disabled="" type="checkbox"> Does the relay pipeline produce <code>StructurallyChecked&lt;TimestampedOrder&gt;</code> rather than bare <code>TimestampedOrder</code> for forwarded orders?</li>
+<li><input disabled="" type="checkbox"> Is <code>StructurallyChecked::new()</code> called ONLY inside the <code>ForeignOrderPipeline::process()</code> path (or equivalent structural validation)? (the <code>_private</code> field should prevent external construction)</li>
+<li><input disabled="" type="checkbox"> Is <code>StructurallyChecked&lt;T&gt;</code> NEVER confused with <code>Verified&lt;T&gt;</code>? (the relay does NOT run <code>ic-sim</code> — it cannot produce <code>Verified&lt;T&gt;</code>)</li>
+<li><input disabled="" type="checkbox"> Are rejected orders logged to <code>rejection_log</code> for behavioral scoring?</li>
 </ul>
 <h3 id="hash-type-review"><a class="header" href="#hash-type-review">Hash Type Review</a></h3>
 <p>When reviewing code that computes or compares hashes:</p>

@@ -35,10 +35,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../../../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-02bd7aa6.js"></script>
+        <script src="../../../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -262,7 +262,8 @@ fn configure_connection(conn: &amp;Connection, config: &amp;DbConfig) -&gt; rusq
 <h4 id="table-to-file-assignments-for-d047-and-d057"><a class="header" href="#table-to-file-assignments-for-d047-and-d057">Table-to-File Assignments for D047 and D057</a></h4>
 <p>Not every table set warrants its own <code>.db</code> file. Two decision areas have SQLite tables that live inside existing databases:</p>
 <ul>
-<li><strong>D047 LLM provider config</strong> (<code>llm_providers</code>, <code>llm_task_routing</code>) → stored in <strong><code>profile.db</code></strong>. These are small config tables (~dozen rows) containing encrypted API keys — they inherit <code>profile.db</code>’s <code>synchronous=FULL</code> durability, which is appropriate for data that includes secrets. Co-locating with identity data keeps all “who am I and what are my settings” data in one backup-critical file.</li>
+<li><strong>D047 LLM provider config</strong> (<code>llm_providers</code>, <code>llm_task_routing</code>, <code>llm_model_packs</code>, <code>llm_prompt_profiles</code>, <code>llm_task_prompt_strategy</code>, <code>llm_provider_capability_probe</code>) → stored in <strong><code>profile.db</code></strong>. These are small config tables (~dozen rows each) containing encrypted credentials and user preferences — they inherit <code>profile.db</code>’s <code>synchronous=FULL</code> durability, which is appropriate for data that includes secrets. Co-locating with identity data keeps all “who am I and what are my settings” data in one backup-critical file.
+<strong>Credential encryption:</strong> The <code>api_key</code>, <code>oauth_token</code>, and <code>oauth_refresh_token</code> columns in <code>llm_providers</code> are stored as AES-256-GCM encrypted BLOBs, never plaintext. The Data Encryption Key (DEK) is held in the OS credential store (Windows DPAPI / macOS Keychain / Linux Secret Service via the <code>keyring</code> crate), or derived from a user-provided vault passphrase (Argon2id). A <code>vault_meta</code> table in <code>profile.db</code> stores the backend type, DEK salt, verification HMAC, and Argon2 parameters. See <code>research/credential-protection-design.md</code> for the full three-tier <code>CredentialStore</code> design and V61 in <code>security/vulns-edge-cases-infra.md</code> for the threat model.</li>
 <li><strong>D057 Skill Library</strong> (<code>skills</code>, <code>skills_fts</code>, <code>skill_embeddings</code>, <code>skill_compositions</code>) → stored in <strong><code>gameplay.db</code></strong>. Skills are analytical data produced from gameplay — they benefit from <code>gameplay.db</code>’s 16 MB cache and 64 MB mmap (FTS5 keyword search and embedding similarity scans over potentially thousands of skills). A mature skill library with embeddings may reach 10–50 MB, well within <code>gameplay.db</code>’s 10–500 MB expected range. Co-locating with <code>gameplay_events</code> and <code>player_profiles</code> keeps all AI/LLM-consumed data queryable in one file.</li>
 </ul>
 <h4 id="configuration-rationale"><a class="header" href="#configuration-rationale">Configuration Rationale</a></h4>

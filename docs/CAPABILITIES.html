@@ -35,10 +35,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-02bd7aa6.js"></script>
+        <script src="toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -197,7 +197,7 @@
 <tr><td><strong>Ranked Multiplayer</strong></td><td>Glicko-2 rating with seasonal tiers (Conscript → Supreme Commander), per-queue ratings (1v1, 2v2, FFA), map veto system, placement matches, escalating cooldowns (D055)</td></tr>
 <tr><td><strong>Casual Multiplayer</strong></td><td>Game browser, Among Us-style room codes (IRON-XXXX), QR join for LAN/streaming, Discord/Steam deep links, auto-download missing mods on join (D030)</td></tr>
 <tr><td><strong>Asymmetric Co-op</strong></td><td>Commander + Field Ops roles with separate HUDs, support request system (CAS, Recon, Reinforcements, Extraction), and War-Effort Board pacing (D070)</td></tr>
-<tr><td><strong>Generative Campaigns (BYOLLM)</strong></td><td>Describe a campaign in plain text → LLM generates branching missions, briefings, AI behavior, and narrative that adapts to your play (D016)</td></tr>
+<tr><td><strong>Generative Campaigns</strong></td><td>Describe a campaign in plain text → LLM generates branching missions, briefings, AI behavior, and narrative that adapts to your play; built-in CPU models run locally after a one-time download, external LLM providers (BYOLLM) unlock higher quality (D016)</td></tr>
 <tr><td><strong>LLM Exhibition</strong></td><td>BYO-LLM Fight Night (AI vs AI), Prompt Duel (guide AI with strategy prompts), Director Showmatch (audience-driven spectacle) (D073)</td></tr>
 <tr><td><strong>Spectating</strong></td><td>Mid-game join, configurable broadcast delay, observer panels (Army/Production/Economy/Score/APM), directed camera AI, community observer UI layouts via Workshop</td></tr>
 </tbody>
@@ -262,8 +262,8 @@
 <li><strong>Relay servers</strong> eliminate lag-switching and host advantage — relay owns the clock (D007)</li>
 <li><strong>Sub-tick fairness</strong> — orders from faster and slower players processed fairly (D008)</li>
 <li><strong>Adaptive run-ahead</strong> — client predicts during lag, corrects without rubber-banding</li>
-<li><strong>Encrypted transport</strong> — all traffic encrypted and authenticated (TLS/QUIC)</li>
-<li><strong>Community servers</strong> — anyone can host their own relay, matchmaking, and workshop servers with federated trust (D052)</li>
+<li><strong>Encrypted transport</strong> — X25519 key exchange, AES-256-GCM authenticated encryption, Ed25519 identity binding (TransportCrypto)</li>
+<li><strong>Community servers</strong> — single <code>ic-server</code> binary with toggleable capability flags (relay, matchmaking, ranking, Workshop P2P seeding, moderation) and federated trust (D074)</li>
 <li><strong>Cross-engine browser</strong> — see OpenRA and CnCNet games from the IC client (D011)</li>
 <li><strong>Portable identity</strong> — 24-word recovery phrase; restore on any machine (D061)</li>
 </ul>
@@ -420,7 +420,8 @@
 <li><strong>CI/CD integration</strong> — headless publishing via scoped API tokens; tag-based automation</li>
 <li><strong>CLI:</strong> <code>ic mod install</code>, <code>ic mod update</code>, <code>ic mod tree</code>, <code>ic mod audit</code>, <code>ic mod publish</code></li>
 </ul>
-<h3 id="llm-powered-creator-tools-optional-byollm--d016"><a class="header" href="#llm-powered-creator-tools-optional-byollm--d016">LLM-Powered Creator Tools (Optional, BYOLLM — D016)</a></h3>
+<h3 id="llm-powered-creator-tools-optional--d016"><a class="header" href="#llm-powered-creator-tools-optional--d016">LLM-Powered Creator Tools (Optional — D016)</a></h3>
+<p>Built-in CPU models (Tier 1) run locally after a one-time download; no account or external service needed. External LLM providers (BYOLLM Tiers 2–4) unlock higher quality.</p>
 <ul>
 <li><strong>Single mission generation</strong> — text prompt → terrain, objectives, AI behavior, triggers, briefing</li>
 <li><strong>Campaign generation</strong> — text description → full branching multi-mission campaign</li>
@@ -500,7 +501,7 @@
 </ul>
 <h3 id="community-infrastructure"><a class="header" href="#community-infrastructure">Community Infrastructure</a></h3>
 <ul>
-<li><strong>Self-hostable relay, matchmaking, and workshop servers</strong> (D052)</li>
+<li><strong>Unified <code>ic-server</code> binary</strong> with independently toggleable capability flags: relay, matchmaking, ranking, Workshop P2P seeding, moderation (D074)</li>
 <li><strong>Ed25519 signed credential records</strong> — portable reputation across communities</li>
 <li><strong>Transparency logs</strong> — server publishes signed operation log for accountability</li>
 <li><strong>Federated architecture</strong> — communities interoperate with official infrastructure</li>
@@ -523,7 +524,7 @@
 <tr><td>Scenario editor</td><td>Map editor only</td><td>No</td><td><strong>Full OFP-inspired mission editor (D038)</strong></td></tr>
 <tr><td>Asset studio</td><td>No</td><td>No</td><td><strong>Visual sprite/palette/terrain/audio editor (D040)</strong></td></tr>
 <tr><td>Export to other engines</td><td>N/A</td><td>N/A</td><td><strong>OpenRA + RA1 export with fidelity warnings (D066)</strong></td></tr>
-<tr><td>LLM-generated missions</td><td>No</td><td>No</td><td><strong>BYOLLM — text → playable campaigns (D016)</strong></td></tr>
+<tr><td>LLM-generated missions</td><td>No</td><td>No</td><td><strong>Built-in + BYOLLM — text → playable campaigns (D016)</strong></td></tr>
 <tr><td>Multi-game engine</td><td>RA1/TD/TS/D2K (separate mods)</td><td>RA1 + TD only</td><td><strong>GameModule trait — any RTS (D018)</strong></td></tr>
 <tr><td>Weather system</td><td>No</td><td>No</td><td><strong>Dynamic with gameplay effects (D022)</strong></td></tr>
 <tr><td>Render mode toggle</td><td>No</td><td>Toggle (Classic/HD)</td><td><strong>Classic/HD/3D — mid-game (D048)</strong></td></tr>

@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-02bd7aa6.js"></script>
+        <script src="../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -277,7 +277,8 @@ Canonical design authority lives in the Iron Curtain design-doc repository.</p>
 <tr><td><code>ic-render</code></td><td>Bevy isometric map/sprite renderer, camera, fog rendering</td><td>1</td></tr>
 <tr><td><code>ic-ui</code></td><td>Game UI and chrome (Bevy UI), sidebar, power bar, selection, menus</td><td>3–4</td></tr>
 <tr><td><code>ic-audio</code></td><td>Sound, music, EVA via Kira backend</td><td>3</td></tr>
-<tr><td><code>ic-net</code></td><td><code>NetworkModel</code> implementations, <code>RelayCore</code> library, <code>ic-server</code> binary</td><td>5</td></tr>
+<tr><td><code>ic-net</code></td><td><code>NetworkModel</code> implementations, <code>RelayCore</code> library</td><td>5</td></tr>
+<tr><td><code>ic-server</code></td><td>Unified server binary (D074): relay + optional headless sim for FogAuth/cross-engine</td><td>5</td></tr>
 <tr><td><code>ic-script</code></td><td>Lua (<code>mlua</code>) and WASM (<code>wasmtime</code>) mod runtimes, deterministic sandbox</td><td>4–5</td></tr>
 <tr><td><code>ic-ai</code></td><td>Skirmish AI (<code>PersonalityDrivenAi</code>), adaptive difficulty, economy/production/military managers</td><td>4–6</td></tr>
 <tr><td><code>ic-llm</code></td><td>LLM integration for adaptive missions, briefings, coaching (D016, D044, D073)</td><td>6+</td></tr>
@@ -289,7 +290,8 @@ Canonical design authority lives in the Iron Curtain design-doc repository.</p>
 <p><strong>Critical crate boundaries:</strong></p>
 <ul>
 <li><code>ic-sim</code> never imports <code>ic-net</code>, <code>ic-render</code>, <code>ic-ui</code>, <code>ic-audio</code>, <code>ic-editor</code></li>
-<li><code>ic-net</code> never imports <code>ic-sim</code></li>
+<li><code>ic-net</code> library never imports <code>ic-sim</code></li>
+<li><code>ic-server</code> is a top-level binary (like <code>ic-game</code>) that depends on <code>ic-net</code> for RelayCore and optionally <code>ic-sim</code> for FogAuth/relay-headless (D074)</li>
 <li><code>ic-sim</code> and <code>ic-net</code> share only <code>ic-protocol</code></li>
 <li><code>ic-game</code> never imports <code>ic-editor</code> (separate binaries, shared libraries)</li>
 <li><code>ic-sim</code> never reads/writes SQLite directly</li>

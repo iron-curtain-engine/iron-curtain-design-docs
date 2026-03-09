@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-02bd7aa6.js"></script>
+        <script src="../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -310,6 +310,7 @@
 <p>APIs that grant access (filesystem, network, ECS queries from mods) require unforgeable capability tokens. Tokens use <code>_private: ()</code> to prevent external construction. This pattern applies to: <code>FsReadCapability</code>, <code>ReconcilerToken</code>, <code>AdminCapability</code>, and WASM host function access.</p>
 <h3 id="pattern-4-verified-wrappers"><a class="header" href="#pattern-4-verified-wrappers">Pattern 4: Verified Wrappers</a></h3>
 <p>Security-critical data passes through verification once, then carries proof of verification in the type system. <code>Verified&lt;T&gt;</code> prevents the “forgot to verify” bug class. Applies to: SCR signatures, manifest hashes, replay signatures, validated orders.</p>
+<p><code>StructurallyChecked&lt;T&gt;</code> is the relay-side counterpart — a weaker wrapper indicating structural validation (decode + field bounds) has passed, but NOT full sim validation (D012). The relay cannot produce <code>Verified&lt;T&gt;</code> because it does not run <code>ic-sim</code>. Applies to: <code>StructurallyChecked&lt;TimestampedOrder&gt;</code> in the <code>ForeignOrderPipeline</code> (see <code>cross-engine/relay-security.md</code>). Same <code>_private: ()</code> construction guard as <code>Verified&lt;T&gt;</code> — only the structural validation path can wrap.</p>
 <h3 id="pattern-5-bounded-collections"><a class="header" href="#pattern-5-bounded-collections">Pattern 5: Bounded Collections</a></h3>
 <p>Every collection that grows based on external input has a type-enforced bound. <code>BoundedVec&lt;T, N&gt;</code> returns <code>Err(CapacityExceeded)</code> on overflow. This applies to: order queues, chat buffers, ping lists, draw commands, waypoints, build queues, group assignments.</p>
 <h3 id="pattern-6-directionscope-branding"><a class="header" href="#pattern-6-directionscope-branding">Pattern 6: Direction/Scope Branding</a></h3>

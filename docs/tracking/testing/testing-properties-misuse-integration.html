@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-02bd7aa6.js"></script>
+        <script src="../../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -230,6 +230,7 @@
 <tr><td>S8: <code>Simulation</code> is <code>!Sync</code></td><td>Contains Bevy <code>World</code> (<code>!Sync</code> via <code>UnsafeCell</code>)</td><td>Adding <code>unsafe impl Sync</code> or replacing <code>World</code> with a <code>Sync</code> container</td><td><code>clippy</code> + code review</td></tr>
 <tr><td>O6: <code>OrderBudget</code> unconstructible externally</td><td><code>_private: ()</code> field</td><td>Making inner fields <code>pub</code></td><td>Code review checklist</td></tr>
 <tr><td>O7: <code>Verified&lt;PlayerOrder&gt;</code> restricted construction</td><td><code>pub(crate)</code> on <code>new_verified()</code></td><td>Changing to <code>pub</code></td><td>Code review checklist</td></tr>
+<tr><td>O7b: <code>StructurallyChecked&lt;T&gt;</code> restricted construction</td><td><code>pub(crate)</code> on <code>new()</code> + <code>_private: ()</code></td><td>Making <code>new()</code> <code>pub</code> or adding <code>Default</code> derive</td><td>Code review checklist</td></tr>
 <tr><td>W1: <code>WasmTerminated</code> has no <code>execute()</code></td><td>Typestate pattern</td><td>Adding <code>execute()</code> to terminated state</td><td>Code review + trait audit</td></tr>
 <tr><td>W7: <code>FsReadCapability</code> unconstructible externally</td><td><code>_private: ()</code> field</td><td>Making field <code>pub</code></td><td>Code review checklist</td></tr>
 <tr><td>P1: Workshop <code>extract()</code> requires <code>PkgVerifying</code></td><td>Typestate consumes <code>self</code></td><td>Adding <code>extract()</code> to <code>PkgDownloading</code></td><td>Code review + trait audit</td></tr>

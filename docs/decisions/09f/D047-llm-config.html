@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-02bd7aa6.js"></script>
+        <script src="../../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -194,16 +194,157 @@
 <li>Different prompt/inference strategies for local vs cloud models (or even model-family-specific behavior)</li>
 <li>Capability probing to detect JSON/tool-call reliability, context limits, and template quirks before assigning a provider to a task</li>
 <li>An achievement for configuring and using LLM features (engagement incentive)</li>
+<li><strong>A zero-configuration path for non-technical players</strong> — clicking “Enable AI features” and having something work immediately, without installing third-party software, creating accounts, or pasting API keys</li>
 </ul>
 <h3 id="decision"><a class="header" href="#decision">Decision</a></h3>
-<p>Provide a dedicated <strong>LLM Manager</strong> UI screen, a community-shareable configuration format for LLM provider setups, and a provider/model-aware <strong>Prompt Strategy Profile</strong> system with optional capability probing and task-level overrides.</p>
+<p>Provide a dedicated <strong>LLM Manager</strong> UI screen, a community-shareable configuration format for LLM provider setups, a provider/model-aware <strong>Prompt Strategy Profile</strong> system with optional capability probing and task-level overrides, and a <strong>tiered provider system</strong> that ranges from zero-setup IC Built-in models to full BYOLLM power-user configurations.</p>
+<h3 id="provider-tiers"><a class="header" href="#provider-tiers">Provider Tiers</a></h3>
+<p>IC supports four provider tiers, ordered from easiest to most configurable. All tiers implement the same <code>LlmProvider</code> trait and participate in the same task routing and prompt strategy infrastructure. The tiers serve different audiences — the goal is that every user has a path to LLM features regardless of technical skill.</p>
+<h4 id="tier-1-ic-built-in-zero-configuration"><a class="header" href="#tier-1-ic-built-in-zero-configuration">Tier 1: IC Built-in (Zero Configuration)</a></h4>
+<p>IC ships an embedded inference runtime and optional first-party <strong>model packs</strong> — small, prebuilt, CPU-optimized models that run entirely on the user’s machine with no external dependencies.</p>
+<p><strong>Design rules:</strong></p>
+<ul>
+<li>The inference runtime ships with the game binary. No separate install, no sidecar process, no <code>PATH</code> configuration.</li>
+<li>Model weights are <strong>not</strong> bundled in the base install. They are downloaded on demand when the user enables a built-in model pack (or via Workshop as a resource type).</li>
+<li>First-party model packs target <strong>CPU-only inference</strong> (no GPU required). The emphasis is on broad hardware compatibility and a “just works” experience, not maximum quality. GPU acceleration is not planned for initial delivery (Phase 7, M11); if profiling shows CPU inference is a bottleneck on target hardware, GPU support would be scoped as a separate feature at that time.</li>
+<li>Model packs are GGUF-quantized (or equivalent) for minimal RAM footprint. Target: usable on 8 GB RAM systems.</li>
+<li>The runtime is managed by <code>ic-llm</code> — started lazily on first use, kept warm while active, unloaded when idle or under memory pressure.</li>
+<li>Built-in models use the <code>EmbeddedCompact</code> prompt strategy profile (see below) — shorter prompts, smaller context windows, optimized for the specific models IC ships.</li>
+<li>IC selects and validates specific model checkpoints for each release. The user does not choose models — they enable a capability (“Enable AI coaching,” “Enable AI opponents”) and the correct model pack is resolved automatically.</li>
+</ul>
+<p><strong>What this looks like for the user:</strong></p>
+<pre><code>Settings → LLM → Quick Setup:
+
+  ┌─────────────────────────────────────────────────────────┐
+  │  AI Features — Quick Setup                              │
+  │                                                         │
+  │  IC can run AI features using built-in models that run  │
+  │  locally on your computer. No account needed.           │
+  │                                                         │
+  │  ● AI Coaching &amp; Replay Analysis     [Enable] (850 MB)  │
+  │  ● AI Opponents (Orchestrator)       [Enable] (850 MB)  │
+  │  ● Mission &amp; Campaign Drafting       [Enable] (850 MB)  │
+  │                                                         │
+  │  System: 16 GB RAM / 8 GB available ✓                   │
+  │  Models run on CPU — no GPU required.                   │
+  │                                                         │
+  │  ─ or ─                                                 │
+  │                                                         │
+  │  [Connect Cloud Provider →]  for higher quality output  │
+  │  [Connect Local LLM →]      (Ollama, LM Studio, etc.)  │
+  │  [Advanced Setup →]         API keys, task routing      │
+  │                                                         │
+  └─────────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>Model pack management:</strong></p>
+<ul>
+<li>Model packs are Workshop resource type <code>llm-model-pack</code> (D030). First-party packs are published to the Workshop by the IC project account and pinned per engine version.</li>
+<li>Each pack includes: GGUF weights, a manifest (<code>model_pack.toml</code>), the prompt strategy profile it was validated against, and a minimal eval suite result.</li>
+<li>Packs declare their role (<code>coaching</code>, <code>orchestrator</code>, <code>generation</code>) and hardware requirements (<code>min_ram_gb</code>, <code>recommended_ram_gb</code>).</li>
+<li>Users can replace IC’s default packs with community or third-party packs from the Workshop, but the Quick Setup path always uses IC-validated defaults.</li>
+</ul>
+<p><strong>Model pack manifest example (<code>model_pack.toml</code>):</strong></p>
+<pre><code class="language-toml">[pack]
+id = "ic.builtin.coach-v1"
+display_name = "IC Replay Coach"
+version = "1.0.0"
+roles = ["coaching", "replay_analysis"]
+license = "Apache-2.0"  # IC first-party packs prefer Apache-2.0/MIT models
+
+[requirements]
+min_ram_gb = 6
+recommended_ram_gb = 8
+cpu_only = true          # no GPU needed
+
+[model]
+format = "gguf"
+quantization = "Q4_K_M"
+context_window = 8192
+filename = "ic-coach-v1-q4km.gguf"
+checksum_sha256 = "..."
+
+[validation]
+ic_version = "&gt;=0.8.0"
+prompt_profile = "EmbeddedCompact"
+eval_suite = "coaching-basic-v1"
+eval_pass_rate = 0.92
+</code></pre>
+<p><strong>Runtime embedding — not a sidecar:</strong>
+The inference runtime uses existing <strong>pure Rust</strong> crates (<code>candle-core</code>, <code>candle-transformers</code>, <code>tokenizers</code> — all MIT/Apache 2.0) compiled directly into <code>ic-llm</code>. It runs in-process on a dedicated thread pool, not as a separate OS process. This eliminates process lifecycle management, port conflicts, and the “is the server running?” failure mode. <code>candle</code> provides GGUF loading, quantized tensor math with SIMD kernels (AVX2/NEON/WASM simd128), and pre-built Qwen2/Phi model architectures — no C/C++ bindings, no FFI. IC writes only a thin bridge layer (~400–600 lines) implementing <code>LlmProvider</code>. The tradeoff (larger binary size) is acceptable because model weights — not the runtime — dominate the download. See <code>research/pure-rust-inference-feasibility.md</code> for full architecture.</p>
+<p><strong>Relationship to BYOLLM:</strong>
+IC Built-in is not a replacement for BYOLLM — it is the <strong>floor</strong>. Users who want higher quality, larger context, GPU acceleration, or specific model families upgrade to Tier 2–4. The built-in models provide a baseline that makes every LLM feature <em>functional</em> without external setup. BYOLLM provides the ceiling.</p>
+<h4 id="tier-2-cloud-provider--oauth-login"><a class="header" href="#tier-2-cloud-provider--oauth-login">Tier 2: Cloud Provider — OAuth Login</a></h4>
+<p>For users who have accounts with major LLM platforms but don’t want to manage API keys, IC supports <strong>OAuth 2.0 login flows</strong> against supported cloud providers.</p>
+<p><strong>Design rules:</strong></p>
+<ul>
+<li>IC registers as an OAuth client with each supported provider (OpenAI, Anthropic, Google AI, etc.).</li>
+<li>The user clicks “Sign in with OpenAI” (or equivalent), completes the browser-based OAuth flow, and IC receives a scoped access token.</li>
+<li>Tokens are stored encrypted in the local credential store (<code>CredentialStore</code> in <code>ic-paths</code> — OS keyring primary, Argon2id vault passphrase fallback; see <code>research/credential-protection-design.md</code>).</li>
+<li><strong>Decryption failure recovery:</strong> If the DEK is lost or the token blob is corrupted, the provider shows a ⚠ badge and [Sign In] button in Settings → LLM. The player clicks [Sign In] to redo the OAuth flow — provider name, endpoint, and model are preserved. A non-blocking banner appears only when the player triggers an LLM-gated action (not at launch). See <code>research/credential-protection-design.md</code> § Decryption Failure Recovery.</li>
+<li>Token refresh is handled automatically. The user never sees a token or API key.</li>
+<li>Billing is through the user’s existing platform account — IC never processes payments.</li>
+<li>Not all providers offer OAuth for API access. This tier is available only where the provider’s auth model supports it. Providers without OAuth fall back to Tier 3.</li>
+</ul>
+<p><strong>UX advantage:</strong> The user clicks a button, logs in through their browser, and the provider is configured. No copy-pasting API keys, no endpoint URLs, no model name lookups.</p>
+<h4 id="tier-3-cloud-provider--api-key"><a class="header" href="#tier-3-cloud-provider--api-key">Tier 3: Cloud Provider — API Key</a></h4>
+<p>The existing BYOLLM model: the user creates an API key on their provider’s dashboard and pastes it into IC’s LLM Manager.</p>
+<p><strong>Design rules:</strong></p>
+<ul>
+<li>Supports any OpenAI-compatible API endpoint (covers Ollama remote, vLLM, LiteLLM, Azure OpenAI, and dozens of other providers).</li>
+<li>Also supports provider-specific APIs where the protocol differs (Anthropic’s Messages API).</li>
+<li>API keys encrypted at rest via <code>CredentialStore</code> (AES-256-GCM with DEK from OS keyring or vault passphrase; see <code>research/credential-protection-design.md</code>).</li>
+<li><strong>Decryption failure recovery:</strong> If the DEK is lost (new machine, keyring cleared, forgotten vault passphrase) or a credential blob is corrupted, the provider shows a ⚠ badge and [Sign In] button in Settings → LLM. The player is prompted to re-enter the API key — provider name, endpoint, and model are preserved. LLM features fall back to built-in models until re-entry is complete. Vault passphrase reset is available via Settings → Data → Security → [Reset Vault Passphrase] (or <code>/vault reset</code> in console). See <code>research/credential-protection-design.md</code> § Decryption Failure Recovery.</li>
+<li>Keys are <strong>never</strong> exported in shareable configurations.</li>
+</ul>
+<h4 id="tier-4-local-external--self-managed"><a class="header" href="#tier-4-local-external--self-managed">Tier 4: Local External — Self-Managed</a></h4>
+<p>For power users running their own inference infrastructure: Ollama, LM Studio, vLLM, text-generation-webui, or any local/remote server exposing an OpenAI-compatible HTTP API.</p>
+<p><strong>Design rules:</strong></p>
+<ul>
+<li>User provides endpoint URL, model name, and optionally an API key.</li>
+<li>IC auto-detects Ollama at <code>localhost:11434</code> and LM Studio at <code>localhost:1234</code> for convenience.</li>
+<li>Full control: the user manages their own hardware, model selection, quantization, GPU allocation.</li>
+<li>This tier gets the full D047 experience: capability probing, prompt strategy profiles, task routing.</li>
+</ul>
+<h4 id="tier-summary"><a class="header" href="#tier-summary">Tier Summary</a></h4>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Tier</th><th>Name</th><th>Auth Method</th><th>Setup Effort</th><th>Target Audience</th><th>Quality Ceiling</th></tr>
+</thead>
+<tbody>
+<tr><td>1</td><td>IC Built-in</td><td>None</td><td>Click “Enable” + download</td><td>Everyone</td><td>Functional (CPU-optimized small models)</td></tr>
+<tr><td>2</td><td>Cloud OAuth</td><td>Browser login</td><td>2 clicks</td><td>Users with platform accounts</td><td>High (cloud-scale models)</td></tr>
+<tr><td>3</td><td>Cloud API Key</td><td>Paste API key</td><td>Copy-paste + configure</td><td>Developers, power users</td><td>High (any cloud model)</td></tr>
+<tr><td>4</td><td>Local External</td><td>Endpoint URL</td><td>Install + configure</td><td>Enthusiasts, self-hosters</td><td>Variable (user’s hardware)</td></tr>
+</tbody>
+</table>
+</div>
+<p>All four tiers produce the same <code>LlmProvider</code> trait object. Task routing, prompt strategy profiles, capability probing, and the eval harness work identically across tiers. A user can mix tiers — IC Built-in for quick coaching responses, cloud OAuth for high-quality mission generation.</p>
 <h3 id="llm-manager-ui"><a class="header" href="#llm-manager-ui">LLM Manager UI</a></h3>
-<p>Accessible from Settings → LLM Providers:</p>
+<p>Accessible from Settings → LLM Providers. The UI opens with the Quick Setup view (Tier 1) and an expandable “Advanced” section for Tiers 2–4.</p>
 <pre><code>┌─────────────────────────────────────────────────────────┐
 │  LLM Providers                                          │
 ├─────────────────────────────────────────────────────────┤
 │                                                         │
-│  [+] Add Provider                                       │
+│  Built-in AI (runs locally, no account needed)          │
+│  ┌────────────────────────────────────────────────────┐ │
+│  │  ● AI Coaching &amp; Replay Analysis   ✓ Enabled       │ │
+│  │  ● AI Opponents (Orchestrator)     ✓ Enabled       │ │
+│  │  ● Mission &amp; Campaign Drafting     ○ Not installed  │ │
+│  │  Model: IC Coach v1 (Q4, CPU) │ RAM: 4.2/8 GB     │ │
+│  │  Status: ● Ready  │  Avg latency: 1.8s             │ │
+│  └────────────────────────────────────────────────────┘ │
+│                                                         │
+│  [+] Add Cloud or Local Provider                        │
+│                                                         │
+│  ┌─ OpenAI (OAuth) ────────────── ✓ Active ───────────┐ │
+│  │  Signed in as: user@example.com                    │ │
+│  │  Model: gpt-4o                                     │ │
+│  │  Prompt Mode: Auto → Cloud-Rich                    │ │
+│  │  Assigned to: Mission generation, Campaign briefings│ │
+│  │  Avg latency: 1.2s   │  Status: ● Connected        │ │
+│  │  [Probe] [Test] [Edit] [Sign Out]                  │ │
+│  └────────────────────────────────────────────────────┘ │
 │                                                         │
 │  ┌─ Local Ollama (llama3.2) ──────── ✓ Active ───────┐ │
 │  │  Endpoint: http://localhost:11434                   │ │
@@ -214,17 +355,8 @@
 │  │  [Probe] [Test] [Edit] [Remove]                    │ │
 │  └────────────────────────────────────────────────────┘ │
 │                                                         │
-│  ┌─ OpenAI API (GPT-4o) ───────── ✓ Active ──────────┐ │
-│  │  Endpoint: https://api.openai.com/v1               │ │
-│  │  Model: gpt-4o                                     │ │
-│  │  Prompt Mode: Auto → Cloud-Rich                    │ │
-│  │  Assigned to: Mission generation, Campaign briefings│ │
-│  │  Avg latency: 1.2s   │  Status: ● Connected        │ │
-│  │  [Probe] [Test] [Edit] [Remove]                    │ │
-│  └────────────────────────────────────────────────────┘ │
-│                                                         │
 │  ┌─ Anthropic API (Claude) ────── ○ Inactive ─────────┐ │
-│  │  Endpoint: https://api.anthropic.com/v1            │ │
+│  │  Auth: API Key                                     │ │
 │  │  Model: claude-sonnet-4-20250514                          │ │
 │  │  Assigned to: (none)                               │ │
 │  │  [Test] [Edit] [Remove] [Activate]                 │ │
@@ -237,8 +369,8 @@
 │  │ AI Orchestrator      │ Local Ollama / Compact   │    │
 │  │ Mission Generation   │ OpenAI / Cloud-Rich      │    │
 │  │ Campaign Briefings   │ OpenAI / Cloud-Rich      │    │
-│  │ Post-Match Coaching  │ Local Ollama / Structured│    │
-│  │ Asset Generation     │ OpenAI API (quality)     │    │
+│  │ Post-Match Coaching  │ IC Built-in / Embedded   │    │
+│  │ Asset Generation     │ OpenAI (quality)         │    │
 │  │ Voice Synthesis      │ ElevenLabs (quality)     │    │
 │  │ Music Generation     │ Suno API (quality)       │    │
 │  └──────────────────────┴──────────────────────────┘    │
@@ -246,10 +378,38 @@
 │  [Run Prompt Test] [Export Config] [Import Config] [Browse Community] │
 └─────────────────────────────────────────────────────────┘
 </code></pre>
+<p><strong>Add Provider flow</strong> (Tiers 2–4):</p>
+<pre><code>┌─────────────────────────────────────────────────────────┐
+│  Add LLM Provider                                       │
+│                                                         │
+│  Sign in with a cloud provider:                         │
+│  [Sign in with OpenAI]                                  │
+│  [Sign in with Anthropic]                               │
+│  [Sign in with Google AI]                               │
+│                                                         │
+│  ── or ──                                               │
+│                                                         │
+│  Paste an API key:                                      │
+│  Provider: [OpenAI-Compatible ▾]                        │
+│  Endpoint: [https://...              ]                  │
+│  Model:    [                         ]                  │
+│  API Key:  [••••••••••••••           ]                  │
+│                                                         │
+│  ── or ──                                               │
+│                                                         │
+│  Connect a local LLM server:                            │
+│  [Auto-detect Ollama]  [Auto-detect LM Studio]          │
+│  Endpoint: [http://localhost:11434   ]                  │
+│  Model:    [llama3.2:8b              ]                  │
+│                                                         │
+│  [Test Connection]  [Save]  [Cancel]                    │
+└─────────────────────────────────────────────────────────┘
+</code></pre>
 <h3 id="prompt-strategy-profiles-local-vs-cloud-auto-selectable"><a class="header" href="#prompt-strategy-profiles-local-vs-cloud-auto-selectable">Prompt Strategy Profiles (Local vs Cloud, Auto-Selectable)</a></h3>
 <p>The LLM Manager defines <strong>Prompt Strategy Profiles</strong> that sit between task routing and prompt assembly. This allows IC to adapt behavior for local models without forking every feature prompt manually.</p>
 <p><strong>Examples (built-in profiles):</strong></p>
 <ul>
+<li><code>EmbeddedCompact</code> — minimal prompts, small context budgets, and format constraints specifically validated against IC’s first-party model packs. Not user-configurable — tied to the built-in model version. Used automatically by Tier 1 providers.</li>
 <li><code>CloudRich</code> — larger context budget, richer instructions/few-shot examples, complex schema prompts when supported</li>
 <li><code>CloudStructuredJson</code> — strict structured output / repair-pass-oriented profile</li>
 <li><code>LocalCompact</code> — shorter prompts, tighter context budget, reduced examples, simpler schema wording</li>
@@ -268,7 +428,7 @@
 <ul>
 <li><code>Auto</code> chooses a prompt strategy profile based on:
 <ul>
-<li>provider type (<code>ollama</code>, <code>llama.cpp</code>, cloud API, etc.)</li>
+<li>provider type (<code>ic-built-in</code>, <code>ollama</code>, cloud API, etc.)</li>
 <li>capability probe results (see below)</li>
 <li>task type (coaching vs mission generation vs orchestrator)</li>
 </ul>
@@ -396,16 +556,40 @@ llm_config:
 </table>
 </div>
 <h3 id="storage-d034"><a class="header" href="#storage-d034">Storage (D034)</a></h3>
+<p><strong>Credential encryption:</strong> Sensitive columns (<code>api_key</code>, <code>oauth_token</code>, <code>oauth_refresh_token</code>) are stored as AES-256-GCM encrypted BLOBs, never plaintext. The Data Encryption Key (DEK) is held in the OS credential store (Windows DPAPI / macOS Keychain / Linux Secret Service) via the <code>keyring</code> crate, or derived from a user-provided vault passphrase (Argon2id) when no OS keyring is available. See <code>research/credential-protection-design.md</code> for the full three-tier <code>CredentialStore</code> design, threat model, and <code>zeroize</code>-based memory protection.</p>
 <pre><code class="language-sql">CREATE TABLE llm_providers (
     id          INTEGER PRIMARY KEY,
     name        TEXT NOT NULL,
-    type        TEXT NOT NULL,           -- 'ollama', 'openai', 'anthropic', 'custom'
+    tier        TEXT NOT NULL,           -- 'builtin', 'cloud_oauth', 'cloud_apikey', 'local_external'
+    type        TEXT NOT NULL,           -- 'ic_builtin', 'ollama', 'openai', 'anthropic', 'google_ai', 'openai_compatible', 'custom'
+    auth_method TEXT NOT NULL,           -- 'none', 'oauth', 'api_key'
     endpoint    TEXT,
     model       TEXT NOT NULL,
-    api_key     TEXT,                    -- encrypted at rest
+    api_key     BLOB,                   -- AES-256-GCM encrypted (CredentialStore DEK); NULL for OAuth/builtin
+    oauth_token BLOB,                   -- AES-256-GCM encrypted (CredentialStore DEK); NULL for API key/builtin
+    oauth_refresh_token BLOB,           -- AES-256-GCM encrypted (CredentialStore DEK); NULL for non-OAuth
+    oauth_token_expiry TEXT,             -- RFC 3339 UTC; NULL if token does not expire
+    oauth_provider TEXT,                 -- 'openai', 'anthropic', 'google_ai'; NULL for non-OAuth tiers
     is_active   INTEGER NOT NULL DEFAULT 1,
     created_at  TEXT NOT NULL,
     last_tested TEXT
+);
+
+CREATE TABLE llm_model_packs (
+    id              TEXT PRIMARY KEY,    -- e.g. 'ic.builtin.coach-v1'
+    display_name    TEXT NOT NULL,
+    roles_json      TEXT NOT NULL,       -- JSON array: ["coaching", "replay_analysis"]
+    license         TEXT NOT NULL,       -- SPDX identifier
+    format          TEXT NOT NULL,       -- 'gguf'
+    quantization    TEXT NOT NULL,       -- 'Q4_K_M', 'Q5_K_M', etc.
+    context_window  INTEGER NOT NULL,
+    min_ram_gb      INTEGER NOT NULL,
+    filename        TEXT NOT NULL,
+    checksum_sha256 TEXT NOT NULL,
+    ic_version_min  TEXT NOT NULL,
+    installed       INTEGER NOT NULL DEFAULT 0,
+    install_path    TEXT,
+    source          TEXT NOT NULL        -- 'first_party', 'workshop', 'custom'
 );
 
 CREATE TABLE llm_task_routing (
@@ -447,11 +631,38 @@ CREATE TABLE llm_provider_capability_probe (
 }
 
 pub enum BuiltinPromptProfile {
+    EmbeddedCompact,        // Tier 1 IC Built-in: validated against first-party model packs
     CloudRich,
     CloudStructuredJson,
     LocalCompact,
     LocalStructured,
     LocalStepwise,
+}
+
+pub enum ProviderTier {
+    /// Tier 1: IC-shipped models, CPU-only, zero config.
+    IcBuiltIn,
+    /// Tier 2: Cloud provider via OAuth browser login.
+    CloudOAuth,
+    /// Tier 3: Cloud provider via pasted API key.
+    CloudApiKey,
+    /// Tier 4: User-managed local/remote server (Ollama, LM Studio, vLLM, etc.).
+    LocalExternal,
+}
+
+pub enum AuthMethod {
+    /// No authentication needed (IC Built-in).
+    None,
+    /// OAuth 2.0 browser flow — token managed automatically.
+    OAuth { provider: OAuthProvider },
+    /// User-provided API key — encrypted at rest.
+    ApiKey,
+}
+
+pub enum OAuthProvider {
+    OpenAi,
+    Anthropic,
+    GoogleAi,
 }
 
 pub struct PromptStrategyProfile {
@@ -492,13 +703,14 @@ pub struct PromptExecutionPlan {
 <span class="boring">}</span></code></pre>
 <h3 id="relationship-to-existing-decisions"><a class="header" href="#relationship-to-existing-decisions">Relationship to Existing Decisions</a></h3>
 <ul>
-<li><strong>D016 (BYOLLM):</strong> D047 is the UI and management layer for D016’s <code>LlmProvider</code> trait. D016 defined the trait and provider types; D047 provides the user experience for configuring them.</li>
-<li><strong>D016 (prompt strategy note):</strong> D047 operationalizes D016’s local-vs-cloud prompt-strategy distinction through Prompt Strategy Profiles, capability probing, and test/eval UX.</li>
+<li><strong>D016 (BYOLLM):</strong> D047 is the UI and management layer for D016’s <code>LlmProvider</code> trait. D016 defined the trait and provider types; D047 provides the user experience for configuring them. The Tier 1 built-in models extend BYOLLM with a zero-config floor — BYOLLM remains the architecture, built-in is the product default.</li>
+<li><strong>D016 (prompt strategy note):</strong> D047 operationalizes D016’s local-vs-cloud prompt-strategy distinction through Prompt Strategy Profiles, capability probing, and test/eval UX. The <code>EmbeddedCompact</code> profile is purpose-built for Tier 1’s small CPU models.</li>
 <li><strong>D036 (Achievements):</strong> LLM-related achievements encourage exploration of optional features without making them required.</li>
-<li><strong>D030 (Workshop):</strong> LLM configurations become another shareable resource type.</li>
-<li><strong>D034 (SQLite):</strong> Provider configurations stored locally, encrypted API keys.</li>
-<li><strong>D044 (LLM AI):</strong> The task routing table directly determines which provider the orchestrator and LLM player use.</li>
-<li><strong>Player Flow (BYOLLM Feature Discovery):</strong> A one-time GUI prompt lists all features unlocked by configuring an LLM provider, with direct links to D047’s LLM Manager and community configs. See <code>player-flow/settings.md</code> § BYOLLM Feature Discovery Prompt.</li>
+<li><strong>D030 (Workshop):</strong> LLM configurations and model packs are Workshop resource types. First-party model packs use <code>llm-model-pack</code> type. Community model packs follow the same manifest schema with required license metadata.</li>
+<li><strong>D034 (SQLite):</strong> Provider configurations and model pack state stored locally, encrypted credentials (API keys and OAuth tokens).</li>
+<li><strong>D044 (LLM AI):</strong> The task routing table directly determines which provider the orchestrator and LLM player use. IC Built-in is a valid routing target.</li>
+<li><strong>D049 (Workshop asset formats):</strong> Model packs use the Workshop distribution and integrity-verification infrastructure.</li>
+<li><strong>Player Flow (BYOLLM Feature Discovery):</strong> The discovery prompt now leads with Quick Setup (Tier 1 built-in) and offers cloud/local as upgrade paths. See <code>player-flow/settings.md</code> § BYOLLM Feature Discovery Prompt.</li>
 </ul>
 <h3 id="alternatives-considered"><a class="header" href="#alternatives-considered">Alternatives Considered</a></h3>
 <ul>
@@ -507,6 +719,11 @@ pub struct PromptExecutionPlan {
 <li>Include API keys in exports (rejected — obvious security risk; never export secrets)</li>
 <li>Centralized LLM service run by IC project (rejected — conflicts with BYOLLM principle; users control their own data and costs)</li>
 <li><strong>One universal prompt template/profile for all providers</strong> (rejected — local/cloud/model-family differences make this brittle; capability-driven strategy selection is more reliable)</li>
+<li><strong>Sidecar process instead of embedded runtime for Tier 1</strong> (rejected — a separate inference server process introduces lifecycle management, port conflicts, firewall issues, and “is the server running?” support burden; in-process pure Rust inference is simpler for the zero-config audience)</li>
+<li><strong>C/C++ inference library bindings (e.g., llama-cpp-rs)</strong> (rejected — introduces FFI complexity, C++ build toolchain dependency, platform-specific compilation issues, and conflicts with the project’s pure Rust philosophy; Rust’s native SIMD via <code>std::arch</code>/<code>std::simd</code> provides equivalent CPU performance for IC’s narrow model support scope)</li>
+<li><strong>GPU-first for built-in models</strong> (rejected for launch — GPU inference is faster but creates driver compatibility issues, VRAM conflicts with the game’s own renderer, and platform variance; CPU-first ensures broadest compatibility; GPU acceleration is not in scope for M11 delivery)</li>
+<li><strong>Shipping model weights in the base install</strong> (rejected — model packs add 500 MB–2 GB per role; on-demand download via Workshop keeps the base install small)</li>
+<li><strong>BYOLLM only, no built-in tier</strong> (rejected — the original position, but excludes non-technical players entirely; the built-in tier is the floor, BYOLLM is the ceiling)</li>
 </ul>
 <hr>
 <hr>

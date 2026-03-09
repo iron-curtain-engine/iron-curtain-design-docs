@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-02bd7aa6.js"></script>
+        <script src="../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -206,8 +206,12 @@
 // The API surface IS the security boundary.
 
 #[wasm_host_fn]
-fn get_unit_position(unit_id: u32) -&gt; Option&lt;(i32, i32)&gt; {
-    let unit = sim.get_unit(unit_id)?;
+// Note: WASM ABI passes entity IDs as opaque u32 handles.
+// The host unwraps to UnitTag and validates. See type-safety.md
+// § WASM ABI Boundary Policy for the two-layer convention.
+fn get_unit_position(unit_handle: u32) -&gt; Option&lt;(i32, i32)&gt; {
+    let tag = UnitTag::from_wasm_handle(unit_handle)?;
+    let unit = sim.resolve_unit(tag)?;
     // CHECK: is this unit visible to the mod's player?
     if !sim.is_visible_to(mod_player, unit.position) {
         return None;  // Mod cannot see fogged units
@@ -286,6 +290,10 @@ impl Default for WasmExecutionLimits {
 </span><span class="boring">fn main() {
 </span>// === Render Host API (ic_render_* namespace) ===
 // Available only to mods with ModCapabilities.render = true
+// Render APIs use u32 for resource handles (sprite_id, mesh_handle, etc.)
+// These are render-side opaque handles, not sim domain IDs — newtypes are
+// not required here (type-safety.md § WASM ABI Boundary Policy applies
+// to sim-affecting domain IDs only). f32 is permitted for presentation.
 
 /// Register a custom Renderable implementation for an actor type.
 #[wasm_host_fn] fn ic_render_register(actor_type: &amp;str, renderable_id: u32);
@@ -461,6 +469,8 @@ mod:
 /// Get current production queue state.
 #[wasm_host_fn] fn ic_ai_get_production_queues() -&gt; Vec&lt;AiProductionQueue&gt;;
 
+These host function signatures are the **logical API** — what mod authors see in documentation and use in their Rust/C/AssemblyScript code. The `#[wasm_host_fn]` attribute generates primitive ABI glue (same `(ptr: i32, len: i32)` MessagePack bridge as exports). Complex types (`WorldPos`, `Vec&lt;T&gt;`, `&amp;str`) are serialized into guest linear memory by the host before the call. See `type-safety.md` § WASM ABI Boundary Policy.
+
 /// Check if a unit type can be built (prerequisites, cost, factory available).
 #[wasm_host_fn] fn ic_ai_can_build(unit_type: &amp;str) -&gt; bool;
 
@@ -476,17 +486,18 @@ mod:
 #[wasm_host_fn] fn ic_ai_map_bounds() -&gt; (WorldPos, WorldPos);
 
 /// Get current tick number.
-#[wasm_host_fn] fn ic_ai_current_tick() -&gt; u64;
+/// Host-side returns SimTick; WASM ABI serializes as u64.
+#[wasm_host_fn] fn ic_ai_current_tick() -&gt; SimTick;
 
 /// Get fog-filtered event narrative since a given tick (D041 AiEventLog).
 /// Returns a natural-language chronological account of game events.
 /// This is the "inner game event log / action story / context" that LLM-based
 /// AI (D044) and any WASM AI can use for temporal awareness.
-#[wasm_host_fn] fn ic_ai_get_event_narrative(since_tick: u64) -&gt; String;
+#[wasm_host_fn] fn ic_ai_get_event_narrative(since_tick: SimTick) -&gt; String;
 
 /// Get structured event log since a given tick (D041 AiEventLog).
 /// Returns fog-filtered events as typed entries for programmatic consumption.
-#[wasm_host_fn] fn ic_ai_get_events(since_tick: u64) -&gt; Vec&lt;AiEventEntry&gt;;
+#[wasm_host_fn] fn ic_ai_get_events(since_tick: SimTick) -&gt; Vec&lt;AiEventEntry&gt;;
 
 /// Issue an order for an owned unit. Returns false if order is invalid.
 /// Orders go through the same OrderValidator (D012/D041) as human orders.
@@ -497,47 +508,54 @@ mod:
 #[wasm_host_fn] fn ic_ai_scratch_alloc(bytes: u32) -&gt; u32;
 #[wasm_host_fn] fn ic_ai_scratch_free(offset: u32, bytes: u32);
 
-/// String table lookups — resolve u32 type IDs to human-readable names.
-/// Called once at game start or on-demand; results cached WASM-side.
+/// String table lookups — resolve interned IDs to human-readable names.
+/// These use u32 because they are interned string table indices, not
+/// domain entity IDs. Called once at game start; results cached WASM-side.
 /// This avoids per-tick String allocation across the WASM boundary.
 #[wasm_host_fn] fn ic_ai_get_type_name(type_id: u32) -&gt; String;
 #[wasm_host_fn] fn ic_ai_get_event_description(event_code: u32) -&gt; String;
 #[wasm_host_fn] fn ic_ai_get_type_count() -&gt; u32;  // total registered unit types
 
+// Host-side structs use newtypes (type-safety.md § WASM ABI Boundary Policy).
+// The WASM ABI layer converts to/from primitives at the boundary.
 pub struct AiUnitInfo {
-    pub entity_id: u32,
-    pub unit_type_id: u32,    // interned type ID (see ic_ai_get_type_name() for string lookup)
+    pub tag: UnitTag,             // opaque handle — guest cannot forge
+    pub unit_type_id: UnitTypeId, // interned type ID (see ic_ai_get_type_name() for string lookup)
     pub position: WorldPos,
-    pub health: i32,
-    pub max_health: i32,
+    pub health: SimCoord,
+    pub max_health: SimCoord,
     pub is_idle: bool,
     pub is_moving: bool,
 }
 
 pub struct AiEventEntry {
-    pub tick: u64,
-    pub event_type: u32,      // mapped from AiEventType enum
-    pub event_code: u32,      // interned event description ID (see ic_ai_get_event_description())
-    pub entity_id: Option&lt;u32&gt;,
-    pub related_entity_id: Option&lt;u32&gt;,
+    pub tick: SimTick,
+    pub event_type: AiEventType,  // typed enum, not raw u32
+    pub event_code: u32,          // interned event description ID (see ic_ai_get_event_description())
+    pub entity: Option&lt;UnitTag&gt;,
+    pub related_entity: Option&lt;UnitTag&gt;,
 }
 <span class="boring">}</span></code></pre>
 <p><strong>WASM-exported trait functions</strong> (the engine <em>calls</em> these on the mod):</p>
+<p>These signatures are the <strong>logical API</strong> — the Rust-idiomatic interface that maps to the <code>AiStrategy</code> trait. They are NOT the raw WASM ABI. The actual WASM ABI uses only primitives (<code>i32</code>/<code>i64</code>/<code>f32</code>/<code>f64</code>). Complex types (<code>Vec&lt;T&gt;</code>, <code>&amp;str</code>, <code>Option&lt;T&gt;</code>, structs) cross the boundary via a <strong>serde bridge</strong>: the host serializes them as MessagePack into the guest’s linear memory and passes a <code>(ptr: i32, len: i32)</code> pair. The guest deserializes on its side. The <code>#[wasm_export]</code> attribute generates this glue code automatically — mod authors write the logical signatures; the toolchain produces the primitive ABI wrappers. See <code>type-safety.md</code> § WASM ABI Boundary Policy.</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
-</span>// Exported by the WASM AI mod — these map to the AiStrategy trait
+</span>// LOGICAL API — what mod authors write (Rust-idiomatic).
+// The #[wasm_export] macro generates primitive ABI wrappers.
+// See "Raw ABI shape" note below.
 
 /// Called once per tick. Returns serialized Vec&lt;PlayerOrder&gt;.
 #[wasm_export] fn ai_decide(player_id: u32, tick: u64) -&gt; Vec&lt;PlayerOrder&gt;;
 
 /// Event callbacks — called before ai_decide() in the same tick.
-#[wasm_export] fn ai_on_unit_created(unit_id: u32, unit_type: &amp;str);
-#[wasm_export] fn ai_on_unit_destroyed(unit_id: u32, attacker_id: Option&lt;u32&gt;);
-#[wasm_export] fn ai_on_unit_idle(unit_id: u32);
-#[wasm_export] fn ai_on_enemy_spotted(unit_id: u32, unit_type: &amp;str);
-#[wasm_export] fn ai_on_enemy_destroyed(unit_id: u32);
-#[wasm_export] fn ai_on_under_attack(unit_id: u32, attacker_id: u32);
-#[wasm_export] fn ai_on_building_complete(building_id: u32);
+/// Entity IDs are opaque u32 handles (see api-misuse-patterns.md § U4).
+#[wasm_export] fn ai_on_unit_created(unit_handle: u32, unit_type: &amp;str);
+#[wasm_export] fn ai_on_unit_destroyed(unit_handle: u32, attacker_handle: Option&lt;u32&gt;);
+#[wasm_export] fn ai_on_unit_idle(unit_handle: u32);
+#[wasm_export] fn ai_on_enemy_spotted(unit_handle: u32, unit_type: &amp;str);
+#[wasm_export] fn ai_on_enemy_destroyed(unit_handle: u32);
+#[wasm_export] fn ai_on_under_attack(unit_handle: u32, attacker_handle: u32);
+#[wasm_export] fn ai_on_building_complete(building_handle: u32);
 #[wasm_export] fn ai_on_research_complete(tech: &amp;str);
 
 /// Parameter introspection — called by lobby UI for "Advanced AI Settings."
@@ -547,6 +565,21 @@ pub struct AiEventEntry {
 /// Engine scaling opt-out.
 #[wasm_export] fn ai_uses_engine_difficulty_scaling() -&gt; bool;
 <span class="boring">}</span></code></pre>
+<p><strong>Raw ABI shape:</strong> The generated WASM ABI for a function like <code>ai_decide(player_id: u32, tick: u64) -&gt; Vec&lt;PlayerOrder&gt;</code> is:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// Generated primitive ABI (what actually crosses the WASM boundary).
+// Mod authors never see or write this — it's macro-generated.
+#[no_mangle] pub extern "C" fn ai_decide(player_id: i32, tick_lo: i32, tick_hi: i32) -&gt; i64 {
+    // tick reconstructed from two i32s (WASM has no native u64 params)
+    // Return value is (ptr &lt;&lt; 32 | len) packed into i64, pointing to
+    // MessagePack-serialized Vec&lt;PlayerOrder&gt; in guest linear memory.
+    // The host reads (ptr, len), copies the bytes, deserializes to
+    // Vec&lt;PlayerOrder&gt;, then converts to Vec&lt;Verified&lt;PlayerOrder&gt;&gt;
+    // via the standard order validation path (D012).
+}
+<span class="boring">}</span></code></pre>
+<p>For <code>&amp;str</code> parameters: the host writes the UTF-8 bytes into guest memory and passes <code>(ptr: i32, len: i32)</code>. For <code>Option&lt;u32&gt;</code>: encoded as <code>(tag: i32, value: i32)</code> where <code>tag=0</code> is None.</p>
 <p><strong>Security:</strong> AI mods can read visible game state (<code>ic_ai_get_own_units</code>, <code>ic_ai_get_visible_enemies</code>) and issue orders (<code>ic_ai_issue_order</code>). They CANNOT read fogged state — <code>ic_ai_get_visible_enemies()</code> returns only units in the AI player’s line of sight. They cannot access render functions, pathfinder internals, or other players’ private data. Orders go through the same <code>OrderValidator</code> as human orders — an AI mod cannot issue impossible commands.</p>
 <p><strong>Determinism:</strong> WASM AI mods execute in the deterministic sim context. Events fire in a fixed order (same order on all clients). <code>decide()</code> is called at the same pipeline point on all clients with the same <code>FogFilteredView</code>. All clients run the same WASM binary (verified by SHA-256 hash per AI player slot) with the same inputs, producing identical orders.</p>
 <p><strong>Performance:</strong> AI mods share the <code>WasmExecutionLimits</code> fuel budget. The <code>tick_budget_hint()</code> return value is advisory — the engine uses it for scheduling but enforces the fuel limit regardless. A community AI that exceeds its budget mid-tick gets truncated deterministically.</p>

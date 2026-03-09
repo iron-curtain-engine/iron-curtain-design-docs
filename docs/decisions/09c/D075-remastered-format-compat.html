@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-02bd7aa6.js"></script>
+        <script src="../../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -193,7 +193,7 @@
 <li><strong>Invariants preserved:</strong> <code>ra-formats</code> remains a pure parsing library with no I/O side effects. All imported assets convert to IC-native representations (PNG sprites, OGG/WAV audio, WebM video). Sim determinism unaffected — asset formats are presentation-only.</li>
 <li><strong>Defaults / UX behavior:</strong> “Import Remastered Installation” wizard in Asset Studio auto-detects a Remastered install folder, inventories available assets, and offers selective import. Users choose which asset categories to import. Imported assets land in a mod-ready directory structure.</li>
 <li><strong>Compatibility / Export impact:</strong> Imported Remastered assets are usable in IC mods but NOT publishable to Workshop (proprietary EA content). Asset Studio marks provenance as <code>source: remastered_collection</code> and Publish Readiness (D038) blocks Workshop upload of EA-sourced assets.</li>
-<li><strong>Security / Trust impact:</strong> MEG archive parser must handle malformed archives safely (fuzzing required). TGA/DDS parsers use established Rust crates (<code>image</code>, <code>ddsfile</code>) — no custom decoder needed.</li>
+<li><strong>Security / Trust impact:</strong> MEG archive parser must handle malformed archives safely (fuzzing required). MEG entry extraction uses <code>strict-path</code> <code>PathBoundary</code> to sandbox output to the mod directory — same Zip Slip defense as <code>.oramap</code> and <code>.icpkg</code> (see <code>06-SECURITY.md</code> § Path Security Infrastructure). TGA/DDS parsers use established Rust crates (<code>image</code>, <code>ddsfile</code>) — no custom decoder needed.</li>
 <li><strong>Public interfaces / types / commands:</strong> <code>MegArchive</code>, <code>MegEntry</code>, <code>RemasteredSpriteSheet</code>, <code>MetaFrame</code>, <code>RemasteredImportManifest</code>, <code>ic asset import-remastered</code></li>
 <li><strong>Affected docs:</strong> <code>src/05-FORMATS.md</code>, <code>src/decisions/09f/D040-asset-studio.md</code>, <code>src/architecture/ra-experience.md</code>, <code>src/decisions/09c-modding.md</code></li>
 <li><strong>Keywords:</strong> remastered, remaster, MEG, TGA, META, BK2, Bink2, HD sprites, megasheet, GlyphX, Petroglyph, EA GPL, import wizard</li>
@@ -352,14 +352,15 @@ pub struct RemasteredSpriteSheet {
 
 /// Import manifest tracking what was imported from a Remastered installation.
 pub struct RemasteredImportManifest {
-    pub source_path: PathBuf,
-    pub imported_at: String, // RFC 3339 UTC
+    pub source_path: PathBuf,        // Remastered install dir (trusted, user-provided)
+    pub output_boundary: PathBoundary, // `mods/remastered-hd/` — all extraction sandboxed here
+    pub imported_at: String,         // RFC 3339 UTC
     pub assets: Vec&lt;ImportedAsset&gt;,
 }
 
 pub struct ImportedAsset {
-    pub original_path: String,       // Path within MEG archive
-    pub ic_path: PathBuf,            // Where it landed in IC mod structure
+    pub original_path: String,       // Path within MEG archive (untrusted — validated via PathBoundary)
+    pub ic_path: PathBuf,            // Where it landed in IC mod structure (within output_boundary)
     pub asset_type: ImportedAssetType,
     pub provenance: AssetProvenance, // From D040 — source: remastered_collection
 }
@@ -468,7 +469,7 @@ pub enum ImportedAssetType {
 <ul>
 <li><strong>Phase 2:</strong> <code>ra-formats</code> gains MEG archive parser, TGA+META sprite sheet splitter, and DDS reader. These are pure parsing — no UI.</li>
 <li><strong>Phase 6a:</strong> Asset Studio “Import Remastered Installation” wizard ships. BK2→WebM conversion pipeline. Full import workflow with provenance tracking.</li>
-<li><strong>CLI fallback (Phase 2):</strong> <code>ic asset import-remastered &lt;path&gt;</code> provides headless import for CI/automation/power users before Asset Studio ships.</li>
+<li><strong>CLI fallback (Phase 2):</strong> <code>ic asset import-remastered &lt;path&gt;</code> provides headless import for CI/automation/power users before Asset Studio ships. The output directory (<code>mods/remastered-hd/</code>) is enforced via <code>strict-path</code> <code>PathBoundary</code> — MEG archive entry names (potentially user-modified in modded installs) cannot escape the output mod directory.</li>
 </ul>
 <h3 id="cross-references"><a class="header" href="#cross-references">Cross-References</a></h3>
 <ul>

@@ -35,10 +35,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-02bd7aa6.js"></script>
+        <script src="toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -313,6 +313,7 @@
 <li><strong>Automatic daily critical snapshots (D061):</strong> Rotating 3-day <code>auto-critical-N.zip</code> files (~5 MB) containing keys, profile, community credentials, achievements, config — created silently on first launch of the day; protects all players regardless of cloud sync status</li>
 <li><strong>Screenshot capture with metadata (D061):</strong> PNG screenshots with IC-specific <code>tEXt</code> chunks (engine version, map, players, tick, replay link); timestamped filenames in <code>&lt;data_dir&gt;/screenshots/</code></li>
 <li><strong>Mnemonic seed recovery (D061):</strong> BIP-39-inspired 24-word recovery phrase generated alongside Ed25519 identity key; <code>ic identity seed show</code> / <code>ic identity seed verify</code> / <code>ic identity recover</code> CLI commands; deterministic key derivation via PBKDF2-HMAC-SHA512 — zero infrastructure, zero cost, identity recoverable from a piece of paper</li>
+<li><strong>CredentialStore infrastructure (D052/D061):</strong> <code>CredentialStore</code> in <code>ic-paths</code> — OS keyring (Tier 1), vault passphrase with Argon2id KDF (Tier 2); DEK management; <code>Zeroizing&lt;T&gt;</code> memory protection; identity key AEAD encryption at rest; <code>vault_meta</code> table. WASM session-only tier (Tier 3) and LLM credential column encryption (D047) ship in Phase 7 (M11). See <code>research/credential-protection-design.md</code></li>
 <li><strong>Virtual asset namespace (D062):</strong> <code>VirtualNamespace</code> struct — resolved lookup table mapping logical asset paths to content-addressed blobs (D049 CAS); built at load time from the active mod set; SHA-256 fingerprint computed and recorded in replays; implicit default profile (no user-facing profile concept yet)</li>
 <li><strong>Centralized compression module (D063):</strong> <code>CompressionAlgorithm</code> enum (LZ4) and <code>CompressionLevel</code> enum (fastest/balanced/compact); <code>AdvancedCompressionConfig</code> struct (21 raw parameters for server operators); all LZ4 callsites refactored through centralized module; <code>compression_algorithm: u8</code> byte added to save and replay headers; <code>settings.toml</code> <code>compression.*</code> and <code>compression.advanced.*</code> sections; decompression ratio caps and security size limits configurable per deployment</li>
 <li><strong>Server configuration schema (D064):</strong> <code>server_config.toml</code> schema definition with typed parameters, valid ranges, and compiled defaults; TOML deserialization with validation and range clamping; relay server reads config at startup; initial parameter namespaces: <code>relay.*</code>, <code>protocol.*</code>, <code>db.*</code></li>
@@ -349,7 +350,7 @@
 <li>Build placement with validity checking</li>
 <li>Audio: EVA voice lines, unit responses, ambient, music (<code>.aud</code> playback)
 <ul>
-<li><strong>Audio system design (P003):</strong> Resolve audio library choice; design <code>.aud</code> IMA ADPCM decoding pipeline; dynamic music state machine (combat/build/idle transitions — original RA had this); music-as-Workshop-resource architecture; investigate loading remastered soundtrack if player owns Remastered Collection</li>
+<li><strong>Audio system (P003 resolved — Kira via <code>bevy_kira_audio</code>):</strong> <code>.aud</code> IMA ADPCM decoding pipeline; dynamic music state machine (combat/build/idle transitions — original RA had this); music-as-Workshop-resource architecture; investigate loading remastered soundtrack if player owns Remastered Collection</li>
 </ul>
 </li>
 <li>Custom UI layer on <code>wgpu</code> for game HUD</li>
@@ -502,7 +503,7 @@
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="07-CROSS-ENGINE.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="cross-engine/relay-security.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
@@ -516,7 +517,7 @@
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="07-CROSS-ENGINE.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="cross-engine/relay-security.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 

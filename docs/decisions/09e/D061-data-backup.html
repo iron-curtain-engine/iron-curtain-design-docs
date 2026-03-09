@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-02bd7aa6.js"></script>
+        <script src="../../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -213,7 +213,7 @@
 <p>All player data lives under a single, stable, documented directory. The layout is defined at Phase 0 (directory structure), stabilized by Phase 2 (save/replay formats finalized), and fully populated by Phase 5 (multiplayer profile data).</p>
 <pre><code>&lt;data_dir&gt;/
 ├── config.toml                         # Engine + game settings (D033 toggles, keybinds, render quality)
-├── profile.db                          # Player identity, friends, blocks, privacy settings (D053)
+├── profile.db                          # Player identity, friends, blocks, privacy settings (D053), LLM provider config (D047)
 ├── achievements.db                     # Achievement collection (D036)
 ├── gameplay.db                         # Event log, replay catalog, save game index, map catalog, asset index (D034)
 ├── telemetry.db                        # Unified telemetry events (D031) — pruned at 100 MB
@@ -279,6 +279,9 @@ ic backup verify ic-backup-2027-03-15.zip     # Verify archive integrity without
 <li><strong>Key files:</strong> <code>keys/identity.key</code> is included (the player’s private key — also recoverable via mnemonic seed phrase, but a full backup preserves everything).</li>
 <li><strong>Package:</strong> Everything is bundled into a ZIP archive with the original directory structure preserved. No compression on already-compressed files (<code>.icsave</code>, <code>.icrep</code> are LZ4-compressed internally).</li>
 </ol>
+<p><strong>Credential safety in backups:</strong> <code>profile.db</code> contains AES-256-GCM encrypted credential columns (OAuth tokens, API keys — see V61 in <code>06-SECURITY.md</code>, D047). The encrypted BLOBs are included in the backup as-is — still encrypted. The Data Encryption Key (DEK) is <strong>not</strong> in the backup (it lives in the OS keyring or is derived from the user’s vault passphrase). This means a stolen backup archive does not expose LLM provider credentials. On restore, the user must unlock the <code>CredentialStore</code> on the new machine (OS keyring auto-unlocks on login; Tier 2 vault passphrase is prompted). If the DEK is lost (new machine, no keyring migration), the encrypted columns are unreadable — the user re-enters their API keys. This is the intended behavior: credentials fail-safe to “re-enter” rather than fail-open to “exposed.”</p>
+<p><strong>How <code>ic backup restore</code> works:</strong></p>
+<p><code>ic backup restore</code> extracts a backup ZIP into <code>&lt;data_dir&gt;</code>. Because backup archives may come from untrusted sources (shared online, downloaded from a forum, received from another player), extraction uses <code>strict-path</code> <code>PathBoundary</code> scoped to <code>&lt;data_dir&gt;</code> — the same Zip Slip defense used for <code>.oramap</code> and <code>.icpkg</code> extraction (see <code>06-SECURITY.md</code> § Path Security Infrastructure). A crafted backup ZIP with entries like <code>../../.config/autostart/malware.sh</code> is rejected before any file is written.</p>
 <p><strong>Backup categories for <code>--exclude</code> and <code>--only</code>:</strong></p>
 <div class="table-wrapper">
 <table>
@@ -287,7 +290,7 @@ ic backup verify ic-backup-2027-03-15.zip     # Verify archive integrity without
 </thead>
 <tbody>
 <tr><td><code>keys</code></td><td><code>keys/identity.key</code></td><td>&lt; 1 KB</td><td><strong>Yes</strong> — recoverable via mnemonic seed phrase</td></tr>
-<tr><td><code>profile</code></td><td><code>profile.db</code></td><td>&lt; 1 MB</td><td><strong>Yes</strong> — friends, settings, avatar</td></tr>
+<tr><td><code>profile</code></td><td><code>profile.db</code></td><td>&lt; 1 MB</td><td><strong>Yes</strong> — friends, settings, avatar, LLM provider config</td></tr>
 <tr><td><code>communities</code></td><td><code>communities/*.db</code></td><td>1–10 MB</td><td><strong>Yes</strong> — ratings, match history (SCRs)</td></tr>
 <tr><td><code>achievements</code></td><td><code>achievements.db</code></td><td>&lt; 1 MB</td><td><strong>Yes</strong> — local achievement progress and unlock state (D036)</td></tr>
 <tr><td><code>config</code></td><td><code>config.toml</code></td><td>&lt; 100 KB</td><td>Medium — preferences, easily recreated</td></tr>

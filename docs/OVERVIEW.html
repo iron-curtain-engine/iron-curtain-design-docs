@@ -35,10 +35,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-02bd7aa6.js"></script>
+        <script src="toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -246,27 +246,27 @@
 <hr>
 <h2 id="for-community-leaders--server-operators"><a class="header" href="#for-community-leaders--server-operators">For Community Leaders &amp; Server Operators</a></h2>
 <ul>
-<li><strong>Self-hostable everything.</strong> Relay, matchmaking, and workshop servers are all self-hostable. Federated architecture — communities mirror each other’s content. Ed25519-signed credential records (not JWT) with transparency logs for server accountability. No single point of failure.</li>
+<li><strong>Self-hostable everything.</strong> A single <code>ic-server</code> binary (D074) with toggleable capability flags handles relay, matchmaking, ranking, Workshop P2P seeding, and moderation. Federated architecture — communities mirror each other’s content. Ed25519-signed credential records (not JWT) with transparency logs for server accountability. No single point of failure.</li>
 <li><strong>Community governance.</strong> RFC process, community-elected representatives, self-hosting independence. The project can’t be killed by one organization.</li>
 <li><strong>Observability.</strong> OTEL-based telemetry (metrics, traces, logs), pre-built Grafana dashboards for self-hosters. Zero-cost when disabled.</li>
 </ul>
 <hr>
 <h2 id="for-developers--contributors"><a class="header" href="#for-developers--contributors">For Developers &amp; Contributors</a></h2>
 <ul>
-<li><strong>Modern Rust on Bevy.</strong> No GC, memory safety, fearless concurrency. ECS scheduling, parallel queries, asset hot-reloading, large plugin ecosystem. 11 focused crates with clear boundaries.</li>
+<li><strong>Modern Rust on Bevy.</strong> No GC, memory safety, fearless concurrency. ECS scheduling, parallel queries, asset hot-reloading, large plugin ecosystem. 14 focused crates with clear boundaries.</li>
 <li><strong>Clean sim/net separation.</strong> <code>ic-sim</code> and <code>ic-net</code> never import each other — only <code>ic-protocol</code>. Swap the network model without touching simulation code.</li>
 <li><strong>Multi-game engine.</strong> Game-agnostic core. RA and TD are game modules via a <code>GameModule</code> trait. Pathfinding, spatial queries, rendering, fog — all pluggable per game.</li>
 <li><strong>Standalone crates.</strong> <code>ra-formats</code> parses C&amp;C formats independently. <code>ic-sim</code> runs headless for AI training or testing.</li>
 </ul>
 <hr>
 <h2 id="nice-to-haves"><a class="header" href="#nice-to-haves">Nice-to-Haves</a></h2>
-<p>Interested specifically in the LLM-related gameplay/content/tooling plans? See <a href="LLM-MODES.html">Experimental LLM Modes &amp; Plans (BYOLLM)</a> for a consolidated BYOLLM overview (all experimental / optional).</p>
+<p>Interested specifically in the LLM-related gameplay/content/tooling plans? See <a href="LLM-MODES.html">Experimental LLM Modes &amp; Plans</a> for a consolidated overview (all experimental / optional). IC ships built-in CPU models (Tier 1) for zero-config operation; external LLM providers (BYOLLM Tiers 2–4) are optional for higher quality.</p>
 <ul>
-<li><strong>AI-generated missions and campaigns (BYOLLM).</strong> Describe a scenario, get a playable mission — or generate an entire branching campaign with recurring characters who evolve, betray, and die based on your choices. Choose a story style (C&amp;C Classic, Realistic Military, Political Thriller, and more). World Domination mode: conquer a strategic map region by region with garrison management and faction dynamics. Each mission reacts to how you actually played — the LLM reads your battle report and adapts the next mission’s narrative, difficulty, and objectives. Mid-mission radar comms, RPG-style dialogue choices, and cinematic moments are all generated. Every output is standard YAML + Lua, fully playable without the LLM after creation. Built-in mission templates provide a fallback without any LLM at all. Bring your own LLM; the engine never requires one. Phase 7.</li>
-<li><strong>AI-generated custom factions (BYOLLM).</strong> Describe a faction concept in plain English — “a guerrilla faction that relies on stealth, traps, and hit-and-run” — and the LLM generates a complete tech tree, unit roster, building roster, and unique mechanics as standard YAML. References Workshop sprite packs, sound packs, and weapon definitions (with author consent) to assemble factions with real assets from day one. Balance-validated against existing factions. Fully editable by hand, publishable to Workshop, playable in skirmish and custom games. Phase 7.</li>
-<li><strong>LLM-enhanced AI (BYOLLM).</strong> Two modes: <code>LlmOrchestratorAi</code> wraps conventional AI with LLM strategic guidance, <code>LlmPlayerAi</code> lets the LLM play the game directly — designed for community entertainment streams (“GPT vs. Claude playing Red Alert”). Observable reasoning overlay for spectators. Neither mode allowed in ranked. Phase 7.</li>
-<li><strong>LLM coaching (BYOLLM).</strong> Post-match analysis, personalized improvement suggestions, and adaptive briefings based on your play history. Phase 7.</li>
-<li><strong>LLM Skill Library (BYOLLM).</strong> Persistent, semantically-indexed store of verified LLM outputs — AI strategies and generation patterns that improve over time. Verification-to-promotion pipeline ensures quality. Shareable via Workshop. Voyager-inspired lifelong learning. Phase 7.</li>
+<li><strong>AI-generated missions and campaigns.</strong> Describe a scenario, get a playable mission — or generate an entire branching campaign with recurring characters who evolve, betray, and die based on your choices. Choose a story style (C&amp;C Classic, Realistic Military, Political Thriller, and more). World Domination mode: conquer a strategic map region by region with garrison management and faction dynamics. Each mission reacts to how you actually played — the LLM reads your battle report and adapts the next mission’s narrative, difficulty, and objectives. Mid-mission radar comms, RPG-style dialogue choices, and cinematic moments are all generated. Every output is standard YAML + Lua, fully playable without the LLM after creation. Built-in mission templates provide a fallback without any LLM at all. IC ships built-in CPU models for zero-config operation; external LLM providers unlock higher quality. Phase 7.</li>
+<li><strong>AI-generated custom factions.</strong> Describe a faction concept in plain English — “a guerrilla faction that relies on stealth, traps, and hit-and-run” — and the LLM generates a complete tech tree, unit roster, building roster, and unique mechanics as standard YAML. References Workshop sprite packs, sound packs, and weapon definitions (with author consent) to assemble factions with real assets from day one. Balance-validated against existing factions. Fully editable by hand, publishable to Workshop, playable in skirmish and custom games. Phase 7.</li>
+<li><strong>LLM-enhanced AI.</strong> Two modes: <code>LlmOrchestratorAi</code> wraps conventional AI with LLM strategic guidance, <code>LlmPlayerAi</code> lets the LLM play the game directly — designed for community entertainment streams (“GPT vs. Claude playing Red Alert”). Observable reasoning overlay for spectators. Neither mode allowed in ranked. Phase 7.</li>
+<li><strong>LLM coaching.</strong> Post-match analysis, personalized improvement suggestions, and adaptive briefings based on your play history. Phase 7.</li>
+<li><strong>LLM Skill Library.</strong> Persistent, semantically-indexed store of verified LLM outputs — AI strategies and generation patterns that improve over time. Verification-to-promotion pipeline ensures quality. Shareable via Workshop. Voyager-inspired lifelong learning. Phase 7.</li>
 <li><strong>Dynamic weather.</strong> Real-time transitions (sunny → rain → storm), terrain effects (frozen water, mud), snow accumulation. Deterministic weather state machine.</li>
 <li><strong>Advanced visuals for modders.</strong> Bevy’s wgpu stack gives modders access to bloom, dynamic lighting, GPU particles, shader effects, day/night, smooth zoom, and even full 3D rendering — while the base game stays classic isometric. Render modes are switchable mid-game (see above).</li>
 <li><strong>Switchable UI themes.</strong> Classic, Remastered, or Modern look — YAML-driven, community themes via Workshop.</li>
@@ -275,7 +275,7 @@
 </ul>
 <hr>
 <h2 id="how-this-was-designed"><a class="header" href="#how-this-was-designed">How This Was Designed</a></h2>
-<p>The networking design alone studied 20+ open-source codebases, 4 EA GPL source releases, and multiple academic papers — all at the source code level. Every major subsystem went through the same process. 62 design decisions with rationale. 32 research documents. ~57,000 lines of documentation across 120+ commits.</p>
+<p>The networking design alone studied 20+ open-source codebases, 4 EA GPL source releases, and multiple academic papers — all at the source code level. Every major subsystem went through the same process. 76 design decisions with rationale. 63 research documents. ~95,000 lines of design and research documentation across 160+ commits.</p>
 <p>📖 <strong><a href="https://dk26.github.io/iron-curtain-design-docs/">Read the full design documentation →</a></strong></p>
 
                     </main>

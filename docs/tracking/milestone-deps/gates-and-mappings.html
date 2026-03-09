@@ -35,10 +35,10 @@
             const path_to_root = "../../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-02bd7aa6.js"></script>
+        <script src="../../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -204,9 +204,9 @@
 <tr><th>Gate Node ID</th><th>Type</th><th>Blocks Validation Of</th><th>Canonical Source</th><th>Notes</th></tr>
 </thead>
 <tbody>
-<tr><td><code>PG.P002.FIXED_POINT_SCALE</code></td><td>Pending decision</td><td><code>M2</code>, <code>M3</code></td><td><code>09-DECISIONS.md</code> pending table</td><td>Numeric scale must be fixed before implementing/tuning deterministic math and pathfinding</td></tr>
-<tr><td><code>PG.P003.AUDIO_LIBRARY</code></td><td>Pending decision</td><td><code>M3</code>, <code>M6</code></td><td><code>09-DECISIONS.md</code> pending table</td><td>Blocks final audio/music integration choice</td></tr>
-<tr><td><code>PG.P004.LOBBY_WIRE_DETAILS</code></td><td>Pending decision</td><td><code>M7</code> (and some <code>M4</code> polish)</td><td><code>09-DECISIONS.md</code> pending table</td><td>Architecture is resolved; wire/product details still need a lock</td></tr>
+<tr><td><code>PG.P002.FIXED_POINT_SCALE</code></td><td>Resolved</td><td><del><code>M2</code>, <code>M3</code></del></td><td><code>09-DECISIONS.md</code> pending table</td><td><strong>Resolved:</strong> Scale 1024, matching OpenRA. See <code>research/fixed-point-math-design.md</code>. Gate cleared.</td></tr>
+<tr><td><code>PG.P003.AUDIO_LIBRARY</code></td><td>Resolved</td><td><del><code>M3</code>, <code>M6</code></del></td><td><code>09-DECISIONS.md</code> pending table</td><td><strong>Resolved:</strong> Kira via <code>bevy_kira_audio</code>. See <code>research/audio-library-music-integration-design.md</code>. Gate cleared.</td></tr>
+<tr><td><code>PG.P004.LOBBY_WIRE_DETAILS</code></td><td>Resolved</td><td><del><code>M7</code> (and some <code>M4</code> polish)</del></td><td><code>09-DECISIONS.md</code> pending table</td><td><strong>Resolved:</strong> Complete wire protocol (CBOR, 40+ messages). See <code>research/lobby-matchmaking-wire-protocol-design.md</code>. Gate cleared.</td></tr>
 <tr><td><code>PG.LEGAL.ENTITY_FORMED</code></td><td>Policy gate</td><td><code>M7</code>, <code>M9</code> production validation</td><td><code>08-ROADMAP.md</code>, <code>06-SECURITY.md</code></td><td>Needed before public server infra and user-data-bearing services go live</td></tr>
 <tr><td><code>PG.LEGAL.DMCA_AGENT</code></td><td>Policy gate</td><td><code>M9</code> Workshop production validation</td><td><code>08-ROADMAP.md</code>, <code>09e-community.md</code></td><td>Required before accepting user uploads under safe harbor expectations</td></tr>
 <tr><td><code>PG.LEGAL.CNC_FREEWARE_MIRROR_RIGHTS_POLICY</code></td><td>Policy gate</td><td>Any official/community Workshop mirroring of legacy/freeware C&amp;C content (<code>M8.COM.FREEWARE_MIRROR_STARTER_CONTENT</code>)</td><td><code>09e-community.md</code>, <code>06-SECURITY.md</code></td><td>Must explicitly define rights basis, provenance labels, and takedown/update policy; D069 owned-install import remains available regardless</td></tr>

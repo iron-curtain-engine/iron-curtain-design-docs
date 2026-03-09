@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Experimental LLM Modes &amp; Plans (BYOLLM) - Iron Curtain — Design Documentation</title>
+        <title>Experimental LLM Modes &amp; Plans - Iron Curtain — Design Documentation</title>
 
 
         <!-- Custom HTML head -->
@@ -35,10 +35,10 @@
             const path_to_root = "";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-02bd7aa6.js"></script>
+        <script src="toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -180,7 +180,7 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="experimental-llm-modes--plans-byollm"><a class="header" href="#experimental-llm-modes--plans-byollm">Experimental LLM Modes &amp; Plans (BYOLLM)</a></h1>
+                        <h1 id="experimental-llm-modes--plans"><a class="header" href="#experimental-llm-modes--plans">Experimental LLM Modes &amp; Plans</a></h1>
 <p>This page is the <strong>human-facing overview</strong> of Iron Curtain’s LLM-related modes and plans for:</p>
 <ul>
 <li>players</li>
@@ -190,7 +190,7 @@
 </ul>
 <p>Everything here is <strong>design-stage only</strong> (no playable build yet) and should be treated as <strong>experimental</strong>. Some items are “accepted” decisions in the docs, but that means “accepted as a design direction,” not “implemented” or “stable.”</p>
 <blockquote>
-<p><code>BYOLLM</code> = <strong>Bring Your Own LLM</strong>. Iron Curtain does not ship or require a model/provider. You configure your own local or cloud provider if you want these features.</p>
+<p><code>BYOLLM</code> = <strong>Bring Your Own LLM</strong>. Iron Curtain does not require a specific model/provider. You can use IC’s built-in local models (CPU-only, zero setup), sign in to a cloud provider, connect your own local inference server, or paste an API key — whatever fits your setup.</p>
 </blockquote>
 <blockquote>
 <p>For agentic retrieval / RAG routing, use <code>LLM-INDEX.md</code>. This page is for humans.</p>
@@ -199,17 +199,17 @@
 <h2 id="ground-rules-applies-to-all-llm-features"><a class="header" href="#ground-rules-applies-to-all-llm-features">Ground Rules (Applies to All LLM Features)</a></h2>
 <ul>
 <li><strong>Optional, never required.</strong> The game and SDK are designed to work fully without any LLM configured (D016).</li>
-<li><strong>BYOLLM only.</strong> Users choose providers/models; the engine does not bundle a mandatory vendor (D016, D047).</li>
+<li><strong>BYOLLM architecture, built-in floor.</strong> The engine supports four provider tiers: IC Built-in (embedded CPU models, zero setup), Cloud OAuth (browser login), Cloud API Key (paste key), and Local External (Ollama, LM Studio, etc.). Users choose their tier; the engine does not mandate a vendor. IC Built-in provides a functional baseline; BYOLLM provides the ceiling (D047).</li>
 <li><strong>Determinism preserved.</strong> <code>ic-sim</code> never performs LLM or network I/O. LLM outputs affect gameplay only by producing normal orders through existing pipelines (D044, D073).</li>
 <li><strong>No ranked assistance.</strong> LLM-controlled/player-assisted match modes are excluded from ranked-certified play (D044, D073, D055).</li>
-<li><strong>Privacy and disclosure matter.</strong> Replay annotations, prompt capture, and voice-like context features are opt-in/configurable, with stripping/redaction paths planned (D059, D073).</li>
+<li><strong>Privacy and disclosure matter.</strong> Replay annotations, prompt capture, and voice-like context features are opt-in/configurable, with stripping/redaction paths planned (D059, D073). Built-in models run entirely on-device — no data leaves the machine. Cloud providers are the user’s choice and the user’s responsibility.</li>
 <li><strong>Standard outputs for creators.</strong> Generated content is standard YAML/Lua/assets, not opaque engine-only blobs (D016, D040).</li>
 </ul>
 <hr>
 <h2 id="quick-map-by-audience"><a class="header" href="#quick-map-by-audience">Quick Map by Audience</a></h2>
 <h3 id="players"><a class="header" href="#players">Players</a></h3>
 <ul>
-<li><strong>LLM-generated missions/campaigns</strong> (BYOLLM, optional) — D016</li>
+<li><strong>LLM-generated missions/campaigns</strong> (optional) — D016</li>
 <li><strong>LLM-enhanced AI opponents</strong> (<code>LlmOrchestratorAi</code>, experimental <code>LlmPlayerAi</code>) — D044</li>
 <li><strong>LLM exhibition / prompt-coached match modes</strong> (showmatch/custom-focused) — D073</li>
 <li><strong>LLM coaching / post-match commentary</strong> (optional, built on behavioral profiles) — D042 + D016</li>
@@ -226,7 +226,7 @@
 <li><strong>Replay-to-scenario narrative generation</strong> (optional LLM layer on top of replay extraction) — D038 + D016</li>
 <li><strong>Asset Studio agentic generation</strong> (optional Layer 3 in SDK) — D040</li>
 <li><strong>LLM-callable editor tools (planned)</strong> for structured editor automation — D016</li>
-<li><strong>Custom factions (planned, BYOLLM)</strong> — D016</li>
+<li><strong>Custom factions (planned)</strong> — D016</li>
 </ul>
 <h3 id="tool-developers"><a class="header" href="#tool-developers">Tool Developers</a></h3>
 <ul>
@@ -294,7 +294,7 @@
 </ul>
 <hr>
 <h2 id="player-facing-llm-content-generation-campaigns--missions"><a class="header" href="#player-facing-llm-content-generation-campaigns--missions">Player-Facing LLM Content Generation (Campaigns / Missions)</a></h2>
-<h3 id="3-llm-generated-missions--campaigns-byollm"><a class="header" href="#3-llm-generated-missions--campaigns-byollm">3. LLM-Generated Missions &amp; Campaigns (BYOLLM)</a></h3>
+<h3 id="3-llm-generated-missions--campaigns"><a class="header" href="#3-llm-generated-missions--campaigns">3. LLM-Generated Missions &amp; Campaigns</a></h3>
 <p>Canonical: D016</p>
 <p>Planned Phase 7 optional features include:</p>
 <ul>
@@ -384,7 +384,7 @@
 <p>This is aimed at modder productivity and SDK automation, not live gameplay.</p>
 <h3 id="10-custom-faction--content-generation-planned"><a class="header" href="#10-custom-faction--content-generation-planned">10. Custom Faction / Content Generation (Planned)</a></h3>
 <p>Canonical: D016</p>
-<p>Planned BYOLLM path for power users:</p>
+<p>Planned path for power users (built-in models work; external providers unlock higher quality):</p>
 <ul>
 <li>generate faction concepts into editable YAML-based faction definitions</li>
 <li>pull compatible Workshop resources (subject to permissions/licensing rules)</li>
@@ -393,21 +393,24 @@
 <p>This is a planned experimental feature, not a core onboarding path for modders.</p>
 <hr>
 <h2 id="tooling--infrastructure-that-makes-llm-features-practical"><a class="header" href="#tooling--infrastructure-that-makes-llm-features-practical">Tooling &amp; Infrastructure That Makes LLM Features Practical</a></h2>
-<h3 id="11-llm-configuration-manager-byollm-ux-layer"><a class="header" href="#11-llm-configuration-manager-byollm-ux-layer">11. LLM Configuration Manager (BYOLLM UX Layer)</a></h3>
+<h3 id="11-llm-configuration-manager"><a class="header" href="#11-llm-configuration-manager">11. LLM Configuration Manager</a></h3>
 <p>Canonical: D047</p>
 <p>Why it exists:</p>
 <ul>
 <li>different tasks need different model/provider tradeoffs</li>
 <li>local vs cloud models need different prompt strategies</li>
 <li>users may want multiple providers at once</li>
+<li>non-technical players need a zero-config path to LLM features</li>
 </ul>
 <p>Key planned capabilities:</p>
 <ul>
-<li>multiple provider profiles</li>
-<li>task-specific routing (e.g., fast local for orchestration, richer cloud for generation)</li>
-<li>prompt strategy profiles (auto + override)</li>
+<li><strong>four provider tiers:</strong> IC Built-in (CPU models, zero setup), Cloud OAuth (browser login), Cloud API Key, Local External (Ollama, etc.)</li>
+<li>multiple provider profiles with tier mixing (built-in for quick tasks, cloud for quality)</li>
+<li>task-specific routing (e.g., built-in for coaching, cloud for generation)</li>
+<li>prompt strategy profiles (auto + override), including <code>EmbeddedCompact</code> for built-in models</li>
 <li>capability probing and prompt test harness</li>
 <li>shareable configs without API keys</li>
+<li>Workshop model packs for first-party and community-provided model weights</li>
 </ul>
 <h3 id="12-llm-skill-library-lifelong-learning-layer"><a class="header" href="#12-llm-skill-library-lifelong-learning-layer">12. LLM Skill Library (Lifelong Learning Layer)</a></h3>
 <p>Canonical: D057</p>
@@ -448,7 +451,7 @@
 <tr><th>Area</th><th>Example Modes / Features</th><th>Planned Phase</th><th>Experimental Notes</th></tr>
 </thead>
 <tbody>
-<tr><td>LLM missions/campaigns</td><td>Mission gen, generative campaigns, replay narrative layer</td><td>Phase 7</td><td>Optional BYOLLM only; hand-authored campaigns remain primary</td></tr>
+<tr><td>LLM missions/campaigns</td><td>Mission gen, generative campaigns, replay narrative layer</td><td>Phase 7</td><td>Optional; IC Built-in (Tier 1) provides baseline, BYOLLM (Tiers 2–4) for higher quality; hand-authored campaigns remain primary</td></tr>
 <tr><td>LLM-enhanced AI</td><td><code>LlmOrchestratorAi</code></td><td>Phase 7</td><td>Best path for practical gameplay/spectating</td></tr>
 <tr><td>Full LLM player</td><td><code>LlmPlayerAi</code></td><td>Experimental, no scheduled phase</td><td>Architecture supported; quality/latency dependent</td></tr>
 <tr><td>LLM exhibition/prompt matches</td><td>LLM exhibition, prompt duel, director showmatch</td><td>Phase 7</td><td>Explicitly non-ranked, trust-labeled</td></tr>
@@ -492,7 +495,7 @@
 </ul>
 <hr>
 <h2 id="suggested-public-messaging-if-you-want-a-one-paragraph-summary"><a class="header" href="#suggested-public-messaging-if-you-want-a-one-paragraph-summary">Suggested Public Messaging (If You Want a One-Paragraph Summary)</a></h2>
-<p>Iron Curtain’s LLM features are a <strong>BYOLLM, opt-in, experimental power-user layer</strong> for content generation, AI experimentation, replay analysis, and creator tooling. The engine is fully playable and moddable without any LLM configured. Competitive integrity remains intact because ranked play excludes LLM-assisted modes, and showmatch/coached LLM events are explicitly labeled with clear trust and visibility rules.</p>
+<p>Iron Curtain’s LLM features are an <strong>opt-in, experimental layer</strong> for content generation, AI experimentation, replay analysis, and creator tooling. Built-in CPU models provide a zero-setup starting point; users who want higher quality can connect their own cloud or local providers (BYOLLM). The engine is fully playable and moddable without any LLM configured. Competitive integrity remains intact because ranked play excludes LLM-assisted modes, and showmatch/coached LLM events are explicitly labeled with clear trust and visibility rules.</p>
 
                     </main>
 

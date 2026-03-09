@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-02bd7aa6.js"></script>
+        <script src="../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -212,8 +212,8 @@
 <tr><td><strong>Controls</strong></td><td>Official input profiles by device: <code>Classic RA (KBM)</code>, <code>OpenRA (KBM)</code>, <code>Modern RTS (KBM)</code>, <code>Gamepad Default</code>, <code>Steam Deck Default</code>, plus <code>Custom</code> (profile diff). Full rebinding UI with category filters (Unit Commands, Production, Control Groups, Camera, Communication, UI/System, Debug). Mouse settings: edge scroll speed, scroll inversion, drag selection shape. Controller/Deck settings: deadzones, stick curves, cursor acceleration, radial behavior, gyro sensitivity (when available). Touch settings: handedness (mirror layout), touch target size, hold/drag thresholds, command rail behavior, camera bookmark dock preferences. Includes <code>Import</code>, <code>Export</code>, and <code>Share on Workshop</code> (config-profile packages with scope/diff preview), plus <code>View Controls Quick Reference</code> and <code>What's Changed in Controls</code> replay entry.</td></tr>
 <tr><td><strong>Gameplay</strong></td><td>Experience profile (one-click preset). Balance preset. Pathfinding preset. AI behavior preset. Full D033 QoL toggle list organized by category: Production, Commands, UI Feedback, Selection, Gameplay. Tutorial hint frequency, Controls Walkthrough prompts, and mobile Tempo Advisor warnings (client-only) also live here.</td></tr>
 <tr><td><strong>Social</strong></td><td>Voice settings: PTT key, input/output device, voice effect preset, mic test. Chat settings: profanity filter, emojis, auto-translated phrases. Privacy: who can spectate, who can friend-request, online status visibility, and <strong>campaign progress / benchmark sharing</strong> controls (D021/D052/D053).</td></tr>
-<tr><td><strong>LLM</strong></td><td>Provider cards (add/edit/remove LLM providers). Task routing table (which provider handles which task). Connection test. Community config import/export (D047).</td></tr>
-<tr><td><strong>Data</strong></td><td>Content sources (detected game installations, manual paths, re-scan). <strong>Installed Content Manager</strong> (install profiles like <code>Minimal Multiplayer</code> / <code>Campaign Core</code> / <code>Full</code>, optional media packs, media variant groups such as cutscenes <code>Original</code> / <code>Clean Remaster</code> / <code>AI Enhanced</code> and voice-over variants by language/style, language capability badges for media packs (<code>Audio</code>, <code>Subs</code>, <code>CC</code>), translation source/trust labels, size estimates, reclaimable space). <strong>Modify Installation / Repair &amp; Verify</strong> (D069 maintenance wizard re-entry). Data health summary. Backup/Restore buttons. Cloud sync toggle. Mod profile manager link. Storage usage. Export profile data (GDPR, D061). Recovery phrase viewer (“Show my 24-word phrase”). <strong>Database Management</strong> section: per-database size display, [Optimize Databases] button (VACUUM + ANALYZE — reclaim disk space, useful for portable/flash drive installs), [Open in DB Browser] per database, [Export to CSV/JSON] for tables/views, link to schema documentation. See D034 § User-Facing Database Access and D061 § <code>ic db</code> CLI.</td></tr>
+<tr><td><strong>LLM</strong></td><td>Provider cards (add/edit/remove LLM providers). Providers with credential issues show ⚠ badge and [Sign In] button instead of [Edit]. Task routing table (which provider handles which task). Connection test. Community config import/export (D047). See <code>llm-setup-guide.md</code> § Credential Recovery for the full re-entry flow.</td></tr>
+<tr><td><strong>Data</strong></td><td>Content sources (detected game installations, manual paths, re-scan). <strong>Installed Content Manager</strong> (install profiles like <code>Minimal Multiplayer</code> / <code>Campaign Core</code> / <code>Full</code>, optional media packs, media variant groups such as cutscenes <code>Original</code> / <code>Clean Remaster</code> / <code>AI Enhanced</code> and voice-over variants by language/style, language capability badges for media packs (<code>Audio</code>, <code>Subs</code>, <code>CC</code>), translation source/trust labels, size estimates, reclaimable space). <strong>Modify Installation / Repair &amp; Verify</strong> (D069 maintenance wizard re-entry). Data health summary. Backup/Restore buttons. Cloud sync toggle. Mod profile manager link. Storage usage. Export profile data (GDPR, D061). Recovery phrase viewer (“Show my 24-word phrase”). <strong>Security</strong> section: [Change Vault Passphrase] (Tier 2 only, visible when vault passphrase is active), [Reset Vault Passphrase] (clears all saved AI provider logins, prompts new passphrase — discoverable escape hatch for forgotten passphrases), [Reset All AI Logins] (purges all encrypted credentials, prompts confirmation). <strong>Database Management</strong> section: per-database size display, [Optimize Databases] button (VACUUM + ANALYZE — reclaim disk space, useful for portable/flash drive installs), [Open in DB Browser] per database, [Export to CSV/JSON] for tables/views, link to schema documentation. See D034 § User-Facing Database Access and D061 § <code>ic db</code> CLI.</td></tr>
 </tbody>
 </table>
 </div>
@@ -425,8 +425,8 @@
 <li>The same flow is reachable from no-dead-end guidance panels when missing/corrupt content is detected</li>
 </ul>
 <hr>
-<h3 id="byollm-feature-discovery-prompt-settings--llm-and-contextual"><a class="header" href="#byollm-feature-discovery-prompt-settings--llm-and-contextual">BYOLLM Feature Discovery Prompt (Settings → LLM, and contextual)</a></h3>
-<p>IC does not require an LLM to play, but connecting one unlocks a significant set of optional features. Rather than letting players discover these features piecemeal (or never), a <strong>one-time discovery prompt</strong> appears at a natural moment to show what becomes available.</p>
+<h3 id="ai-feature-discovery-prompt-settings--llm-and-contextual"><a class="header" href="#ai-feature-discovery-prompt-settings--llm-and-contextual">AI Feature Discovery Prompt (Settings → LLM, and contextual)</a></h3>
+<p>IC does not require an LLM to play, but enabling one unlocks a significant set of optional features. IC ships built-in CPU models that work with zero setup, and supports cloud providers and local servers for higher quality. Rather than letting players discover these features piecemeal (or never), a <strong>one-time discovery prompt</strong> appears at a natural moment to show what becomes available.</p>
 <h4 id="trigger-conditions-show-once-dismissible"><a class="header" href="#trigger-conditions-show-once-dismissible">Trigger Conditions (show once, dismissible)</a></h4>
 <p>The prompt appears <strong>once</strong> when any of the following first occurs:</p>
 <ul>
@@ -434,13 +434,15 @@
 <li>Player encounters a no-dead-end guidance panel for an LLM-gated feature (e.g., Generative Campaign, AI Coaching)</li>
 <li>Player completes their first campaign mission or first 3 skirmish games (engaged enough to benefit from extended features)</li>
 </ul>
-<p>The prompt is a single, skippable panel — not a modal gate. Dismissing it records <code>llm_discovery_prompt_shown = true</code> locally (D034) and never re-triggers. The player can always find the same information at Settings → LLM → “What does BYOLLM unlock?”</p>
+<p>The prompt is a single, skippable panel — not a modal gate. Dismissing it records <code>llm_discovery_prompt_shown = true</code> locally (D034) and never re-triggers. The player can always find the same information at Settings → LLM → “What does AI unlock?”</p>
 <h4 id="panel-design"><a class="header" href="#panel-design">Panel Design</a></h4>
 <pre><code>┌─────────────────────────────────────────────────────────────────┐
 │  EXTEND YOUR GAME WITH AI                            [Dismiss ×]│
 │                                                                 │
-│  Iron Curtain supports Bring-Your-Own-LLM — connect your own   │
-│  AI provider (local or cloud) to unlock optional features:      │
+│  Iron Curtain includes built-in AI models that run locally on   │
+│  your computer — no account, no third-party setup needed.       │
+│  A one-time download (~850 MB) is required for the model pack.  │
+│  For higher quality, connect a cloud or local provider.         │
 │                                                                 │
 │  CAMPAIGNS &amp; MISSIONS                                           │
 │  ● Generative Campaigns — AI-authored campaigns from a text     │
@@ -473,36 +475,40 @@
 │                                                                 │
 │  ─────────────────────────────────────────────────────────────  │
 │                                                                 │
-│  Works with: Ollama (free, local), OpenAI, Anthropic, or any   │
-│  OpenAI-compatible API. Your keys stay on your machine.         │
+│  Built-in: runs on CPU, no account needed (download ~850 MB).   │
+│  Upgrade: connect a cloud or local-GPU provider for stronger    │
+│  models, faster responses, and lower CPU usage during gameplay.  │
+│  Cloud providers may charge per use (many offer free tiers).     │
+│  Your data stays on your machine unless you choose cloud.       │
 │                                                                 │
-│  [Set Up LLM Provider →]  [Browse Community Configs →]  [Later] │
+│  [Enable Built-in AI →]  [Connect Cloud →]  [Advanced →] [Later]│
 └─────────────────────────────────────────────────────────────────┘
 </code></pre>
 <h4 id="design-rules"><a class="header" href="#design-rules">Design Rules</a></h4>
 <ul>
 <li><strong>Never blocks gameplay.</strong> The panel is informational and fully dismissible. No feature outside the LLM tab requires LLM configuration to function.</li>
 <li><strong>No upsell language.</strong> The tone is “here’s what exists” not “you’re missing out.” The panel describes capabilities, not deficiencies.</li>
-<li><strong>BYOLLM principle preserved.</strong> IC never provides, recommends, or prices a specific provider. The panel lists compatibility categories (local, cloud, compatible APIs) without endorsement.</li>
-<li><strong>Community configs reduce friction.</strong> The [Browse Community Configs →] button links to the Workshop LLM Configurations category (D047/D030), where community-tested setups with performance notes and cost estimates are shared.</li>
-<li><strong>One-time only.</strong> The prompt respects the player’s attention. If dismissed, it stays dismissed. Settings → LLM always has the feature list accessible via a “What does BYOLLM unlock?” link for players who want to revisit it.</li>
+<li><strong>Built-in first, upgrade second.</strong> The primary call-to-action is [Enable Built-in AI →], which downloads a model pack and requires zero accounts or configuration. Cloud and local options are presented as upgrades for users who want higher quality, not as the expected path.</li>
+<li><strong>BYOLLM principle preserved.</strong> IC never mandates a specific provider for cloud/local tiers. The built-in tier uses IC-validated model packs, but users can replace them with Workshop alternatives.</li>
+<li><strong>Community configs reduce friction.</strong> The [Advanced →] button provides access to the Workshop LLM Configurations category (D047/D030), where community-tested setups with performance notes and cost estimates are shared.</li>
+<li><strong>One-time only.</strong> The prompt respects the player’s attention. If dismissed, it stays dismissed. Settings → LLM always has the feature list accessible via a “What does AI unlock?” link for players who want to revisit it.</li>
 <li><strong>Platform-responsive.</strong> On small screens (Phone/Tablet <code>ScreenClass</code>), the panel uses a scrollable list rather than the full grid layout. On TV/Deck, navigation follows the standard D-pad flow.</li>
 </ul>
 <h4 id="contextual-mini-prompts-no-dead-end-integration"><a class="header" href="#contextual-mini-prompts-no-dead-end-integration">Contextual Mini-Prompts (No-Dead-End Integration)</a></h4>
 <p>In addition to the one-time discovery panel, individual LLM-gated features show a concise contextual prompt when accessed without a configured provider. These reuse the existing no-dead-end pattern (UX Principle 3) with a consistent format:</p>
 <pre><code>┌─────────────────────────────────────────────────────────────────┐
-│  This feature uses an AI provider (BYOLLM)                      │
+│  This feature uses AI                                           │
 │                                                                 │
 │  {Feature description, 1-2 sentences}                           │
 │                                                                 │
-│  [Set Up LLM Provider →]  [Browse Community Configs →]          │
-│  [See All BYOLLM Features →]                                    │
+│  [Enable Built-in AI →]  [Connect Provider →]                   │
+│  [See All AI Features →]                                        │
 └─────────────────────────────────────────────────────────────────┘
 </code></pre>
-<p>The [See All BYOLLM Features →] link opens the full discovery panel, giving context for players who encounter it feature-by-feature rather than through settings.</p>
+<p>The [See All AI Features →] link opens the full discovery panel, giving context for players who encounter it feature-by-feature rather than through settings.</p>
 <h4 id="cross-references"><a class="header" href="#cross-references">Cross-References</a></h4>
 <ul>
-<li><strong>D047 (LLM Config Manager):</strong> Target of [Set Up LLM Provider →] — the LLM Manager UI</li>
+<li><strong>D047 (LLM Config Manager):</strong> Target of [Enable Built-in AI →] and [Connect Cloud →] — the LLM Manager UI with four provider tiers</li>
 <li><strong>D016 (LLM Missions):</strong> Generative campaigns and procedural missions</li>
 <li><strong>D044 (LLM AI):</strong> LLM Orchestrator AI and LLM Player AI</li>
 <li><strong>D042 (Behavioral Profiles):</strong> AI-powered playstyle analysis</li>

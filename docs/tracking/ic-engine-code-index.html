@@ -35,10 +35,10 @@
             const path_to_root = "../";
             const default_light_theme = "light";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0f263f9c.js";
+            window.path_to_searchindex_js = "../searchindex-8c21bc0f.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-02bd7aa6.js"></script>
+        <script src="../toc-e01a4107.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -233,15 +233,15 @@ Canonical design authority: <code>https://github.com/AE26/iron-curtain-design-do
 <tbody>
 <tr><td><code>crates/ic-protocol/</code></td><td>Shared wire types</td><td>Boundary crate between sim and net</td></tr>
 <tr><td><code>crates/ra-formats/</code></td><td>RA1 asset parsers</td><td>Standalone, no game dependencies</td></tr>
-<tr><td><code>crates/ic-paths/</code></td><td>Platform path resolution</td><td>Standalone, wraps <code>app-path</code></td></tr>
+<tr><td><code>crates/ic-paths/</code></td><td>Platform path resolution + credential store</td><td>Standalone, wraps <code>app-path</code> + <code>strict-path</code> + <code>keyring</code> + <code>aes-gcm</code> + <code>argon2</code> + <code>zeroize</code></td></tr>
 <tr><td><code>crates/ic-sim/</code></td><td>Deterministic simulation</td><td>Pure, no I/O, no floats</td></tr>
 <tr><td><code>crates/ic-render/</code></td><td>Bevy isometric renderer</td><td>Reads sim state (read-only)</td></tr>
 <tr><td><code>crates/ic-ui/</code></td><td>Game UI chrome (Bevy UI)</td><td>Reads sim + render state</td></tr>
 <tr><td><code>crates/ic-audio/</code></td><td>Sound/music/EVA (Kira)</td><td>Reads ra-formats for .aud</td></tr>
 <tr><td><code>crates/ic-net/</code></td><td>Networking + relay server</td><td>RelayCore lib + relay binary</td></tr>
 <tr><td><code>crates/ic-script/</code></td><td>Lua + WASM mod runtimes</td><td>Sandboxed, capability-gated</td></tr>
-<tr><td><code>crates/ic-ai/</code></td><td>Skirmish AI</td><td>Reads sim state via fog-filtered view</td></tr>
-<tr><td><code>crates/ic-llm/</code></td><td>LLM integration</td><td>Adaptive missions, coaching</td></tr>
+<tr><td><code>crates/ic-ai/</code></td><td>Skirmish AI + LLM strategies</td><td>Reads sim state via fog-filtered view; depends on ic-llm</td></tr>
+<tr><td><code>crates/ic-llm/</code></td><td>LLM provider traits + infra</td><td>No ic-sim import; candle inference runtime (D047)</td></tr>
 <tr><td><code>crates/ic-editor/</code></td><td>SDK editor tools</td><td>Separate binary from ic-game</td></tr>
 <tr><td><code>crates/ic-game/</code></td><td>Main game binary</td><td>Orchestrates all systems</td></tr>
 <tr><td><code>tests/</code></td><td>Integration test suites</td><td>Conformance, replay, determinism</td></tr>
@@ -284,17 +284,17 @@ Canonical design authority: <code>https://github.com/AE26/iron-curtain-design-do
 <h3 id="ic-paths"><a class="header" href="#ic-paths"><code>ic-paths</code></a></h3>
 <ul>
 <li><strong>Path:</strong> <code>crates/ic-paths/</code></li>
-<li><strong>Primary responsibility:</strong> Platform path resolution — XDG on Linux, APPDATA on Windows, portable mode via <code>portable.marker</code></li>
+<li><strong>Primary responsibility:</strong> Platform path resolution — XDG on Linux, APPDATA on Windows, portable mode via <code>portable.marker</code>. Wraps <code>app-path</code> (exe-relative resolution) and <code>strict-path</code> (path boundary enforcement for untrusted inputs). Also owns <code>CredentialStore</code> — three-tier credential protection (OS keyring / vault passphrase / session-only) with AES-256-GCM per-column encryption for sensitive SQLite data</li>
 <li><strong>Does not own:</strong> file I/O beyond path construction, asset loading</li>
-<li><strong>Public interfaces / trait seams:</strong> <code>AppDirs</code>, <code>PathMode::Platform</code> / <code>PathMode::Portable</code></li>
-<li><strong>Key files to read first:</strong> <code>src/lib.rs</code></li>
-<li><strong>Hot paths / perf-sensitive files:</strong> none (called once at startup)</li>
+<li><strong>Public interfaces / trait seams:</strong> <code>AppDirs</code>, <code>PathMode::Platform</code> / <code>PathMode::Portable</code>, <code>AppDirs::save_boundary()</code> / <code>mod_boundary()</code> / <code>replay_cache_boundary()</code> (→ <code>PathBoundary</code>), <code>CredentialStore</code>, <code>CredentialBackend</code></li>
+<li><strong>Key files to read first:</strong> <code>src/lib.rs</code>, <code>src/credentials.rs</code></li>
+<li><strong>Hot paths / perf-sensitive files:</strong> none (called once at startup; credential ops are infrequent)</li>
 <li><strong>Generated files:</strong> none</li>
-<li><strong>Tests / verification entry points:</strong> unit tests for path resolution on each platform</li>
-<li><strong>Related design decisions (<code>Dxxx</code>):</strong> D061</li>
+<li><strong>Tests / verification entry points:</strong> unit tests for path resolution on each platform; credential round-trip encryption tests</li>
+<li><strong>Related design decisions (<code>Dxxx</code>):</strong> D061, D047</li>
 <li><strong>Related execution steps (<code>G*</code>):</strong> G1 (asset discovery)</li>
-<li><strong>Common change risks:</strong> platform-specific path bugs; portable mode detection</li>
-<li><strong>Search hints:</strong> <code>AppDirs</code>, <code>PathMode</code>, <code>portable.marker</code>, <code>XDG</code>, <code>APPDATA</code></li>
+<li><strong>Common change risks:</strong> platform-specific path bugs; portable mode detection; OS keyring API differences across Linux DEs</li>
+<li><strong>Search hints:</strong> <code>AppDirs</code>, <code>PathMode</code>, <code>portable.marker</code>, <code>XDG</code>, <code>APPDATA</code>, <code>CredentialStore</code>, <code>CredentialBackend</code>, <code>vault_meta</code></li>
 </ul>
 <h3 id="ic-sim"><a class="header" href="#ic-sim"><code>ic-sim</code></a></h3>
 <ul>
@@ -389,7 +389,7 @@ Canonical design authority: <code>https://github.com/AE26/iron-curtain-design-do
 <h3 id="ic-ai"><a class="header" href="#ic-ai"><code>ic-ai</code></a></h3>
 <ul>
 <li><strong>Path:</strong> <code>crates/ic-ai/</code></li>
-<li><strong>Primary responsibility:</strong> Skirmish AI — <code>PersonalityDrivenAi</code>, economy/production/military managers, adaptive difficulty. Reads SQLite (D034) for player analytics</li>
+<li><strong>Primary responsibility:</strong> Skirmish AI — <code>PersonalityDrivenAi</code>, economy/production/military managers, adaptive difficulty, LLM-enhanced AI strategies (<code>LlmOrchestratorAi</code>, <code>LlmPlayerAi</code> — D044). Depends on <code>ic-llm</code> for provider access. Reads SQLite (D034) for player analytics and personalization</li>
 <li><strong>Does not own:</strong> sim state mutation (emits <code>PlayerOrder</code> through <code>AiStrategy</code> trait), rendering, networking</li>
 <li><strong>Public interfaces / trait seams:</strong> <code>AiStrategy</code> trait, <code>PersonalityDrivenAi</code>, <code>AiDifficulty</code> enum, personality config</li>
 <li><strong>Key files to read first:</strong> <code>src/lib.rs</code>, <code>src/personality.rs</code>, <code>src/strategy.rs</code></li>
@@ -404,9 +404,9 @@ Canonical design authority: <code>https://github.com/AE26/iron-curtain-design-do
 <h3 id="ic-llm"><a class="header" href="#ic-llm"><code>ic-llm</code></a></h3>
 <ul>
 <li><strong>Path:</strong> <code>crates/ic-llm/</code></li>
-<li><strong>Primary responsibility:</strong> LLM integration — adaptive mission generation (D016), LLM-enhanced AI coaching (D044), exhibition modes (D073), provider configuration (D047). Reads SQLite (D034) for personalization</li>
-<li><strong>Does not own:</strong> sim logic, rendering, core gameplay</li>
-<li><strong>Public interfaces / trait seams:</strong> LLM prompt pipelines, provider abstraction, skill library (D057)</li>
+<li><strong>Primary responsibility:</strong> LLM provider abstraction — four-tier provider system (D047: IC Built-in CPU models, Cloud OAuth, API Key, Local External), <code>LlmProvider</code> trait, prompt infrastructure, skill library (D057), pure Rust CPU inference runtime. Does NOT import <code>ic-sim</code> or <code>ic-ai</code> — traits and infra only. Reads SQLite (D034) for model pack state and provider config.</li>
+<li><strong>Does not own:</strong> sim logic, rendering, core gameplay, AI strategies (those live in <code>ic-ai</code> which depends on <code>ic-llm</code>)</li>
+<li><strong>Public interfaces / trait seams:</strong> <code>LlmProvider</code> trait, <code>ProviderTier</code> enum, <code>PromptAssembler</code>, prompt strategy profiles, skill library (D057), pure Rust inference runtime (Tier 1)</li>
 <li><strong>Key files to read first:</strong> <code>src/lib.rs</code>, <code>src/provider.rs</code>, <code>src/mission_gen.rs</code></li>
 <li><strong>Hot paths / perf-sensitive files:</strong> none (LLM calls are async, not frame-budget-sensitive)</li>
 <li><strong>Generated files:</strong> none</li>
