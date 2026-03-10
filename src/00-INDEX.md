@@ -1,5 +1,7 @@
 # Iron Curtain — Design Documentation
 
+![Iron Curtain Logo](images/logo.png)
+
 ## Project: Rust-Native RTS Engine
 
 **Status:** Pre-development (design phase)  
