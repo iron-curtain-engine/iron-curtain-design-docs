@@ -106,4 +106,4 @@ Interested specifically in the LLM-related gameplay/content/tooling plans? See [
 
 The networking design alone studied 20+ open-source codebases, 4 EA GPL source releases, and multiple academic papers — all at the source code level. Every major subsystem went through the same process. 76 design decisions with rationale. 63 research documents. ~95,000 lines of design and research documentation across 160+ commits.
 
-📖 **[Read the full design documentation →](https://dk26.github.io/iron-curtain-design-docs/)**
+📖 **[Read the full design documentation →](https://iron-curtain-engine.github.io/iron-curtain-design-docs/)**

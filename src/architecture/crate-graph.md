@@ -595,7 +595,7 @@ Mode is selected by (highest priority first):
 3. Presence of a `portable.marker` file next to the executable
 4. Otherwise: platform mode
 
-**Portable mode** uses the [`app-path`](https://github.com/DK26/app-path-rs) crate (zero-dependency, cross-platform exe-relative path resolution with static caching) to resolve all paths relative to the executable. In portable mode the data directory becomes `<exe_dir>/data/` instead of the platform-specific location, and the entire installation is self-contained — copy the folder to move it.
+**Portable mode** uses the [`app-path`](https://github.com/iron-curtain-engine/app-path-rs) crate (zero-dependency, cross-platform exe-relative path resolution with static caching) to resolve all paths relative to the executable. In portable mode the data directory becomes `<exe_dir>/data/` instead of the platform-specific location, and the entire installation is self-contained — copy the folder to move it.
 
 **Key types:**
 ```rust

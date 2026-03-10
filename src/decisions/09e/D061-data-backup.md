@@ -71,7 +71,7 @@ All player data lives under a single, stable, documented directory. The layout i
 | Mobile         | App sandbox (platform-managed)                                                                   |
 | Portable mode  | `<exe_dir>/data/` (activated by `IC_PORTABLE=1`, `--portable`, or `portable.marker` next to exe) |
 
-**Override:** `IC_DATA_DIR` environment variable or `--data-dir` CLI flag overrides the default. Portable mode (`IC_PORTABLE=1`, `--portable` flag, or `portable.marker` file next to the executable) resolves all paths relative to the executable via the [`app-path`](https://github.com/DK26/app-path-rs) crate — useful for USB-stick deployments, Steam Deck SD cards, and self-contained distributions. All path resolution is centralized in the `ic-paths` crate (see `02-ARCHITECTURE.md` § Crate Design Notes).
+**Override:** `IC_DATA_DIR` environment variable or `--data-dir` CLI flag overrides the default. Portable mode (`IC_PORTABLE=1`, `--portable` flag, or `portable.marker` file next to the executable) resolves all paths relative to the executable via the [`app-path`](https://github.com/iron-curtain-engine/app-path-rs) crate — useful for USB-stick deployments, Steam Deck SD cards, and self-contained distributions. All path resolution is centralized in the `ic-paths` crate (see `02-ARCHITECTURE.md` § Crate Design Notes).
 
 ### Backup System: `ic backup` CLI
 

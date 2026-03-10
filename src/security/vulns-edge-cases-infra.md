@@ -313,7 +313,7 @@ The credential store raises the bar from "copy a file" to "execute code as the u
 
 All path operations involving untrusted input — archive extraction, save game loading, mod file references, Workshop package installation, replay resource extraction, YAML asset paths — require boundary-enforced path handling that defends against more than `..` sequences.
 
-The [`strict-path`](https://github.com/DK26/strict-path-rs) crate (MIT/Apache-2.0, compatible with GPL v3 per D051) provides compile-time path boundary enforcement with protection against 19+ real-world CVEs:
+The [`strict-path`](https://github.com/iron-curtain-engine/strict-path-rs) crate (MIT/Apache-2.0, compatible with GPL v3 per D051) provides compile-time path boundary enforcement with protection against 19+ real-world CVEs:
 
 - **Symlink escapes** — resolves symlinks before boundary check
 - **Windows 8.3 short names** — `PROGRA~1` resolving outside boundary

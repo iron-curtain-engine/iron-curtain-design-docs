@@ -144,8 +144,8 @@ This keeps the project honest about what comes first while preserving the long-t
 
 If you want the full dependency-aware breakdown (what blocks what, what can run in parallel, and where optional systems land), use the implementation overlay link below.
 
-📖 **[See everything Iron Curtain offers →](https://dk26.github.io/iron-curtain-design-docs/OVERVIEW.html)**
-🗺️ **[See implementation milestones & dependency order →](https://dk26.github.io/iron-curtain-design-docs/18-PROJECT-TRACKER.html)**
+📖 **[See everything Iron Curtain offers →](https://iron-curtain-engine.github.io/iron-curtain-design-docs/OVERVIEW.html)**
+🗺️ **[See implementation milestones & dependency order →](https://iron-curtain-engine.github.io/iron-curtain-design-docs/18-PROJECT-TRACKER.html)**
 
 ## The Story Behind This
 
@@ -159,7 +159,7 @@ I chose Rust because I believe it's the best match for working with LLMs: the la
 
 My most formative gaming experience outside Red Alert was Operation Flashpoint — a game that gave you tools to create your own scenarios. That philosophy — games as platforms, not just products — is at the heart of this project.
 
-📖 **[Read the full story →](https://dk26.github.io/iron-curtain-design-docs/FOREWORD.html)**
+📖 **[Read the full story →](https://iron-curtain-engine.github.io/iron-curtain-design-docs/FOREWORD.html)**
 
 ## How This Was Designed
 
@@ -169,15 +169,15 @@ The networking design alone analyzed the source code of 20+ open-source games an
 
 Across the project: 76 design decisions with rationale and alternatives, 63 standalone research documents, 20+ codebases studied at the source code level, ~95,000 lines of design and research documentation — all built through 160+ commits of iterative refinement. The LLM accelerated the research; the human directed every question and made every decision.
 
-📖 **[Read the methodology →](https://dk26.github.io/iron-curtain-design-docs/14-METHODOLOGY.html)**
+📖 **[Read the methodology →](https://iron-curtain-engine.github.io/iron-curtain-design-docs/14-METHODOLOGY.html)**
 
 ## Project Status
 
 📐 **Design phase** — architecture documents in progress, implementation not yet started.
 
-📖 **[Read the full design documentation →](https://dk26.github.io/iron-curtain-design-docs/)**
+📖 **[Read the full design documentation →](https://iron-curtain-engine.github.io/iron-curtain-design-docs/)**
 
-🗺️ **[Implementation Milestones & Dependency Overlay →](https://dk26.github.io/iron-curtain-design-docs/18-PROJECT-TRACKER.html)** — execution order, priorities, and dependency-aware milestone planning (separate from the canonical roadmap)
+🗺️ **[Implementation Milestones & Dependency Overlay →](https://iron-curtain-engine.github.io/iron-curtain-design-docs/18-PROJECT-TRACKER.html)** — execution order, priorities, and dependency-aware milestone planning (separate from the canonical roadmap)
 
 ## Contributing
 
@@ -202,7 +202,7 @@ Red Alert, Tiberian Dawn, Command & Conquer, and C&C are trademarks of Electroni
 
 **Design documents** (everything in `src/` and `research/`) are licensed under [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). You may share and adapt this material with attribution and share-alike.
 
-**Engine source code** is licensed under [GPL v3](https://www.gnu.org/licenses/gpl-3.0.html) with an explicit modding exception (see [D051](https://dk26.github.io/iron-curtain-design-docs/09-DECISIONS.html)). The modding exception uses GPL v3 § 7 to clarify that YAML, Lua, and WASM mods loaded through the engine's data interfaces are NOT derivative works — modders choose their own license. Engine source modifications remain GPL v3.
+**Engine source code** is licensed under [GPL v3](https://www.gnu.org/licenses/gpl-3.0.html) with an explicit modding exception (see [D051](https://iron-curtain-engine.github.io/iron-curtain-design-docs/09-DECISIONS.html)). The modding exception uses GPL v3 § 7 to clarify that YAML, Lua, and WASM mods loaded through the engine's data interfaces are NOT derivative works — modders choose their own license. Engine source modifications remain GPL v3.
 
 ### Disclaimer
 
