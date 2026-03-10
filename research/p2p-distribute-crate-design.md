@@ -906,11 +906,307 @@ impl BlockListRevocationPolicy {
 
 ---
 
-## 2.8 Bucket-Based Scheduling
+## 2.8 Web Seeding & Multi-Source Downloads (Feature: `webseed`)
+
+Web seeding enables the piece scheduler to download pieces from HTTP endpoints **simultaneously** with BT peers, treating HTTP mirrors as "virtual peers" in a unified bandwidth pool. This addresses cold-start (empty/thin swarms), supplements P2P bandwidth with server capacity, and ensures content remains available even when no peers are online — without the binary HTTP-or-P2P fallback model.
+
+### 2.8.0 Historical Context & Motivation
+
+Early 2000s download managers (FlashGet, GetRight, Download Accelerator Plus, Free Download Manager) pioneered multi-source downloading: splitting a file into segments, fetching from multiple HTTP/FTP mirrors in parallel, pausing and resuming by requesting only missing byte ranges. BitTorrent formalized this with two BEPs:
+
+- **BEP 17 (HTTP Seeding, GetRight-style):** Adds an `httpseeds` key to torrent metadata listing URLs of complete file copies. The client issues HTTP Range requests for individual pieces, mapping BT piece offsets to byte ranges. The HTTP server needs no BT awareness — standard Range support suffices.
+- **BEP 19 (Web Seeding, Hoffman-style):** Adds a `url-list` key mapping torrent file paths to web URLs. More natural for multi-file torrents where each file has a distinct URL. Uses standard HTTP Range requests.
+
+The insight from aria2 (the gold-standard multi-source downloader): **don't model HTTP mirrors and BT peers as different subsystems — model them as different transports for the same piece scheduler.** The scheduler doesn't care where a piece comes from; it cares about latency, bandwidth, and piece availability.
+
+### 2.8.0a Design
+
+HTTP endpoints are modeled as `HttpSeedPeer` — a virtual peer in the connection pool that responds to piece requests via HTTP Range instead of BT wire protocol. The piece scheduler treats them identically to BT peers for scheduling decisions:
+
+```rust
+/// An HTTP endpoint that serves torrent content.
+/// Modeled as a virtual peer in the piece scheduler.
+pub struct HttpSeedPeer {
+    /// Base URL for piece requests.
+    url: Url,
+    /// BEP 17 (single URL, piece-offset Range) or BEP 19 (per-file URL mapping).
+    mode: WebSeedMode,
+    /// Current measured download rate from this endpoint (bytes/sec).
+    download_rate: AtomicU64,
+    /// Number of in-flight HTTP requests to this endpoint.
+    active_requests: AtomicU32,
+    /// Maximum concurrent requests to this endpoint (prevents server overload).
+    max_concurrent_requests: u32,
+    /// Consecutive failure count (for backoff).
+    consecutive_failures: AtomicU32,
+    /// Whether this endpoint supports HTTP Range requests (probed on first use).
+    supports_range: AtomicBool,
+}
+
+pub enum WebSeedMode {
+    /// BEP 17: single URL serves the entire torrent content.
+    /// Piece requests map to byte Range offsets.
+    HttpSeed { url: Url },
+    /// BEP 19: each file in the torrent has a distinct URL.
+    /// Piece requests map to file path + byte offset.
+    UrlList { base_url: Url },
+}
+```
+
+**Piece request flow for HTTP seeds:**
+
+```
+FUNCTION request_piece_from_http_seed(seed: HttpSeedPeer, piece_index: u32, piece_length: u32):
+    byte_offset = piece_index * torrent.piece_length
+    byte_end = byte_offset + piece_length - 1
+
+    MATCH seed.mode:
+        HttpSeed { url }:
+            // BEP 17: Range request against single URL (entire torrent as one file)
+            request = HTTP GET url
+                      Range: bytes={byte_offset}-{byte_end}
+            response = await http_client.send(request)
+            RETURN handle_http_response(seed, piece_index, response, byte_offset, byte_end)
+
+        UrlList { base_url }:
+            // BEP 19: map piece to file(s). A piece may span file boundaries
+            // in multi-file torrents, so we may need multiple Range requests.
+            segments = map_piece_to_file_segments(piece_index, piece_length)
+            // segments: Vec<(file_path, file_offset, length)>
+            // Single-file torrents always produce exactly one segment.
+            // Multi-file torrents produce 1..N segments when a piece
+            // straddles a file boundary.
+
+            IF segments.len() == 1:
+                (file_path, file_offset, length) = segments[0]
+                request = HTTP GET {base_url}/{file_path}
+                          Range: bytes={file_offset}-{file_offset + length - 1}
+                response = await http_client.send(request)
+                RETURN handle_http_response(seed, piece_index, response, file_offset, file_offset + length - 1)
+            ELSE:
+                // Multi-segment: issue one Range request per file, reassemble
+                piece_data = BytesMut::with_capacity(piece_length)
+                FOR (file_path, file_offset, length) IN segments:
+                    request = HTTP GET {base_url}/{file_path}
+                              Range: bytes={file_offset}-{file_offset + length - 1}
+                    response = await http_client.send(request)
+                    IF response.status == 206:
+                        piece_data.extend_from_slice(response.body)
+                    ELSE:
+                        seed.consecutive_failures.fetch_add(1)
+                        RETURN Err(HttpSeedError::PartialSegmentFailed)
+                // All segments received — verify the reassembled piece
+                verify_piece_hash(piece_index, piece_data)
+                RETURN Ok(piece_data)
+
+FUNCTION handle_http_response(seed, piece_index, response, byte_offset, byte_end) -> Result<Bytes>:
+    IF response.status == 206 (Partial Content):
+        verify_piece_hash(piece_index, response.body)
+        RETURN Ok(response.body)
+    ELSE IF response.status == 200 (no Range support):
+        // Server ignores Range header — downloading the entire object per
+        // piece request is prohibitively wasteful (full torrent for BEP 17,
+        // full file for BEP 19). Mark this seed unusable for piece-mode
+        // requests so the scheduler stops selecting it. Whole-file HTTP
+        // fallback (§ 8.4 in protocol design) handles non-Range servers.
+        seed.supports_range.store(false)
+        log::warn("HTTP seed {seed.url} lacks Range support — disabling for piece requests")
+        RETURN Err(HttpSeedError::NoRangeSupport)
+    ELSE:
+        seed.consecutive_failures.fetch_add(1)
+        RETURN Err(HttpSeedError::HttpStatus(response.status))
+
+// Maps a BT piece to one or more file segments. In single-file torrents this
+// always returns one segment. In multi-file torrents, a piece at a file
+// boundary produces multiple segments — the tail of one file and the head of
+// the next (the "piece spanning" case per BEP 19).
+//
+// Uses a fixed absolute endpoint (abs_end) rather than decrementing a
+// remaining counter, so segment bounds stay correct across file boundaries.
+FUNCTION map_piece_to_file_segments(piece_index, piece_length) -> Vec<(String, u64, u32)>:
+    abs_start = piece_index * torrent.piece_length
+    abs_end   = abs_start + piece_length   // exclusive byte position
+    segments = Vec::new()
+    file_offset_cursor = 0
+    FOR file IN torrent.files:
+        file_end = file_offset_cursor + file.length
+        IF abs_start < file_end AND file_offset_cursor < abs_end:
+            seg_file_start = max(abs_start, file_offset_cursor) - file_offset_cursor
+            seg_file_end   = min(abs_end,   file_end)           - file_offset_cursor
+            segments.push((file.path, seg_file_start, seg_file_end - seg_file_start))
+            IF abs_end <= file_end:
+                BREAK   // piece does not extend past this file
+        file_offset_cursor = file_end
+    RETURN segments
+```
+
+**Integration with piece scheduler:** The `select_peer_for_piece` function (§ 2 in protocol design) is extended to consider HTTP seeds alongside BT peers:
+
+```
+FUNCTION select_peer_for_piece(piece_index, available_peers, http_seeds, config) -> Option<PeerOrSeed>:
+    // HTTP seeds always "have" every piece (they serve the complete file)
+    bt_sources = available_peers
+        .filter(|p| p.has_piece(piece_index) AND p.state == Unchoked
+                AND p.request_count < MAX_REQUESTS_PER_PEER)
+        .map(|p| Source::BtPeer(p))
+
+    // Filter HTTP seeds: must support Range (piece-mode), must be under
+    // per-seed concurrency cap, must not be in failure backoff, and the
+    // global HTTP request budget must not be exhausted.
+    global_http_active = http_seeds.sum(|s| s.active_requests)
+    http_sources = http_seeds
+        .filter(|s| s.supports_range.load() == true
+                AND s.active_requests < s.max_concurrent_requests
+                AND s.consecutive_failures < BACKOFF_THRESHOLD
+                AND global_http_active < config.webseed.max_requests_global)
+        .map(|s| Source::HttpSeed(s))
+
+    // Bandwidth fraction gate: if the HTTP share of total download
+    // bandwidth already meets or exceeds max_bandwidth_fraction,
+    // exclude HTTP sources for this scheduling round.
+    IF config.webseed.max_bandwidth_fraction < 1.0:
+        total_dl_rate  = swarm_state.total_download_rate()
+        http_dl_rate   = http_seeds.sum(|s| s.download_rate)
+        IF total_dl_rate > 0 AND http_dl_rate / total_dl_rate >= config.webseed.max_bandwidth_fraction:
+            http_sources = empty   // HTTP at or above cap — BT only this round
+
+    // prefer_bt_peers policy: when enough BT peers have good rates,
+    // deprioritize HTTP seeds to preserve swarm reciprocity.
+    IF config.webseed.prefer_bt_peers:
+        healthy_bt = bt_sources
+            .filter(|s| s.download_rate >= config.webseed.bt_peer_rate_threshold)
+        IF healthy_bt.count() >= 2:
+            // Swarm is healthy — use BT peers first, HTTP seeds only
+            // if no BT peer can serve this piece
+            bt_pick = healthy_bt
+                .sort_by(download_rate DESC, active_requests ASC)
+                .first()
+            IF bt_pick IS SOME:
+                RETURN bt_pick
+            // Fall through: no healthy BT peer has this piece,
+            // allow HTTP seeds
+
+    // Default path (or prefer_bt_peers disabled, or swarm unhealthy):
+    // score all sources uniformly by rate and load
+    all_sources = bt_sources.chain(http_sources)
+        .sort_by(download_rate DESC, active_requests ASC)
+    RETURN all_sources.first()
+```
+
+**Torrent metadata extension:** Web seed URLs are standard torrent metadata fields:
+
+```python
+# BEP 17 — httpseeds key in torrent dict (outside info dict)
+{
+    "info": { ... },
+    "httpseeds": [
+        "https://workshop.example.com/packages/coolmod-2.1.0.icpkg",
+        "https://mirror2.example.com/packages/coolmod-2.1.0.icpkg"
+    ]
+}
+
+# BEP 19 — url-list key in torrent dict
+{
+    "info": { ... },
+    "url-list": [
+        "https://workshop.example.com/packages/"
+    ]
+}
+```
+
+### 2.8.0b Configuration
+
+```toml
+[webseed]
+# Enable web seeding (BEP 17 / BEP 19 HTTP sources)
+enabled = true
+
+# Maximum concurrent HTTP requests per web seed endpoint
+max_requests_per_seed = 4
+
+# Maximum concurrent HTTP requests globally (across all web seeds).
+# Enforced in select_peer_for_piece(): the scheduler sums active_requests
+# across all HttpSeedPeer instances and excludes HTTP sources when the
+# count reaches this cap.
+max_requests_global = 16
+
+# Connection timeout for HTTP seed requests (seconds)
+connect_timeout = 10
+
+# Request timeout for individual piece fetches (seconds)
+request_timeout = 60
+
+# Backoff: consecutive failure count before temporarily disabling a seed
+failure_backoff_threshold = 5
+
+# Backoff: how long to disable a failing seed (seconds)
+failure_backoff_duration = 300
+
+# Bandwidth allocation: maximum fraction of total download bandwidth
+# that HTTP seeds may consume (0.0–1.0). Prevents HTTP from starving
+# BT peers (which provide reciprocal upload value to the swarm).
+# Enforced in select_peer_for_piece(): each scheduling round computes
+# http_dl_rate / total_dl_rate from the EWMA download rate on each
+# source; when the ratio meets or exceeds this cap, HTTP sources are
+# excluded for that round. Bandwidth measurement uses the same
+# per-peer EWMA rate already maintained by the transfer stats module.
+max_bandwidth_fraction = 0.8
+
+# Prefer BT peers over HTTP seeds when the swarm is healthy.
+# When true, HTTP seeds are deprioritized if enough BT peers are
+# available with good transfer rates. This preserves swarm health
+# by keeping BT peer reciprocity active.
+prefer_bt_peers = true
+
+# Minimum BT peer transfer rate (bytes/sec) below which HTTP seeds
+# are used to supplement. Only applies when prefer_bt_peers = true.
+bt_peer_rate_threshold = 51200  # 50 KB/s
+```
+
+### 2.8.0c Interaction with Other Subsystems
+
+| Subsystem                                      | Interaction                                                                                                                                                       |
+| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Priority channels (§ 2 in protocol design)** | HTTP seeds participate in priority tiers. `LobbyUrgent` pieces can be fetched from HTTP seeds, bypassing the `prefer_bt_peers` preference.                        |
+| **Choking (§ 3 in protocol design)**           | HTTP seeds are never choked (they don't participate in tit-for-tat). They are purely download sources.                                                            |
+| **Endgame mode**                               | HTTP seeds receive duplicate requests alongside BT peers during endgame. First response wins; others are cancelled.                                               |
+| **Bandwidth QoS (§ Group 6)**                  | HTTP seed bandwidth counts against the global download rate limit. The `max_bandwidth_fraction` knob provides an additional HTTP-specific cap.                    |
+| **Connection pool bucketing (§ 2.9.2)**        | HTTP seeds do not consume BT connection pool slots. They use a separate HTTP connection pool.                                                                     |
+| **Revocation (§ 2.7)**                         | Revoked torrents stop HTTP seed requests immediately, same as BT transfers.                                                                                       |
+| **Resume/pause**                               | Pausing a torrent pauses HTTP seed requests. Resuming re-enables them. HTTP seeds provide natural resume via Range requests — only missing pieces are re-fetched. |
+
+### 2.8.0d Open-Source Study References
+
+The following open-source projects implement multi-source and/or web seed downloading. Their architectures informed this design:
+
+| Project                                                      | Language | License      | Key Study Value                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------------ | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [aria2](https://github.com/aria2/aria2)                      | C++      | GPL-2.0      | **Primary reference.** Unified `RequestGroup` + `SegmentMan` architecture downloads from HTTP + FTP + BitTorrent simultaneously. Studies how a single piece/segment scheduler allocates work across heterogeneous sources with different characteristics (latency, bandwidth, reliability). |
+| [libtorrent-rasterbar](https://github.com/arvidn/libtorrent) | C++      | BSD-3-Clause | Gold standard BT library with built-in BEP 17 + BEP 19 web seed support. `web_peer_connection` class treats HTTP endpoints as peer connections — the cleanest existing integration of web seeds into a BT piece scheduler. Already an IC study reference.                                   |
+| [Dragonfly2](https://github.com/dragonflyoss/Dragonfly2)     | Go       | Apache-2.0   | CNCF P2P distribution with "back-to-source" HTTP fallback that runs in parallel with P2P mesh. 7-level priority system (inspired IC's 3-tier). Production-proven at Alibaba scale. Already an IC study reference for peer scoring.                                                          |
+| [Uber Kraken](https://github.com/uber/kraken)                | Go       | Apache-2.0   | P2P Docker registry with HTTP Origin servers as permanent content sources alongside BT peer mesh. Clean separation of origin (HTTP) vs. P2P distribution — directly analogous to IC's Workshop server + peer swarm model.                                                                   |
+| [transmission](https://github.com/transmission/transmission) | C        | GPL-2.0+     | Simpler BT client with BEP 19 web seed support. Easier to read than libtorrent. Good for studying minimal web seed integration in a production client.                                                                                                                                      |
+| [Nydus](https://github.com/dragonflyoss/nydus)               | Rust     | Apache-2.0   | Rust-based container image service with on-demand P2P + HTTP hybrid downloading. Most relevant for Rust-specific async I/O patterns and trait design in a multi-source context.                                                                                                             |
+| [axel](https://github.com/axel-download-accelerator/axel)    | C        | GPL-2.0      | Minimalist multi-connection HTTP downloader (~3K lines). Clean implementation of segmented downloading and resume via Range requests. Studies the simplest possible multi-source HTTP architecture.                                                                                         |
+
+**Protocol specifications:**
+
+| Spec                                                               | What It Defines                                                                        |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| [BEP 17](https://www.bittorrent.org/beps/bep_0017.html)            | HTTP Seeding (GetRight-style): `httpseeds` key; client fetches pieces via HTTP Range   |
+| [BEP 19](https://www.bittorrent.org/beps/bep_0019.html)            | Web Seeding (Hoffman-style): `url-list` key; maps torrent file paths to web URLs       |
+| [RFC 5854](https://www.rfc-editor.org/rfc/rfc5854) (Metalink)      | XML metadata format listing multiple mirrors + hashes + P2P links for the same content |
+| [RFC 6249](https://www.rfc-editor.org/rfc/rfc6249) (Metalink/HTTP) | HTTP `Link:` headers with `rel=duplicate` advertising mirror URLs inline               |
+
+**Why not adopt aria2 directly?** aria2 is GPL-2.0 (incompatible with MIT/Apache-2.0 crate licensing), written in C++ (no WASM), and is a monolithic application rather than an embeddable library. But its architecture — particularly the unified segment scheduler across protocols — is the correct design pattern. `p2p-distribute`'s web seed implementation is informed by aria2's architecture without copying its code.
+
+---
+
+## 2.9 Bucket-Based Scheduling
 
 Several subsystems benefit from pre-partitioning entities into **buckets** — classified groups that replace flat linear scans with structured lookups. The crate uses bucket logic in three places: tracker-side peer selection, client-side connection pooling, and tracker-side content popularity classification. These are crate-level concerns — not application-specific — because they affect protocol-layer performance and fairness.
 
-### 2.8.1 Tracker-Side Peer Bucketing
+### 2.9.1 Tracker-Side Peer Bucketing
 
 The embedded tracker (§ 6) pre-classifies announced peers into a hierarchical bucket tree. On each announce response, the tracker walks buckets from best-match outward until the peer handout limit is filled — O(k) where k = number of buckets, not O(n) over all peers in the swarm.
 
@@ -1008,7 +1304,7 @@ region_source = "both"               # Default: "both" (requires `geoip` feature
 proportional_sampling = false        # Default: false (closest-first is better for latency)
 ```
 
-### 2.8.2 Connection Pool Bucketing by Transport
+### 2.9.2 Connection Pool Bucketing by Transport
 
 The client-side connection manager partitions connection slots by transport type. Each transport gets guaranteed minimum slots and a maximum cap. This prevents cross-transport starvation — a swarm heavy with browser peers cannot fill all slots with high-overhead WebRTC connections, starving high-quality desktop TCP connections.
 
@@ -1077,7 +1373,7 @@ FUNCTION evict_over_minimum_connection(excluding) -> bool:
 
 **Why this matters for IC:** Browser WASM clients use WebRTC, which has ~3x the connection overhead of TCP (DTLS handshake, SCTP negotiation, ICE candidate exchange). Without bucketing, a lobby with 80 browser clients and 20 desktop clients could saturate all connection slots with low-throughput WebRTC connections. Transport bucketing guarantees desktop peers retain capacity even when browser peers outnumber them. This is critical for IC's cross-platform multiplayer (D010) where desktop and browser clients interoperate in the same swarm.
 
-### 2.8.3 Content Popularity Bucketing (Tracker-Side)
+### 2.9.3 Content Popularity Bucketing (Tracker-Side)
 
 The embedded tracker automatically classifies content into popularity tiers based on recent announce frequency. This drives adaptive resource allocation — the seed box and tracker invest resources where they provide the most incremental value (the long tail), not where the swarm already self-serves (hot content).
 
@@ -1195,13 +1491,13 @@ pub struct TorrentTrackerStats {
 }
 ```
 
-### 2.8.4 Interaction Summary
+### 2.9.4 Interaction Summary
 
 | Bucket System                        | Where It Runs             | What It Replaces                              | Complexity                                  | Benefit                                                             |
 | ------------------------------------ | ------------------------- | --------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------- |
-| Peer bucketing (§ 2.8.1)             | Embedded tracker          | Flat O(n) peer scoring on every announce      | O(1) insert, O(k) lookup (k = bucket count) | Fast announce response for popular content; better locality         |
-| Connection pool buckets (§ 2.8.2)    | Client connection manager | Flat `max_connections_per_torrent` limit      | O(1) per-connect check                      | Prevents cross-transport starvation; guarantees transport diversity |
-| Content popularity buckets (§ 2.8.3) | Embedded tracker          | Equal bandwidth allocation across all content | O(1) tier lookup (EWMA pre-computed)        | Seed box focuses bandwidth on long-tail content                     |
+| Peer bucketing (§ 2.9.1)             | Embedded tracker          | Flat O(n) peer scoring on every announce      | O(1) insert, O(k) lookup (k = bucket count) | Fast announce response for popular content; better locality         |
+| Connection pool buckets (§ 2.9.2)    | Client connection manager | Flat `max_connections_per_torrent` limit      | O(1) per-connect check                      | Prevents cross-transport starvation; guarantees transport diversity |
+| Content popularity buckets (§ 2.9.3) | Embedded tracker          | Equal bandwidth allocation across all content | O(1) tier lookup (EWMA pre-computed)        | Seed box focuses bandwidth on long-tail content                     |
 
 All three systems are **optional and backward-compatible**. Disabling peer bucketing falls back to flat scoring. Disabling connection pool bucketing uses the single `max_connections_per_torrent` limit. Disabling popularity bucketing uses equal bandwidth allocation. The bucket systems compose independently — they can be enabled in any combination.
 
@@ -1306,7 +1602,7 @@ connection_timeout = 10              # Seconds before a pending connection is ab
 peer_timeout = 120                   # Seconds of inactivity before disconnecting a peer. Range: 30–600. Default: 120
 handshake_timeout = 10               # Seconds to complete the BT handshake. Range: 2–30. Default: 10
 
-# Transport-bucketed connection slots (§ 2.8.2)
+# Transport-bucketed connection slots (§ 2.9.2)
 # Partitions max_connections_per_torrent into per-transport guaranteed minimums
 # and hard caps. Prevents cross-transport starvation (e.g., WebRTC flooding TCP).
 enable_connection_buckets = true     # Enable transport-bucketed connection slots. Default: true
@@ -1719,6 +2015,7 @@ tracing-integration = ["dep:tracing"]  # tracing crate span integration
 channels = []                       # Content Channels — mutable, append-only versioned data streams (§ 2.5)
 streaming = []                      # Streaming piece selection strategies (§ 2.6)
 revocation = []                     # Revocation infrastructure — block list enforcement at protocol layer (§ 2.7)
+webseed = ["dep:reqwest"]           # BEP 17/19 HTTP web seeding — download pieces from HTTP mirrors alongside BT peers (§ 2.8)
 
 # ──── Optional functionality ────
 geoip = ["dep:maxminddb"]           # GeoIP peer location lookup
@@ -1729,7 +2026,8 @@ full = [
     "dht", "udp_tracker", "pex", "lsd", "utp", "encryption",
     "upnp_natpmp", "v2", "hybrid_v1_v2", "webrtc",
     "webapi", "rpc", "cli", "metrics", "tracing-integration",
-    "geoip", "plugins", "channels", "streaming", "revocation"
+    "geoip", "plugins", "channels", "streaming", "revocation",
+    "webseed"
 ]
 
 # Minimal — for deeply embedded use (just TCP BT wire protocol)
@@ -1934,7 +2232,7 @@ log_format = "json"
 tracing_network_spans = false
 ```
 
-> **Seed box note:** When a `PopularityClassifier` is registered, the `server_seedbox` profile automatically applies per-tier bandwidth weighting (§ 2.8.3). Cold and warm torrents receive proportionally more upload bandwidth than hot torrents, since hot swarms are self-sustaining. This ensures the seed box's limited uplink has maximum swarm health impact.
+> **Seed box note:** When a `PopularityClassifier` is registered, the `server_seedbox` profile automatically applies per-tier bandwidth weighting (§ 2.9.3). Cold and warm torrents receive proportionally more upload bandwidth than hot torrents, since hot swarms are self-sustaining. This ensures the seed box's limited uplink has maximum swarm health impact.
 
 ### 4.4 `lan_party`
 
@@ -2018,9 +2316,9 @@ pub struct TrackerConfig {
     pub min_announce_interval: u32,
     /// Access control: open (anyone), whitelist, or auth callback.
     pub access_mode: TrackerAccessMode,
-    /// Hierarchical peer bucketing for fast announce responses (§ 2.8.1).
+    /// Hierarchical peer bucketing for fast announce responses (§ 2.9.1).
     pub peer_buckets: PeerBucketConfig,
-    /// Content popularity classification for adaptive seed allocation (§ 2.8.3).
+    /// Content popularity classification for adaptive seed allocation (§ 2.9.3).
     pub popularity: PopularityConfig,
 }
 
@@ -2034,7 +2332,7 @@ pub enum TrackerAccessMode {
 }
 ```
 
-The embedded tracker speaks standard BEP 3/15/23 protocols and is interoperable with any standard BitTorrent client. The tracker does not need to be used with the embedded client — it can operate standalone as a lightweight tracker. When peer bucketing is enabled (§ 2.8.1), the tracker pre-classifies announced peers into a region × seed-status × transport hierarchy for O(k) announce responses instead of O(n) flat scoring. When popularity classification is enabled (§ 2.8.3), the tracker maintains per-torrent popularity tiers that drive adaptive seed box bandwidth allocation.
+The embedded tracker speaks standard BEP 3/15/23 protocols and is interoperable with any standard BitTorrent client. The tracker does not need to be used with the embedded client — it can operate standalone as a lightweight tracker. When peer bucketing is enabled (§ 2.9.1), the tracker pre-classifies announced peers into a region × seed-status × transport hierarchy for O(k) announce responses instead of O(n) flat scoring. When popularity classification is enabled (§ 2.9.3), the tracker maintains per-torrent popularity tiers that drive adaptive seed box bandwidth allocation.
 
 ---
 
@@ -2044,28 +2342,29 @@ This crate exists because IC needs it. But IC is not the only possible consumer 
 
 IC uses `p2p-distribute` across multiple subsystems, not just the Workshop:
 
-| IC Component                           | `p2p-distribute` Features Used                                                  | How It Uses `p2p-distribute`                                                                                                                                                              |
-| -------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `workshop-core` (D050)                 | `Session`, `StorageBackend`, `DiscoveryBackend`, `RevocationPolicy`, `channels` | Embeds `Session` for Workshop package download/upload. CAS blob storage. Workshop-aware peer discovery. Revocation enforcement from federation. Content channels for live metadata feeds. |
-| `ic-server` Workshop capability (D074) | `Session`, embedded tracker, `AuthPolicy`, `RevocationPolicy`                   | Permanent seeding + tracker for community server. Ed25519 community auth. Block list enforcement from moderation/DMCA decisions.                                                          |
-| `ic-server` relay capability (D074)    | `channels`                                                                      | Content channels for live server configuration distribution (balance patches, map rotation announcements) to connected players.                                                           |
-| `ic-game` lobby auto-download          | `Session` (via `workshop-core`), priority channels                              | Lobby-urgent priority scheduling for missing content when joining a game. Fast P2P download from lobby peers before match start.                                                          |
-| `ic-game` replay sharing               | `Session`, `StorageBackend`                                                     | P2P distribution of `.icrep` replay files. Players who watch a replay seed it. Community replay archives.                                                                                 |
-| `ic-game` update delivery              | `Session`, `streaming`                                                          | Game update distribution via P2P swarms, reducing CDN dependency. Streaming piece selection for progressive patching.                                                                     |
+| IC Component                           | `p2p-distribute` Features Used                                                  | How It Uses `p2p-distribute`                                                                                                                                                                   |
+| -------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `workshop-core` (D050)                 | `Session`, `StorageBackend`, `DiscoveryBackend`, `RevocationPolicy`, `channels` | Embeds `Session` for Workshop package download/upload. CAS blob storage. Workshop-aware peer discovery. Revocation enforcement from federation. Content channels for live metadata feeds.      |
+| `ic-server` Workshop capability (D074) | `Session`, embedded tracker, `AuthPolicy`, `RevocationPolicy`                   | Permanent seeding + tracker for community server. Ed25519 community auth. Block list enforcement from moderation/DMCA decisions.                                                               |
+| `ic-server` relay capability (D074)    | `channels`                                                                      | Content channels for live server configuration distribution (balance patches, map rotation announcements) to connected players.                                                                |
+| `ic-game` lobby auto-download          | `Session` (via `workshop-core`), priority channels                              | Lobby-urgent priority scheduling for missing content when joining a game. Fast P2P download from lobby peers before match start.                                                               |
+| `ic-game` replay sharing               | `Session`, `StorageBackend`                                                     | P2P distribution of `.icrep` replay files. Players who watch a replay seed it. Community replay archives.                                                                                      |
+| `ic-game` update delivery              | `Session`, `streaming`, `webseed`                                               | Game update distribution via P2P swarms with CDN web seed fallback. Streaming piece selection for progressive patching. Web seeds provide guaranteed baseline bandwidth from official mirrors. |
 
 **IC-specific extensions build on top of `p2p-distribute`'s traits:**
 
-| IC Extension            | Trait Used                   | What It Does                                                                                            |
-| ----------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Lobby-urgent priority   | `PriorityChannel::Custom(2)` | IC's lobby priority scheduling (D049 § piece picker) maps to `p2p-distribute`'s priority channel system |
-| Authenticated announce  | `AuthPolicy`                 | IC's Ed25519 tokens (see `research/p2p-engine-protocol-design.md` § ic_auth)                            |
-| Community peer filter   | `PeerFilter`                 | IC's community membership verification                                                                  |
-| CAS blob storage        | `StorageBackend`             | IC's content-addressed local deduplication store (D049)                                                 |
-| Workshop revocation     | `RevocationPolicy`           | Workshop federation revocation records feed the block list. Moderation and DMCA takedowns propagate.    |
-| Balance/config channels | Content Channels (§ 2.5)     | Live balance patch distribution, server config updates, tournament rule pushes                          |
-| Workshop metadata API   | External (not in crate)      | IC's manifest/search/dependency resolution sits above the P2P layer                                     |
+| IC Extension            | Trait Used                   | What It Does                                                                                                |
+| ----------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Lobby-urgent priority   | `PriorityChannel::Custom(2)` | IC's lobby priority scheduling (D049 § piece picker) maps to `p2p-distribute`'s priority channel system     |
+| Authenticated announce  | `AuthPolicy`                 | IC's Ed25519 tokens (see `research/p2p-engine-protocol-design.md` § ic_auth)                                |
+| Community peer filter   | `PeerFilter`                 | IC's community membership verification                                                                      |
+| CAS blob storage        | `StorageBackend`             | IC's content-addressed local deduplication store (D049)                                                     |
+| Workshop revocation     | `RevocationPolicy`           | Workshop federation revocation records feed the block list. Moderation and DMCA takedowns propagate.        |
+| Balance/config channels | Content Channels (§ 2.5)     | Live balance patch distribution, server config updates, tournament rule pushes                              |
+| CDN web seeding         | `HttpSeedPeer` (§ 2.8)       | Official CDN mirrors as web seeds for game updates — guaranteed baseline bandwidth even with zero P2P peers |
+| Workshop metadata API   | External (not in crate)      | IC's manifest/search/dependency resolution sits above the P2P layer                                         |
 
-**Wire protocol:** `p2p-distribute` implements standard BEP 3/5/9/10/11/14/15/23/29/52 wire protocol as described in `research/p2p-engine-protocol-design.md` §§ 1–7. IC-specific extensions (ic_auth, ic_priority) are negotiated via BEP 10 and implemented as `AuthPolicy` and `PriorityChannel` trait implementations, not as hardcoded protocol extensions in the crate.
+**Wire protocol:** `p2p-distribute` implements standard BEP 3/5/9/10/11/14/15/17/19/23/29/52 wire protocol as described in `research/p2p-engine-protocol-design.md` §§ 1–7, with BEP 17/19 web seeding support gated behind the `webseed` feature (§ 2.8). IC-specific extensions (ic_auth, ic_priority) are negotiated via BEP 10 and implemented as `AuthPolicy` and `PriorityChannel` trait implementations, not as hardcoded protocol extensions in the crate.
 
 ---
 
@@ -2101,6 +2400,7 @@ Per D076:
 | `bendy` or `serde_bencode`        | MIT               | Bencode serialization                        |
 | `quinn` (optional, future)        | MIT OR Apache-2.0 | QUIC transport (alternative to uTP)          |
 | `str0m` or `webrtc-rs` (optional) | MIT OR Apache-2.0 | WebRTC data channels                         |
+| `reqwest` (optional)              | MIT OR Apache-2.0 | HTTP client for BEP 17/19 web seeding        |
 
 ---
 
@@ -2270,7 +2570,7 @@ automatically with warnings. To suppress: run `p2p-distribute migrate-config`.
 **Duration:** 3–4 weeks
 
 **Deliverables:**
-- Full config schema (all 10 knob groups)
+- Full config schema (all 10 core knob groups; feature-specific groups like `[webseed]` ship with their feature milestone)
 - Config layering (built-in → profile → file → per-torrent → runtime)
 - Config validation with structured error messages
 - All four built-in profiles
@@ -2348,7 +2648,7 @@ automatically with warnings. To suppress: run `p2p-distribute migrate-config`.
 - External IP discovery (from tracker `yourip`, UPnP, STUN)
 - LSD (BEP 14 multicast local peer discovery)
 - Feature-gated: all behind `upnp_natpmp`, `utp`, `lsd` flags
-- **Connection pool bucketing by transport (§ 2.8.2):**
+- **Connection pool bucketing by transport (§ 2.9.2):**
   - `ConnectionBuckets` implementation with per-transport min/max slots
   - Slot allocation algorithm (TCP, uTP, WebRTC guaranteed minimums)
   - Dynamic redistribution when a transport is disabled
@@ -2380,7 +2680,26 @@ automatically with warnings. To suppress: run `p2p-distribute migrate-config`.
 
 **Exit criteria:** Content channels propagate snapshots to subscribers within 5 seconds. Streaming hybrid strategy maintains playback continuity while contributing to swarm health. Revocation of an active torrent stops all transfers within 1 second.
 
-### Milestone 9: v2/Hybrid Support
+### Milestone 9: Web Seeding & Multi-Source Downloads
+
+**Duration:** 3–4 weeks (feature-gated: `webseed`)
+
+**Deliverables:**
+- `HttpSeedPeer` virtual peer implementation (BEP 17 `httpseeds` + BEP 19 `url-list`)
+- HTTP Range request piece fetching with resume support
+- Piece scheduler integration: HTTP seeds scored alongside BT peers
+- Bandwidth allocation: `max_bandwidth_fraction` limiter, `prefer_bt_peers` logic
+- Backoff and failure handling: consecutive failure threshold, exponential backoff
+- Range support probing: detect servers without Range support, exclude from piece-mode (whole-file HTTP fallback only)
+- `[webseed]` configuration group (§ 2.8.0b)
+- Multi-file torrent support (BEP 19 file-to-URL mapping with piece-spanning reassembly)
+- Integration tests: hybrid download from BT swarm + HTTP seed simultaneously
+- Integration tests: HTTP-seed-only download (empty swarm), resume after pause
+- Interop tests: verify web seed URLs work with libtorrent/Transmission web seed torrents
+
+**Exit criteria:** A torrent with `httpseeds` or `url-list` metadata downloads pieces from HTTP endpoints and BT peers simultaneously. HTTP seeds supplement thin swarms. Pausing and resuming re-fetches only missing pieces. `prefer_bt_peers` correctly deprioritizes HTTP when the swarm is healthy.
+
+### Milestone 10: v2/Hybrid Support
 
 **Duration:** 3–4 weeks (feature-gated, can be deferred)
 
@@ -2394,7 +2713,7 @@ automatically with warnings. To suppress: run `p2p-distribute migrate-config`.
 
 **Exit criteria:** Client can download and seed v2 and hybrid torrents. v1 and v2 peers interoperate on hybrid torrents.
 
-### Milestone 10: Control Surfaces
+### Milestone 11: Control Surfaces
 
 **Duration:** 3–4 weeks
 
@@ -2412,12 +2731,12 @@ automatically with warnings. To suppress: run `p2p-distribute migrate-config`.
 - **CLI** (`cli` feature): `p2p-distribute` binary with subcommands:
   - `download <magnet|torrent>`, `seed <dir>`, `status`, `config`, `profile`
 - **Embedded tracker** (in `webapi`): HTTP announce/scrape, optional UDP
-- **Tracker-side peer bucketing (§ 2.8.1):**
+- **Tracker-side peer bucketing (§ 2.9.1):**
   - `PeerBucketTree` implementation (region × seed_status × transport)
   - Hierarchical `RegionKey` (continent|country|region|city) with GeoIP-sourced classification
   - Closest-outward bucket walk on announce response
   - Integration test: simulated multi-region swarm verifies locality-better peer lists
-- **Content popularity bucketing (§ 2.8.3):**
+- **Content popularity bucketing (§ 2.9.3):**
   - `PopularityTier` classification (Hot/Warm/Cold/Frozen) with EWMA + hysteresis
   - Seed box bandwidth weight allocation per tier
   - `PopularityClassifier` trait with default EWMA implementation
@@ -2427,7 +2746,7 @@ automatically with warnings. To suppress: run `p2p-distribute migrate-config`.
 
 **Exit criteria:** A headless daemon can be fully controlled via web API and CLI. Metrics endpoint produces valid Prometheus output. Embedded tracker produces locality-optimized peer lists via bucket walk. Popularity tiers are stable at boundaries (no flapping within 10-minute hysteresis window).
 
-### Milestone 11: Hardening & Completion
+### Milestone 12: Hardening & Completion
 
 **Duration:** 4–6 weeks
 
@@ -2445,7 +2764,7 @@ automatically with warnings. To suppress: run `p2p-distribute migrate-config`.
 - `cargo-deny` configured: reject GPL, audit advisories
 - Publish to crates.io
 
-**Exit criteria:** All acceptance criteria met (see § 11). No known crashes from fuzzing. Performance gates pass. Documentation complete.
+**Exit criteria:** All acceptance criteria met (see § 12). No known crashes from fuzzing. Performance gates pass. Documentation complete.
 
 ---
 
@@ -2479,20 +2798,22 @@ The crate is considered **successful** when all of the following are true:
 
 13. **Streaming selection works:** `StreamingHybrid` strategy delivers pieces sequentially near the cursor while maintaining rarest-first for the rest of the swarm. Dynamic cursor repositioning works without restarting the torrent.
 
-14. **Bucket-based scheduling works:** Tracker-side peer bucketing produces locality-better peer lists than flat scoring (measured via simulated multi-region swarm). Connection pool bucketing enforces transport-type minimum guarantees under contention. Content popularity classification correctly categorizes into tiers with EWMA + hysteresis stability (no flapping at tier boundaries in 10-minute test window).
+14. **Web seeding works end-to-end:** A torrent with `httpseeds` (BEP 17) or `url-list` (BEP 19) metadata downloads pieces simultaneously from HTTP endpoints and BT peers. HTTP seeds supplement thin swarms and fill gaps during cold-start. Pause and resume re-fetches only missing pieces via Range requests. The `prefer_bt_peers` setting correctly deprioritizes HTTP sources when the BT swarm is healthy. Failing HTTP seeds are backed off without affecting BT peer transfers.
+
+15. **Bucket-based scheduling works:** Tracker-side peer bucketing produces locality-better peer lists than flat scoring (measured via simulated multi-region swarm). Connection pool bucketing enforces transport-type minimum guarantees under contention. Content popularity classification correctly categorizes into tiers with EWMA + hysteresis stability (no flapping at tier boundaries in 10-minute test window).
 
 ---
 
 ## Cross-References
 
-| Document                                            | Relationship                                                                                                                                                                                        |
-| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `research/p2p-engine-protocol-design.md`            | Wire-level protocol spec (BEP 3/5/9/10/15, IC extensions, WebRTC signaling, icpkg header). `p2p-distribute` implements the protocol-standard subset; IC-specific extensions are layered via traits. |
-| `research/bittorrent-p2p-libraries.md`              | Ecosystem study. Informed build-vs-adopt decisions. `librqbit` (Apache-2.0) is the primary Rust reference.                                                                                          |
-| `src/decisions/09a/D076-standalone-crates.md`       | `p2p-distribute` is Tier 3 (Phase 5–6a). MIT OR Apache-2.0. Separate repo.                                                                                                                          |
-| `src/decisions/09c/D050-workshop-library.md`        | Workshop as cross-project library. `workshop-core` is the middle layer between `p2p-distribute` (transport) and game integration. Three-layer model: `p2p-distribute` → `workshop-core` → IC.       |
-| `src/decisions/09e/D049-workshop-assets.md`         | Workshop P2P delivery strategy, `.icpkg` format, CAS storage, peer scoring. `p2p-distribute` is the engine; D049 is the IC integration layer.                                                       |
-| `src/decisions/09b/D074-community-server-bundle.md` | `ic-server` Workshop capability uses `p2p-distribute` for permanent seeding. Relay capability uses content channels for live config distribution.                                                   |
-| `src/modding/workshop.md`                           | Workshop user experience, auto-download, modpacks, revocation propagation. Sits above `p2p-distribute`.                                                                                             |
-| `research/p2p-federated-registry-analysis.md`       | Competitive landscape (Uber Kraken, Dragonfly, IPFS). Informed peer scoring, scheduling, and architecture.                                                                                          |
-| `src/decisions/09e/D052-community-servers.md`       | Ed25519 credential system. `AuthPolicy` implementations validate IC's signed credential records. Revocation policy cross-references community trust infrastructure.                                 |
+| Document                                            | Relationship                                                                                                                                                                                              |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `research/p2p-engine-protocol-design.md`            | Wire-level protocol spec (BEP 3/5/9/10/15/17/19, IC extensions, WebRTC signaling, icpkg header). `p2p-distribute` implements the protocol-standard subset; IC-specific extensions are layered via traits. |
+| `research/bittorrent-p2p-libraries.md`              | Ecosystem study. Informed build-vs-adopt decisions. `librqbit` (Apache-2.0) is the primary Rust reference.                                                                                                |
+| `src/decisions/09a/D076-standalone-crates.md`       | `p2p-distribute` is Tier 3 (Phase 5–6a). MIT OR Apache-2.0. Separate repo.                                                                                                                                |
+| `src/decisions/09c/D050-workshop-library.md`        | Workshop as cross-project library. `workshop-core` is the middle layer between `p2p-distribute` (transport) and game integration. Three-layer model: `p2p-distribute` → `workshop-core` → IC.             |
+| `src/decisions/09e/D049-workshop-assets.md`         | Workshop P2P delivery strategy, `.icpkg` format, CAS storage, peer scoring. `p2p-distribute` is the engine; D049 is the IC integration layer.                                                             |
+| `src/decisions/09b/D074-community-server-bundle.md` | `ic-server` Workshop capability uses `p2p-distribute` for permanent seeding. Relay capability uses content channels for live config distribution.                                                         |
+| `src/modding/workshop.md`                           | Workshop user experience, auto-download, modpacks, revocation propagation. Sits above `p2p-distribute`.                                                                                                   |
+| `research/p2p-federated-registry-analysis.md`       | Competitive landscape (Uber Kraken, Dragonfly, IPFS). Informed peer scoring, scheduling, and architecture.                                                                                                |
+| `src/decisions/09e/D052-community-servers.md`       | Ed25519 credential system. `AuthPolicy` implementations validate IC's signed credential records. Revocation policy cross-references community trust infrastructure.                                       |

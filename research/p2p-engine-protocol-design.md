@@ -387,6 +387,12 @@ Priority assignment for newly discovered pieces:
 - If piece belongs to a package the user explicitly requested → `UserRequested`
 - Otherwise → `Background`
 
+### 2.6 Web Seed Integration
+
+When the `webseed` feature is enabled (`p2p-distribute-crate-design.md` § 2.8), HTTP mirrors join the connection pool as `HttpSeedPeer` virtual peers. They participate in `select_peer_for_piece()` alongside BT peers and are scored by download rate. By default the `prefer_bt_peers` policy biases the scheduler toward BT peers when the swarm is healthy (≥ 2 BT peers above `bt_peer_rate_threshold`), preserving swarm reciprocity. When the swarm is thin or the policy is disabled, all sources are scored uniformly by rate — the scheduler picks the fastest source regardless of transport.
+
+Web seed peers always report a complete bitfield (they have all pieces) and are never choked. Their rarity contribution is excluded from `rarity[]` counts to avoid inflating rarity estimates — actual BT peer rarity drives piece selection order. Seeds that lack HTTP Range support are automatically excluded from piece-mode requests (only whole-file HTTP fallback applies). Request limiting for web seeds is handled by `max_requests_per_seed` and `max_requests_global` configuration (see `p2p-distribute-crate-design.md` § 2.8.0b).
+
 ---
 
 ## 3. Choking Algorithm
@@ -493,8 +499,6 @@ When IC is seeding (has all pieces), the upload strategy changes:
 - **Regular unchoke:** Unchoke the 4 interested peers with the **lowest** completion percentage. This helps newcomers complete faster, which in turn creates more seeders.
 - **Optimistic unchoke:** Same as leech mode — random choked interested peer every 30 seconds.
 - **Lobby exemption:** Still applies. Lobby peers are never choked.
-
-> **Interaction with bucket-based scheduling:** When connection pool bucketing (§ 2.8.2 in `research/p2p-distribute-crate-design.md`) is enabled, the set of connected peers is pre-filtered by transport type — guaranteed minimum slots for TCP, uTP, and WebRTC prevent any single transport from monopolizing the connection table. The choking algorithm operates on the *connected* peer set without modification; bucketing shapes *which* peers are connected, choking shapes *which* connected peers receive data. Tracker-side peer bucketing (§ 2.8.1) similarly shapes the *candidate* peer set by locality before connections are established.
 
 ---
 
@@ -1019,9 +1023,9 @@ interface IcPieceStore {
 
 **Eviction policy:** LRU by `cached_at`, with a configurable max cache size (default: 500 MB). Pieces belonging to actively-used packages are pinned and exempt from eviction.
 
-### 8.4 HTTP Fallback
+### 8.4 HTTP Fallback & Web Seeding
 
-When P2P is unavailable (no WebRTC peers, restrictive network, or WASM build without WebRTC support), the browser client falls back to HTTP Range requests against the Workshop server's REST API:
+**Fallback mode (WASM or restricted networks).** When P2P is unavailable (no WebRTC peers, restrictive network, or WASM build without WebRTC support), the browser client falls back to HTTP Range requests against the Workshop server's REST API:
 
 ```http
 GET /api/v1/packages/coolmodder/awesome-tanks/2.1.0/piece/42 HTTP/1.1
@@ -1040,20 +1044,33 @@ Range: bytes=4096-
 
 The HTTP fallback is intentionally simple — it is a degraded mode, not the primary delivery mechanism. The Workshop server serves the same bytes over HTTP that it seeds over BT.
 
+**Hybrid web seeding mode (BEP 17/19).** When the `webseed` feature is enabled in `p2p-distribute`, HTTP mirrors participate **simultaneously** alongside BT peers in the piece scheduler — not as a fallback, but as a concurrent transport. This is the aria2 model: the scheduler doesn't care whether a piece comes from a BT peer or an HTTP Range request.
+
+- **BEP 17 (GetRight-style):** The torrent metadata contains an `httpseeds` key listing seed URLs. The client maps piece indices to byte ranges and fetches via `Range: bytes=<start>-<end>` headers.
+- **BEP 19 (Hoffman-style):** The torrent metadata contains a `url-list` key. For single-file torrents (all `.icpkg` files), URLs map directly to the file. Multi-file torrents map file paths to URL suffixes.
+
+HTTP mirrors are modeled as `HttpSeedPeer` virtual peers in the connection pool. They participate in the same piece picker algorithm (§ 2) and are scored alongside BT peers by download rate. When the `prefer_bt_peers` policy is active (default) and the BT swarm is healthy, the scheduler favors BT peers to preserve reciprocity; HTTP seeds absorb the remaining demand or take over when the swarm is thin. When the policy is disabled, the scheduler picks whichever source is fastest regardless of transport. Seeds that do not support HTTP Range requests are excluded from piece-mode and handled only by the whole-file HTTP fallback path (§ 8.4). See `p2p-distribute-crate-design.md` § 2.8 for the full design, including per-seed request caps, global bandwidth fraction limits, and failure backoff.
+
+**Key difference from pure fallback:** In fallback mode, HTTP and P2P are mutually exclusive (P2P fails → HTTP activates). In web seeding mode, HTTP and P2P run concurrently — a download aggregates bandwidth from both transports. This is particularly valuable for:
+- **Initial swarm bootstrapping:** HTTP seeds provide guaranteed bandwidth before enough BT peers join.
+- **Game update delivery:** CDN mirrors as web seeds ensure baseline download speed even during launch-day swarm formation.
+- **Long-tail content:** Obscure Workshop packages with few seeders still download fast when web seeds are available.
+
 ### 8.5 Feature Matrix by Platform
 
-| Feature                              | Desktop (Native)               | Browser (WASM)                       |
-| ------------------------------------ | ------------------------------ | ------------------------------------ |
-| TCP BT wire protocol                 | Yes                            | No                                   |
-| uTP transport                        | Yes                            | No                                   |
-| WebRTC data channel                  | Yes (bridge mode)              | Yes (primary)                        |
-| DHT participation                    | Yes (full)                     | No (no UDP)                          |
-| Persistent seeding                   | Yes (background process)       | No (page lifetime only)              |
-| Piece cache                          | Disk (content-addressed store) | IndexedDB                            |
-| HTTP fallback                        | Yes                            | Yes                                  |
-| Bandwidth control                    | Full (upload/download limits)  | Limited (no OS-level socket control) |
-| Authenticated announce (UDP tracker) | Yes                            | No (uses WS announce)                |
-| Authenticated announce (WS tracker)  | Yes                            | Yes                                  |
+| Feature                              | Desktop (Native)               | Browser (WASM)                                                                              |
+| ------------------------------------ | ------------------------------ | ------------------------------------------------------------------------------------------- |
+| TCP BT wire protocol                 | Yes                            | No                                                                                          |
+| uTP transport                        | Yes                            | No                                                                                          |
+| WebRTC data channel                  | Yes (bridge mode)              | Yes (primary)                                                                               |
+| DHT participation                    | Yes (full)                     | No (no UDP)                                                                                 |
+| Persistent seeding                   | Yes (background process)       | No (page lifetime only)                                                                     |
+| Piece cache                          | Disk (content-addressed store) | IndexedDB                                                                                   |
+| HTTP fallback                        | Yes                            | Yes                                                                                         |
+| BEP 17/19 web seeding                | Yes (feature-gated: `webseed`) | Yes (feature-gated: `webseed`; mirrors must be CORS-enabled for cross-origin Range fetches) |
+| Bandwidth control                    | Full (upload/download limits)  | Limited (no OS-level socket control)                                                        |
+| Authenticated announce (UDP tracker) | Yes                            | No (uses WS announce)                                                                       |
+| Authenticated announce (WS tracker)  | Yes                            | Yes                                                                                         |
 
 ---
 
@@ -1442,12 +1459,13 @@ pub enum IcpkgError {
 
 ## Cross-References
 
-| Document                                                      | Relationship                                                                                                                                                        |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **D049** (Workshop Asset Formats & Distribution)              | Defines P2P distribution strategy, peer scoring formula, seeding config, `.icpkg` format concepts. This document specifies the wire-level implementation.           |
-| **D052** (Community Servers with Portable Signed Credentials) | Defines Ed25519 identity system, SCR format. IC auth tokens (§ 4) use the same Ed25519 key infrastructure.                                                          |
-| **D074** (Community Server Bundle)                            | Defines `ic-server` as unified binary, Workshop-as-BT-seeder philosophy, capability flags, Content Advisory Records. This document provides the protocol internals. |
-| **research/bittorrent-p2p-libraries.md**                      | Design study of existing P2P implementations. Architectural decisions referenced here are grounded in that study.                                                   |
+| Document                                                      | Relationship                                                                                                                                                                                            |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **D049** (Workshop Asset Formats & Distribution)              | Defines P2P distribution strategy, peer scoring formula, seeding config, `.icpkg` format concepts. This document specifies the wire-level implementation.                                               |
+| **D052** (Community Servers with Portable Signed Credentials) | Defines Ed25519 identity system, SCR format. IC auth tokens (§ 4) use the same Ed25519 key infrastructure.                                                                                              |
+| **D074** (Community Server Bundle)                            | Defines `ic-server` as unified binary, Workshop-as-BT-seeder philosophy, capability flags, Content Advisory Records. This document provides the protocol internals.                                     |
+| **research/bittorrent-p2p-libraries.md**                      | Design study of existing P2P implementations. Architectural decisions referenced here are grounded in that study.                                                                                       |
+| **research/p2p-distribute-crate-design.md** § 2.8             | Web seeding & multi-source download design (BEP 17/19). `HttpSeedPeer` virtual peer model, piece scheduler integration, configuration. § 8.4 of this document describes the protocol-level integration. |
 
 ---
 
@@ -1484,7 +1502,7 @@ Clients can exploit this to inspect a package's manifest *before* committing to 
 3. Check name, version, dependencies, file list, license metadata, `ai_usage` flags — all without downloading the payload.
 4. If acceptable, continue downloading pieces 1..N. If not (wrong version, missing dependency, license conflict), disconnect without wasting bandwidth.
 
-**Priority integration:** Piece 0 is always assigned `lobby-urgent` priority in the piece picker (§ 6). When the client begins a new download, piece 0 is requested immediately from all connected peers, overriding rarest-first ordering. Once piece 0 is received and the manifest is validated, the remaining pieces revert to standard rarest-first scheduling.
+**Priority integration:** Piece 0 is always assigned `lobby-urgent` priority in the piece picker (§ 2). When the client begins a new download, piece 0 is requested immediately from all connected peers, overriding rarest-first ordering. Once piece 0 is received and the manifest is validated, the remaining pieces revert to standard rarest-first scheduling.
 
 ### 10.4 CAS Dedup vs. BT Immutability
 
@@ -1518,6 +1536,8 @@ Workshop packages under 256 KiB (single piece) are common: individual maps, bala
 
 This aligns with the size strategy table in D049 (< 5 MB → HTTP direct only), but enforces a hard floor at the piece level to avoid degenerate single-piece swarms.
 
+**Web seed interaction:** When multiple HTTP mirrors are available for a package, small packages that fall below the BT threshold benefit from multi-mirror HTTP downloads — the client issues parallel Range requests against different mirror URLs listed in the Workshop registry. This is plain multi-mirror HTTP, not BEP 17/19 web seeding (which requires torrent metadata that doesn't exist for sub-threshold packages). Medium-sized packages (5–50 MB) that do establish BT swarms gain the most from hybrid web seeding: the BT swarm provides peer bandwidth while web seeds guarantee a baseline rate, producing faster aggregate downloads than either transport alone.
+
 ### 10.6 Info Dictionary Format
 
 The `.torrent` info dictionary for `.icpkg` packages follows standard BEP 3 single-file format (bencoded):
@@ -1544,6 +1564,6 @@ The info hash announced to the tracker (§ 4) and exchanged in the handshake (§
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **D049** (Workshop Asset Formats & Distribution) | Defines `.icpkg` binary layout (4,096-byte header + ZIP), CAS blob store, manifest schema, size-based delivery strategy. This section specifies the BT piece mapping for that format. |
 | **D030** (Workshop Registry & Dependency System) | Defines package identities, versioning, dependency resolution. Package naming in § 10.6 follows D030 conventions.                                                                     |
-| **§ 6** (Piece Picker & Priority Channels)       | `lobby-urgent` priority channel used for piece 0 manifest-only fetch (§ 10.3).                                                                                                        |
-| **§ 5** (Choking Algorithm)                      | Upload slot allocation applies unchanged — small packages bypass BT entirely (§ 10.5), large packages use standard choking.                                                           |
+| **§ 2** (Piece Picker & Priority Channels)       | `lobby-urgent` priority channel used for piece 0 manifest-only fetch (§ 10.3).                                                                                                        |
+| **§ 3** (Choking Algorithm)                      | Upload slot allocation applies unchanged — small packages bypass BT entirely (§ 10.5), large packages use standard choking.                                                           |
 | **§ 4** (Tracker Protocol)                       | Announce/scrape for `.icpkg` torrents uses the IC-extended UDP tracker protocol with auth tokens.                                                                                     |
