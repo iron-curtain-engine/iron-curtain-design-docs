@@ -1,6 +1,8 @@
 # Foreword — Why I'm Building This
 
-![Iron Curtain Logo](images/logo.png)
+<p align="center">
+  <img src="images/logo.png" alt="Iron Curtain Logo" width="200">
+</p>
 
 I've been a Red Alert fan since the first game came out. I was a kid, playing at a friend's house over what we'd now call a "LAN" — two ancient computers connected with a cable. I was hooked. The cutscenes, the music, building a base and watching your stuff fight. I would literally go to any friend's house that could run this game just to play it.
 

@@ -8,10 +8,11 @@ language = "en"
 build-dir = "docs"
 
 [output.html]
+theme = "src/theme"
 git-repository-url = "https://github.com/iron-curtain-engine/iron-curtain-design-docs"
 edit-url-template = "https://github.com/iron-curtain-engine/iron-curtain-design-docs/edit/main/{path}"
-favicon-png = "images/logo.png"
-additional-css = []
+default-theme = "navy"
+additional-css = ["css/sidebar-logo.css"]
 
 # License: Design documents (src/, research/) are CC BY-SA 4.0.
 # Engine code license is pending (P006). See LICENSE-DOCS.

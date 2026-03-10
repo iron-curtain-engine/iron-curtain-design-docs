@@ -1,6 +1,8 @@
 # Iron Curtain — Design Documentation
 
-![Iron Curtain Logo](images/logo.png)
+<p align="center">
+  <img src="images/logo.png" alt="Iron Curtain Logo" width="200">
+</p>
 
 ## Project: Rust-Native RTS Engine
 
