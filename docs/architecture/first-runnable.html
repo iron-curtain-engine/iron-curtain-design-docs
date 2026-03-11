@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-04514734.js";
+            window.path_to_searchindex_js = "../searchindex-4312bfdc.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-9adfe301.js"></script>
@@ -207,8 +207,8 @@
 </table>
 </div>
 <h3 id="implementation-steps"><a class="header" href="#implementation-steps">Implementation Steps</a></h3>
-<h4 id="step-1-ra-formats--parse-everything-weeks-12"><a class="header" href="#step-1-ra-formats--parse-everything-weeks-12">Step 1: <code>ra-formats</code> — Parse Everything (Weeks 1–2)</a></h4>
-<p>Build the <code>ra-formats</code> crate to read all Red Alert binary formats. This is pure Rust with zero Bevy dependency — a standalone library that other tools could use.</p>
+<h4 id="step-1-cnc-formats--ra-formats--parse-everything-weeks-12"><a class="header" href="#step-1-cnc-formats--ra-formats--parse-everything-weeks-12">Step 1: <code>cnc-formats</code> + <code>ra-formats</code> — Parse Everything (Weeks 1–2)</a></h4>
+<p>Build the <code>cnc-formats</code> crate (MIT/Apache-2.0, standalone) to read all Red Alert binary formats — pure Rust, zero Bevy dependency. Then build <code>ra-formats</code> (GPL, IC monorepo) as a thin wrapper adding EA-derived constants and Bevy asset integration.</p>
 <p><strong>Deliverables:</strong></p>
 <div class="table-wrapper">
 <table>
@@ -225,11 +225,11 @@
 </tbody>
 </table>
 </div>
-<p><strong>Key implementation detail:</strong> MIX archives use a CRC32 hash of the filename (uppercased) as the lookup key — there’s no filename stored in the archive. <code>ra-formats</code> must include the hash function and a known-filename dictionary (from OpenRA’s <code>global.mix</code> filenames list) to resolve entries by name.</p>
+<p><strong>Key implementation detail:</strong> MIX archives use a CRC32 hash of the filename (uppercased) as the lookup key — there’s no filename stored in the archive. <code>cnc-formats</code> must include the hash function and a known-filename dictionary (from OpenRA’s <code>global.mix</code> filenames list) to resolve entries by name.</p>
 <p><strong>Test strategy:</strong> Parse every <code>.mix</code> from a stock Red Alert installation. Extract every <code>.shp</code> and verify frame counts match OpenRA’s <code>sequences/*.yaml</code>. Render every <code>.pal</code> as a 16×16 color grid PNG.</p>
 <h4 id="step-2-bevy-window--one-sprite-week-3"><a class="header" href="#step-2-bevy-window--one-sprite-week-3">Step 2: Bevy Window + One Sprite (Week 3)</a></h4>
 <p>The “Hello RA” moment — a Bevy window opens and displays a single Red Alert sprite with the correct palette applied.</p>
-<p><strong>What this proves:</strong> <code>ra-formats</code> output can flow into Bevy’s <code>Image</code> / <code>TextureAtlas</code> pipeline. Palette-indexed sprites render correctly on a GPU.</p>
+<p><strong>What this proves:</strong> <code>cnc-formats</code> → <code>ra-formats</code> output can flow into Bevy’s <code>Image</code> / <code>TextureAtlas</code> pipeline. Palette-indexed sprites render correctly on a GPU.</p>
 <p><strong>Implementation:</strong></p>
 <ol>
 <li>Load <code>conquer.mix</code> → extract <code>e1.shp</code> (rifle infantry) and <code>temperat.pal</code></li>

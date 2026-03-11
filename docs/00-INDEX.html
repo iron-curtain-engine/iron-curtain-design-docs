@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-04514734.js";
+            window.path_to_searchindex_js = "searchindex-4312bfdc.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-9adfe301.js"></script>
@@ -245,7 +245,7 @@
 </ol>
 <h2 id="crate-structure-overview"><a class="header" href="#crate-structure-overview">Crate Structure Overview</a></h2>
 <pre><code>iron-curtain/
-├── ra-formats     # .mix, .shp, .pal, YAML parsing, MiniYAML converter (C&amp;C-specific, keeps ra- prefix)
+├── ra-formats     # Wraps cnc-formats + EA-derived code; Bevy asset integration; MiniYAML auto-conversion pipeline (C&amp;C-specific, keeps ra- prefix)
 ├── ic-protocol    # PlayerOrder, TimestampedOrder, OrderCodec trait (SHARED boundary)
 ├── ic-sim         # Deterministic simulation (Bevy FixedUpdate systems)
 ├── ic-net         # NetworkModel trait + implementations; RelayCore library (no ic-sim dependency)

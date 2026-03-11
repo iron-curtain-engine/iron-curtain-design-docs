@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-04514734.js";
+            window.path_to_searchindex_js = "../searchindex-4312bfdc.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-9adfe301.js"></script>
@@ -233,7 +233,7 @@ Canonical design authority: <code>https://github.com/AE26/iron-curtain-design-do
 </thead>
 <tbody>
 <tr><td><code>crates/ic-protocol/</code></td><td>Shared wire types</td><td>Boundary crate between sim and net</td></tr>
-<tr><td><code>crates/ra-formats/</code></td><td>RA1 asset parsers</td><td>Standalone, no game dependencies</td></tr>
+<tr><td><code>crates/ra-formats/</code></td><td>RA1 asset pipeline wrapper</td><td>Wraps <code>cnc-formats</code> + EA-derived code; Bevy <code>AssetSource</code> integration</td></tr>
 <tr><td><code>crates/ic-paths/</code></td><td>Platform path resolution + credential store</td><td>Standalone, wraps <code>app-path</code> + <code>strict-path</code> + <code>keyring</code> + <code>aes-gcm</code> + <code>argon2</code> + <code>zeroize</code></td></tr>
 <tr><td><code>crates/ic-sim/</code></td><td>Deterministic simulation</td><td>Pure, no I/O, no floats</td></tr>
 <tr><td><code>crates/ic-render/</code></td><td>Bevy isometric renderer</td><td>Reads sim state (read-only)</td></tr>
@@ -270,17 +270,17 @@ Canonical design authority: <code>https://github.com/AE26/iron-curtain-design-do
 <h3 id="ra-formats"><a class="header" href="#ra-formats"><code>ra-formats</code></a></h3>
 <ul>
 <li><strong>Path:</strong> <code>crates/ra-formats/</code></li>
-<li><strong>Primary responsibility:</strong> Parse RA1 file formats (<code>.mix</code>, <code>.shp</code>, <code>.pal</code>, <code>.aud</code>, <code>.vqa</code>, MiniYAML)</li>
-<li><strong>Does not own:</strong> rendering, audio playback, game logic</li>
-<li><strong>Public interfaces / trait seams:</strong> asset loader functions, <code>MixArchive</code>, <code>ShpFrame</code>, <code>Palette</code>, MiniYAML parser</li>
+<li><strong>Primary responsibility:</strong> IC asset pipeline integration: wraps <code>cnc-formats</code> (binary + text parsers) with EA-derived constants, Bevy <code>AssetSource</code>, MiniYAML auto-conversion pipeline</li>
+<li><strong>Does not own:</strong> rendering, audio playback, game logic, clean-room format parsing (that’s <code>cnc-formats</code>)</li>
+<li><strong>Public interfaces / trait seams:</strong> asset loader functions, <code>MixArchive</code>, <code>ShpFrame</code>, <code>Palette</code>, <code>detect_format()</code>, MiniYAML auto-conversion</li>
 <li><strong>Key files to read first:</strong> <code>src/lib.rs</code>, <code>src/mix.rs</code>, <code>src/shp.rs</code></li>
 <li><strong>Hot paths / perf-sensitive files:</strong> <code>.mix</code> archive lookup (used during asset loading)</li>
 <li><strong>Generated files:</strong> none</li>
 <li><strong>Tests / verification entry points:</strong> format parsing tests against known-good RA1 corpus</li>
 <li><strong>Related design decisions (<code>Dxxx</code>):</strong> D003, D023, D025, D027, D075, D076</li>
 <li><strong>Related execution steps (<code>G*</code>):</strong> G1 (asset parsing)</li>
-<li><strong>Common change risks:</strong> format regressions against real RA1 assets; MiniYAML parser compatibility with OpenRA YAML</li>
-<li><strong>Search hints:</strong> <code>mix</code>, <code>shp</code>, <code>pal</code>, <code>aud</code>, <code>vqa</code>, <code>MiniYAML</code>, <code>palette</code></li>
+<li><strong>Common change risks:</strong> format regressions against real RA1 assets; MiniYAML auto-conversion compatibility with OpenRA YAML</li>
+<li><strong>Search hints:</strong> <code>mix</code>, <code>shp</code>, <code>pal</code>, <code>aud</code>, <code>vqa</code>, <code>MiniYAML</code>, <code>palette</code>, <code>detect_format</code></li>
 </ul>
 <h3 id="ic-paths"><a class="header" href="#ic-paths"><code>ic-paths</code></a></h3>
 <ul>

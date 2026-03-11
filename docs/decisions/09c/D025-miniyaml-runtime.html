@@ -36,7 +36,7 @@
             const path_to_root = "../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-04514734.js";
+            window.path_to_searchindex_js = "../../searchindex-4312bfdc.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../toc-9adfe301.js"></script>
@@ -202,7 +202,7 @@
 <li><strong>Non-goals:</strong> Maintaining MiniYAML as a first-class authoring format. IC-native content uses standard YAML. MiniYAML is a compatibility input, not an output.</li>
 <li><strong>Invariants preserved:</strong> Deterministic sim (parsing produces identical output regardless of input format). No network or I/O in <code>ic-sim</code>.</li>
 <li><strong>Performance impact:</strong> ~10–50ms per mod file on first load; result cached for session. Negligible for gameplay.</li>
-<li><strong>Public interfaces / types / commands:</strong> <code>miniyaml2yaml</code> CLI command, <code>ra_formats::miniyaml::parse()</code>, <code>ra_formats::detect_format()</code></li>
+<li><strong>Public interfaces / types / commands:</strong> <code>miniyaml2yaml</code> CLI (ships with <code>cnc-formats</code>), <code>cnc_formats::miniyaml::parse()</code> (clean-room parser, MIT/Apache-2.0), <code>ra_formats::detect_format()</code> (IC integration layer)</li>
 <li><strong>Affected docs:</strong> <code>02-ARCHITECTURE.md</code> § Data Format, <code>04-MODDING.md</code> § MiniYAML Migration, <code>05-FORMATS.md</code></li>
 <li><strong>Keywords:</strong> MiniYAML, runtime loading, auto-conversion, format detection, miniyaml2yaml, OpenRA compatibility</li>
 </ul>

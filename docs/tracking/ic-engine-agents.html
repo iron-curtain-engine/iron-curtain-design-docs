@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-04514734.js";
+            window.path_to_searchindex_js = "../searchindex-4312bfdc.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-9adfe301.js"></script>
@@ -272,7 +272,7 @@ Canonical design authority lives in the Iron Curtain design-doc repository.</p>
 </thead>
 <tbody>
 <tr><td><code>ic-protocol</code></td><td>Shared serializable types (<code>PlayerOrder</code>, <code>TimestampedOrder</code>, <code>TickOrders</code>, <code>MessageLane</code>)</td><td>0</td></tr>
-<tr><td><code>ra-formats</code></td><td>RA1 asset parsing (<code>.mix</code>, <code>.shp</code>, <code>.pal</code>, <code>.aud</code>, <code>.vqa</code>, MiniYAML)</td><td>0–1</td></tr>
+<tr><td><code>ra-formats</code></td><td>IC asset pipeline wrapper: wraps <code>cnc-formats</code> + EA-derived code, Bevy integration, MiniYAML auto-conversion</td><td>0–1</td></tr>
 <tr><td><code>ic-paths</code></td><td>Platform path resolution (XDG/APPDATA/portable mode)</td><td>1</td></tr>
 <tr><td><code>ic-sim</code></td><td>Pure deterministic simulation (fixed-point, no I/O, no floats)</td><td>2</td></tr>
 <tr><td><code>ic-render</code></td><td>Bevy isometric map/sprite renderer, camera, fog rendering</td><td>1</td></tr>

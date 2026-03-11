@@ -36,7 +36,7 @@
             const path_to_root = "../../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-04514734.js";
+            window.path_to_searchindex_js = "../../../searchindex-4312bfdc.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../../../toc-9adfe301.js"></script>
@@ -250,11 +250,11 @@
 <p><strong>Phase:</strong> Phase 4 (Lua scripting implementation). API surface documented during Phase 2 planning.</p>
 <hr>
 <h3 id="d025--runtime-miniyaml-loading"><a class="header" href="#d025--runtime-miniyaml-loading">D025 — Runtime MiniYAML Loading</a></h3>
-<p><strong>Decision:</strong> Support loading MiniYAML directly at runtime as a fallback format in <code>ra-formats</code>. When the engine encounters tab-indented files with <code>^</code> inheritance or <code>@</code> suffixes, it auto-converts in memory. The <code>miniyaml2yaml</code> CLI converter still exists for permanent migration, but is no longer a prerequisite for loading mods.</p>
+<p><strong>Decision:</strong> Support loading MiniYAML directly at runtime as a fallback format in <code>ra-formats</code>. When the engine encounters tab-indented files with <code>^</code> inheritance or <code>@</code> suffixes, it auto-converts in memory using <code>cnc-formats</code>’s clean-room MiniYAML parser (D076, MIT/Apache-2.0). The <code>miniyaml2yaml</code> CLI converter (also in <code>cnc-formats</code>) still exists for permanent migration, but is no longer a prerequisite for loading mods.</p>
 <p><strong>Revision of D003:</strong> D003 (“Real YAML, not MiniYAML”) remains the canonical format. All IC-native content uses standard YAML. D025 adds a compatibility loader — it does not change what IC produces, only what it accepts.</p>
 <p><strong>Key design points:</strong></p>
 <ol>
-<li><strong>Format detection:</strong> <code>ra-formats</code> checks the first few lines of each file. Tab-indented content with no YAML indicators triggers the MiniYAML parser path.</li>
+<li><strong>Format detection:</strong> <code>ra-formats</code> checks the first few lines of each file. Tab-indented content with no YAML indicators triggers the MiniYAML path, which calls <code>cnc-formats::miniyaml::parse()</code>.</li>
 <li><strong>In-memory conversion:</strong> MiniYAML is parsed to an intermediate tree, then resolved to standard YAML structs. The result is identical to what <code>miniyaml2yaml</code> would produce.</li>
 <li><strong>Combined with D023:</strong> OpenRA trait name aliases (D023) apply after MiniYAML parsing — so the full chain is: MiniYAML → intermediate tree → alias resolution → typed Rust structs.</li>
 <li><strong>Performance:</strong> Conversion adds ~10-50ms per mod at load time (one-time cost). Cached after first load.</li>

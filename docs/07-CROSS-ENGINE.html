@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-04514734.js";
+            window.path_to_searchindex_js = "searchindex-4312bfdc.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-9adfe301.js"></script>
@@ -190,7 +190,7 @@ Layer 1:  Data compatibility        (do they load same rules?)→ Very achievabl
 <h2 id="layer-1-data-compatibility-do-this"><a class="header" href="#layer-1-data-compatibility-do-this">Layer 1: Data Compatibility (DO THIS)</a></h2>
 <p>Load the same YAML rules, maps, unit definitions, weapon stats as OpenRA.</p>
 <ul>
-<li><code>ra-formats</code> crate parses MiniYAML and converts to standard YAML</li>
+<li><code>cnc-formats</code> provides the clean-room MiniYAML parser; <code>ra-formats</code> wraps it for IC’s asset pipeline and converts to standard YAML</li>
 <li>Same maps work on both engines</li>
 <li>Existing mod data migrates automatically</li>
 <li><strong>Status:</strong> Core part of Phase 0, already planned</li>
