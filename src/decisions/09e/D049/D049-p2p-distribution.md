@@ -6,7 +6,7 @@
 
 **The cost problem:** A popular 500MB mod downloaded 10,000 times generates 5TB of egress. At CDN rates ($0.01–0.09/GB), that's $50–450/month — per mod. For a community project sustained by donations, centralized hosting is financially unsustainable at scale. A BitTorrent tracker VPS costs $5–20/month regardless of popularity.
 
-**The solution:** Workshop distribution uses the **BitTorrent protocol** for large packages, with HTTP direct download as fallback. The Workshop server acts as both metadata registry (SQLite, lightweight) and BitTorrent tracker (peer coordination, lightweight). Actual content transfer happens peer-to-peer between players who have the package.
+**The solution:** Workshop distribution uses the **BitTorrent protocol** for large packages, with HTTP as both a concurrent transport (via BEP 17/19 web seeding) and a last-resort fallback. When web seed URLs are present in torrent metadata, HTTP mirrors participate **simultaneously** alongside BT peers in the piece scheduler — downloads aggregate bandwidth from both transports. The Workshop server acts as both metadata registry (SQLite, lightweight) and BitTorrent tracker (peer coordination, lightweight). See [D049-web-seeding.md](D049-web-seeding.md) for the full web seeding design.
 
 **How it works:**
 
@@ -21,14 +21,14 @@
 │              │ ◄──────────────────────► Other players (peers/seeds)
 │              │     (BitTorrent protocol)
 │              │
-│              │     4. Fallback: HTTP direct download
+│              │     4. Web seeding (BEP 17/19 concurrent HTTP) + fallback
 │              │ ◄─────────────────────── Workshop server / mirrors / seed box
 └─────────────┘     5. Verify SHA-256
 ```
 
 1. **Publish:** `ic mod publish` uploads .icpkg to Workshop server. Server computes SHA-256, generates torrent metadata (info hash), starts seeding the package alongside any initial seed infrastructure.
 2. **Browse/Search:** Workshop server handles all metadata queries (search, dependency resolution, ratings) via the existing SQLite + FTS5 design. Lightweight.
-3. **Install:** `ic mod install` fetches the manifest from the server, then downloads the .icpkg via BitTorrent from other players who have it. Falls back to HTTP direct download if no peers are available or if P2P is too slow.
+3. **Install:** `ic mod install` fetches the manifest from the server, then downloads the .icpkg via BitTorrent + HTTP concurrently (when web seed URLs are present in torrent metadata). If no BT peers are available and no web seeds exist, falls back to HTTP direct download as a last resort.
 4. **Seed:** Players who have downloaded a package automatically seed it to others (opt-out in settings). The more popular a resource, the faster it downloads — the opposite of CDN economics where popularity means higher cost.
 5. **Verify:** SHA-256 checksum validation on the complete package, regardless of download method. BitTorrent's built-in piece-level hashing provides additional integrity during transfer.
 
@@ -38,11 +38,11 @@
 
 **Transport strategy by package size:**
 
-| Package Size | Strategy                     | Rationale                                                                                   |
-| ------------ | ---------------------------- | ------------------------------------------------------------------------------------------- |
-| < 5MB        | HTTP direct only             | P2P overhead exceeds benefit for small files. Maps, balance presets, palettes.              |
-| 5–50MB       | P2P preferred, HTTP fallback | Small sprite packs, sound effect packs, script libraries. P2P helps but HTTP is acceptable. |
-| > 50MB       | P2P strongly preferred       | HD resource packs, cutscene packs, full mods. P2P's cost advantage is decisive.             |
+| Package Size | Strategy                                                    | Rationale                                                                            |
+| ------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| < 5MB        | HTTP direct only                                            | P2P overhead exceeds benefit for small files. Maps, balance presets, palettes.       |
+| 5–50MB       | P2P + HTTP concurrent (web seeding); HTTP-only fallback     | Sprite packs, sound packs, script libraries. Web seeds supplement BT swarm.          |
+| > 50MB       | P2P + HTTP concurrent (web seeding); P2P strongly preferred | HD resource packs, cutscene packs, full mods. HTTP seeds provide baseline bandwidth. |
 
 Thresholds are configurable in `settings.toml`. Players on connections where BitTorrent is throttled or blocked can force HTTP-only mode.
 
@@ -50,7 +50,7 @@ Thresholds are configurable in `settings.toml`. Players on connections where Bit
 
 - **Initial setup downloads** use `user-requested` priority (not `background`) and surface source indicators (`P2P` / `HTTP`) in progress UI.
 - **Small setup assets/config packages** (including `player-config` profiles, small language packs, and tiny metadata-driven fixes) should default to **HTTP direct** per the size strategy above to avoid P2P startup overhead.
-- **Large optional media packs** (cutscenes, HD assets) remain P2P-preferred with HTTP fallback, but the wizard must explain this transparently ("faster from peers when available").
+- **Large optional media packs** (cutscenes, HD assets) use BT + HTTP concurrent download (when web seed URLs exist in torrent metadata), with HTTP-only as last resort. The wizard must explain this transparently ("faster from peers when available").
 - **Offline-first behavior:** if no network is available, the setup wizard completes local-only steps and defers downloadable packs instead of failing the entire flow.
 
 **D069 repair/verify mapping:** The maintenance wizard's `Repair & Verify` actions map directly to D049 primitives:
@@ -62,7 +62,7 @@ Thresholds are configurable in `settings.toml`. Players on connections where Bit
 
 Repair/verify is an IC-side content/setup operation. Store-platform binary verification (Steam/GOG) remains a separate platform responsibility and is only linked/guided from the wizard.
 
-**Auto-download on lobby join (D030 interaction):** When joining a lobby with missing resources, the client first attempts P2P download (likely fast, since other players in the lobby are already seeding). If the lobby timer is short or P2P is slow, falls back to HTTP. The lobby UI shows download progress with source indicators (P2P/HTTP). See D052 § "In-Lobby P2P Resource Sharing" for the detailed lobby protocol, including host-as-tracker, verification against Workshop index, and security constraints.
+**Auto-download on lobby join (D030 interaction):** When joining a lobby with missing resources, the client downloads via BT + HTTP concurrently (lobby peers are high-priority BT sources since they already have the content). If web seeds exist, HTTP mirrors contribute bandwidth immediately alongside lobby peers. If no BT peers or web seeds are available, the client uses HTTP direct download as a last resort. The lobby UI shows download progress with source indicators (P2P/HTTP). See D052 § "In-Lobby P2P Resource Sharing" for the detailed lobby protocol, including host-as-tracker, verification against Workshop index, and security constraints.
 
 **Gaming industry precedent:**
 - **Blizzard (WoW, StarCraft 2, Diablo 3):** Used a custom P2P downloader ("Blizzard Downloader", later integrated into Battle.net) for game patches and updates from 2004–2016. Saved millions in CDN costs for multi-GB patches distributed to millions of players.
@@ -107,7 +107,7 @@ The Workshop doesn't rely solely on player altruism for seeding:
 - **Workshop seed server:** A dedicated seed box (modest: a VPS with good upload bandwidth) that permanently seeds all Workshop content. This ensures new/unpopular packages are always downloadable even with zero player peers. Cost: ~$20-50/month for a VPS with 1TB+ storage and unmetered bandwidth.
 - **Community seed volunteers:** Players who opt in to extended seeding (beyond just while the game is running). Similar to how Linux mirror operators volunteer bandwidth. Could be incentivized with Workshop badges/reputation (D036/D037).
 - **Mirror servers (federation):** Community-hosted Workshop servers (D030 federation) also seed the content they host. Regional community servers naturally become regional seeds.
-- **Lobby-optimized seeding:** When a lobby host has required mods, the game client prioritizes seeding to joining players who are downloading. The "auto-download on lobby join" flow becomes: download from lobby peers first → swarm → HTTP fallback.
+- **Lobby-optimized seeding:** When a lobby host has required mods, the game client prioritizes seeding to joining players who are downloading. The "auto-download on lobby join" flow aggregates bandwidth from lobby peers (highest priority) + wider swarm + HTTP web seeds concurrently, with HTTP-only as last resort.
 
 **Privacy and security:**
 

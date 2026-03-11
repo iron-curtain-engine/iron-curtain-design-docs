@@ -197,6 +197,7 @@
       - [P2P Policy & Admin](decisions/09e/D049/D049-p2p-policy-admin.md)
       - [Content Channels Integration](decisions/09e/D049/D049-content-channels-integration.md)
       - [Replay Sharing via P2P](decisions/09e/D049/D049-replay-sharing.md)
+      - [Web Seeding](decisions/09e/D049/D049-web-seeding.md)
     - [D053 — Player Profile](decisions/09e/D053-player-profile.md)
     - [D061 — Data Backup](decisions/09e/D061-data-backup.md)
       - [Player Experience](decisions/09e/D061/D061-player-experience.md)

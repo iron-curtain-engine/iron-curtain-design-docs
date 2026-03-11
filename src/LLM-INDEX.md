@@ -171,7 +171,7 @@ Large individual decisions have been further split into sub-files:
 | `D031-observability.md`           | 1 sub-file  | `decisions/09e/D031/` |
 | `D034-sqlite.md`                  | 1 sub-file  | `decisions/09e/D034/` |
 | `D038-scenario-editor.md`         | 6 sub-files | `decisions/09f/D038/` |
-| `D049-workshop-assets.md`         | 5 sub-files | `decisions/09e/D049/` |
+| `D049-workshop-assets.md`         | 6 sub-files | `decisions/09e/D049/` |
 | `D052-community-servers.md`       | 5 sub-files | `decisions/09b/D052/` |
 | `D055-ranked-matchmaking.md`      | 1 sub-file  | `decisions/09b/D055/` |
 | `D058-command-console.md`         | 3 sub-files | `decisions/09g/D058/` |

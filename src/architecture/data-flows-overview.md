@@ -50,7 +50,9 @@ Player                    IC Client                   workshop-core             
 
 **Trust model:** Workshop index is the trust anchor. SHA-256 in the manifest is verified against the downloaded `.icpkg` content. P2P peers are untrusted byte sources — content-addressed integrity makes malicious peers harmless.
 
-**Cross-references:** D030 (registry), D049 § "P2P Distribution", `player-flow/workshop.md` § "Install Flow".
+**Web seeding (BEP 17/19):** When the `webseed` feature is enabled and torrent metadata includes `httpseeds` or `url-list` keys, HTTP mirrors participate **concurrently** alongside BT peers in the piece scheduler — downloads aggregate bandwidth from both transports. This is especially valuable during initial swarm bootstrapping for newly published packages. See D049 § “Web Seeding” for the full design.
+
+**Cross-references:** D030 (registry), D049 § “P2P Distribution”, D049 § “Web Seeding”, `player-flow/workshop.md` § “Install Flow”.
 
 ---
 
@@ -83,7 +85,7 @@ Host                     Relay/Tracker               Joining Player
 ```
 
 **Key detail — host-as-tracker:** The relay (or host in listen-server mode) maintains `HashMap<ResourceId, Vec<PeerId>>` for the room's lifetime. Ready players join the seeding pool, accelerating downloads for later joiners. Lobby prefetch (seed boxes pre-warmed on room creation) further accelerates first-joiner experience.
-
+**Web seeding in lobby context:** When `webseed` is enabled, HTTP seeds provide immediate bandwidth while lobby BT peers connect. `LobbyUrgent` pieces bypass the `prefer_bt_peers` policy, allowing HTTP seeds to serve them even when the BT swarm is healthy.
 **Security:** Only Workshop-published resources can be shared. Client verifies SHA-256 against a known Workshop source before accepting bytes. Unknown resources are refused. See D052 § "In-Lobby P2P Resource Sharing" for the full security model.
 
 **Cross-references:** D052 § "In-Lobby P2P Resource Sharing", D049 § priority tier `lobby-urgent`.

@@ -278,9 +278,9 @@ This is a privacy concern, not a direct exploit — but combined with other info
 
 `ra-formats` processes untrusted binary data from multiple sources: `.mix` archives, `.oramap` ZIP files, Workshop packages, downloaded replays, and shared save games. The current design documents format specifications in detail but do not address defensive parsing:
 
-1. **Decompression bombs:** LCW decompression (used by `.shp`, `.tmp`, `.vqa`) has no decompression ratio cap and no maximum output size. A crafted `.shp` frame with LCW data claiming a 4 GB output from 100 bytes of compressed input is currently unbounded. The `uncompressed_length` field in save files (`SaveHeader`) is trusted for pre-allocation without validation.
+1. **Decompression bombs:** LCW decompression (used by `.shp`, `.tmp`, `.vqa`, `.wsa`) has no decompression ratio cap and no maximum output size. A crafted `.shp` frame with LCW data claiming a 4 GB output from 100 bytes of compressed input is currently unbounded. The `uncompressed_length` field in save files (`SaveHeader`) is trusted for pre-allocation without validation.
 
-2. **No fuzzing strategy:** None of the format parsers (MIX, SHP, TMP, PAL, AUD, VQA, WSA) have documented fuzzing requirements. Binary format parsers are the #1 source of memory safety bugs in Rust projects — even with safe Rust, panics from malformed input cause denial of service.
+2. **No fuzzing strategy:** None of the format parsers (MIX, SHP, TMP, PAL, AUD, VQA, WSA, FNT) have documented fuzzing requirements. Binary format parsers are the #1 source of memory safety bugs in Rust projects — even with safe Rust, panics from malformed input cause denial of service.
 
 3. **No per-format resource limits:** VQA frame parsing has no maximum frame count. MIX archives have no maximum entry count. SHP files have no maximum frame count. A crafted file with millions of entries causes unbounded memory allocation during parsing.
 
@@ -288,13 +288,17 @@ This is a privacy concern, not a direct exploit — but combined with other info
 
 5. **Archive path traversal:** `.oramap` files are ZIP archives. Entries with paths like `../../.config/autostart/malware.sh` escape the extraction directory (classic Zip Slip). The current design does not specify path validation for archive extraction.
 
+6. **Blowfish decryption of untrusted .mix headers:** Some original `.mix` archives have Blowfish-encrypted header indexes (flag `0x0002`). Decryption uses a hardcoded key in ECB mode. A crafted `.mix` can supply ciphertext that decrypts to a `FileHeader` with an inflated `count` (billions of entries), triggering unbounded `SubBlock` allocation. Truncated ciphertext (not a multiple of the 8-byte Blowfish block size) must not cause panics.
+
 ### Mitigation
 
 **Decompression ratio cap:** Maximum 256:1 decompression ratio for all codecs (LCW, LZ4). Absolute output size caps per format: SHP frame max 16 MB, VQA frame max 32 MB, save game snapshot max 64 MB. Reject input exceeding these limits before allocation.
 
 **Mandatory fuzzing:** Every format parser in `ra-formats` must have a `cargo-fuzz` target as a Phase 0 exit criterion. Fuzz targets accept arbitrary bytes and must not panic. Property-based testing with `proptest` for round-trip encode/decode where write support exists (Phase 6a).
 
-**Per-format entry caps:** MIX archives: max 16,384 entries (original RA archives contain ~1,500). SHP files: max 65,536 frames. VQA files: max 100,000 frames (~90 minutes at 15 fps). TMP icon sets: max 65,536 tiles. These caps are configurable but have safe defaults.
+**Per-format entry caps:** MIX archives: max 16,384 entries (original RA archives contain ~1,500). SHP files: max 65,536 frames. VQA files: max 100,000 frames (~90 minutes at 15 fps). TMP icon sets: max 65,536 tiles. WSA animations: max 10,000 frames. FNT fonts: max 256 characters (one byte index space). These caps are configurable but have safe defaults.
+
+**Blowfish header validation:** After decrypting an encrypted `.mix` header, validate the decrypted `FileHeader.count` and `FileHeader.size` against the same 16,384-entry cap *before* allocating the `SubBlock` array. Reject ciphertext whose length is not a multiple of 8 bytes (Blowfish block size). Use the `blowfish` crate (RustCrypto, MIT/Apache-2.0) — do not reimplement the cipher.
 
 **Iteration counters:** All decompression loops include a maximum iteration counter. LCW decompression terminates after `output_size_cap` bytes written, regardless of end marker presence. ADPCM decoding terminates after `max_samples` decoded.
 

@@ -59,6 +59,29 @@ When neither flag is set, the first `short` is the file count and the archive us
 
 The SubBlock array is sorted by CRC to enable binary search lookup at runtime.
 
+#### Encrypted Header Handling (Extended Format)
+
+**Source:** `REDALERT/MIXFILE.CPP` — `MixFileClass::Retrieve()` and key initialization
+
+Some original RA `.mix` files ship with Blowfish-encrypted header indexes (flag `0x0002`). Notable examples: `local.mix`, `speech.mix`. Full resource compatibility (Invariant #8) requires decryption support.
+
+**What is encrypted:** Only the `SubBlock` index array (the file directory). File data bodies are always plaintext. The Blowfish cipher operates in ECB mode on 8-byte blocks.
+
+**Key source:** Westwood used a hardcoded 56-byte Blowfish key embedded in every game binary. This key is public knowledge — documented by XCC Utilities, OpenRA (`MixFile.cs`), and numerous community tools since the early 2000s. `cnc-formats` embeds this key as a constant. The key is not copyrightable (it is a number) and the decrypt algorithm is standard Blowfish — no EA-specific code is needed.
+
+**Decryption steps:**
+1. Read the 2-byte zero marker + 2-byte flags word (4 bytes total)
+2. If flag `0x0002` is set, the next N bytes are the Blowfish-encrypted header
+3. Decrypt using the hardcoded key in ECB mode (8-byte blocks)
+4. The decrypted output contains the `FileHeader` (6 bytes) followed by the `SubBlock` array
+5. Validate decrypted `FileHeader.count` and `FileHeader.size` against sane limits (V38 entry caps) before allocating the `SubBlock` array
+
+**SHA-1 digest (flag `0x0001`):** When present, a 20-byte SHA-1 digest follows the file data section. It covers the unencrypted body data. Verification is optional but recommended for integrity checking of original archives.
+
+**Implementation crate:** Use the `blowfish` crate from RustCrypto (MIT/Apache-2.0) for the Blowfish primitive. Do not reimplement the cipher.
+
+**Security:** Blowfish decryption of untrusted input is a parsing step — see V38 in `security/vulns-infrastructure.md` for defensive parsing requirements (validate decrypted header values before allocation, reject malformed ciphertext cleanly).
+
 ---
 
 ### SHP Sprite Format (.shp)
@@ -653,6 +676,76 @@ typedef struct _VQHeader {
 #define VQCM_RGBTRUE   1   // RGB true color
 #define VQCM_YBRTRUE   2   // YBR (luminance-chrominance) true color
 ```
+
+---
+
+### WSA Animation Format (.wsa)
+
+**Source:** `REDALERT/WSA.H`, `REDALERT/WSA.CPP`
+
+WSA (Westwood Studios Animation) files contain LCW-compressed delta animations. Used for menu backgrounds, installation screens, campaign map animations, and some in-game effects in both TD and RA. Each frame is an XOR-delta against the previous frame.
+
+#### File Header
+
+```c
+// From WSA.H
+typedef struct {
+    unsigned short NumFrames;     // Number of animation frames
+    unsigned short Width;         // Frame width in pixels
+    unsigned short Height;        // Frame height in pixels
+    unsigned short Delta;         // Delta buffer size
+    unsigned short Flags;         // (unused in RA)
+    unsigned long  Offsets[];     // (NumFrames + 2) offsets to frame data
+} WSA_Header;
+```
+
+**Frame data layout:**
+- `Offsets[0]` through `Offsets[NumFrames-1]` point to each frame's LCW-compressed XOR-delta data
+- `Offsets[NumFrames]` points to a loop-back delta (for seamless looping animations)
+- `Offsets[NumFrames+1]` marks end of data (used to compute last frame's compressed size)
+- If an offset is 0, that frame is identical to the previous frame (no delta)
+- Palette data (768 bytes, 6-bit VGA) may follow the frame data if the WSA includes its own palette
+
+**Decoding algorithm:**
+1. Allocate a frame buffer (Width × Height bytes, palette-indexed)
+2. For each frame: LCW-decompress the delta data, then XOR the delta onto the frame buffer
+3. The frame buffer now contains the current frame's pixels
+4. For looping: apply `Offsets[NumFrames]` delta to return to frame 0
+
+**Security:** Same defensive parsing requirements as other LCW-consuming formats — decompression ratio cap (256:1), output size cap (max 4 MB per frame), iteration counter on LCW decode loop. See V38 in `security/vulns-infrastructure.md`.
+
+---
+
+### FNT Bitmap Font Format (.fnt)
+
+**Source:** `REDALERT/WIN32LIB/FONT.H`, `REDALERT/WIN32LIB/FONT.CPP`
+
+FNT files contain bitmap fonts used for in-game text rendering. Each file contains a fixed set of character glyphs as palette-indexed pixel bitmaps.
+
+#### File Header
+
+```c
+// From FONT.H
+typedef struct {
+    unsigned short InfoBlock;     // Offset to font info block
+    unsigned short OffsetBlock;   // Offset to character offset table
+    unsigned short WidthBlock;    // Offset to character width table
+    unsigned short DataBlock;     // Offset to glyph bitmap data
+    unsigned short HeightBlock;   // Offset to per-character height info
+} FontHeader_Type;
+```
+
+**Font info block** (at `InfoBlock` offset):
+- `MaxHeight` (u8) — maximum character height in pixels
+- `MaxWidth` (u8) — maximum character width in pixels
+- `NumChars` (u16) — number of characters (typically 128 or 256)
+
+**Per-character data:**
+- **Offset table** (at `OffsetBlock`): `NumChars` × `u16` — byte offset from `DataBlock` to each character's bitmap
+- **Width table** (at `WidthBlock`): `NumChars` × `u8` — pixel width of each character
+- **Glyph data** (at `DataBlock`): raw palette-indexed pixels, 1 byte per pixel, row-major order. Each glyph is `width × height` bytes. Index 0 = transparent background.
+
+**IC usage:** IC does not use `.fnt` for runtime text rendering (Bevy's font pipeline handles modern TTF/OTF fonts with CJK/RTL support). `.fnt` parsing is needed for: (1) displaying original game fonts faithfully in Classic render mode (D048), (2) Asset Studio (D040) font preview and export.
 
 ---
 

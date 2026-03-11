@@ -90,7 +90,7 @@ Cross-engine compatibility is a **boundary layer around the sim**, not a modific
 │  Shared wire types (ic-protocol)                                     │
 │    └─ TimestampedOrder / PlayerOrder / codec seams                   │
 │                                                                      │
-│  Data / asset compatibility (ra-formats)                             │
+│  Data / asset compatibility (cnc-formats + ra-formats)              │
 │    └─ MiniYAML, maps, replay decoders, coordinate transforms         │
 │                                                                      │
 │  Deterministic simulation (ic-sim)                                   │

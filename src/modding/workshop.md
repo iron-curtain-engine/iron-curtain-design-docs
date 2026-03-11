@@ -142,20 +142,20 @@ Community Workshop servers can replicate from the official server (pull replicat
 
 #### P2P Distribution (BitTorrent/WebTorrent) — D049
 
-Workshop delivery uses **peer-to-peer distribution** for large packages, with HTTP direct download as fallback. The Workshop server acts as both metadata registry (SQLite, lightweight) and BitTorrent tracker (peer coordination, lightweight). Actual content transfer happens peer-to-peer between players.
+Workshop delivery uses **peer-to-peer distribution** for large packages, with HTTP as both a **concurrent transport** (BEP 17/19 web seeding — HTTP mirrors participate simultaneously alongside BT peers in the piece scheduler) and a last-resort fallback. See `decisions/09e/D049/D049-web-seeding.md` for the full web seeding design. The Workshop server acts as both metadata registry (SQLite, lightweight) and BitTorrent tracker (peer coordination, lightweight). Actual content transfer happens peer-to-peer between players.
 
 **Transport strategy by package size:**
 
-| Package Size | Strategy                     | Rationale                                                                 |
-| ------------ | ---------------------------- | ------------------------------------------------------------------------- |
-| < 5MB        | HTTP direct only             | P2P overhead exceeds benefit. Maps, balance presets, palettes.            |
-| 5–50MB       | P2P preferred, HTTP fallback | Sprite packs, sound packs, script libraries.                              |
-| > 50MB       | P2P strongly preferred       | HD resource packs, cutscene packs, full mods. Cost advantage is decisive. |
+| Package Size | Strategy                                                    | Rationale                                                      |
+| ------------ | ----------------------------------------------------------- | -------------------------------------------------------------- |
+| < 5MB        | HTTP direct only                                            | P2P overhead exceeds benefit. Maps, balance presets, palettes. |
+| 5–50MB       | P2P + HTTP concurrent (web seeding); HTTP-only fallback     | Sprite packs, sound packs, script libraries.                   |
+| > 50MB       | P2P + HTTP concurrent (web seeding); P2P strongly preferred | HD resource packs, cutscene packs, full mods.                  |
 
 **How it works:**
 
 1. `ic mod publish` packages `.icpkg` and publishes it. Phase 0–3: uploads to GitHub Releases + opens PR to `workshop-index`. Phase 3+: Workshop server computes BitTorrent info hash and starts seeding.
-2. `ic mod install` fetches manifest (from git index or Workshop server), downloads content via HTTP or BitTorrent from other players who have it. Falls back to HTTP if no peers available.
+2. `ic mod install` fetches manifest (from git index or Workshop server), downloads content via BT + HTTP concurrently when web seed URLs exist in torrent metadata. If no BT peers or web seeds are available, falls back to HTTP direct download as a last resort.
 3. Players who download automatically seed to others (opt-out in settings). Popular resources get faster — the opposite of CDN economics.
 4. SHA-256 verification on complete package, same as D030's existing integrity design.
 5. **WebTorrent** extends this to browser builds (WASM) — P2P over WebRTC. Desktop and browser clients interoperate.

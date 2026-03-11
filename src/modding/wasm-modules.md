@@ -445,7 +445,7 @@ For `&str` parameters: the host writes the UTF-8 bytes into guest memory and pas
 Tier 3 WASM mods can register custom asset format loaders via the `FormatRegistry`. This is critical for total conversions that use non-C&C asset formats — analysis of OpenRA mods (see `research/openra-mod-architecture-analysis.md`) shows that non-C&C games on the engine require extensive custom format support:
 
 - **OpenKrush (KKnD):** 15+ custom binary format decoders — `.blit` (sprites), `.mobd` (animations), `.mapd` (terrain), `.lvl` (levels), `.son`/`.soun` (audio), `.vbc` (video). None of these resemble C&C formats.
-- **d2 (Dune II):** 6 distinct sprite formats (`.icn`, `.cps`, `.wsa`, `.shp` variant), custom map format, `.adl` music.
+- **d2 (Dune II):** 6 distinct sprite formats (`.icn`, `.cps`, `.shp` variant), custom map format, `.adl` music. Dune II reuses `.wsa` (same format as C&C — handled by `cnc-formats`).
 - **OpenHV:** Uses standard PNG/WAV/OGG — no proprietary binary formats at all.
 
 The engine provides a `FormatLoader` WASM API surface that lets mods register custom decoders:
