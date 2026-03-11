@@ -297,9 +297,9 @@ The hydration function is game-module-specific — RA1's module maps `UnitDef.co
 
 ### MiniYAML Migration & Runtime Loading
 
-**Converter tool:** `ra-formats` includes a `miniyaml2yaml` CLI converter that translates existing OpenRA mod data to standard YAML. Available for permanent, clean migration.
+**Converter tool:** `cnc-formats` includes a `miniyaml2yaml` CLI converter (behind the `miniyaml` feature flag) that translates existing OpenRA mod data to standard YAML. Available for permanent, clean migration.
 
-**Runtime loading (D025):** MiniYAML files also load directly at runtime — no pre-conversion required. When `ra-formats` detects tab-indented content with `^` inheritance or `@` suffixes, it auto-converts in memory. The result is identical to what the converter would produce. This means existing OpenRA mods can be dropped into IC and played immediately.
+**Runtime loading (D025):** MiniYAML files also load directly at runtime — no pre-conversion required. When `ra-formats` detects tab-indented content with `^` inheritance or `@` suffixes, it calls `cnc-formats`'s clean-room MiniYAML parser and auto-converts in memory. The result is identical to what the converter would produce. This means existing OpenRA mods can be dropped into IC and played immediately.
 
 ```
 ┌─────────────────────────────────────────────────────────┐

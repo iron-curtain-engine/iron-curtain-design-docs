@@ -62,13 +62,13 @@
 
 ### D025 — Runtime MiniYAML Loading
 
-**Decision:** Support loading MiniYAML directly at runtime as a fallback format in `ra-formats`. When the engine encounters tab-indented files with `^` inheritance or `@` suffixes, it auto-converts in memory. The `miniyaml2yaml` CLI converter still exists for permanent migration, but is no longer a prerequisite for loading mods.
+**Decision:** Support loading MiniYAML directly at runtime as a fallback format in `ra-formats`. When the engine encounters tab-indented files with `^` inheritance or `@` suffixes, it auto-converts in memory using `cnc-formats`'s clean-room MiniYAML parser (D076, MIT/Apache-2.0). The `miniyaml2yaml` CLI converter (also in `cnc-formats`) still exists for permanent migration, but is no longer a prerequisite for loading mods.
 
 **Revision of D003:** D003 ("Real YAML, not MiniYAML") remains the canonical format. All IC-native content uses standard YAML. D025 adds a compatibility loader — it does not change what IC produces, only what it accepts.
 
 **Key design points:**
 
-1. **Format detection:** `ra-formats` checks the first few lines of each file. Tab-indented content with no YAML indicators triggers the MiniYAML parser path.
+1. **Format detection:** `ra-formats` checks the first few lines of each file. Tab-indented content with no YAML indicators triggers the MiniYAML path, which calls `cnc-formats::miniyaml::parse()`.
 2. **In-memory conversion:** MiniYAML is parsed to an intermediate tree, then resolved to standard YAML structs. The result is identical to what `miniyaml2yaml` would produce.
 3. **Combined with D023:** OpenRA trait name aliases (D023) apply after MiniYAML parsing — so the full chain is: MiniYAML → intermediate tree → alias resolution → typed Rust structs.
 4. **Performance:** Conversion adds ~10-50ms per mod at load time (one-time cost). Cached after first load.

@@ -66,23 +66,25 @@ The Asset Studio (D040) converts in both directions. See `decisions/09e/D049-wor
 D076 splits format handling into two crates with distinct roles:
 
 **cnc-formats** (MIT OR Apache-2.0, separate repo — Tier 1, Phase 0):
-1. Clean-room parsers for all C&C binary formats (`.mix`, `.shp`, `.tmp`, `.pal`, `.aud`, `.vqa`, `.wsa`, `.fnt`, `.ini`, MiniYAML)
-2. Extensive tests against known-good OpenRA data
-3. `miniyaml2yaml` converter tool
-4. CLI tool to dump/inspect/validate C&C assets
-5. No EA-derived code — permissive licensing enables adoption by any C&C tool or modding project
-6. Released open source as a standalone crate on day one (Phase 0 deliverable, read-only)
-7. Serves as a **clean-room feasibility proof** that the engine is not technically dependent on EA's GPL code — all formats parse correctly from community docs alone (see D051 § "GPL Is a Policy Choice" and D076 rationale #6)
+1. Clean-room parsers for all C&C binary formats (`.mix`, `.shp`, `.tmp`, `.pal`, `.aud`, `.vqa`, `.wsa`, `.fnt`)
+2. Clean-room parsers for C&C text configuration formats: `.ini` (classic C&C rules, always enabled) and MiniYAML (OpenRA rules, behind `miniyaml` feature flag)
+3. `miniyaml2yaml` converter tool (behind `miniyaml` feature flag)
+4. Extensive tests against known-good OpenRA data
+5. CLI tool to dump/inspect/validate C&C assets (binary and text)
+6. No EA-derived code — permissive licensing enables adoption by any C&C tool or modding project
+7. Released open source as a standalone crate on day one (Phase 0 deliverable, read-only)
+8. Uses `std` — enables `std::io::Read` streaming for large files (`.mix` archives, `.vqa` video), `std::error::Error` ergonomics, and `HashMap` without extra dependencies. The `&[u8]` parsing API remains the primary interface; streaming is an additional option.
+9. Serves as a **clean-room feasibility proof** that the engine is not technically dependent on EA's GPL code — all formats parse correctly from community docs alone (see D051 § "GPL Is a Policy Choice" and D076 rationale #6)
 
 **ra-formats** (GPL v3, IC monorepo):
-1. Thin wrapper over `cnc-formats` — adds EA-specific details (compression tables, game-specific constants) that reference EA's GPL-licensed C&C source (D051)
+1. Thin wrapper over `cnc-formats` (with `miniyaml` feature enabled) — adds EA-specific details (compression tables, game-specific constants) that reference EA's GPL-licensed C&C source (D051)
 2. Bevy `AssetSource` integration for IC's asset pipeline
 3. Remastered Collection format support (`.meg`, `.tga+.meta`, `.dds`, `.bk2`, `.pgm`) — formats not in `cnc-formats`'s scope
 4. **Write support (Phase 6a):** .shp generation from frames (LCW compression + frame offset tables), .pal writing (trivial — 768 bytes), .aud encoding (IMA ADPCM compression from PCM input), .vqa encoding (VQ codebook generation + frame differencing + audio interleaving), optional .mix packing (CRC hash table generation) — required by Asset Studio (D040). Encoders reference the EA GPL source code implementations directly (see § Binary Format Codec Reference)
 
 ### Non-C&C Format Landscape
 
-The `cnc-formats` crate provides clean-room parsers for the C&C binary format family; `ra-formats` wraps it with EA-derived details and IC asset pipeline integration. But the engine (D039) supports non-C&C games via the `FormatRegistry` and WASM format loaders (see `04-MODDING.md` § WASM Format Loader API Surface). Analysis of six major OpenRA community mods (see `research/openra-mod-architecture-analysis.md`) reveals the scope of formats that non-C&C total conversions require:
+The `cnc-formats` crate provides clean-room parsers for the entire C&C format family (binary codecs, `.ini`, and feature-gated MiniYAML); `ra-formats` wraps it with EA-derived details and IC asset pipeline integration. But the engine (D039) supports non-C&C games via the `FormatRegistry` and WASM format loaders (see `04-MODDING.md` § WASM Format Loader API Surface). Analysis of six major OpenRA community mods (see `research/openra-mod-architecture-analysis.md`) reveals the scope of formats that non-C&C total conversions require:
 
 | Game (Mod)             | Custom Formats Required                                                   | Notes                                                                                                                  |
 | ---------------------- | ------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -113,7 +115,7 @@ pub enum ContentSource {
 
 TiberianDawnHD detects Steam via AppId, Origin via Windows registry key, and GOG via standard install paths. IC should implement a `ContentDetector` that probes all known sources for each supported game and presents the user with detected installations at first run. This handles the critical UX question "where are your game assets?" without requiring manual path entry — the same approach used by OpenRA, CorsixTH, and other reimplementation projects.
 
-**Phase:** Content detection ships in Phase 0 — format parsing in `cnc-formats`, IC-specific asset pipeline integration (including content source probing) in `ra-formats`. Game module content detection in Phase 1.
+**Phase:** Content detection ships in Phase 0 — format parsing (binary + `.ini` + MiniYAML) in `cnc-formats`, IC-specific asset pipeline integration (including content source probing) in `ra-formats`. Game module content detection in Phase 1.
 
 ### Browser Asset Storage
 

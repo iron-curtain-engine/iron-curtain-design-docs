@@ -57,7 +57,7 @@ Phase 0 (Foundation)
 - `IC_DATA_DIR` environment variable and `--data-dir` CLI flag override support
 
 ### Release
-Open source `ra-formats` early. Useful standalone, builds credibility and community interest.
+Open source `cnc-formats` (MIT/Apache-2.0) early. Useful standalone for any C&C tool or modding project, builds credibility and community interest. `ra-formats` (GPL) wraps it with EA-derived details and Bevy asset integration.
 
 ### Exit Criteria
 - Can parse any OpenRA mod's YAML rules into typed Rust structs

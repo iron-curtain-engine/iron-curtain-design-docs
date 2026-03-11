@@ -80,16 +80,16 @@ iron-curtain/                       # Cargo workspace root
 │   ├── ra/
 │   └── td/
 ├── crates/                         # All Rust crates live here
-│   ├── ra-formats/                 # .mix, .shp, .pal parsers; MiniYAML converter
+│   ├── ra-formats/                 # Wraps cnc-formats + EA-derived code; Bevy asset integration
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── lib.rs
-│   │       ├── mix.rs              #   MIX archive reader
-│   │       ├── shp.rs              #   SHP sprite reader
-│   │       ├── pal.rs              #   PAL palette reader
-│   │       ├── aud.rs              #   AUD audio decoder
-│   │       ├── vqa.rs              #   VQA video decoder
-│   │       ├── miniyaml.rs         #   MiniYAML parser + converter (D025)
+│   │       ├── mix.rs              #   MIX archive reader (wraps cnc-formats)
+│   │       ├── shp.rs              #   SHP sprite reader (wraps cnc-formats)
+│   │       ├── pal.rs              #   PAL palette reader (wraps cnc-formats)
+│   │       ├── aud.rs              #   AUD audio decoder (wraps cnc-formats)
+│   │       ├── vqa.rs              #   VQA video decoder (wraps cnc-formats)
+│   │       ├── miniyaml.rs         #   MiniYAML auto-conversion pipeline (parser from cnc-formats, D025)
 │   │       ├── oramap.rs           #   .oramap map loader
 │   │       └── mod_manifest.rs     #   OpenRA mod.yaml parser (D026)
 │   ├── ic-protocol/                # Shared boundary: orders, codecs
@@ -173,7 +173,6 @@ iron-curtain/                       # Cargo workspace root
 │       └── src/
 │           └── main.rs             #   Bevy App setup, plugin registration
 ├── tools/                          # Developer tools (not shipped)
-│   ├── miniyaml2yaml/              #   MiniYAML → YAML batch converter CLI
 │   └── replay-corpus/              #   Foreign replay regression test harness (D056)
 └── tests/                          # Integration tests
     ├── sim/                        #   Deterministic sim regression tests

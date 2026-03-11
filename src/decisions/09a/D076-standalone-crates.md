@@ -47,7 +47,7 @@ IC consumes these crates as normal Cargo dependencies. The extracted crates are 
 
 5. **Contributor attraction.** The Rust ecosystem runs on MIT/Apache-2.0. Developers searching crates.io for fixed-point math or C&C format parsers will find and contribute to permissive crates far more readily than to GPL engine modules.
 
-6. **Clean-room feasibility proof.** `cnc-formats` demonstrates that all C&C binary format parsing works correctly using only community documentation and public specifications — zero EA-derived code. This proves the engine is not *technically dependent* on GPL code. `ra-formats` adds EA-derived details for authoritative edge-case correctness (a quality choice), but the engine functions on `cnc-formats` alone. This gives IC a fallback path: if GPL ever became problematic, the engine crates (which contain no EA code) could be relicensed, and `ra-formats`'s EA references could be dropped in favor of `cnc-formats`'s clean-room implementations. See D051 § "GPL Is a Policy Choice, Not a Technical Necessity."
+6. **Clean-room feasibility proof.** `cnc-formats` demonstrates that all C&C format parsing (binary and text) works correctly using only community documentation and public specifications — zero EA-derived code. This proves the engine is not *technically dependent* on GPL code. `ra-formats` adds EA-derived details for authoritative edge-case correctness (a quality choice), but the engine functions on the standalone crate alone. This gives IC a fallback path: if GPL ever became problematic, the engine crates (which contain no EA code) could be relicensed, and `ra-formats`'s EA references could be dropped in favor of the clean-room implementations. See D051 § "GPL Is a Policy Choice, Not a Technical Necessity."
 
 ---
 
@@ -57,13 +57,15 @@ IC consumes these crates as normal Cargo dependencies. The extracted crates are 
 
 These crates are the first things built. They have zero IC-specific dependencies by definition because IC doesn't exist yet when they're created. **Separate repos from the start.**
 
-| Crate Name          | Purpose                                                                                                              | Why Standalone                                                                                                                                                             | IC Consumer                                                                                    |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `cnc-formats`       | Parse all C&C binary formats: `.mix`, `.shp`, `.tmp`, `.pal`, `.aud`, `.vqa`, `.wsa`, `.fnt`, `.ini`, MiniYAML       | Every C&C tool, viewer, converter, and modding project needs format parsing. Currently scattered across C/C#/Python community tools with no canonical Rust implementation. | `ra-formats` (IC's game-specific layer wraps `cnc-formats` with IC asset pipeline integration) |
-| `fixed-game-math`   | Deterministic fixed-point arithmetic: `Fixed<N>`, trig tables, CORDIC atan2, Newton sqrt, modifier chains            | Any deterministic game (lockstep RTS, fighting game, physics sim) needs platform-identical math. No good Rust crate exists with game-focused API.                          | `ic-sim`, `ic-protocol`                                                                        |
-| `deterministic-rng` | Seedable, platform-identical PRNG with game-oriented API: range sampling, weighted selection, shuffle, damage spread | Same audience as `fixed-game-math`. Must produce identical sequences on all platforms (x86/ARM/WASM).                                                                      | `ic-sim`                                                                                       |
+| Crate Name          | Purpose                                                                                                                                    | Why Standalone                                                                                                                                                                                                                                                            | IC Consumer                                                                                    |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `cnc-formats`       | Parse all C&C formats: binary (`.mix`, `.shp`, `.tmp`, `.pal`, `.aud`, `.vqa`, `.wsa`, `.fnt`), `.ini` rules, and MiniYAML (feature-gated) | Every C&C tool, viewer, converter, and modding project needs format parsing. Currently scattered across C/C#/Python community tools with no canonical Rust implementation. `.ini` is a classic C&C format; MiniYAML is OpenRA-originated but de facto community standard. | `ra-formats` (IC's game-specific layer wraps `cnc-formats` with IC asset pipeline integration) |
+| `fixed-game-math`   | Deterministic fixed-point arithmetic: `Fixed<N>`, trig tables, CORDIC atan2, Newton sqrt, modifier chains                                  | Any deterministic game (lockstep RTS, fighting game, physics sim) needs platform-identical math. No good Rust crate exists with game-focused API.                                                                                                                         | `ic-sim`, `ic-protocol`                                                                        |
+| `deterministic-rng` | Seedable, platform-identical PRNG with game-oriented API: range sampling, weighted selection, shuffle, damage spread                       | Same audience as `fixed-game-math`. Must produce identical sequences on all platforms (x86/ARM/WASM).                                                                                                                                                                     | `ic-sim`                                                                                       |
 
-**Naming note:** The IC crate currently called `ra-formats` stays in the IC monorepo as GPL code because it references EA's GPL-licensed C&C source for struct definitions and lookup tables (D051 rationale #2). `cnc-formats` is the *new* permissive crate containing only clean-room format parsing with no EA-derived code. `ra-formats` becomes a thin wrapper that adds EA-specific details (compression tables, game-specific constants) on top of `cnc-formats`.
+**Naming note:** The IC crate currently called `ra-formats` stays in the IC monorepo as GPL code because it references EA's GPL-licensed C&C source for struct definitions and lookup tables (D051 rationale #2). `cnc-formats` is the *new* permissive crate containing only clean-room format parsing with no EA-derived code. `ra-formats` becomes a thin wrapper that adds EA-specific details (compression tables, game-specific constants) on top.
+
+**Feature-gated MiniYAML:** `.ini` parsing is always available (it's a classic C&C format). MiniYAML parsing is behind `features = { miniyaml = [] }` because it's OpenRA-specific — a `.mix` extractor tool or asset viewer doesn't need it. The `miniyaml2yaml` converter ships as a binary in the `cnc-formats` repo, gated behind the same feature. `ra-formats` depends on `cnc-formats` with `miniyaml` enabled.
 
 ### Tier 2a — Phase 2 (Simulation)
 
@@ -97,7 +99,7 @@ Each extracted crate lives in its own Git repository under the author's GitHub o
 
 ```
 github.com/<author>/
-├── cnc-formats/          # MIT OR Apache-2.0
+├── cnc-formats/          # MIT OR Apache-2.0 (binary + text codecs, MiniYAML feature-gated)
 ├── fixed-game-math/      # MIT OR Apache-2.0
 ├── deterministic-rng/    # MIT OR Apache-2.0
 ├── glicko2-rts/          # MIT OR Apache-2.0
@@ -144,9 +146,9 @@ These rules prevent accidental GPL contamination of the permissive crates:
 
 Each extracted crate follows these design principles:
 
-1. **`#![no_std]` where possible.** `fixed-game-math`, `deterministic-rng`, and `cnc-formats` (parser core) should work in `no_std` environments with optional `alloc`. This maximizes portability (embedded, WASM, kernel).
+1. **`#![no_std]` only where the use case is genuinely universal.** `fixed-game-math` and `deterministic-rng` are `#![no_std]` — deterministic math and PRNG are legitimately useful in embedded, bare-metal, and WASM-without-std contexts. `cnc-formats` uses `std` by default — its consumers are always desktop/mobile/browser applications with full `std` support. `std` enables `std::io::Read` streaming (critical for large `.mix`/`.vqa` files), `std::error::Error` ergonomics, and `HashMap` without extra dependencies. There is no realistic scenario where C&C format parsers run on a microcontroller or in a kernel module.
 
-2. **Zero mandatory dependencies.** Core functionality should work with only `core`/`alloc`. Optional features gate integration with `serde`, `bevy`, `tokio`, etc.
+2. **Zero mandatory dependencies beyond `std`.** Optional features gate integration with `serde`, `bevy`, `tokio`, etc.
 
 3. **Feature flags for ecosystem integration.** Example for `fixed-game-math`:
    ```toml
@@ -291,5 +293,5 @@ pub trait PackageStore {
 - [ ] `cargo-deny` in IC monorepo permits GPL but verifies extracted crate versions match
 - [ ] `CONTRIBUTING.md` in each extracted repo states the no-GPL-cross-pollination rule
 - [ ] `LICENSE-MIT` and `LICENSE-APACHE` exist in each extracted repo
-- [ ] `ra-formats` in IC monorepo wraps `cnc-formats` and adds EA-derived code (GPL boundary is `ra-formats`, not `cnc-formats`)
+- [ ] `ra-formats` in IC monorepo wraps `cnc-formats` (with `miniyaml` feature enabled) and adds EA-derived code (GPL boundary is `ra-formats`, not the standalone crate)
 - [ ] Cross-platform CI (x86, ARM, WASM) runs for determinism-critical crates

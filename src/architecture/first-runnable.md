@@ -24,9 +24,9 @@ We cannot copy code from OpenRA (C#) or the Remastered Collection (proprietary C
 
 ### Implementation Steps
 
-#### Step 1: `ra-formats` — Parse Everything (Weeks 1–2)
+#### Step 1: `cnc-formats` + `ra-formats` — Parse Everything (Weeks 1–2)
 
-Build the `ra-formats` crate to read all Red Alert binary formats. This is pure Rust with zero Bevy dependency — a standalone library that other tools could use.
+Build the `cnc-formats` crate (MIT/Apache-2.0, standalone) to read all Red Alert binary formats — pure Rust, zero Bevy dependency. Then build `ra-formats` (GPL, IC monorepo) as a thin wrapper adding EA-derived constants and Bevy asset integration.
 
 **Deliverables:**
 
@@ -39,7 +39,7 @@ Build the `ra-formats` crate to read all Red Alert binary formats. This is pure 
 | **AUD audio**     | `.aud` file bytes     | PCM samples. IMA ADPCM decompression via `IndexTable`/`DiffTable`     | EA source `AUDIO.CPP`, `05-FORMATS.md` § AUD                    |
 | **CLI inspector** | Any RA file or `.mix` | Human-readable dump: file list, sprite frame count, palette preview   | `ic` CLI prototype: `ic dump <file>`                            |
 
-**Key implementation detail:** MIX archives use a CRC32 hash of the filename (uppercased) as the lookup key — there's no filename stored in the archive. `ra-formats` must include the hash function and a known-filename dictionary (from OpenRA's `global.mix` filenames list) to resolve entries by name.
+**Key implementation detail:** MIX archives use a CRC32 hash of the filename (uppercased) as the lookup key — there's no filename stored in the archive. `cnc-formats` must include the hash function and a known-filename dictionary (from OpenRA's `global.mix` filenames list) to resolve entries by name.
 
 **Test strategy:** Parse every `.mix` from a stock Red Alert installation. Extract every `.shp` and verify frame counts match OpenRA's `sequences/*.yaml`. Render every `.pal` as a 16×16 color grid PNG.
 
@@ -47,7 +47,7 @@ Build the `ra-formats` crate to read all Red Alert binary formats. This is pure 
 
 The "Hello RA" moment — a Bevy window opens and displays a single Red Alert sprite with the correct palette applied.
 
-**What this proves:** `ra-formats` output can flow into Bevy's `Image` / `TextureAtlas` pipeline. Palette-indexed sprites render correctly on a GPU.
+**What this proves:** `cnc-formats` → `ra-formats` output can flow into Bevy's `Image` / `TextureAtlas` pipeline. Palette-indexed sprites render correctly on a GPU.
 
 **Implementation:**
 

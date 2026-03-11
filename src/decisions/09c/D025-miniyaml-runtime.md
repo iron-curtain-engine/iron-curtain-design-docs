@@ -17,7 +17,7 @@
 - **Non-goals:** Maintaining MiniYAML as a first-class authoring format. IC-native content uses standard YAML. MiniYAML is a compatibility input, not an output.
 - **Invariants preserved:** Deterministic sim (parsing produces identical output regardless of input format). No network or I/O in `ic-sim`.
 - **Performance impact:** ~10–50ms per mod file on first load; result cached for session. Negligible for gameplay.
-- **Public interfaces / types / commands:** `miniyaml2yaml` CLI command, `ra_formats::miniyaml::parse()`, `ra_formats::detect_format()`
+- **Public interfaces / types / commands:** `miniyaml2yaml` CLI (ships with `cnc-formats`), `cnc_formats::miniyaml::parse()` (clean-room parser, MIT/Apache-2.0), `ra_formats::detect_format()` (IC integration layer)
 - **Affected docs:** `02-ARCHITECTURE.md` § Data Format, `04-MODDING.md` § MiniYAML Migration, `05-FORMATS.md`
 - **Keywords:** MiniYAML, runtime loading, auto-conversion, format detection, miniyaml2yaml, OpenRA compatibility
 
@@ -49,8 +49,8 @@ Both paths produce identical output. The runtime conversion adds ~10–50ms per 
 
 ### Alternatives Considered
 
-| Alternative | Verdict | Reason |
-|-------------|---------|--------|
-| Require pre-conversion | Rejected | Adds a setup step; deters casual modders who just want to try IC with existing content |
-| Support MiniYAML as first-class format | Rejected | Maintaining two YAML dialects long-term increases parser complexity and documentation burden |
-| Runtime conversion with caching (chosen) | Accepted | Best balance: zero friction for users, clean YAML for new content, negligible runtime cost |
+| Alternative                              | Verdict  | Reason                                                                                       |
+| ---------------------------------------- | -------- | -------------------------------------------------------------------------------------------- |
+| Require pre-conversion                   | Rejected | Adds a setup step; deters casual modders who just want to try IC with existing content       |
+| Support MiniYAML as first-class format   | Rejected | Maintaining two YAML dialects long-term increases parser complexity and documentation burden |
+| Runtime conversion with caching (chosen) | Accepted | Best balance: zero friction for users, clean YAML for new content, negligible runtime cost   |

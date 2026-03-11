@@ -74,7 +74,7 @@ IC does not *technically depend* on any EA GPL code to function. The GPL depende
 
 **Every one of these is independently documented** by the community (XCC Utilities, ModEnc wiki, OpenRA source, community format specifications) and has been for 20+ years. IMA ADPCM is an industry standard with a public specification — it is not EA-proprietary.
 
-`cnc-formats` (D076, MIT/Apache-2.0) proves the point: it implements identical parsers for all C&C binary formats using only community documentation and public specifications, with zero EA-derived code. The engine runs correctly with `cnc-formats` alone.
+`cnc-formats` (D076, MIT/Apache-2.0) proves the point: it implements identical parsers for all C&C formats — binary codecs (`.mix`, `.shp`, `.pal`, `.aud`, `.tmp`, `.vqa`, `.wsa`, `.fnt`), `.ini` rules, and feature-gated MiniYAML — using only community documentation and public specifications, with zero EA-derived code. The engine runs correctly with `cnc-formats` alone.
 
 `ra-formats` adds EA-derived details for **authoritative correctness** — when community docs and the original source disagree on edge cases (corrupt files, undocumented flags, rare compression modes), the original source is the ground truth. This is a quality choice, not a functional dependency.
 

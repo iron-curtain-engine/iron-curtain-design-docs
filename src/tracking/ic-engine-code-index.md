@@ -42,7 +42,7 @@
 | Path                  | Role                                        | Notes                                                                                       |
 | --------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | `crates/ic-protocol/` | Shared wire types                           | Boundary crate between sim and net                                                          |
-| `crates/ra-formats/`  | RA1 asset parsers                           | Standalone, no game dependencies                                                            |
+| `crates/ra-formats/`  | RA1 asset pipeline wrapper                  | Wraps `cnc-formats` + EA-derived code; Bevy `AssetSource` integration                       |
 | `crates/ic-paths/`    | Platform path resolution + credential store | Standalone, wraps `app-path` + `strict-path` + `keyring` + `aes-gcm` + `argon2` + `zeroize` |
 | `crates/ic-sim/`      | Deterministic simulation                    | Pure, no I/O, no floats                                                                     |
 | `crates/ic-render/`   | Bevy isometric renderer                     | Reads sim state (read-only)                                                                 |
@@ -78,17 +78,17 @@
 ### `ra-formats`
 
 - **Path:** `crates/ra-formats/`
-- **Primary responsibility:** Parse RA1 file formats (`.mix`, `.shp`, `.pal`, `.aud`, `.vqa`, MiniYAML)
-- **Does not own:** rendering, audio playback, game logic
-- **Public interfaces / trait seams:** asset loader functions, `MixArchive`, `ShpFrame`, `Palette`, MiniYAML parser
+- **Primary responsibility:** IC asset pipeline integration: wraps `cnc-formats` (binary + text parsers) with EA-derived constants, Bevy `AssetSource`, MiniYAML auto-conversion pipeline
+- **Does not own:** rendering, audio playback, game logic, clean-room format parsing (that's `cnc-formats`)
+- **Public interfaces / trait seams:** asset loader functions, `MixArchive`, `ShpFrame`, `Palette`, `detect_format()`, MiniYAML auto-conversion
 - **Key files to read first:** `src/lib.rs`, `src/mix.rs`, `src/shp.rs`
 - **Hot paths / perf-sensitive files:** `.mix` archive lookup (used during asset loading)
 - **Generated files:** none
 - **Tests / verification entry points:** format parsing tests against known-good RA1 corpus
 - **Related design decisions (`Dxxx`):** D003, D023, D025, D027, D075, D076
 - **Related execution steps (`G*`):** G1 (asset parsing)
-- **Common change risks:** format regressions against real RA1 assets; MiniYAML parser compatibility with OpenRA YAML
-- **Search hints:** `mix`, `shp`, `pal`, `aud`, `vqa`, `MiniYAML`, `palette`
+- **Common change risks:** format regressions against real RA1 assets; MiniYAML auto-conversion compatibility with OpenRA YAML
+- **Search hints:** `mix`, `shp`, `pal`, `aud`, `vqa`, `MiniYAML`, `palette`, `detect_format`
 
 ### `ic-paths`
 

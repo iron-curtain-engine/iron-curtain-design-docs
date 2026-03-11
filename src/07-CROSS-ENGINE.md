@@ -12,7 +12,7 @@ Layer 1:  Data compatibility        (do they load same rules?)→ Very achievabl
 
 Load the same YAML rules, maps, unit definitions, weapon stats as OpenRA.
 
-- `ra-formats` crate parses MiniYAML and converts to standard YAML
+- `cnc-formats` provides the clean-room MiniYAML parser; `ra-formats` wraps it for IC's asset pipeline and converts to standard YAML
 - Same maps work on both engines
 - Existing mod data migrates automatically
 - **Status:** Core part of Phase 0, already planned

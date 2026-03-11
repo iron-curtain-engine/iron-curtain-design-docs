@@ -69,7 +69,7 @@ These are non-negotiable across the entire project:
 
 ```
 iron-curtain/
-├── ra-formats     # .mix, .shp, .pal, YAML parsing, MiniYAML converter (C&C-specific, keeps ra- prefix)
+├── ra-formats     # Wraps cnc-formats + EA-derived code; Bevy asset integration; MiniYAML auto-conversion pipeline (C&C-specific, keeps ra- prefix)
 ├── ic-protocol    # PlayerOrder, TimestampedOrder, OrderCodec trait (SHARED boundary)
 ├── ic-sim         # Deterministic simulation (Bevy FixedUpdate systems)
 ├── ic-net         # NetworkModel trait + implementations; RelayCore library (no ic-sim dependency)
