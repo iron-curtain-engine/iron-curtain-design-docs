@@ -389,6 +389,26 @@ Canonical references:
 - Run `cargo deny check licenses` in CI to catch GPL-incompatible transitive dependencies early. Add `deny.toml` to the repository root in Phase 0.
 - **Full coding standards** (file structure, commenting philosophy, naming conventions, error handling, testing patterns, code review checklist) are in `src/16-CODING-STANDARDS.md`.
 
+### Code Module Structure — LLM/RAG Efficiency
+
+The same principle behind the mdbook [File Size Discipline](#file-size-discipline-llmrag-token-efficiency) applies to **source code**: modules must be structured so an LLM or RAG system can retrieve and reason about them efficiently without loading the entire codebase.
+
+**Hard rules:**
+- **≤ 500 lines per file** (logic files). Over 800 lines is a split trigger. Data definition files (struct-heavy YAML deserialization, exhaustive test suites) may exceed this — logic files may not.
+- **≤ 40 lines per function** (target). Over 60 is a smell. Over 100 requires a justification comment.
+- **One concept per module.** A module named `harvesting.rs` contains harvesting logic — not harvesting + refinery + ore growth. If a file needs a compound name (`harvesting_and_refining.rs`), it should be two files.
+- **Module doc comment as a routing header.** Every `.rs` file starts (after SPDX) with a `//!` doc comment block that tells an agent what this module does, what it depends on, and where it fits in the system pipeline — without reading the code. This is the equivalent of a hub page's routing table for code.
+
+**Structural patterns:**
+- **`mod.rs` as barrel/hub.** A directory's `mod.rs` re-exports public items and contains a doc comment summarizing the submodules — an agent reads `mod.rs` (~50 tokens) to decide which submodule to load.
+- **Self-contained context.** Each file restates enough context (system ordering, cross-module interactions, key invariants) that an agent can reason about it without loading siblings. This is the "Dropped In" test from `src/16-CODING-STANDARDS.md`.
+- **Greppable names.** If a concept spans files, use the identical term everywhere. An agent searching for "cargo" should find it in both `harvester.rs` and `refinery.rs` — not "payload" in one and "cargo" in the other.
+- **Trait files are routing indexes.** A trait definition file (`pathfinder.rs` defining `Pathfinder`) should doc-comment each method with enough context that an agent can decide whether it needs the trait or an implementation file.
+
+**Why this matters:** An LLM context window is 8K–200K tokens. A 500-line Rust file is ~1,500–2,500 tokens — an agent can load 3–5 related files and still have room to reason. An 1,800-line file is ~6,000 tokens — it crowds out everything else. RAG retrieval works best when each chunk is self-contained, well-labeled, and single-topic — exactly the same properties that make code readable to humans.
+
+**Canonical reference:** `src/coding-standards/quality-review.md` § File Size Guideline, § Isolation and Context Independence.
+
 ### When Adding a New Feature
 1. Check `src/09-DECISIONS.md` (decision index) — has this been decided already? Follow the link to the relevant sub-document.
 2. Check the roadmap (`src/08-ROADMAP.md`) — which phase does this belong to?
@@ -504,3 +524,4 @@ Algorithm-level designs that prove out architectural decisions with concrete spe
 - **Cloud-native lessons for IC platform:** Reverse analysis of K8s operational patterns applicable to IC — readiness vs. liveness probes (`/ready` endpoint), match-aware drain protocol, `_schema_meta` schema versioning, config migration with deprecation warnings, disk budgets with `on_limit` behavior, reconciliation loops (content/federation/health), server capability labels for federation routing, secrets separation (`secrets.toml`), operational metrics, cvar persistence; 15 improvements prioritized by impact-to-effort, anti-lessons (what NOT to adopt from K8s); see `research/cloud-native-lessons-for-ic-platform.md`
 - **Decentralized compute exploration:** Research-only exploration of P2P platform as compute orchestration infrastructure (K8s-like task scheduling over IC's federation); NOT a committed design, Phase 7+ at earliest; conclusion: sound intuition but don't build now — ensure `p2p-distribute` traits don't preclude future compute orchestration (already satisfied by existing extensibility traits); proposes future `p2p-orchestrate` crate (post-IC, not scheduled); see `research/p2p-decentralized-compute-cloud-exploration.md`
 - **Credential protection at rest:** Three-tier `CredentialStore` in `ic-paths` — OS keyring (DPAPI/Keychain/Secret Service via `keyring` crate), vault passphrase (Argon2id KDF), session-only (WASM); per-column AES-256-GCM encryption for SQLite credential columns; DEK model; `zeroize` memory protection; threat model and honest limitations; see `research/credential-protection-design.md`
+- **ML training pipeline design:** Replay-to-dataset conversion for AI model training — `TrainingPair` schema (fog-filtered state + orders + outcome labels), Parquet export format, SQLite training index, fog-of-war filtered extraction pipeline, headless self-play generation architecture, `ic training generate` / `ic training export` CLI, custom model integration paths (WASM AiStrategy, LlmProvider Tier 4, native Rust), dataset collection strategy (self-play, foreign replay import, community donation), quality tiers, volume estimates; see `research/ml-training-pipeline-design.md`

@@ -242,6 +242,7 @@ The `<data_dir>` layout (D061) reflects the split:
 ├── achievements.db                     # Achievement collection (SQLite)
 ├── gameplay.db                         # Event log, replay catalog (SQLite)
 ├── telemetry.db                        # Telemetry events (SQLite)
+├── training_index.db                   # ML training data catalog (SQLite) — optional
 ├── keys/
 │   └── identity.key
 ├── communities/

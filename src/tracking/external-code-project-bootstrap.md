@@ -157,6 +157,7 @@ To make an external implementation repo work well with agentic tools:
 - Document public interfaces and trait boundaries
 - Link code areas to `Dxxx` and `G*` steps
 - Add "start here for X" routing entries
+- **Structure code modules for RAG efficiency** — see the AGENTS template § Code Module Structure for RAG Efficiency (≤ 500 lines per logic file, one concept per module, `//!` doc routing headers, `mod.rs` barrel hubs, self-contained "Dropped In" context)
 
 This prevents agents from wasting tokens or editing the wrong files first.
 
@@ -178,7 +179,7 @@ Recommended labels for cross-repo coordination:
 For the **IC engine/game repository** (primary Rust codebase), pre-filled versions of both templates are available — all placeholders replaced with IC-specific details:
 
 - **`tracking/ic-engine-agents.md`** — filled-in `AGENTS.md` with architectural invariants, crate workspace, build commands, milestone targets, and LLM/agent rules
-- **`tracking/ic-engine-code-index.md`** — filled-in `CODE-INDEX.md` with task routing table, all 13 crate subsystem entries, cross-cutting boundaries, and evidence paths
+- **`tracking/ic-engine-code-index.md`** — filled-in `CODE-INDEX.md` with task routing table, all 14 crate subsystem entries, cross-cutting boundaries, and evidence paths
 
 **For the engine repo (iron-curtain):** Copy the pre-filled `tracking/ic-engine-agents.md` and `tracking/ic-engine-code-index.md` into the new engine repo, and use the GitHub template repository (`iron-curtain/ic-template`, described below) as your baseline.
 

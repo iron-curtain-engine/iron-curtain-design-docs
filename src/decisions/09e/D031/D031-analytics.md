@@ -71,14 +71,14 @@ These capture the lifecycle and pacing of matches — when they start, how they 
 
 These events measure whether IC's post-game / post-session feedback prompts are useful without becoming spam. They support UX tuning and creator-tooling iteration, but they are **not** moderation verdicts and they do **not** carry gameplay rewards.
 
-| Event                           | JSON `data` Fields                                                                                                                                                              | What It Reveals                                                                 |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| `feedback.prompt.shown`         | `surface` (post_game/campaign_end/workshop_detail), `target_kind` (match_mode/workshop_resource/campaign), `target_id` (optional), `session_number`, `sampling_reason`        | Prompt frequency and where feedback is requested                                |
-| `feedback.prompt.action`        | `surface`, `target_kind`, `action` (submitted/skipped/snoozed/disabled_for_target/disabled_global), `time_on_prompt_ms`                                                      | Whether the prompt is helpful or intrusive                                      |
-| `feedback.review.submit`        | `target_kind`, `target_id`, `rating` (optional 1-5), `text_length`, `playtime_s`, `community_submit` (bool), `contains_spoiler_opt_in` (bool)                               | Review quality and submission patterns across modes/mods/campaigns              |
-| `feedback.review.helpful_mark`  | `resource_id`, `review_id`, `actor_role` (author/moderator), `outcome` (marked/unmarked/rejected), `reward_granted` (bool), `reward_type` (badge/title/acknowledgement/reputation/points/none) | Creator triage behavior and helpful-review recognition usage                    |
-| `feedback.review.reward_grant`  | `review_id`, `resource_id`, `reward_type`, `recipient_scope` (local_profile/community_profile), `revocable` (bool), `points_amount` (optional)                             | How often profile-only rewards are granted and what types are used              |
-| `feedback.review.reward_redeem` | `reward_catalog_id`, `cost_points`, `recipient_scope`, `outcome` (success/rejected/revoked/refunded), `reason`                                                               | Cosmetic/profile reward redemption usage and abuse/policy tuning (if enabled)   |
+| Event                           | JSON `data` Fields                                                                                                                                                                             | What It Reveals                                                               |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `feedback.prompt.shown`         | `surface` (post_game/campaign_end/workshop_detail), `target_kind` (match_mode/workshop_resource/campaign), `target_id` (optional), `session_number`, `sampling_reason`                         | Prompt frequency and where feedback is requested                              |
+| `feedback.prompt.action`        | `surface`, `target_kind`, `action` (submitted/skipped/snoozed/disabled_for_target/disabled_global), `time_on_prompt_ms`                                                                        | Whether the prompt is helpful or intrusive                                    |
+| `feedback.review.submit`        | `target_kind`, `target_id`, `rating` (optional 1-5), `text_length`, `playtime_s`, `community_submit` (bool), `contains_spoiler_opt_in` (bool)                                                  | Review quality and submission patterns across modes/mods/campaigns            |
+| `feedback.review.helpful_mark`  | `resource_id`, `review_id`, `actor_role` (author/moderator), `outcome` (marked/unmarked/rejected), `reward_granted` (bool), `reward_type` (badge/title/acknowledgement/reputation/points/none) | Creator triage behavior and helpful-review recognition usage                  |
+| `feedback.review.reward_grant`  | `review_id`, `resource_id`, `reward_type`, `recipient_scope` (local_profile/community_profile), `revocable` (bool), `points_amount` (optional)                                                 | How often profile-only rewards are granted and what types are used            |
+| `feedback.review.reward_redeem` | `reward_catalog_id`, `cost_points`, `recipient_scope`, `outcome` (success/rejected/revoked/refunded), `reason`                                                                                 | Cosmetic/profile reward redemption usage and abuse/policy tuning (if enabled) |
 
 **Privacy / reward boundary (normative):**
 - These are **product/community UX analytics** events, not ranked, matchmaking, or anti-cheat signals.
@@ -89,12 +89,12 @@ These events measure whether IC's post-game / post-session feedback prompts are 
 
 Campaign telemetry supports local campaign dashboards, branching progress summaries, and (if the player opts in) community benchmark aggregates. These events are **social/analytics-facing**, not ranked or anti-cheat signals.
 
-| Event                        | JSON `data` Fields                                                                                                                                                 | What It Reveals                                                                 |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| `campaign.run.start`         | `campaign_id`, `campaign_version`, `game_module`, `difficulty`, `balance_preset`, `save_slot`, `continued`                                                       | Which campaigns are being played and under what ruleset                         |
-| `campaign.node.complete`     | `campaign_id`, `mission_id`, `outcome`, `path_depth`, `time_s`, `units_lost`, `score`, `branch_revealed_count`                                                  | Mission outcomes, pacing, branching progress, friction points                   |
-| `campaign.progress_snapshot` | `campaign_id`, `campaign_version`, `unique_completed`, `total_missions`, `current_path_depth`, `best_path_depth`, `endings_unlocked`, `time_played_s`           | Branching-safe progress metrics for campaign browser/profile/dashboard UIs      |
-| `campaign.run.end`           | `campaign_id`, `reason` (completed/abandoned/defeat_branch/pause_for_later), `best_path_depth`, `unique_completed`, `ending_id` (optional), `session_time_s`    | Campaign completion/abandonment rates and session outcomes                      |
+| Event                        | JSON `data` Fields                                                                                                                                           | What It Reveals                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
+| `campaign.run.start`         | `campaign_id`, `campaign_version`, `game_module`, `difficulty`, `balance_preset`, `save_slot`, `continued`                                                   | Which campaigns are being played and under what ruleset                    |
+| `campaign.node.complete`     | `campaign_id`, `mission_id`, `outcome`, `path_depth`, `time_s`, `units_lost`, `score`, `branch_revealed_count`                                               | Mission outcomes, pacing, branching progress, friction points              |
+| `campaign.progress_snapshot` | `campaign_id`, `campaign_version`, `unique_completed`, `total_missions`, `current_path_depth`, `best_path_depth`, `endings_unlocked`, `time_played_s`        | Branching-safe progress metrics for campaign browser/profile/dashboard UIs |
+| `campaign.run.end`           | `campaign_id`, `reason` (completed/abandoned/defeat_branch/pause_for_later), `best_path_depth`, `unique_completed`, `ending_id` (optional), `session_time_s` | Campaign completion/abandonment rates and session outcomes                 |
 
 **Privacy / sharing boundary (normative):**
 - These events are always available for **local dashboards** (campaign browser, profile campaign card, career stats).
@@ -379,6 +379,35 @@ Pre-built Grafana dashboards ship with the project:
 - Always-on telemetry (violates performance invariant — must be zero-cost when disabled)
 
 **Phase:** Unified `telemetry_events` SQLite schema + `/analytics` console commands in Phase 2 (shared across all components from day one). Engine telemetry (per-system timing, `GameplayEvent` stream) in Phase 2 (sim). Product analytics (GUI interaction, session, settings, onboarding, errors, performance sampling) in Phase 3 (alongside UI chrome). Server-side SQLite telemetry recording (relay, tracking, workshop) in Phase 5 (multiplayer). Optional OTEL export layer for server operators in Phase 5. Pre-built Grafana dashboards in Phase 5. AI training pipeline in Phase 7 (LLM).
+
+### AI Training Data Export
+
+The telemetry and gameplay event data captured above is a secondary data source for AI model training — enriching the primary source (replay files) with contextual signals not present in the replay order stream.
+
+**What telemetry adds to training data:**
+
+| Telemetry Event                           | Training Data Value                                                          |
+| ----------------------------------------- | ---------------------------------------------------------------------------- |
+| `match.pace` (every 60s)                  | Economic time-series — credits, power, army value, tech tier over time       |
+| `input.ctrl_group`                        | Micro skill indicator — control group adoption and reassignment frequency    |
+| `input.order` (method breakdown)          | Input habit fingerprint — right-click vs. hotkey vs. sidebar ordering        |
+| `match.surrender_point`                   | Reward shaping signal — at what deficit do players perceive the game as lost |
+| `input.camera`                            | Attention model — what the player was looking at when making decisions       |
+| `match.first_build`, `match.first_combat` | Build order and aggression timing markers                                    |
+
+**Export for ML:**
+
+```
+ic analytics export-training \
+  --categories match,input,campaign \
+  --from 2026-01-01 \
+  --format parquet \
+  --output ./telemetry_training/
+```
+
+Exports selected telemetry event categories as Parquet files, joined to replay metadata where available. This supplements the replay-derived training pairs (see `research/ml-training-pipeline-design.md`) with player behavior signals that aren't captured in the deterministic order stream.
+
+**Privacy boundary:** Training exports apply the same anonymization as `/analytics export` — hashed session IDs, no PII, no hardware identifiers. Players who disable product analytics (`telemetry.product_analytics false`) produce no telemetry-enriched training data; replay-derived training pairs remain unaffected.
 
 ---
 

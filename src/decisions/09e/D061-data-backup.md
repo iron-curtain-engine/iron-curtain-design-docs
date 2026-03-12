@@ -34,6 +34,7 @@ All player data lives under a single, stable, documented directory. The layout i
 ├── achievements.db                     # Achievement collection (D036)
 ├── gameplay.db                         # Event log, replay catalog, save game index, map catalog, asset index (D034)
 ├── telemetry.db                        # Unified telemetry events (D031) — pruned at 100 MB
+├── training_index.db                   # ML training data catalog (D044) — optional, only created by `ic training` commands
 ├── keys/                               # Player Ed25519 keypair (D052) — THE critical file
 │   └── identity.key                    # Private key — recoverable via mnemonic seed phrase
 ├── communities/                        # Per-community credential stores (D052)
@@ -117,10 +118,11 @@ ic backup verify ic-backup-2027-03-15.zip     # Verify archive integrity without
 | `screenshots`  | `screenshots/*.png`            | 10 MB – 5 GB   | Low — sentimental, not functional                            |
 | `workshop`     | `workshop/` (cache + packages) | 100 MB – 50 GB | None — re-downloadable                                       |
 | `gameplay`     | `gameplay.db`                  | 10–100 MB      | Medium — event log, catalogs (rebuildable)                   |
+| `training`     | `training_index.db`            | 1–100 MB       | None — AI training catalog, fully rebuildable from replays   |
 | `mods`         | `mods/`                        | Variable       | Low — re-downloadable or re-installable                      |
 | `maps`         | `maps/`                        | Variable       | Low — re-downloadable                                        |
 
-**Default `ic backup create`** includes: `keys`, `profile`, `communities`, `achievements`, `config`, `saves`, `replays`, `screenshots`, `gameplay`. Excludes `workshop`, `mods`, `maps` (re-downloadable). Total size for a typical player: 200 MB – 2 GB.
+**Default `ic backup create`** includes: `keys`, `profile`, `communities`, `achievements`, `config`, `saves`, `replays`, `screenshots`, `gameplay`. Excludes `workshop`, `mods`, `maps` (re-downloadable), `training` (rebuildable from replays). Total size for a typical player: 200 MB – 2 GB.
 
 ### Database Query & Export: `ic db` CLI
 

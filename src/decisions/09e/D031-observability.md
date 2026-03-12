@@ -240,28 +240,28 @@ This is the "game engine equivalent of a Kubernetes dashboard" — operators of 
 
 ### AI / LLM Training Data Pipeline
 
-The gameplay event stream is the foundation for AI development:
+The primary ML training pipeline is **replay-first** — deterministic replay files are the source of truth. Telemetry enriches replay-derived data with contextual signals not present in the order stream (see `research/ml-training-pipeline-design.md`):
 
-| Consumer                      | Data Source                        | Purpose                                                                   |
-| ----------------------------- | ---------------------------------- | ------------------------------------------------------------------------- |
-| `ic-ai` (skirmish AI)         | Gameplay events from human games   | Learn build orders, engagement timing, micro patterns                     |
-| `ic-llm` (missions)           | Gameplay events + enriched replays | Learn what makes missions fun (engagement density, pacing, flow)          |
-| `ic-editor` (replay→scenario) | Replay event log (SQLite)          | Direct extraction of waypoints, combat zones, build timelines into editor |
-| `ic-llm` (replay→scenario)    | Replay event log + context         | Generate narrative, briefings, dialogue for replay-to-scenario pipeline   |
-| Behavioral analysis           | Relay-side player profiles         | APM, reaction time, input entropy → suspicion scoring (V12)               |
-| Balance analysis              | Aggregated match outcomes          | Win rates by faction/map/preset → balance tuning                          |
-| Adaptive difficulty           | Per-player gameplay patterns       | Build speed, APM, unit composition → difficulty calibration               |
-| Community analytics           | Workshop + match metadata          | Popular resources, play patterns, mod adoption → recommendations          |
+| Consumer                      | Data Source                                          | Purpose                                                                   |
+| ----------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------- |
+| `ic-ai` (skirmish AI)         | Replay-derived training pairs + telemetry enrichment | Learn build orders, engagement timing, micro patterns                     |
+| `ic-llm` (missions)           | Replay-derived training pairs + telemetry enrichment | Learn what makes missions fun (engagement density, pacing, flow)          |
+| `ic-editor` (replay→scenario) | Replay event log (SQLite)                            | Direct extraction of waypoints, combat zones, build timelines into editor |
+| `ic-llm` (replay→scenario)    | Replay event log + context                           | Generate narrative, briefings, dialogue for replay-to-scenario pipeline   |
+| Behavioral analysis           | Relay-side player profiles                           | APM, reaction time, input entropy → suspicion scoring (V12)               |
+| Balance analysis              | Aggregated match outcomes                            | Win rates by faction/map/preset → balance tuning                          |
+| Adaptive difficulty           | Per-player gameplay patterns                         | Build speed, APM, unit composition → difficulty calibration               |
+| Community analytics           | Workshop + match metadata                            | Popular resources, play patterns, mod adoption → recommendations          |
 
 **Privacy:** Gameplay events are associated with anonymized player IDs (hashed). No PII in telemetry. Players opt in to telemetry export (default: local-only for debugging). Tournament/ranked play may require telemetry for anti-cheat and certified results. See `06-SECURITY.md`.
 
-**Data format:** Gameplay events export as structured OTEL log records → can be collected into Parquet/Arrow columnar format for batch ML training. The LLM training pipeline reads events, not raw replay bytes.
+**Data format:** Gameplay events export as structured OTEL log records → can be collected into Parquet/Arrow columnar format for operational analytics and balance analysis. The primary ML training pipeline is **replay-first** — deterministic replay files are the source of truth for training pairs (fog-filtered state + orders + outcome labels). Telemetry enriches replay-derived training data with contextual signals (camera attention, input habits, pacing snapshots) not present in the order stream. See `research/ml-training-pipeline-design.md` and `D031/D031-analytics.md` § "AI Training Data Export."
 
 
 ---
 
 ## Sub-Pages
 
-| Section | Topic | File |
-| --- | --- | --- |
+| Section                  | Topic                                                                                                                                        | File                                        |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------- |
 | Analytics & Architecture | Product analytics client event taxonomy (10 categories), analytical power, architecture, implementation approach, self-hosting observability | [D031-analytics.md](D031/D031-analytics.md) |

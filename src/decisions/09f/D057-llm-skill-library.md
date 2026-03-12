@@ -409,6 +409,19 @@ ic skill stats     # library overview: counts by domain/confidence/game module
 - **NOT required for any LLM feature to work.** All LLM features (D016, D044) work without a skill library — they just don't improve over time. The library is an additive enhancement, not a prerequisite.
 - **NOT a replacement for hand-authored content.** The built-in scene templates, AI behavior presets (D043), and campaign content (D021) are hand-crafted and don't depend on the skill library. The library augments LLM capabilities; it doesn't replace authored content.
 
+### Skills as Training Data (ML Pipeline Integration)
+
+While the skill library is designed for **retrieval** (few-shot prompt context), not gradient-based training, skills are also valuable as **high-quality labeled training data** for users who train custom models (D044 § Custom Trained Models):
+
+- Each verified `StrategicPattern` skill contains a labeled (situation, plan, outcome) tuple — exactly the supervision signal needed for imitation learning
+- The `SituationSignature` provides the observation features; the `StrategicPlan` provides the action label; `success_rate` provides the quality weight
+- Verification runs (`ic skill verify`) produce replay files as a side effect — these replays contain strategy-annotated gameplay data (the skill being tested is known, the outcome is measured)
+- Skills can be exported alongside their source replays: `ic skill export --with-replays --domain ai --confidence established+`
+
+The training data pipeline (`research/ml-training-pipeline-design.md`) defines the full spec for converting replays and skills into Parquet training datasets. Skills provide the "expert annotation" layer — curated, verified, and semantically labeled — on top of raw (state, action) pairs extracted from replays.
+
+**Key distinction:** The skill library improves text-based LLMs via retrieval (no training). Custom models can use skills as labeled training data (gradient updates). Both paths consume the same data; they differ in how that data reaches the model — prompt context window vs. training loss function.
+
 ### Alternatives Considered
 
 - **Full model fine-tuning per user** (rejected — requires GPU infrastructure, violates BYOLLM portability, incompatible with API-based providers, and risks catastrophic forgetting of general capabilities)

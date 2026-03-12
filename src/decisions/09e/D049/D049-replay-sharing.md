@@ -83,12 +83,13 @@ Piece length for replay files follows the standard D049 size-based table: most r
 
 #### Cross-References
 
-| Topic                                   | Document                                                                            |
-| --------------------------------------- | ----------------------------------------------------------------------------------- |
-| Replay UX (browser, viewer, sharing UI) | [player-flow/replays.md](../../../player-flow/replays.md) § "Replay Sharing"        |
-| .icrep binary format                    | [formats/save-replay-formats.md](../../../formats/save-replay-formats.md)           |
-| P2P distribution protocol               | [D049 § P2P Distribution](D049-p2p-distribution.md)                                 |
-| Relay server management & retention     | [D072](../../09b/D072-server-management.md)                                         |
-| Voice-in-replay                         | [D059](../../09g/D059-communication.md)                                             |
-| Replay anonymization                    | [D056](../../09f/D056-replay-import.md)                                             |
-| Data-sharing flows overview             | [architecture/data-flows-overview.md](../../../architecture/data-flows-overview.md) |
+| Topic                                   | Document                                                                                                                                                                                     |
+| --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Replay UX (browser, viewer, sharing UI) | [player-flow/replays.md](../../../player-flow/replays.md) § "Replay Sharing"                                                                                                                 |
+| .icrep binary format                    | [formats/save-replay-formats.md](../../../formats/save-replay-formats.md)                                                                                                                    |
+| P2P distribution protocol               | [D049 § P2P Distribution](D049-p2p-distribution.md)                                                                                                                                          |
+| Relay server management & retention     | [D072](../../09b/D072-server-management.md)                                                                                                                                                  |
+| Voice-in-replay                         | [D059](../../09g/D059-communication.md)                                                                                                                                                      |
+| Replay anonymization                    | [D056](../../09f/D056-replay-import.md)                                                                                                                                                      |
+| Data-sharing flows overview             | [architecture/data-flows-overview.md](../../../architecture/data-flows-overview.md)                                                                                                          |
+| ML training replay donation (research)  | [research/ml-training-pipeline-design.md](../../../../research/ml-training-pipeline-design.md) § "Source 3: Community Replay Donation" — uses same anonymization infrastructure as this page |

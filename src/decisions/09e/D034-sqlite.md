@@ -61,15 +61,15 @@ This is also why SQLite is chosen over flat files (JSON, CSV): structured data i
 
 D031 (OTEL) and D034 (SQLite) are complementary, not competing:
 
-| Concern                   | D031 (OTEL)                                  | D034 (SQLite)                                                          |
-| ------------------------- | -------------------------------------------- | ---------------------------------------------------------------------- |
-| **Real-time monitoring**  | Yes — Prometheus metrics, Grafana dashboards | No                                                                     |
-| **Distributed tracing**   | Yes — Jaeger traces across clients and relay | No                                                                     |
-| **Persistent records**    | No — metrics are time-windowed, logs rotate  | Yes — match history, ratings, replays are permanent                    |
-| **Ad-hoc investigation**  | Requires OTEL stack running                  | Just open the `.db` file                                               |
-| **Offline operation**     | No — needs collector + backends              | Yes — works standalone                                                 |
-| **Client-side debugging** | Requires exporting to a collector            | Local `.db` file, queryable immediately                                |
-| **AI training pipeline**  | Yes — Parquet/Arrow export for ML            | Source data — gameplay events could be exported from SQLite to Parquet |
+| Concern                   | D031 (OTEL)                                            | D034 (SQLite)                                                                    |
+| ------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| **Real-time monitoring**  | Yes — Prometheus metrics, Grafana dashboards           | No                                                                               |
+| **Distributed tracing**   | Yes — Jaeger traces across clients and relay           | No                                                                               |
+| **Persistent records**    | No — metrics are time-windowed, logs rotate            | Yes — match history, ratings, replays are permanent                              |
+| **Ad-hoc investigation**  | Requires OTEL stack running                            | Just open the `.db` file                                                         |
+| **Offline operation**     | No — needs collector + backends                        | Yes — works standalone                                                           |
+| **Client-side debugging** | Requires exporting to a collector                      | Local `.db` file, queryable immediately                                          |
+| **AI training pipeline**  | Enrichment — supplements replay-derived training pairs | Primary source — replay-derived training pairs enriched by telemetry from SQLite |
 
 OTEL is for operational monitoring and distributed debugging. SQLite is for persistent records, metadata indices, and standalone investigation. Tournament servers and relay servers use both — OTEL for dashboards, SQLite for match history.
 

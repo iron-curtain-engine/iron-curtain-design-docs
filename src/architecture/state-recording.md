@@ -114,3 +114,16 @@ fn on_desync_detected(
 ```
 
 This ensures desync debugging always has a snapshot at the exact point of divergence — not N ticks later when the developer gets around to analyzing it. The pattern comes from Valve's Fossilize (crash-safe state capture, see `research/valve-github-analysis.md` § 3.1) and OpenTTD's periodic desync snapshot naming convention (`desync_{seed}_{tick}.snap`).
+
+### ML Training Data Extraction
+
+The same keyframe snapshots and order streams that power replay playback also serve as the foundation for AI training data extraction. The `StateRecorder`'s output (`.icrep` files with tick-order frames + periodic keyframe snapshots) can be processed offline into structured training datasets:
+
+- **Keyframe snapshots → game state observations.** Each `SimCoreSnapshot` or `DeltaSnapshot` provides the full game state at a point in time. The extraction pipeline applies fog-of-war filtering (same `FogFilteredView` as live gameplay) to produce per-player observations.
+- **Tick-order frames → action labels.** The `ReplayTickFrame { tick, state_hash, orders }` recorded every tick provides the ground truth for "what the player did at tick T."
+- **Analysis events → temporal context.** The optional analysis event stream (HAS_EVENTS flag) provides unit lifecycle, economy snapshots, and camera tracking between keyframes — enriching training samples with recent event history.
+- **Keyframe seeking → arbitrary tick reconstruction.** The keyframe index enables binary-search seeking to any point in the match, then forward simulation to the exact target tick. This means training data can be extracted at any stride without re-simulating from tick 0.
+
+**Training extraction operates read-only on `.icrep` files** — no sim modification, no recording changes. The extraction pipeline is a consumer of the same replay format that powers spectator replay, desync debugging, and save games.
+
+See `research/ml-training-pipeline-design.md` for the complete training pair schema, Parquet export format, headless self-play generation, and the `ic training generate` / `ic training export` CLI specification.

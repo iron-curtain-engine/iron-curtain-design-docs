@@ -195,17 +195,17 @@ pub enum TimePressure { None, Low, Medium, Urgent, Immediate }
 
 **StrategicPlan → `set_parameter()` mapping:**
 
-| StrategicPlan field | Inner AI parameter | Example value |
-|---|---|---|
-| `build_focus: AntiAir` | `tech_priority_aa` | 80 |
-| `build_focus: Economy` | `expansion_priority` | 90 |
-| `risk_assessment.threat_level: Critical` | `aggression` | 20 (defensive) |
-| `risk_assessment.threat_level: Low` | `aggression` | 75 (aggressive) |
-| `economic_guidance.expand: true` | `expansion_priority` | 85 |
-| `economic_guidance.harvester_target: 6` | `harvester_count_target` | 6 |
+| StrategicPlan field                       | Inner AI parameter                   | Example value   |
+| ----------------------------------------- | ------------------------------------ | --------------- |
+| `build_focus: AntiAir`                    | `tech_priority_aa`                   | 80              |
+| `build_focus: Economy`                    | `expansion_priority`                 | 90              |
+| `risk_assessment.threat_level: Critical`  | `aggression`                         | 20 (defensive)  |
+| `risk_assessment.threat_level: Low`       | `aggression`                         | 75 (aggressive) |
+| `economic_guidance.expand: true`          | `expansion_priority`                 | 85              |
+| `economic_guidance.harvester_target: 6`   | `harvester_count_target`             | 6               |
 | `priority_targets[0].target_type: Attack` | `attack_target_x`, `attack_target_y` | WorldPos coords |
-| `priority_targets[0].target_type: Scout` | `scout_priority` | 80 |
-| `time_pressure: Immediate` | `reaction_urgency` | 100 |
+| `priority_targets[0].target_type: Scout`  | `scout_priority`                     | 80              |
+| `time_pressure: Immediate`                | `reaction_urgency`                   | 100             |
 
 **How StrategicPlan reaches the inner AI:**
 
@@ -329,6 +329,28 @@ The architecture is deliberately designed not to stand in the way of full LLM co
 | Prompt templates (YAML)       | mod data | Game-module-specific, moddable                                 |
 | Game state serializer for LLM | `ic-ai`  | Reads sim state (read-only), formats for LLM prompts           |
 | Debug overlay (plan viewer)   | `ic-ui`  | Spectator/dev UI for observing LLM reasoning + event narrative |
+
+### Custom Trained Models — Beyond Text-Based LLMs
+
+The orchestrator and player architectures above use text-based LLMs (natural language in, structured plan out). For users who want to train their own models on gameplay data — whether neural networks, reinforcement learning agents, or custom "pseudo-LLMs" optimized for RTS decision-making — IC provides three integration paths, all using the same `AiStrategy` trait:
+
+**Path A: WASM `AiStrategy` (recommended for gameplay-optimized models)**
+
+A trained neural network compiled to WASM and distributed via Workshop (D043). The model receives `FogFilteredView` as structured data and emits `Vec<PlayerOrder>` directly — no text serialization, no prompt engineering. Inference frameworks like `candle` (MIT, pure Rust) compile to WASM. Target inference latency: < 5ms per `decide()` call.
+
+**Path B: `LlmProvider` Tier 4 — Local External (D047)**
+
+A custom model runs as a local HTTP server and receives fog-filtered state as JSON, returning orders as JSON. Supports any model framework (PyTorch, ONNX Runtime, TensorFlow Serving) without WASM compilation. Higher latency (~10-100ms per call) but maximum framework flexibility.
+
+**Path C: Native Rust `AiStrategy` (maximum performance)**
+
+A custom model compiled directly as a Rust `AiStrategy` implementation in `ic-ai`. Bypasses both WASM overhead and HTTP latency — native speed alongside the sim. Suitable for first-party or deeply integrated community models.
+
+All three paths receive the same `FogFilteredView` and produce the same `Vec<PlayerOrder>`. The choice depends on distribution model (Workshop WASM vs. local server vs. source integration) and latency requirements.
+
+**Training data pipeline:** See `research/ml-training-pipeline-design.md` for the complete spec on converting replay files (`.icrep`) into training-ready datasets — including the `TrainingPair` schema, Parquet export format, fog-filtered state encoding, headless self-play generation, and the `ic training generate` / `ic training export` CLI tools. The pipeline extracts (observation, action, outcome) tuples from replay keyframes and order streams, producing datasets compatible with any ML framework.
+
+**Relationship to D057 Skill Library:** Custom models and the skill library serve complementary roles. The skill library provides few-shot context for text-based LLMs without model modification. Custom trained models use gradient-based learning on replay-derived training pairs. Both consume the same underlying data (replays, telemetry, behavioral profiles) through different pathways — retrieval-augmented generation vs. supervised learning.
 
 ### Alternatives Considered
 

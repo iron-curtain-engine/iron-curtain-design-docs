@@ -30,7 +30,9 @@ fn calculate_effective_damage(raw: i32, armor: &Armor) -> i32 {
 
 ### File Size Guideline
 
-**Target:** Most files should be **under 500 lines** (including comments and tests). If a file exceeds 800 lines, it likely contains multiple concepts and should be split. The `mod.rs` barrel file pattern keeps the public API clean while allowing internal splits:
+> **LLM/RAG rationale:** A 500-line Rust file ≈ 1,500–2,500 tokens. An LLM agent can load 3–5 related files within a single retrieval window and still have room to reason. An 1,800-line file ≈ 6,000 tokens — it crowds out everything else. These limits serve human readability *and* efficient RAG chunking. See `AGENTS.md` § Code Module Structure — LLM/RAG Efficiency.
+
+**Hard rule:** Logic files must be **under 500 lines** (including comments and tests). Over 800 lines is a split trigger — the file almost certainly contains multiple concepts. Data definition files (struct-heavy YAML deserialization, exhaustive test suites) may exceed this; logic files may not. The `mod.rs` barrel file pattern keeps the public API clean while allowing internal splits:
 
 ```
 components/
@@ -40,7 +42,7 @@ components/
 └── economy.rs       # Harvester, ResourceStorage, OreField — ~350 lines
 ```
 
-**Exception:** Some files are naturally large (YAML rule deserialization structs, comprehensive test suites). That's fine — the 500-line guideline is for logic files, not data definition files.
+**Exception:** Some files are naturally large (YAML rule deserialization structs, comprehensive test suites). That's fine — the 500-line limit is for logic files, not data definition files.
 
 ---
 
@@ -76,6 +78,8 @@ A developer reading `harvesting.rs` should not need to also read `movement.rs`, 
 Before merging any file, apply this test: *Could a developer who has never seen this codebase read this file — and only this file — and understand what it does, why it exists, and how to modify it?*
 
 If the answer is no, add more context. Module docs, architecture context comments, cross-reference links — whatever it takes for the file to stand on its own.
+
+> **LLM/RAG note:** This test is the code-module equivalent of the design-doc hub-and-sub-file pattern. When a RAG system retrieves a single file, the module doc comment serves as the routing header — it tells the agent what this file covers without reading the code body. A module that fails the "Dropped In" test also fails RAG retrieval: the agent loads the file, can't make sense of it in isolation, and wastes tokens loading siblings to build context.
 
 ---
 
