@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-9adfe301.js"></script>
+        <script src="toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -194,7 +194,7 @@
 </thead>
 <tbody>
 <tr><td><strong>Campaign (Allied + Soviet)</strong></td><td>All original Red Alert missions fully playable with branching outcomes, unit roster persistence, veterancy carry-over, and optional hero progression (D021)</td></tr>
-<tr><td><strong>Skirmish vs AI</strong></td><td>Up to 8 players/AI on any map; AI difficulty (Easy–Brutal) with distinct personality profiles (Classic Westwood, OpenRA, IC Default); mix different AI personalities in the same match (D043)</td></tr>
+<tr><td><strong>Skirmish vs AI</strong></td><td>Up to 8 players/AI on any map; named AI Commanders with portraits, agendas, and taunts (D043); AI difficulty (Easy–Brutal); mix different commander personalities in the same match</td></tr>
 <tr><td><strong>Ranked Multiplayer</strong></td><td>Glicko-2 rating with seasonal tiers (Conscript → Supreme Commander), per-queue ratings (1v1, 2v2, FFA), map veto system, placement matches, escalating cooldowns (D055)</td></tr>
 <tr><td><strong>Casual Multiplayer</strong></td><td>Game browser, Among Us-style room codes (IRON-XXXX), QR join for LAN/streaming, Discord/Steam deep links, auto-download missing mods on join (D030)</td></tr>
 <tr><td><strong>Asymmetric Co-op</strong></td><td>Commander + Field Ops roles with separate HUDs, support request system (CAS, Recon, Reinforcements, Extraction), and War-Effort Board pacing (D070)</td></tr>
@@ -254,9 +254,13 @@
 </ul>
 <p><strong>AI Personality &amp; Difficulty (D043):</strong></p>
 <ul>
-<li>Two-axis tuning: engine scaling (resource bonuses) + behavioral personality (aggression, expansion, tech preference)</li>
-<li>Mix different personalities in the same match</li>
-<li>Replay-based behavioral mimicry: AI learns from your replays</li>
+<li>Named AI Commanders with portraits, specializations, visible agendas, and contextual taunts (Generals ZH / Civ 5 pattern)</li>
+<li>6 built-in RA1 commanders (Col. Volkov — Armor, Cmdr. Nadia — Intel, Gen. Kukov — Brute Force, Cdr. Stavros — Air, Col. von Esling — Defense, Lt. Tanya — Spec Ops)</li>
+<li>Two-axis tuning: commander persona (aggression, expansion, tech preference) × engine difficulty scaling (resource bonuses)</li>
+<li>Mix different commanders in the same match — each AI slot picks independently</li>
+<li><strong>Puppet Master</strong> strategic guidance: optional external advisor (LLM, human coach, or future types) that directs AI objectives without replacing tick-level control; Masterless by default</li>
+<li>Community commanders via Workshop (YAML — no code required); LLM-generated commanders (Phase 7)</li>
+<li>Replay-based behavioral mimicry: AI learns from your replays (D042)</li>
 </ul>
 <h3 id="multiplayer-infrastructure"><a class="header" href="#multiplayer-infrastructure">Multiplayer Infrastructure</a></h3>
 <ul>

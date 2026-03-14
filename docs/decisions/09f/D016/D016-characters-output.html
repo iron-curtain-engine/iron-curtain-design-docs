@@ -36,10 +36,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../../../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-9adfe301.js"></script>
+        <script src="../../../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -358,33 +358,33 @@
 pub struct GenerativeCampaignContext {
     /// The original campaign skeleton (backstory, arc, characters).
     pub skeleton: CampaignSkeleton,
-    
+
     /// Campaign parameters chosen by the player at setup.
     pub parameters: CampaignParameters,
-    
+
     /// Per-mission summary of what happened (compressed narrative, not raw state).
     pub mission_history: Vec&lt;MissionSummary&gt;,
-    
+
     /// Current state of each named character — tracks everything the LLM needs
     /// to write them consistently and evolve their arc.
     pub character_states: Vec&lt;CharacterState&gt;,
-    
+
     /// Active story flags and campaign variables (D021 persistent state).
     pub flags: HashMap&lt;String, Value&gt;,
-    
+
     /// Current unit roster summary (unit counts by type, veterancy distribution,
     /// named units — not individual unit state, which is too granular for prompts).
     pub roster_summary: RosterSummary,
-    
+
     /// Narrative threads the LLM is tracking (set up in skeleton, updated per mission).
     /// e.g., "Sonya's betrayal — foreshadowed in missions 3, 5; reveal planned for ~mission 12"
     pub active_threads: Vec&lt;NarrativeThread&gt;,
-    
+
     /// Player tendency observations (from D042 profile + mission outcomes).
     /// e.g., "Player favors aggressive strategies, rarely uses naval units,
     /// tends to protect civilians"
     pub player_tendencies: Vec&lt;String&gt;,
-    
+
     /// The planned arc position — where we are in the narrative structure.
     /// e.g., "Act 2, rising action, approaching midpoint crisis"
     pub arc_position: String,

@@ -36,10 +36,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../../../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-9adfe301.js"></script>
+        <script src="../../../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -199,7 +199,7 @@ radar_comms:
     audio: null                        # TTS if available, silent otherwise
     display_mode: radar_comm           # replaces radar panel
     duration: 6.0                      # seconds, then radar returns
-    
+
   - id: betrayal_reveal
     trigger:
       type: objective_complete
@@ -246,13 +246,13 @@ radar_comms:
               - spawn_unit: { type: prisoner_escort, region: prison_compound }
               - add_objective: { text: "Extract the prisoner to the LZ", type: secondary }
             next: extraction_added
-      
+
       - id: officer_cooperates
         speaker: "Captured Officer"
         text: "The mines are along the ridge — I'll mark them on your map. And Commander... the base commander is planning to retreat at 0400."
         effects:
           - add_objective: { text: "Destroy the base before 0400", type: bonus, timer: 300 }
-      
+
       - id: tanya_reacts
         speaker: "Tanya"
         portrait: tanya_cold
@@ -276,7 +276,7 @@ radar_comms:
       - workshop:cold-war-ost/countdown
     victory:
       - credits
-  
+
   # Scripted music cues (override dynamic system at specific moments)
   scripted_cues:
     - trigger: { type: timer, seconds: 0 }         # mission start
@@ -359,12 +359,12 @@ radar_comms:
     text: "Warning: mines detected in this area."
     priority: high
     cooldown: 30                       # don't repeat for 30 seconds
-    
+
   - event: building_captured
     building: enemy_radar
     text: "Enemy radar facility captured. Shroud cleared."
     priority: normal
-    
+
   - event: timer_warning
     timer: evacuation_timer
     remaining: 60
@@ -400,8 +400,8 @@ radar_comms:
 </thead>
 <tbody>
 <tr><td><strong>Voice lines</strong></td><td>Loading screen / intermission (~15–30s)</td><td>Text-only briefing, text bubble radar comms</td><td>Voice synthesis (ElevenLabs, local TTS, XTTS, Bark, Piper)</td></tr>
-<tr><td><strong>Music tracks</strong></td><td>Pre-generated during campaign setup or between missions</td><td>Existing game module soundtrack, Workshop packs</td><td>Music generation (Suno, Udio, MusicGen, local models)</td></tr>
-<tr><td><strong>Sound FX</strong></td><td>Pre-generated during mission generation</td><td>Game module default sound library</td><td>Sound generation (AudioGen, Stable Audio, local models)</td></tr>
+<tr><td><strong>Music tracks</strong></td><td>Pre-generated during campaign setup or between missions</td><td>Existing game module soundtrack, Workshop packs</td><td>Music generation (Suno, Udio, MusicGen, local models) <strong>or</strong> built-in ABC→MIDI→SoundFont pipeline (CPU-only, no external provider needed — see <code>research/llm-soundtrack-generation-design.md</code>)</td></tr>
+<tr><td><strong>Sound FX</strong></td><td>Pre-generated during mission generation</td><td>Game module default sound library</td><td>Sound generation (AudioGen, Stable Audio, local models) <strong>or</strong> built-in ABC→MIDI→SoundFont / <code>!synth</code> parameter synthesis (CPU-only — see <code>research/llm-soundtrack-generation-design.md</code>, <code>research/demoscene-synthesizer-analysis.md</code>)</td></tr>
 <tr><td><strong>Cutscenes</strong></td><td>Pre-generated between missions (longer)</td><td>Text+portrait briefing, radar comm text overlay</td><td>Video generation (deferred optional <code>M11</code> — Sora class, Runway, local models)</td></tr>
 </tbody>
 </table>

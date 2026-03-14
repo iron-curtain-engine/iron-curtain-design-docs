@@ -36,10 +36,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../../../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-9adfe301.js"></script>
+        <script src="../../../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -189,7 +189,7 @@ world_map:
   id: "europe_1953"
   display_name: "Europe 1953"
   game_module: red_alert              # which game module this map is for
-  
+
   # Visual asset — the actual map image
   # Supports multiple render modes (D048): sprite, vector, or 3D globe
   visual:
@@ -197,11 +197,11 @@ world_map:
     region_overlays: "maps/world/europe_1953_regions.png"  # color-coded regions
     faction_colors: true                         # color regions by controlling faction
     animation: frontline_glow                    # animated frontlines between factions
-  
+
   # Region definitions (see region YAML above)
   regions:
     # ... region definitions with adjacency, terrain, resources, etc.
-  
+
   # Starting configurations (selectable in setup)
   scenarios:
     - id: "cold_war_heats_up"
@@ -255,10 +255,10 @@ package:
   category: world-map
   game_module: any                     # or a specific module
   engine_version: "^0.3.0"
-  
+
   tags: ["sci-fi", "galactic", "space", "large"]
   ai_usage: allow                       # LLM can select this map for generated campaigns
-  
+
   dependencies:
     - id: "scifi-modding-collective/space-faction-pack"
       version: "^1.0"                  # faction definitions this map references

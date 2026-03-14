@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9adfe301.js"></script>
+        <script src="../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -333,6 +333,27 @@ pub enum AnalysisEvent {
     /// Vote lifecycle event — proposal, ballot, and resolution.
     /// See `03-NETCODE.md` § "In-Match Vote Framework" for the full vote system.
     VoteEvent { tick: u64, event: VoteAnalysisEvent },
+
+    // --- Highlight detection events (D077) ---
+
+    /// Engagement started — units from opposing players entered weapon range.
+    /// Provides a bounding snapshot for highlight scoring window alignment.
+    EngagementStarted { tick: u64, center_pos: WorldPos, friendly_units: Vec&lt;UnitTag&gt;, enemy_units: Vec&lt;UnitTag&gt;, value_friendly: i64, value_enemy: i64 },
+    /// Engagement ended — all combat ceased or one side retreated/died.
+    /// Duration + losses enable engagement-level scoring.
+    EngagementEnded { tick: u64, center_pos: WorldPos, friendly_losses: u32, enemy_losses: u32, friendly_survivors: u32, enemy_survivors: u32, duration_ticks: u64 },
+    /// Superweapon fired — Iron Curtain, Nuke, Chronosphere, etc.
+    /// Flat rarity bonus (0.9) in the highlight scoring pipeline.
+    SuperweaponFired { tick: u64, weapon_type: AbilityId, target_pos: WorldPos, player: PlayerId, units_affected: u32, buildings_affected: u32 },
+    /// Base destroyed — primary base or expansion fully wiped.
+    /// Rarity bonus (0.85) and strong momentum signal.
+    BaseDestroyed { tick: u64, player: PlayerId, pos: WorldPos, buildings_lost: Vec&lt;UnitTag&gt; },
+    /// Army wipe — &gt;70% of a player's army destroyed in a single engagement.
+    /// Rarity bonus (0.8) and high engagement density signal.
+    ArmyWipe { tick: u64, player: PlayerId, units_lost: u32, total_value_lost: i64, percentage_of_army: u16 },
+    /// Comeback moment — player transitions from losing to winning position.
+    /// Detected from `PlayerStatSnapshot` deltas; rarity bonus (0.75), strong momentum signal.
+    ComebackMoment { tick: u64, player: PlayerId, deficit_before: i64, advantage_after: i64, swing_value: i64 },
 }
 
 /// Control group action types for ControlGroupEvent.

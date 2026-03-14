@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9adfe301.js"></script>
+        <script src="../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -325,7 +325,7 @@ impl&lt;B: ProtocolBridge&gt; NetworkModel for NetcodeBridgeModel&lt;B&gt; {
         // Order goes directly into the next tick — no delay, no projection
         self.pending.push(order);
     }
-    
+
     fn poll_tick(&amp;mut self) -&gt; Option&lt;TickOrders&gt; {
         // Accumulator-based: tracks how much real time has elapsed and
         // emits one tick per TICK_DURATION of accumulated time. TICK_DURATION

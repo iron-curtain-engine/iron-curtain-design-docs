@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-9adfe301.js"></script>
+        <script src="toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -200,7 +200,7 @@
 <ul>
 <li><code>ra-formats</code> crate: parse <code>.mix</code> archives, SHP/TMP sprites, <code>.aud</code> audio, <code>.pal</code> palettes, <code>.vqa</code> video</li>
 <li>Parse OpenRA YAML manifests, map format, rule definitions</li>
-<li><code>cnc-formats</code> CLI tool — Phase 0 subcommands: <code>validate</code> (structural correctness check), <code>inspect</code> (dump archive contents and format metadata, <code>--json</code> for machine-readable output), <code>convert</code> (extensible <code>--from</code>/<code>--to</code> format conversion; current: <code>--from miniyaml --to yaml</code>)</li>
+<li><code>cnc-formats</code> CLI tool — Phase 0 subcommands: <code>validate</code> (structural correctness check), <code>inspect</code> (dump archive contents and format metadata, <code>--json</code> for machine-readable output), <code>convert</code> (extensible <code>--format</code>/<code>--to</code> format conversion; <strong>text:</strong> <code>--format miniyaml --to yaml</code> behind <code>miniyaml</code> feature; <strong>binary:</strong> SHP↔PNG, SHP↔GIF, AUD↔WAV, VQA↔AVI, WSA↔PNG/GIF, TMP→PNG, PAL→PNG, FNT→PNG behind <code>convert</code> feature; <strong>text sprites:</strong> <code>--to ist</code> / <code>--format ist</code> behind <code>ist</code> feature flag)</li>
 <li><strong>Runtime MiniYAML loading (D025):</strong> MiniYAML files load directly at runtime — auto-converts in memory, no pre-conversion required</li>
 <li><strong>OpenRA vocabulary alias registry (D023):</strong> Accept OpenRA trait names (<code>Armament</code>, <code>Valued</code>, etc.) as YAML key aliases alongside IC-native names</li>
 <li><strong>OpenRA mod manifest parser (D026):</strong> Parse OpenRA <code>mod.yaml</code> manifests, map directory layout to IC equivalents</li>
@@ -248,6 +248,7 @@
 <li>OpenRA trait name aliases resolve correctly to IC components (D023)</li>
 <li>Can extract and display sprites from .mix archives</li>
 <li>Can convert MiniYAML to standard YAML losslessly</li>
+<li>Can convert <code>.shp + .pal</code> to IST and back losslessly (<code>cnc-formats convert --to ist</code> / <code>--format ist</code>, behind <code>ist</code> feature flag — see D076)</li>
 <li>Code of conduct and RFC process published (D037)</li>
 <li>SPDX headers present on all source files; <code>cargo deny check licenses</code> passes</li>
 <li>GitHub template repo published; new engine repo instantiated from template has passing CI and a working <code>AGENTS.md</code> pointing to the design docs</li>
@@ -309,6 +310,7 @@
 <li><strong>System execution order documented and fixed</strong></li>
 <li><strong>State hashing for desync detection</strong></li>
 <li><strong>Engine telemetry foundation (D031):</strong> Unified <code>telemetry_events</code> SQLite schema shared by all components; <code>tracing</code> span instrumentation on sim systems; per-system tick timing; gameplay event stream (<code>GameplayEvent</code> enum) behind <code>telemetry</code> feature flag; <code>/analytics status/inspect/export/clear</code> console commands; zero-cost engine instrumentation when disabled</li>
+<li><strong>Highlight analysis events (D077):</strong> 6 new Analysis Event types in the <code>.icrep</code> event stream — <code>EngagementStarted</code>, <code>EngagementEnded</code>, <code>SuperweaponFired</code>, <code>BaseDestroyed</code>, <code>ArmyWipe</code>, <code>ComebackMoment</code> — observation-only events emitted during match recording for post-match highlight detection</li>
 <li><strong>Client-side SQLite storage (D034):</strong> Replay catalog, save game index, gameplay event log, asset index — embedded SQLite for local metadata; queryable without OTEL stack</li>
 <li><strong><code>ic backup</code> CLI (D061):</strong> <code>ic backup create/restore/list/verify</code> — ZIP archive with SQLite <code>VACUUM INTO</code> for consistent database copies; <code>--exclude</code>/<code>--only</code> category filtering; ships alongside save/load system</li>
 <li><strong>Automatic daily critical snapshots (D061):</strong> Rotating 3-day <code>auto-critical-N.zip</code> files (~5 MB) containing keys, profile, community credentials, achievements, config — created silently on first launch of the day; protects all players regardless of cloud sync status</li>
@@ -366,6 +368,7 @@
 </ul>
 <p><strong>Stretch goals (target Phase 3, can slip to early Phase 4 without blocking):</strong></p>
 <ul>
+<li><strong>Replay highlight detection &amp; POTG (D077):</strong> Four-dimension scoring pipeline (engagement/momentum/anomaly/rarity) over recorded Analysis Event Stream; Play-of-the-Game viewport on post-game screen; per-player highlight library in SQLite; main menu highlight background option; <code>/highlight</code> console commands; highlight camera AI</li>
 <li><strong>Screenshot browser (D061):</strong> In-game screenshot gallery with metadata filtering (map, mode, date), thumbnail grid, and “Watch replay” linking via <code>IC:ReplayFile</code> metadata</li>
 <li><strong>Data &amp; Backup settings panel (D061):</strong> In-game Settings → Data &amp; Backup with Data Health summary (identity/sync/backup status), backup create/restore buttons, backup file list, cloud sync status, and Export &amp; Portability section</li>
 <li><strong>First-launch identity + backup prompt (D061):</strong> New player flow after D032 theme selection — identity creation with recovery phrase display, cloud sync offer (Steam/GOG), backup recommendation for non-cloud installs; returning player flow includes mnemonic recovery option alongside backup restore</li>

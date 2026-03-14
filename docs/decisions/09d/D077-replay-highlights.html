@@ -1,0 +1,504 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>D077 — Replay Highlights &amp; POTG - Iron Curtain — Design Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Design docs for a Rust-native Red Alert RTS engine">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon-29075ff1.svg">
+        <link rel="shortcut icon" href="../../favicon-96291481.png">
+        <link rel="stylesheet" href="../../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../../css/general-2459343d.css">
+        <link rel="stylesheet" href="../../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../css/sidebar-logo-511465a2.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../../searchindex-ebe5ef16.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc-5aa22486.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Iron Curtain — Design Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs/edit/main/src/decisions/09d/D077-replay-highlights.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="d077-replay-highlights--play-of-the-game--auto-detection-potg-and-main-menu-background"><a class="header" href="#d077-replay-highlights--play-of-the-game--auto-detection-potg-and-main-menu-background">D077: Replay Highlights &amp; Play-of-the-Game — Auto-Detection, POTG, and Main Menu Background</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th></th><th></th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Status</strong></td><td>Accepted</td></tr>
+<tr><td><strong>Phase</strong></td><td>Phase 2 (new analysis events), Phase 3 (highlight detection + POTG + menu background), Phase 5 (multiplayer POTG), Phase 6a (Lua/WASM custom detectors + Workshop highlight packs), Phase 7 (video export + LLM commentary + foreign replay highlights)</td></tr>
+<tr><td><strong>Depends on</strong></td><td>D010 (snapshottable state/replays), D031 (telemetry/analysis events), D032 (UI themes/shellmap), D033 (QoL toggles), D034 (SQLite storage), D049 (Workshop assets/CAS), D056 (foreign replay import), D058 (console commands), D059 (pings/markers)</td></tr>
+<tr><td><strong>Driver</strong></td><td>No RTS has automatic highlight detection — SC2 attempted it in 2016 and abandoned it. IC’s rich Analysis Event Stream (15 event types growing to 21), existing post-game MVP infrastructure, and replay keyframe system position it to be the first RTS to ship this feature. Community request across OpenRA, C&amp;C Remastered, and SC2 forums.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="decision-capsule-llmrag-summary"><a class="header" href="#decision-capsule-llmrag-summary">Decision Capsule (LLM/RAG Summary)</a></h3>
+<ul>
+<li><strong>Status:</strong> Accepted</li>
+<li><strong>Phase:</strong> Phase 2 (events) → Phase 3 (core) → Phase 5 (multiplayer) → Phase 6a (modding) → Phase 7 (polish)</li>
+<li><strong>Canonical for:</strong> Automatic replay highlight detection, Play-of-the-Game (POTG) on post-game screen, per-player highlight library, main menu highlight background, community/tournament highlight packs</li>
+<li><strong>Scope:</strong> <code>ic-sim</code> (6 new analysis events), <code>ic-game</code>/<code>ic-ui</code> (scoring pipeline + POTG viewport + menu background), <code>ic-render</code> (highlight camera AI), <code>ic-script</code> (Lua/WASM custom detectors)</li>
+<li><strong>Decision:</strong> IC detects “interesting moments” from the Analysis Event Stream using a four-dimension scoring pipeline (engagement density, momentum swing, z-score anomaly, rarity bonus), generates a POTG per match shown on the post-game screen, accumulates per-player highlights in SQLite, and offers personal/community highlights as a main menu background alternative to shellmap AI battles.</li>
+<li><strong>Why:</strong> Replay highlights serve three goals: (1) post-game spectacle (POTG adds emotional punctuation after a match), (2) personal attachment (your best moments cycling on the menu), (3) community engagement (tournament/streamer highlight packs as shareable content). No competing RTS offers this.</li>
+<li><strong>Non-goals:</strong> Real-time highlight detection during gameplay (always post-match), video rendering/export as a core feature (Phase 7 optional), replacing the shellmap as default menu background</li>
+<li><strong>Invariants preserved:</strong> <code>ic-sim</code> remains pure (events are observation-only, no feedback into sim); scoring runs post-match on recorded data; all highlight data referencing replays (not extracted clips)</li>
+<li><strong>Keywords:</strong> replay highlights, POTG, play of the game, highlight reel, main menu background, highlight camera, engagement scoring, momentum swing, anomaly detection, community highlights, tournament clips</li>
+</ul>
+<h3 id="problem"><a class="header" href="#problem">Problem</a></h3>
+<p>IC’s replay system records a rich Analysis Event Stream (15 event types: <code>UnitDestroyed</code>, <code>PlayerStatSnapshot</code>, <code>CameraPositionSample</code>, etc.) alongside the deterministic order stream. The replay viewer has six camera modes, eight observer overlays, timeline event markers, and a bookmark system. The post-game screen calculates 18 MVP award types from match statistics.</p>
+<p><strong>None of this infrastructure is currently used for automatic highlight detection or highlight playback.</strong></p>
+<p>Players must manually scrub through replays to find interesting moments. The main menu’s only dynamic background option is a shellmap AI battle — the same scripted battle every launch. Tournament organizers have no automated way to extract highlight reels. New players miss the emotional punctuation of a “Play of the Game” moment after each match.</p>
+<h3 id="prior-art"><a class="header" href="#prior-art">Prior Art</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Game</th><th>Highlight System</th><th>RTS?</th><th>Result</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>CS:GO/CS2</strong></td><td>“Your Best” multi-kill clips, server-side scoring</td><td>No</td><td>Industry gold standard for FPS</td></tr>
+<tr><td><strong>Overwatch</strong></td><td>POTG with multi-dimensional scoring, role weighting</td><td>No</td><td>Iconic feature, copied widely</td></tr>
+<tr><td><strong>Dota 2</strong></td><td>Post-game multikill/rampage replays</td><td>Partial</td><td>Kill-count dominant, less nuanced</td></tr>
+<tr><td><strong>StarCraft 2</strong></td><td>None — Blizzard attempted 2016–2017, never shipped</td><td>Yes</td><td>Abandoned — “best moment” ambiguity at different skill levels</td></tr>
+<tr><td><strong>Age of Empires 4</strong></td><td>Timeline event markers, no auto-detection</td><td>Yes</td><td>Markers only, no scoring or POTG</td></tr>
+<tr><td><strong>OpenRA / C&amp;C Remastered</strong></td><td>None — community-requested feature</td><td>Yes</td><td>No implementation</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Key insight from SC2’s failure:</strong> They tried to define a universal “best moment” across skill brackets. IC solves this with <strong>per-match baselines</strong> — highlights are unusual <em>relative to this match</em> (z-score anomaly), not compared to a global database.</p>
+<h3 id="decision"><a class="header" href="#decision">Decision</a></h3>
+<h4 id="1-six-new-analysis-event-types"><a class="header" href="#1-six-new-analysis-event-types">1. Six New Analysis Event Types</a></h4>
+<p>Extend the Analysis Event Stream (currently 15 types → 21) with engagement-level events that the highlight scoring pipeline needs:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>New Event</th><th>Fields</th><th>Detection Trigger</th></tr>
+</thead>
+<tbody>
+<tr><td><code>EngagementStarted</code></td><td><code>tick</code>, <code>center_pos</code>, <code>friendly_units[]</code>, <code>enemy_units[]</code>, <code>value_friendly</code>, <code>value_enemy</code></td><td>Units from opposing players enter weapon range</td></tr>
+<tr><td><code>EngagementEnded</code></td><td><code>tick</code>, <code>center_pos</code>, <code>friendly_losses</code>, <code>enemy_losses</code>, <code>friendly_survivors</code>, <code>enemy_survivors</code>, <code>duration_ticks</code></td><td>All combat ceases or one side retreats/dies</td></tr>
+<tr><td><code>SuperweaponFired</code></td><td><code>tick</code>, <code>weapon_type</code>, <code>target_pos</code>, <code>player</code>, <code>units_affected</code>, <code>buildings_affected</code></td><td>Superweapon activation (Iron Curtain, Nuke, Chronosphere, etc.)</td></tr>
+<tr><td><code>BaseDestroyed</code></td><td><code>tick</code>, <code>player</code>, <code>pos</code>, <code>buildings_lost[]</code></td><td>Primary base or expansion fully wiped</td></tr>
+<tr><td><code>ArmyWipe</code></td><td><code>tick</code>, <code>player</code>, <code>units_lost</code>, <code>total_value_lost</code>, <code>percentage_of_army</code></td><td>&gt;70% of a player’s army destroyed in a single engagement</td></tr>
+<tr><td><code>ComebackMoment</code></td><td><code>tick</code>, <code>player</code>, <code>deficit_before</code>, <code>advantage_after</code>, <code>swing_value</code></td><td>Player transitions from losing to winning position (from <code>PlayerStatSnapshot</code> deltas)</td></tr>
+</tbody>
+</table>
+</div>
+<p>These events are <strong>observation-only</strong> — they do not feed back into the simulation. They are recorded into the <code>.icrep</code> Analysis Event Stream during match recording.</p>
+<h4 id="2-four-dimension-highlight-scoring-pipeline"><a class="header" href="#2-four-dimension-highlight-scoring-pipeline">2. Four-Dimension Highlight Scoring Pipeline</a></h4>
+<p>Runs <strong>post-match</strong> over the recorded event stream (not real-time). Uses a sliding window (default 30 seconds, adaptive) with four independent scoring dimensions:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Dimension</th><th>Weight</th><th>What It Measures</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Engagement</strong></td><td>0.35</td><td>Kill density within window — unit value destroyed, kill clusters (3-second sub-window), building/tech/harvester multipliers</td></tr>
+<tr><td><strong>Momentum</strong></td><td>0.25</td><td>Economic/military swing magnitude — army value delta, economy rate delta, territory delta. Comeback bonus (1.5×), collapse bonus (1.2×)</td></tr>
+<tr><td><strong>Anomaly</strong></td><td>0.20</td><td>Statistical outlier relative to match baselines — z-score against per-match averages for kills, building losses, economy swings. Flagged at z &gt; 2.0</td></tr>
+<tr><td><strong>Rarity</strong></td><td>0.20</td><td>Flat bonuses for inherently exciting events — superweapon (0.9), army wipe (0.8), base destroyed (0.85), comeback (0.75), match-ending kill (0.6)</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Composite score</strong> = <code>0.35 × Engagement + 0.25 × Momentum + 0.20 × Anomaly + 0.20 × Rarity</code></p>
+<p>After scoring all windows, <strong>non-maximum suppression</strong> merges overlapping windows (keep peak, discard neighbors within 15 seconds). <strong>Top-N selection</strong> picks POTG (N=1) and highlight reel (N=5) with category diversity enforcement.</p>
+<p><strong>Anti-cheese filters:</strong> Skip first 2 minutes (unless 5+ kills), require non-worker kills, minimum 3-minute match duration, no self-damage-only windows.</p>
+<h4 id="3-play-of-the-game-potg"><a class="header" href="#3-play-of-the-game-potg">3. Play-of-the-Game (POTG)</a></h4>
+<p>After each match, the highest-scoring highlight moment is displayed as a <strong>POTG viewport</strong> on the post-game screen:</p>
+<ul>
+<li>Renders the replay segment (20–45 seconds) in a bounded viewport with the highlight camera AI</li>
+<li>Category label from YAML-moddable pool (e.g., “Decisive Assault”, “Against All Odds”, “Nuclear Option”)</li>
+<li><strong>Skippable</strong> — Escape or Skip button jumps to existing MVP/stats screen</li>
+<li><strong>Multiplayer:</strong> All players see the same POTG (deterministic scoring from the same event stream)</li>
+<li><strong>Team games:</strong> Bonus for coordinated team actions in the same engagement window</li>
+</ul>
+<h4 id="4-per-player-highlight-library"><a class="header" href="#4-per-player-highlight-library">4. Per-Player Highlight Library</a></h4>
+<p>Highlights are stored as <strong>references into replay files</strong> (not extracted video clips) in local SQLite (<code>profile.db</code>):</p>
+<pre><code class="language-sql">CREATE TABLE highlights (
+    highlight_id    TEXT PRIMARY KEY,
+    replay_id       TEXT NOT NULL,
+    replay_path     TEXT NOT NULL,
+    window_start    INTEGER NOT NULL,   -- tick
+    window_end      INTEGER NOT NULL,   -- tick
+    composite_score REAL NOT NULL,
+    category        TEXT NOT NULL,
+    label           TEXT NOT NULL,
+    is_potg         INTEGER NOT NULL DEFAULT 0,
+    player_key      BLOB,
+    map_name        TEXT,
+    match_date      INTEGER NOT NULL,
+    game_module     TEXT NOT NULL,
+    camera_path     BLOB,               -- serialized camera keyframes
+    thumbnail_tick  INTEGER,
+    created_at      INTEGER NOT NULL
+);
+</code></pre>
+<p>5 highlights per match × 1,000 matches = ~1–2.5 MB in SQLite. Actual replay data stays in <code>.icrep</code> files.</p>
+<h4 id="5-main-menu-highlight-background"><a class="header" href="#5-main-menu-highlight-background">5. Main Menu Highlight Background</a></h4>
+<p>A new menu background option alongside static image and shellmap AI battle:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Option</th><th>Source</th><th>Default For</th></tr>
+</thead>
+<tbody>
+<tr><td><code>static_image</code></td><td>Theme background image</td><td>Classic theme</td></tr>
+<tr><td><code>shellmap_ai</code></td><td>Live AI battle (existing)</td><td>Remastered/Modern themes</td></tr>
+<tr><td><code>personal_highlights</code></td><td>Player’s top moments cycling (D077)</td><td>None (opt-in)</td></tr>
+<tr><td><code>community_highlights</code></td><td>Workshop highlight packs from tournaments/streamers</td><td>None (opt-in)</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Fallback:</strong> If player has fewer than 3 valid highlights, falls back to shellmap AI.</p>
+<p><strong>Performance:</strong> Replay re-simulation from nearest keyframe (worst case ~100ms). Runs at reduced priority behind menu UI.</p>
+<h4 id="6-highlight-camera-ai"><a class="header" href="#6-highlight-camera-ai">6. Highlight Camera AI</a></h4>
+<p>Extends the existing Directed Camera mode with cinematic behaviors tuned for short clips:</p>
+<ol>
+<li><strong>Pre-roll</strong> (3s): Establishing shot — zoom out to show both armies approaching</li>
+<li><strong>Engagement</strong>: Track center-of-mass of active combat units, zoom adaptive to engagement spread (tight &lt;10 cells, medium 10–30, wide &gt;30)</li>
+<li><strong>Climax</strong>: Brief 0.5× slow-motion for 2 seconds around peak kill cluster</li>
+<li><strong>Resolution</strong> (3s): Zoom out to show aftermath, hold position</li>
+<li><strong>Post-roll</strong> (2s): Fade transition</li>
+</ol>
+<p>Camera target biased toward the POTG player’s perspective (30% blend with <code>CameraPositionSample</code> data from the match).</p>
+<h4 id="7-community--tournament-highlights"><a class="header" href="#7-community--tournament-highlights">7. Community &amp; Tournament Highlights</a></h4>
+<p>Workshop highlight packs (D030/D049) contain curated moment references + embedded replay segments:</p>
+<pre><code class="language-yaml"># highlight-pack.yaml
+name: "ICA Season 3 Grand Finals"
+curator: "ICA Tournament Org"
+game_module: "ra1"
+highlights:
+  - replay_file: "replays/grand-final-g3.icrep"
+    window_start: 14320
+    window_end: 15120
+    label: "Nuclear Strike on Allied Base"
+    category: spectacle
+    camera_path: "cameras/grand-final-g3-nuke.bin"
+</code></pre>
+<p>Packs include keyframe-trimmed replay segments (not full replays) — typically 2–10 MB for 10–20 moments.</p>
+<h3 id="scoring-configuration-yaml-moddable"><a class="header" href="#scoring-configuration-yaml-moddable">Scoring Configuration (YAML-Moddable)</a></h3>
+<p>All scoring weights, thresholds, multipliers, and labels are YAML-configurable per game module:</p>
+<pre><code class="language-yaml"># ra1/highlight-config.yaml
+highlight_scoring:
+  weights:
+    engagement: 0.35
+    momentum: 0.25
+    anomaly: 0.20
+    rarity: 0.20
+  engagement:
+    kill_cluster_window_sec: 3
+    building_multiplier: 1.5
+    superweapon_multiplier: 5.0
+  rarity_bonuses:
+    superweapon_fired: 0.9
+    army_wipe: 0.8
+    base_destroyed: 0.85
+  labels:
+    engagement: ["Decisive Assault", "Crushing Blow", "Total Annihilation"]
+    momentum: ["Against All Odds", "Turning Point", "The Comeback"]
+</code></pre>
+<h3 id="modding-extensibility"><a class="header" href="#modding-extensibility">Modding Extensibility</a></h3>
+<ul>
+<li><strong>Lua detectors:</strong> Modders register custom highlight detectors (e.g., “Chronosphere into enemy base”) via <code>Highlights.RegisterDetector()</code></li>
+<li><strong>WASM <code>HighlightScorer</code> trait:</strong> Total conversion mods can replace the entire scoring pipeline</li>
+<li><strong>YAML labels:</strong> Category label pools are moddable per game module and theme</li>
+</ul>
+<h3 id="console-commands-d058"><a class="header" href="#console-commands-d058">Console Commands (D058)</a></h3>
+<pre><code>/highlight list [--top N] [--category CAT]
+/highlight play &lt;highlight_id&gt;
+/highlight delete &lt;highlight_id&gt;
+/highlight reanalyze &lt;replay_path&gt;
+/highlight export &lt;highlight_id&gt; [--format webm|gif]   (Phase 7)
+/highlight menu-preview
+</code></pre>
+<h3 id="rts-specific-highlight-types"><a class="header" href="#rts-specific-highlight-types">RTS-Specific Highlight Types</a></h3>
+<p>Beyond FPS-style kill clusters, RTS highlights include unique moment types:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Type</th><th>Description</th><th>Primary Detection Signal</th></tr>
+</thead>
+<tbody>
+<tr><td>Army Wipe</td><td>&gt;70% of opponent’s army destroyed</td><td><code>ArmyWipe</code> event</td></tr>
+<tr><td>Superweapon Strike</td><td>Nuke/Chronosphere/Iron Curtain detonation</td><td><code>SuperweaponFired</code> event</td></tr>
+<tr><td>Economy Raid</td><td>Fast units destroy harvesters behind lines</td><td><code>UnitDestroyed</code> on economic units, attacker from behind</td></tr>
+<tr><td>Comeback</td><td>Recovery from &lt;30% army value to win</td><td><code>ComebackMoment</code> event</td></tr>
+<tr><td>Base Race</td><td>Both players attacking bases, ignoring defense</td><td>Concurrent base destruction events</td></tr>
+<tr><td>Tech Rush</td><td>Game-changing tech earlier than expected</td><td><code>UpgradeCompleted</code> at &lt;70% expected time</td></tr>
+<tr><td>Last Stand</td><td>Small force holds chokepoint against &gt;3:1 odds</td><td>Engagement with extreme value disparity</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="adaptive-window-sizing"><a class="header" href="#adaptive-window-sizing">Adaptive Window Sizing</a></h3>
+<p>RTS engagements are longer than FPS clips. Window sizes adapt:</p>
+<ul>
+<li>Base window: 30 seconds (600 ticks at 20 tps)</li>
+<li>If engagement duration &gt; 20s: expand to <code>engagement.duration + 10s</code></li>
+<li>If superweapon involved: minimum 25s (show buildup)</li>
+<li>Clamp: 15s minimum, 60s maximum (longer splits into two moments)</li>
+</ul>
+<h3 id="implementation-estimate"><a class="header" href="#implementation-estimate">Implementation Estimate</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Component</th><th>Crate</th><th>Est. Lines</th><th>Phase</th></tr>
+</thead>
+<tbody>
+<tr><td>6 new Analysis Event types</td><td><code>ic-sim</code></td><td>~150</td><td>Phase 2</td></tr>
+<tr><td>Highlight scoring pipeline</td><td><code>ic-game</code></td><td>~500</td><td>Phase 3</td></tr>
+<tr><td>POTG post-game viewport</td><td><code>ic-ui</code></td><td>~250</td><td>Phase 3</td></tr>
+<tr><td>Highlight camera AI</td><td><code>ic-render</code></td><td>~350</td><td>Phase 3</td></tr>
+<tr><td>SQLite highlight storage</td><td><code>ic-game</code></td><td>~150</td><td>Phase 3</td></tr>
+<tr><td>Main menu highlight background</td><td><code>ic-ui</code> + <code>ic-render</code></td><td>~300</td><td>Phase 3</td></tr>
+<tr><td>Workshop highlight packs</td><td>Workshop infra</td><td>~200</td><td>Phase 6a</td></tr>
+<tr><td>Lua/WASM highlight detector API</td><td><code>ic-script</code></td><td>~300</td><td>Phase 6a</td></tr>
+<tr><td>Video export</td><td><code>ic-render</code></td><td>~400</td><td>Phase 7</td></tr>
+<tr><td><strong>Total</strong></td><td></td><td><strong>~2,600</strong></td><td></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="alternatives-considered"><a class="header" href="#alternatives-considered">Alternatives Considered</a></h3>
+<ol>
+<li>
+<p><strong>Manual-only highlights (status quo in all RTS games):</strong> Lowest effort. But misses the emotional POTG moment and the personal connection of “my highlights on my menu.” Rejected — the infrastructure already exists.</p>
+</li>
+<li>
+<p><strong>Kill-count-only scoring (Dota 2 model):</strong> Simple but misses RTS-specific moments (comebacks, superweapons, economy raids). Kill-count dominant scoring would always favor the aggressor, missing defensive brilliance. Rejected.</p>
+</li>
+<li>
+<p><strong>Global baseline scoring (SC2’s attempted approach):</strong> Compare against a global database of “typical moments per bracket.” This was why SC2 abandoned the feature — too many edge cases, bracket estimation errors, and “one player’s routine is another’s highlight.” Rejected in favor of per-match baselines (z-score anomaly against <em>this match</em>).</p>
+</li>
+<li>
+<p><strong>Real-time highlight detection:</strong> Compute highlights during the match for live spectator feeds. Higher complexity, performance risk in sim thread. Deferred — post-match scoring is sufficient for all current use cases. Live detection could be Phase 7+ for tournament broadcasts.</p>
+</li>
+</ol>
+<h3 id="cross-references"><a class="header" href="#cross-references">Cross-References</a></h3>
+<ul>
+<li><strong>Research doc:</strong> <code>research/replay-highlights-potg-design.md</code> (full scoring algorithm details, camera path generation, storage budget analysis, prior art survey)</li>
+<li><strong>Replay format:</strong> <code>formats/save-replay-formats.md</code> § Analysis Event Stream, <code>formats/replay-keyframes-analysis.md</code> § AnalysisEvent enum</li>
+<li><strong>Post-game screen:</strong> <code>player-flow/post-game.md</code> § Play-of-the-Game section</li>
+<li><strong>Main menu:</strong> <code>player-flow/main-menu.md</code> § Background selection</li>
+<li><strong>Replay viewer:</strong> <code>player-flow/replays.md</code> § Event Markers</li>
+<li><strong>UI themes:</strong> D032 (shellmap configuration, theme YAML)</li>
+<li><strong>Foreign replay import:</strong> D056 (highlight detection on imported OpenRA/Remastered replays — Phase 7)</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../decisions/09d/D073-llm-exhibition-modes.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../../decisions/09e-community.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../decisions/09d/D073-llm-exhibition-modes.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../../decisions/09e-community.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../../mark-09e88c2c.min.js"></script>
+        <script src="../../searcher-c2a407aa.js"></script>
+
+        <script src="../../clipboard-1626706a.min.js"></script>
+        <script src="../../highlight-abc7f01d.js"></script>
+        <script src="../../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

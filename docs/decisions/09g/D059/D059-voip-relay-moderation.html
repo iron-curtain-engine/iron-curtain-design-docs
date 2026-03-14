@@ -36,10 +36,10 @@
             const path_to_root = "../../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../../../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../../toc-9adfe301.js"></script>
+        <script src="../../../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -374,15 +374,15 @@ impl JitterBuffer {
         // Smoothing factor 0.9 — reacts within ~10 packets to jitter changes
         self.jitter_estimate = 0.9 * self.jitter_estimate + 0.1 * jitter;
         self.last_arrival = now;
-        
+
         // Insert frame at correct position based on sequence number.
         // Handles out-of-order delivery by placing in the correct slot.
         self.insert_frame(sequence, opus_data);
-        
+
         // Adapt buffer depth based on current jitter estimate
         self.adapt_delay();
     }
-    
+
     /// Called every 20ms by the audio render thread.
     /// Returns the next frame to play, or None if the frame is missing.
     /// On None, the caller invokes Opus PLC (decoder with null input)
@@ -390,12 +390,12 @@ impl JitterBuffer {
     pub fn pop(&amp;mut self) -&gt; Option&lt;VoiceFrame&gt; {
         self.frames.pop_front().flatten()
     }
-    
+
     fn adapt_delay(&amp;mut self) {
         // Target: 2× jitter estimate + 1 frame covers ~95% of variance
         let target = ((2.0 * self.jitter_estimate * 50.0) as u32 + 1)
             .clamp(self.min_delay, self.max_delay);
-        
+
         if target &gt; self.delay {
             // Increase delay: expand buffer immediately (insert silence frame)
             self.delay += 1;

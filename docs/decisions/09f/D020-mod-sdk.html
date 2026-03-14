@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-9adfe301.js"></script>
+        <script src="../../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -257,14 +257,14 @@
 <tr><th>Tool</th><th>Scope</th><th>Granularity</th><th>Crate</th><th>License</th></tr>
 </thead>
 <tbody>
-<tr><td><code>cnc-formats convert</code></td><td>Single-file structural text conversion</td><td><code>--from miniyaml --to yaml</code> on one file</td><td><code>cnc-formats</code></td><td>MIT/Apache-2.0</td></tr>
+<tr><td><code>cnc-formats convert</code></td><td>Single-file format conversion</td><td><code>--format miniyaml --to yaml</code>, <code>--to png</code>, <code>--to wav</code>, etc. on one file</td><td><code>cnc-formats</code></td><td>MIT/Apache-2.0</td></tr>
 <tr><td><code>ic mod convert</code></td><td>Mod-directory batch asset conversion</td><td><code>--to-modern</code> / <code>--to-classic</code> across all files in a mod</td><td><code>ic-game</code> (uses <code>ra-formats</code> encoders)</td><td>GPL v3</td></tr>
 </tbody>
 </table>
 </div>
-<p><strong><code>cnc-formats convert</code></strong> is game-agnostic and schema-neutral — it converts MiniYAML syntax to standard YAML syntax without understanding what the fields mean. It operates on individual files. It knows nothing about mod directories, asset types, or game-specific formats like <code>.shp</code> or <code>.aud</code>.</p>
+<p><strong><code>cnc-formats convert</code></strong> is game-agnostic and schema-neutral. It converts individual files between C&amp;C formats and common formats: MiniYAML → YAML (text, behind <code>miniyaml</code> feature), SHP ↔ PNG/GIF, AUD ↔ WAV, VQA ↔ AVI, WSA ↔ PNG/GIF, TMP → PNG, PAL → PNG, FNT → PNG (binary, behind <code>convert</code> feature), MID → WAV/AUD (behind <code>midi</code> feature). It knows nothing about mod directories or game-specific semantics.</p>
 <p><strong><code>ic mod convert</code></strong> is game-aware and operates on entire mod directories. It converts between legacy C&amp;C asset formats (<code>.shp</code>, <code>.aud</code>, <code>.vqa</code>) and modern Bevy-native formats (PNG, OGG, WebM) using <code>ra-formats</code> encoders/decoders. It understands mod structure (<code>mod.toml</code>, directory conventions) and can batch-process all assets in a mod. The Asset Studio (D040) provides the same conversions via GUI.</p>
-<p>They do not overlap: <code>cnc-formats convert</code> handles text format conversion (MiniYAML → YAML); <code>ic mod convert</code> handles binary asset conversion (.shp → PNG, .aud → OGG, etc.).</p>
+<p>They differ in scope: <code>cnc-formats convert</code> handles single-file conversions; <code>ic mod convert</code> handles mod-directory batch operations with game-aware defaults (e.g. choosing OGG bitrate based on asset type).</p>
 <h3 id="tool-phase-schedule"><a class="header" href="#tool-phase-schedule">Tool Phase Schedule</a></h3>
 <div class="table-wrapper">
 <table>
@@ -273,7 +273,7 @@
 </thead>
 <tbody>
 <tr><td><code>ic</code> CLI (validate, import, convert, run)</td><td>Phase 2</td><td>Ships with core engine; <code>ic mod convert</code> = mod-directory batch asset conversion</td></tr>
-<tr><td><code>cnc-formats</code> CLI (validate, inspect, convert)</td><td>Phase 0</td><td>Format validation + inspection + single-file <code>--from</code>/<code>--to</code> text conversion (D025)</td></tr>
+<tr><td><code>cnc-formats</code> CLI (validate, inspect, convert)</td><td>Phase 0</td><td>Format validation + inspection + single-file format conversion (text + binary, feature-gated; see D076)</td></tr>
 <tr><td><code>cnc-formats</code> CLI (extract, list)</td><td>Phase 1</td><td><code>.mix</code> archive decomposition and inventory</td></tr>
 <tr><td><code>cnc-formats</code> CLI (check, diff, fingerprint)</td><td>Phase 2</td><td>Deep integrity, structural comparison, canonical hashing</td></tr>
 <tr><td><code>cnc-formats</code> CLI (pack)</td><td>Phase 6a</td><td><code>.mix</code> archive creation (inverse of extract)</td></tr>

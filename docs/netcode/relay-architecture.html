@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9adfe301.js"></script>
+        <script src="../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -242,7 +242,7 @@ impl RelayCore {
     /// Signature-invalid orders are dropped and logged. See
     /// vulns-protocol.md § Vulnerability 16 for the signing scheme.
     pub fn receive_order(&amp;mut self, player: PlayerId, order: TimestampedOrder) { ... }
-    
+
     /// Receive a per-tick SyncHash from a client. Compared against other
     /// clients' hashes — mismatch triggers DesyncDetected.
     pub fn receive_sync_hash(&amp;mut self, player: PlayerId, tick: SimTick, hash: SyncHash) { ... }
@@ -281,7 +281,7 @@ impl RelayCore {
     /// Produce the canonical TickOrders for this tick.
     /// Sub-tick sorts, runs filter chain, advances tick counter.
     pub fn finalize_tick(&amp;mut self) -&gt; TickOrders { ... }
-    
+
     /// Generate liveness token for the next frame.
     pub fn next_liveness_token(&amp;mut self, player: PlayerId) -&gt; u32 { ... }
 }

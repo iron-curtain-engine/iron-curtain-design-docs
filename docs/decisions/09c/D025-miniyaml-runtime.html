@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-9adfe301.js"></script>
+        <script src="../../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -190,7 +190,7 @@
 <li><strong>Deferred features / extensions:</strong> none</li>
 <li><strong>Canonical for:</strong> MiniYAML auto-detection, runtime conversion, and the <code>cnc-formats convert</code> CLI subcommand</li>
 <li><strong>Scope:</strong> <code>ra-formats</code> crate (runtime auto-conversion), <code>cnc-formats</code> crate (CLI <code>convert</code> subcommand)</li>
-<li><strong>Decision:</strong> MiniYAML files load directly at runtime via auto-detection and in-memory conversion. No pre-conversion step is required. The <code>cnc-formats convert --from miniyaml --to yaml</code> CLI subcommand is also provided for permanent on-disk migration (<code>--from</code> auto-detected from extension when unambiguous; <code>--to</code> always required).</li>
+<li><strong>Decision:</strong> MiniYAML files load directly at runtime via auto-detection and in-memory conversion. No pre-conversion step is required. The <code>cnc-formats convert --format miniyaml --to yaml</code> CLI subcommand is also provided for permanent on-disk migration (<code>--format</code> auto-detected from extension when unambiguous; <code>--to</code> always required).</li>
 <li><strong>Why:</strong>
 <ul>
 <li>Zero-friction import of existing OpenRA mods (drop a mod folder in, play immediately)</li>

@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9adfe301.js"></script>
+        <script src="../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -365,15 +365,15 @@ pub struct CatchupConfig {
 fn on_move_order_issued(click_pos: WorldPos, selected_units: &amp;[Entity]) {
     // Show move marker immediately
     spawn_move_marker(click_pos);
-    
+
     // Start unit turn animation toward target (cosmetic only)
     for unit in selected_units {
         start_turn_preview(unit, click_pos);
     }
-    
+
     // Selection acknowledgement sound plays instantly
     play_unit_response_audio(selected_units);
-    
+
     // The actual sim order is still in the network pipeline.
     // Units will begin real movement when the order is confirmed next tick.
     // The visual prediction bridges the gap so the game feels instant.

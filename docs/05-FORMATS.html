@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-9adfe301.js"></script>
+        <script src="toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -197,7 +197,11 @@
 <tr><td><code>.aud</code></td><td>Audio</td><td>Westwood IMA ADPCM compressed. 12-byte <code>AUDHeaderType</code>: sample rate (Hz), compressed/uncompressed sizes, flags (stereo/16-bit), compression ID. Codec uses dual 1424-entry lookup tables (<code>IndexTable</code>/<code>DiffTable</code>) for 4-bit-nibble decoding. Read + write: Asset Studio (D040) converts .aud ↔ .wav/.ogg so modders can extract original sounds for remixing and convert custom recordings to classic AUD format</td></tr>
 <tr><td><code>.vqa</code></td><td>Video</td><td>VQ vector quantization cutscenes. Chunk-based IFF structure (WVQA/VQHD/FINF/VQFR/VQFK). Codebook blocks (4×2 or 4×4 pixels), LCW-compressed frames, interleaved audio (PCM/Westwood ADPCM/IMA ADPCM). Read + write: Asset Studio (D040) converts .vqa ↔ .mp4/.webm for campaign creators</td></tr>
 <tr><td><code>.wsa</code></td><td>Animations</td><td>Westwood Studios Animation. LCW-compressed XOR-delta frames. Used for menu backgrounds, installation screens, campaign map animations. Header with frame offsets, optional embedded palette. Loop-back delta for seamless looping. See § WSA Animation Format</td></tr>
-<tr><td><code>.fnt</code></td><td>Bitmap fonts</td><td>Westwood bitmap font format for in-game text. Header with offset/width/height tables, raw palette-indexed glyph bitmaps (1 byte/pixel, index 0 = transparent). Read-only — IC uses modern TTF/OTF via Bevy for runtime text; <code>.fnt</code> parsed for Classic render mode (D048) fidelity and Asset Studio (D040) preview. See § FNT Bitmap Font Format</td></tr>
+<tr><td><code>.fnt</code></td><td>Bitmap fonts</td><td>Westwood bitmap font format for in-game text. Header with offset/width/height tables, 4bpp nibble-packed palette-indexed glyph bitmaps (two pixels per byte, high nibble first; index 0 = transparent). Read-only — IC uses modern TTF/OTF via Bevy for runtime text; <code>.fnt</code> parsed for Classic render mode (D048) fidelity and Asset Studio (D040) preview. See § FNT Bitmap Font Format</td></tr>
+<tr><td><code>.mid</code></td><td>MIDI music/SFX</td><td>Standard MIDI file format (SMF Type 0 and Type 1). Intermediate format for IC’s LLM audio generation pipeline (ABC → MIDI → SoundFont → PCM) and universal standard in game audio tooling. Note: C&amp;C (TD/RA) shipped music as <code>.aud</code> digital audio, not MIDI — earlier Westwood titles used synthesizer formats (<code>.adl</code>, XMIDI), not standard <code>.mid</code>. Behind <code>midi</code> feature flag in <code>cnc-formats</code> — adds <code>midly</code> (parser/writer), <code>nodi</code> (playback abstraction), <code>rustysynth</code> (SoundFont SF2 synthesizer). Read + write + SoundFont render: <code>cnc-formats convert</code> renders MID→WAV (via SoundFont) and MID→AUD (SoundFont + IMA ADPCM). WAV/AUD→MID not supported (audio-to-symbolic transcription is unsolved). IC runtime auto-renders <code>.mid</code> to PCM at load time via SoundFont. See <code>research/llm-soundtrack-generation-design.md</code></td></tr>
+<tr><td><code>.adl</code></td><td>AdLib music</td><td>Dune II (1992) soundtrack format — sequential OPL2 register writes driving Yamaha YM3812 FM synthesis. Not a C&amp;C format, but direct Westwood lineage (Dune II is the predecessor to C&amp;C). Behind <code>adl</code> feature flag in <code>cnc-formats</code>. Read-only parser: reads register write sequences into <code>AdlFile</code> struct. <code>validate</code> and <code>inspect</code> report register count, estimated duration, and detected instrument patches. ADL→WAV rendering requires OPL2 chip emulation — the only viable pure Rust emulator (<code>opl-emu</code>) is GPL-3.0, so rendering lives in <code>ra-formats</code>, not <code>cnc-formats</code>. Community documentation: DOSBox source, AdPlug project</td></tr>
+<tr><td><code>.xmi</code></td><td>XMIDI music</td><td>Extended MIDI for the Miles Sound System (Miles AIL). IFF FORM:XMID container wrapping standard MIDI events with Miles-specific extensions: IFTHEN-based absolute timing (vs. standard MIDI delta-time), for-loop markers, multi-sequence files. Used by Kyrandia series and other Miles-licensed Westwood titles — not standard <code>.mid</code>. Behind <code>xmi</code> feature flag in <code>cnc-formats</code> (implies <code>midi</code>). XMI→MID conversion is clean-room (~300 lines): strip IFF wrapper, convert IFTHEN timing to delta-time, merge multi-sequence files. Once converted to MID, the existing MIDI pipeline handles SoundFont rendering to WAV/AUD. <code>validate</code> and <code>inspect</code> report sequence count, timing mode, and embedded SysEx data</td></tr>
+<tr><td><code>.avi</code></td><td>Interchange video</td><td><strong>Tool-level interchange format</strong> for VQA ↔ video conversion (<code>cnc-formats convert</code>, behind <code>convert</code> feature). Uncompressed BGR24 video + 16-bit PCM audio. Clean-room AVI container codec with no external dependencies. This does NOT conflict with D049’s WebM recommendation — D049 targets the engine’s runtime format; AVI is the tool-level interchange format. Pipeline: <code>.vqa</code> → AVI (<code>cnc-formats</code>) → WebM (ffmpeg/user tooling). Not a game asset format — never loaded at runtime</td></tr>
 </tbody>
 </table>
 </div>
@@ -263,28 +267,58 @@
 <p><strong>cnc-formats</strong> (MIT OR Apache-2.0, separate repo — Tier 1, Phase 0):</p>
 <ol>
 <li>
-<p>Clean-room parsers for all C&amp;C binary formats (<code>.mix</code>, <code>.shp</code>, <code>.tmp</code>, <code>.pal</code>, <code>.aud</code>, <code>.vqa</code>, <code>.wsa</code>, <code>.fnt</code>) and Petroglyph <code>.meg</code>/<code>.pgm</code> archives (Phase 2, behind <code>meg</code> feature flag — clean-room from OS Big Editor/OpenSage community docs)</p>
+<p>Clean-room parsers for all C&amp;C binary formats (<code>.mix</code>, <code>.shp</code>, <code>.tmp</code>, <code>.pal</code>, <code>.aud</code>, <code>.vqa</code>, <code>.wsa</code>, <code>.fnt</code>) and Petroglyph <code>.meg</code>/<code>.pgm</code> archives (Phase 2, behind <code>meg</code> feature flag — clean-room from OS Big Editor/OpenSage community docs). Standard MIDI <code>.mid</code> parsing, writing, and SoundFont rendering behind <code>midi</code> feature flag (via <code>midly</code>/<code>nodi</code>/<code>rustysynth</code> — all pure Rust; <code>midly</code> is Unlicense, <code>nodi</code> and <code>rustysynth</code> are MIT). Westwood-lineage audio formats: AdLib <code>.adl</code> (Dune II) parsing behind <code>adl</code> feature flag; XMIDI <code>.xmi</code> (Kyrandia / Miles Sound System) parsing and XMI→MID conversion behind <code>xmi</code> feature flag (implies <code>midi</code>)</p>
 </li>
 <li>
 <p>Clean-room parsers for C&amp;C text configuration formats: <code>.ini</code> (classic C&amp;C rules, always enabled) and MiniYAML (OpenRA rules, behind <code>miniyaml</code> feature flag)</p>
 </li>
 <li>
+<p><strong>Clean-room encoders</strong> for standard algorithms — LCW compression, IMA ADPCM encoding, VQ codebook generation (median-cut quantization), SHP frame assembly, PAL writing. These use publicly documented algorithms with no EA source code references. Sufficient for community tools, round-trip conversion, and Asset Studio basic functionality.</p>
+</li>
+<li>
+<p><strong>Bidirectional format conversion</strong> (behind <code>convert</code> feature flag, gates <code>png</code>/<code>hound</code>/<code>gif</code> dependencies):</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Conversion</th><th>Direction</th><th>Dependency</th></tr>
+</thead>
+<tbody>
+<tr><td>SHP ↔ PNG</td><td>Bidirectional</td><td><code>png</code> crate</td></tr>
+<tr><td>SHP ↔ GIF</td><td>Bidirectional</td><td><code>gif</code> crate</td></tr>
+<tr><td>PAL → PNG (swatch)</td><td>Export</td><td><code>png</code> crate</td></tr>
+<tr><td>TMP → PNG</td><td>Export</td><td><code>png</code> crate</td></tr>
+<tr><td>WSA ↔ PNG (frame sequence)</td><td>Bidirectional</td><td><code>png</code> crate</td></tr>
+<tr><td>WSA ↔ GIF (animated)</td><td>Bidirectional</td><td><code>gif</code> crate</td></tr>
+<tr><td>AUD ↔ WAV</td><td>Bidirectional</td><td><code>hound</code> crate</td></tr>
+<tr><td>MID → WAV</td><td>Export</td><td><code>midly</code> + <code>rustysynth</code> (behind <code>midi</code> feature)</td></tr>
+<tr><td>MID → AUD</td><td>Export</td><td><code>midly</code> + <code>rustysynth</code> + <code>aud::encode_adpcm()</code> (behind <code>midi</code> feature)</td></tr>
+<tr><td>XMI → MID</td><td>Export</td><td><code>midly</code> (behind <code>xmi</code> feature, implies <code>midi</code>)</td></tr>
+<tr><td>XMI → WAV</td><td>Export</td><td>Via XMI→MID then MID→WAV SoundFont render (behind <code>xmi</code> feature)</td></tr>
+<tr><td>XMI → AUD</td><td>Export</td><td>Via XMI→MID→WAV→AUD pipeline (behind <code>xmi</code> + <code>convert</code> features)</td></tr>
+<tr><td>VQA ↔ AVI</td><td>Bidirectional</td><td>custom AVI codec</td></tr>
+<tr><td>FNT → PNG</td><td>Export</td><td><code>png</code> crate</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>cnc-formats convert</code> is the standalone CLI for community utility; Asset Studio (D040) provides the visual GUI via <code>ra-formats</code> (which wraps <code>cnc-formats</code>).</p>
+</li>
+<li>
 <p>CLI tool with phased subcommand rollout:</p>
 <ul>
-<li><strong>Phase 0:</strong> <code>validate</code> (structural correctness), <code>inspect</code> (dump contents/metadata, <code>--json</code> for machine-readable output), <code>convert</code> (extensible <code>--from</code>/<code>--to</code> format conversion — <code>--to</code> required, <code>--from</code> auto-detected from extension; current conversion: <code>--from miniyaml --to yaml</code>, behind <code>miniyaml</code> feature flag)</li>
+<li><strong>Phase 0:</strong> <code>validate</code> (structural correctness), <code>inspect</code> (dump contents/metadata, <code>--json</code> for machine-readable output), <code>convert</code> (extensible <code>--format</code>/<code>--to</code> format conversion — <code>--to</code> required, <code>--format</code> overrides auto-detected source format from extension; <strong>text:</strong> <code>--format miniyaml --to yaml</code> behind <code>miniyaml</code> feature; <strong>binary:</strong> SHP↔PNG, SHP↔GIF, AUD↔WAV, VQA↔AVI, WSA↔PNG/GIF, TMP→PNG, PAL→PNG, FNT→PNG behind <code>convert</code> feature; <strong>MIDI:</strong> MID→WAV, MID→AUD behind <code>midi</code> feature; <strong>XMIDI:</strong> XMI→MID, XMI→WAV, XMI→AUD behind <code>xmi</code> feature)</li>
 <li><strong>Phase 1:</strong> <code>extract</code> (decompose <code>.mix</code> archives to individual files; <code>.meg</code>/<code>.pgm</code> support added Phase 2 via <code>meg</code> feature), <code>list</code> (quick archive inventory — filenames, sizes, types; <code>.meg</code>/<code>.pgm</code> support added Phase 2)</li>
 <li><strong>Phase 2:</strong> <code>check</code> (deep integrity verification — CRC validation, truncation detection, <code>validate --strict</code> equivalent), <code>diff</code> (format-aware structural comparison of two files of the same type), <code>fingerprint</code> (SHA-256 canonical content hash for integrity/deduplication)</li>
 <li><strong>Phase 6a:</strong> <code>pack</code> (create <code>.mix</code> archives from directory — inverse of <code>extract</code>)</li>
 </ul>
 <p><strong>CLI usage examples:</strong></p>
-<pre><code class="language-bash"># Convert MiniYAML rules to standard YAML (explicit --from because .yaml is ambiguous)
-cnc-formats convert --from miniyaml --to yaml rules.yaml
+<pre><code class="language-bash"># Convert MiniYAML rules to standard YAML (explicit --format because .yaml is ambiguous)
+cnc-formats convert --format miniyaml --to yaml rules.yaml
 
 # Auto-detection works when extension is unambiguous
 cnc-formats convert --to yaml openra-rules.miniyaml
 
-# Explicit --from required for pipe/stdin usage
-cat rules.yaml | cnc-formats convert --from miniyaml --to yaml -o rules-converted.yaml
+# Explicit --format required for pipe/stdin usage
+cat rules.yaml | cnc-formats convert --format miniyaml --to yaml -o rules-converted.yaml
 
 # Validate any supported format
 cnc-formats validate main.mix
@@ -317,6 +351,34 @@ cnc-formats extract data.meg -o remastered-assets/
 
 # Create MIX archive from directory (Phase 6a)
 cnc-formats pack assets/ -o custom.mix
+
+# Binary format conversions (requires `convert` feature)
+# Convert SHP sprites to PNG (requires palette)
+cnc-formats convert --format shp --to png infantry.shp --palette temperat.pal -o infantry/
+
+# Convert PNG back to SHP
+cnc-formats convert --format png --to shp infantry/ --palette temperat.pal -o infantry.shp
+
+# Convert AUD audio to WAV
+cnc-formats convert --format aud --to wav speech.aud -o speech.wav
+
+# Convert WAV back to AUD
+cnc-formats convert --format wav --to aud recording.wav -o recording.aud
+
+# Render MIDI to WAV using SoundFont (requires `midi` feature)
+cnc-formats convert --format mid --to wav soundtrack.mid --soundfont default.sf2 -o soundtrack.wav
+
+# Render MIDI to AUD for original game engine modding (requires `midi` feature)
+cnc-formats convert --format mid --to aud soundtrack.mid --soundfont default.sf2 -o soundtrack.aud
+
+# Convert VQA cutscene to AVI (interchange format)
+cnc-formats convert --format vqa --to avi intro.vqa -o intro.avi
+
+# Convert animated WSA to GIF
+cnc-formats convert --format wsa --to gif menu.wsa --palette temperat.pal -o menu.gif
+
+# Ambiguous format hint (TD vs RA .tmp files — use --format tmp to override auto-detection)
+cnc-formats convert --format tmp --to png tiles.tmp --palette temperat.pal
 </code></pre>
 </li>
 <li>
@@ -326,13 +388,13 @@ cnc-formats pack assets/ -o custom.mix
 <p>No EA-derived code — permissive licensing enables adoption by any C&amp;C tool or modding project</p>
 </li>
 <li>
-<p>Released open source as a standalone crate on day one (Phase 0 deliverable, read-only)</p>
+<p>Released open source as a standalone crate on day one (Phase 0 deliverable)</p>
 </li>
 <li>
 <p>Uses <code>std</code> — enables <code>std::io::Read</code> streaming for large files (<code>.mix</code> archives, <code>.vqa</code> video), <code>std::error::Error</code> ergonomics, and <code>HashMap</code> without extra dependencies. The <code>&amp;[u8]</code> parsing API remains the primary interface; streaming is an additional option.</p>
 </li>
 <li>
-<p>Serves as a <strong>clean-room feasibility proof</strong> that the engine is not technically dependent on EA’s GPL code — all formats parse correctly from community docs alone (see D051 § “GPL Is a Policy Choice” and D076 rationale #6)</p>
+<p>Serves as a <strong>clean-room feasibility proof</strong> that the engine is not technically dependent on EA’s GPL code — all formats parse and encode correctly from community docs alone (see D051 § “GPL Is a Policy Choice” and D076 rationale #6)</p>
 </li>
 </ol>
 <p><strong>ra-formats</strong> (GPL v3, IC monorepo):</p>
@@ -340,7 +402,8 @@ cnc-formats pack assets/ -o custom.mix
 <li>Thin wrapper over <code>cnc-formats</code> (with <code>miniyaml</code> feature enabled) — adds EA-specific details (compression tables, game-specific constants) that reference EA’s GPL-licensed C&amp;C source (D051)</li>
 <li>Bevy <code>AssetSource</code> integration for IC’s asset pipeline</li>
 <li>Remastered-specific format support (<code>.tga+.meta</code> megasheet splitting, <code>.dds</code> terrain import, <code>.bk2</code> video conversion, <code>.mtd</code> MegaTexture) — GPL-derived or proprietary formats that stay in <code>ra-formats</code> (see D076 § Remastered format split). Note: <code>.meg</code>/<code>.pgm</code> archive parsing is in <code>cnc-formats</code> (Phase 2, <code>meg</code> feature flag) — <code>ra-formats</code> depends on it</li>
-<li><strong>Write support (Phase 6a):</strong> .shp generation from frames (LCW compression + frame offset tables), .pal writing (trivial — 768 bytes), .aud encoding (IMA ADPCM compression from PCM input), .vqa encoding (VQ codebook generation + frame differencing + audio interleaving), encrypted .mix packing (Blowfish key derivation + SHA-1 body digest — extends <code>cnc-formats pack</code>’s unencrypted archives) — required by Asset Studio (D040). Encoders reference the EA GPL source code implementations directly (see § Binary Format Codec Reference)</li>
+<li><strong>EA-derived encoder enhancements (Phase 6a):</strong> Extends <code>cnc-formats</code>’ clean-room encoders for pixel-perfect original-game-format matching where EA GPL source provides authoritative edge-case details. Encrypted <code>.mix</code> packing (Blowfish key derivation + SHA-1 body digest — extends <code>cnc-formats pack</code>‘s unencrypted archives). Only needed when exact-match reproduction of original game file bytes is required — <code>cnc-formats</code>’ clean-room encoders are sufficient for all standard community workflows. Encoders reference the EA GPL source code implementations for the EA-specific enhancements only (see § Binary Format Codec Reference)</li>
+<li><strong>ADL→WAV rendering (OPL2 synthesis):</strong> Renders <code>.adl</code> register data to PCM audio via OPL2 chip emulation using <code>opl-emu</code> (GPL-3.0, pure Rust). <code>cnc-formats</code> provides the <code>.adl</code> parser (behind <code>adl</code> feature, permissive license); <code>ra-formats</code> adds the rendering step because the only viable pure Rust OPL emulator is GPL-licensed. Pipeline: <code>.adl</code> → register writes → OPL2 emulation → PCM → WAV. Accessible via Asset Studio (D040) and IC SDK CLI. If a permissively-licensed pure Rust OPL2 emulator becomes available, rendering can migrate to <code>cnc-formats</code></li>
 </ol>
 <h3 id="non-cc-format-landscape"><a class="header" href="#non-cc-format-landscape">Non-C&amp;C Format Landscape</a></h3>
 <p>The <code>cnc-formats</code> crate provides clean-room parsers for the entire C&amp;C format family (binary codecs, <code>.ini</code>, and feature-gated MiniYAML); <code>ra-formats</code> wraps it with EA-derived details and IC asset pipeline integration. But the engine (D039) supports non-C&amp;C games via the <code>FormatRegistry</code> and WASM format loaders (see <code>04-MODDING.md</code> § WASM Format Loader API Surface). Analysis of six major OpenRA community mods (see <code>research/openra-mod-architecture-analysis.md</code>) reveals the scope of formats that non-C&amp;C total conversions require:</p>
@@ -351,7 +414,7 @@ cnc-formats pack assets/ -o custom.mix
 </thead>
 <tbody>
 <tr><td>KKnD (OpenKrush)</td><td><code>.blit</code>, <code>.mobd</code>, <code>.mapd</code>, <code>.lvl</code>, <code>.son</code>, <code>.soun</code>, <code>.vbc</code> (15+ decoders)</td><td>Entirely proprietary format family; zero overlap with C&amp;C</td></tr>
-<tr><td>Dune II (d2)</td><td><code>.icn</code>, <code>.cps</code>, <code>.shp</code> variant, <code>.adl</code>, custom map format (6+)</td><td>Different <code>.shp</code> than C&amp;C; incompatible parsers. Dune II reuses <code>.wsa</code> (same format as C&amp;C — handled by <code>cnc-formats</code>)</td></tr>
+<tr><td>Dune II (d2)</td><td><code>.icn</code>, <code>.cps</code>, <code>.shp</code> variant, custom map format (5+)</td><td>Different <code>.shp</code> than C&amp;C; incompatible parsers. Dune II reuses <code>.wsa</code> (same format as C&amp;C — handled by <code>cnc-formats</code>). <code>.adl</code> music now handled by <code>cnc-formats</code> (behind <code>adl</code> feature flag)</td></tr>
 <tr><td>Swarm Assault (OpenSA)</td><td>Custom creature sprites, terrain tiles</td><td>Format details vary by content source</td></tr>
 <tr><td>Tiberian Dawn HD</td><td>MegV3 archives, 128×128 HD tiles (<code>RemasterSpriteSequence</code>)</td><td>Different archive format than <code>.mix</code></td></tr>
 <tr><td>OpenHV</td><td>None — uses PNG/WAV/OGG exclusively</td><td>Original game content avoids legacy formats entirely</td></tr>
@@ -421,7 +484,8 @@ pub struct BrowserStore { /* OPFS primary, IndexedDB fallback */ }
 <tr><th>Section</th><th>Topic</th><th>File</th></tr>
 </thead>
 <tbody>
-<tr><td>Binary Codecs</td><td>MIX, SHP, LCW, TMP, PAL, AUD, VQA, WSA, FNT codec specs + EA source insights + coordinate system translation</td><td><a href="formats/binary-codecs.html">binary-codecs.md</a></td></tr>
+<tr><td>Binary Codecs</td><td>MIX, SHP, LCW, TMP, PAL, AUD, VQA, WSA, FNT codec specs</td><td><a href="formats/binary-codecs.html">binary-codecs.md</a></td></tr>
+<tr><td>— EA Source Insights</td><td>Architecture lessons from EA GPL source: keep/leave-behind patterns, code stats, coordinate translation</td><td><a href="formats/ea-source-insights.html">ea-source-insights.md</a></td></tr>
 <tr><td>Save &amp; Replay Formats</td><td>Save game format (.icsave) + replay file format (.icrep)</td><td><a href="formats/save-replay-formats.html">save-replay-formats.md</a></td></tr>
 <tr><td>— Keyframes &amp; Analysis</td><td>Keyframe snapshot types, delta structs, seeking algorithm, analysis event taxonomy</td><td><a href="formats/replay-keyframes-analysis.html">replay-keyframes-analysis.md</a></td></tr>
 <tr><td>Backup, Screenshot &amp; Import</td><td>Backup archive format (D061) + screenshot format + owned-source import/extraction pipeline</td><td><a href="formats/backup-screenshot-import.html">backup-screenshot-import.md</a></td></tr>

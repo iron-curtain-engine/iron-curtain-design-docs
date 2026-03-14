@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9adfe301.js"></script>
+        <script src="../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -418,7 +418,7 @@ pub struct ReplayTickFrame {
 <h3 id="keyframe-index--snapshots"><a class="header" href="#keyframe-index--snapshots">Keyframe Index &amp; Snapshots</a></h3>
 <p>Periodic <code>SimSnapshot</code> or <code>DeltaSnapshot</code> captures that enable fast seeking without re-simulating from tick 0. Keyframes are <strong>mandatory</strong> — every 300 ticks (~20 seconds at the Slower default). Full/delta alternation bounds worst-case seek cost to one full snapshot + 9 deltas. For the complete type definitions (<code>KeyframeIndexEntry</code>, <code>DeltaSnapshot</code>, <code>SimCoreDelta</code>, <code>EntityDelta</code>, <code>PlayerStateDelta</code>, <code>MapStateDelta</code>, <code>StringInternerSnapshot/Delta</code>) and the seeking algorithm, see <a href="replay-keyframes-analysis.html">Replay Keyframes &amp; Analysis Events</a> § Keyframe Index &amp; Snapshots.</p>
 <h3 id="analysis-event-stream"><a class="header" href="#analysis-event-stream">Analysis Event Stream</a></h3>
-<p>SC2-inspired analytical data stream sampled during recording — enables stats sites, tournament review, and coaching tools to extract rich data without re-simulating. 18 event types covering unit lifecycle, economy, camera tracking, selection/control groups, abilities, votes, and match structure. For the full <code>AnalysisEvent</code> enum, competitive analysis rationale, and compression details, see <a href="replay-keyframes-analysis.html">Replay Keyframes &amp; Analysis Events</a> § Analysis Event Stream.</p>
+<p>SC2-inspired analytical data stream sampled during recording — enables stats sites, tournament review, and coaching tools to extract rich data without re-simulating. 21 event types covering unit lifecycle, economy, camera tracking, selection/control groups, abilities, votes, match structure, and highlight detection signals (6 engagement-level events added by D077: <code>EngagementStarted</code>, <code>EngagementEnded</code>, <code>SuperweaponFired</code>, <code>BaseDestroyed</code>, <code>ArmyWipe</code>, <code>ComebackMoment</code>). For the full <code>AnalysisEvent</code> enum, competitive analysis rationale, and compression details, see <a href="replay-keyframes-analysis.html">Replay Keyframes &amp; Analysis Events</a> § Analysis Event Stream.</p>
 <h3 id="signature-chain-relay-certified-replays"><a class="header" href="#signature-chain-relay-certified-replays">Signature Chain (Relay-Certified Replays)</a></h3>
 <p>For ranked/tournament matches, the relay server signs state hashes at signing cadence (every N ticks, default 30 — see <code>network-model-trait.md</code>), producing a <code>TickSignature</code> chain. The chain is sparse — not every tick has a signature, only those at signing cadence boundaries. The signature algorithm is determined by the replay header version — version <code>1</code> uses Ed25519 (current). Later replay header versions, if introduced, may select post-quantum algorithms via the <code>SignatureScheme</code> enum (D054) while preserving versioned verification dispatch:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -559,7 +559,7 @@ pub struct RemasteredRecordedFrame {
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../formats/binary-codecs.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../formats/ea-source-insights.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
@@ -573,7 +573,7 @@ pub struct RemasteredRecordedFrame {
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../formats/binary-codecs.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../formats/ea-source-insights.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 

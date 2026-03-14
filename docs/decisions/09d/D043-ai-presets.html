@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-9adfe301.js"></script>
+        <script src="../../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -375,18 +375,19 @@ ai_preset:
     qol: iron_curtain
 </code></pre>
 <h3 id="lobby-integration"><a class="header" href="#lobby-integration">Lobby Integration</a></h3>
-<p>AI preset is selectable per AI player slot in the lobby, independent of game-wide balance preset:</p>
+<p>AI commander (or unnamed preset) is selectable per AI player slot in the lobby, independent of game-wide balance preset:</p>
 <pre><code>Player 1: [Human]           Faction: Soviet
-Player 2: [AI] IC Default (Hard)    Faction: Allied
-Player 3: [AI] Classic RA (Normal)  Faction: Allied
-Player 4: [AI] OpenRA (Brutal)      Faction: Soviet
+Player 2: [AI] Col. Stavros — Air Superiority (Hard)    Faction: Allied
+Player 3: [AI] Classic RA AI (Normal)   Faction: Allied
+Player 4: [AI] Gen. Kukov — Brute Force (Brutal)       Faction: Soviet
 
 Balance Preset: Classic RA
 </code></pre>
-<p>This allows mixed AI playstyles in the same game – useful for testing, fun for variety, and educational for understanding how different AI approaches handle the same scenario.</p>
+<p>This allows mixed AI commander personalities in the same game – useful for testing, fun for variety, and educational for understanding how different AI approaches handle the same scenario.</p>
 <h3 id="community-ai-presets"><a class="header" href="#community-ai-presets">Community AI Presets</a></h3>
-<p>Modders can create custom AI presets as Workshop resources (D030):</p>
+<p>Modders can create custom AI presets and named commanders as Workshop resources (D030):</p>
 <ul>
+<li>YAML commander files (name, portrait, personality overrides, taunts) — Tier 1, no code required</li>
 <li>YAML preset files defining <code>personality</code> parameters for <code>PersonalityDrivenAi</code></li>
 <li>Full <code>AiStrategy</code> implementations via WASM Tier 3 mods (D041)</li>
 <li>AI tournament brackets: community members compete by submitting AI presets, tournament server runs automated matches</li>
@@ -478,14 +479,14 @@ difficulty:
 <li><strong>AI implementation</strong> — which <code>AiStrategy</code> algorithm</li>
 <li><strong>Difficulty level</strong> — which engine scaling + personality config</li>
 </ol>
-<pre><code>Player 2: [AI] IC Default / Hard        Faction: Allied
-Player 3: [AI] Classic RA / Normal      Faction: Allied
-Player 4: [AI] Workshop: GOAP Planner / Brutal   Faction: Soviet
-Player 5: [AI] Workshop: Neural Net v2 / Nightmare   Faction: Soviet
+<pre><code>Player 2: [AI] Col. Stavros — Air Superiority / Hard        Faction: Allied
+Player 3: [AI] Classic RA AI / Normal                        Faction: Allied
+Player 4: [AI] Workshop: GOAP Planner / Brutal               Faction: Soviet
+Player 5: [AI] Workshop: Neural Net v2 / Nightmare           Faction: Soviet
 
 Balance Preset: Classic RA
 </code></pre>
-<p>This is different from pathfinders (one axis: which algorithm). AI has two orthogonal axes because <em>how smart the AI plays</em> and <em>what advantages it gets</em> are independent concerns. A “Brutal Classic RA” AI should play with original 1996 patterns but get economic bonuses and instant reactions; an “Easy IC Default” AI should use modern tactics but gather slowly and react late.</p>
+<p>This is different from pathfinders (one axis: which algorithm). AI has two orthogonal axes because <em>how smart the AI plays</em> and <em>what advantages it gets</em> are independent concerns. A “Brutal Col. Volkov” should play with armor-specialist tendencies and get economic bonuses and instant reactions; an “Easy Cdr. Stavros” should use air-superiority tactics but gather slowly and react late.</p>
 <p><strong>Modder as consumer — selecting an AI:</strong></p>
 <p>A mod’s YAML manifest can declare which <code>AiStrategy</code> implementations it ships with or requires:</p>
 <pre><code class="language-toml"># mod.toml — total conversion with custom AI
@@ -564,7 +565,28 @@ replan_interval_ticks = 30
 <li><strong>D033 (QoL toggles / experience profiles):</strong> AI preset selection integrates naturally into experience profiles. The “Classic Red Alert” experience profile bundles classic balance + classic AI + classic theme.</li>
 <li><strong>D045 (pathfinding presets):</strong> Same modder-selectable pattern. Mods select or provide pathfinders; mods select or provide AI implementations. Both distribute via Workshop; both compose with experience profiles. Key difference: pathfinding is one axis (algorithm), AI is two axes (algorithm + difficulty).</li>
 <li><strong>D048 (render modes):</strong> Same modder-selectable pattern. The trait-per-subsystem architecture means every pluggable system follows the same model: engine ships built-in implementations, mods can add more, players/modders pick what they want.</li>
+<li><strong>D059 (communication system):</strong> AI Commander taunts are delivered via D059’s chat channel system as all-chat messages. Rate-limited and toggleable via D033 QoL (<code>ai_taunts: on/off</code>). Taunts are cosmetic — they do not affect simulation or determinism.</li>
 </ul>
+<h3 id="ai-commanders--puppet-masters"><a class="header" href="#ai-commanders--puppet-masters">AI Commanders &amp; Puppet Masters</a></h3>
+<blockquote>
+<p><strong>Full detail:</strong> <a href="D043/commanders-and-puppet-masters.html">AI Commanders &amp; Puppet Masters</a></p>
+</blockquote>
+<p>Two layers build on top of the behavioral AI presets:</p>
+<p><strong>AI Commanders — Named Personas:</strong> Named characters with portraits, specializations, visible agendas, and contextual taunts wrapped around personality presets. 6 built-in RA1 commanders (Col. Volkov, Cmdr. Nadia, Gen. Kukov, Cdr. Stavros, Col. von Esling, Lt. Tanya). Community commanders via Workshop (YAML — no code required); LLM-generated commanders (Phase 7). Taunts delivered via D059 chat system, rate-limited and toggleable.</p>
+<p><strong>Puppet Masters — Strategic Guidance:</strong> A Puppet Master is an external strategic guidance source that influences an AI player’s objectives and priorities without directly controlling units. Three tiers:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Tier</th><th>Name</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>0</strong></td><td><strong>Masterless</strong></td><td>No PM assigned — standard autonomous AI. The default for all AI slots.</td></tr>
+<tr><td><strong>1</strong></td><td><strong>AI Puppet Master</strong></td><td>Algorithmic or LLM-based strategic advisor. D044 <code>LlmOrchestratorAi</code> is the primary implementation.</td></tr>
+<tr><td><strong>2</strong></td><td><strong>Human Puppet Master</strong></td><td>Real player providing strategic direction via structured intents. D073 Prompt-Coached is the primary implementation.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The <code>PuppetMaster</code> trait abstracts the guidance source; <code>GuidedAi</code> wraps any <code>AiStrategy</code> with any <code>PuppetMaster</code>, bridging them through <code>set_parameter()</code>. Architecture is open-ended for future PM types (rule-based advisors, ML models, training coaches). No PMs in ranked play (D055).</p>
 <h3 id="alternatives-considered"><a class="header" href="#alternatives-considered">Alternatives Considered</a></h3>
 <ul>
 <li>AI difficulty only, no style presets (rejected — difficulty is orthogonal to style; a “Hard Classic RA” AI should be hard but still play like original RA, not like a modern AI turned up)</li>
@@ -573,6 +595,7 @@ replan_interval_ticks = 30
 <li>Difficulty as a fixed enum only (rejected — modders should be able to define new difficulty levels via YAML without code changes; AoE2’s 20+ years of community AI prove that a large parameter space outlasts a restrictive one)</li>
 <li>No engine-level difficulty scaling (rejected — delegating difficulty entirely to AI implementations produces inconsistent experiences across different AIs; 0 A.D. and AoE2 both provide engine scaling with opt-out, proving this is the right separation of concerns)</li>
 <li>No event callbacks on <code>AiStrategy</code> (rejected — polling-only AI misses reactive opportunities; Spring Engine and BWAPI both use event + tick hybrid, which is the proven model)</li>
+<li>Unnamed presets only, no commander personas (rejected — prior art from Generals ZH, Civ 5/6, and C&amp;C3 overwhelmingly shows that named AI characters with visible agendas increase replayability and engagement; the behavioral engine already supports differentiated personalities, the presentation layer is low-cost and high-impact)</li>
 </ul>
 <hr>
 <hr>
@@ -584,7 +607,7 @@ replan_interval_ticks = 30
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../../decisions/09d/D044-llm-ai.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../decisions/09d/D045-pathfinding-presets.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -598,7 +621,7 @@ replan_interval_ticks = 30
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../../decisions/09d/D044-llm-ai.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../decisions/09d/D045-pathfinding-presets.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

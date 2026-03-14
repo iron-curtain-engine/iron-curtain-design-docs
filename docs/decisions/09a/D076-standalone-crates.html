@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-9adfe301.js"></script>
+        <script src="../../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -244,14 +244,18 @@
 <tr><th>Crate Name</th><th>Purpose</th><th>Why Standalone</th><th>IC Consumer</th></tr>
 </thead>
 <tbody>
-<tr><td><code>cnc-formats</code></td><td>Parse all C&amp;C formats: binary (<code>.mix</code>, <code>.shp</code>, <code>.tmp</code>, <code>.pal</code>, <code>.aud</code>, <code>.vqa</code>, <code>.wsa</code>, <code>.fnt</code>), <code>.ini</code> rules, MiniYAML (feature-gated), and Petroglyph <code>.meg</code>/<code>.pgm</code> archives (feature-gated, Phase 2)</td><td>Every C&amp;C tool, viewer, converter, and modding project needs format parsing. Currently scattered across C/C#/Python community tools with no canonical Rust implementation. <code>.ini</code> is a classic C&amp;C format; MiniYAML is OpenRA-originated but de facto community standard. <code>.meg</code> is Petroglyph’s archive format (Empire at War / C&amp;C Remastered lineage) — clean-roomable from community docs (OS Big Editor, OpenSage).</td><td><code>ra-formats</code> (IC’s game-specific layer wraps <code>cnc-formats</code> with IC asset pipeline integration)</td></tr>
+<tr><td><code>cnc-formats</code></td><td>Parse and encode C&amp;C formats: binary (<code>.mix</code>, <code>.shp</code>, <code>.tmp</code>, <code>.pal</code>, <code>.aud</code>, <code>.vqa</code>, <code>.wsa</code>, <code>.fnt</code>), <code>.ini</code> rules, MiniYAML (feature-gated), Petroglyph <code>.meg</code>/<code>.pgm</code> archives (feature-gated, Phase 2), <code>.mid</code> MIDI (feature-gated), Westwood-lineage audio <code>.adl</code> AdLib and <code>.xmi</code> XMIDI (feature-gated). Clean-room encoders (LCW, IMA ADPCM, VQ codebook, SHP assembly). Bidirectional conversion (SHP↔PNG, AUD↔WAV, VQA↔AVI, MID→WAV/AUD, XMI→MID/WAV/AUD, etc. behind <code>convert</code> feature).</td><td>Every C&amp;C tool, viewer, converter, and modding project needs format parsing and conversion. Currently scattered across C/C#/Python community tools with no canonical Rust implementation. <code>.ini</code> is a classic C&amp;C format; MiniYAML is OpenRA-originated but de facto community standard. <code>.meg</code> is Petroglyph’s archive format (Empire at War / C&amp;C Remastered lineage) — clean-roomable from community docs (OS Big Editor, OpenSage). MIDI is a universal standard in game audio tooling and the intermediate format for IC’s LLM audio generation pipeline (ABC → MIDI → SoundFont → PCM). <code>.adl</code> (AdLib OPL2, Dune II) and <code>.xmi</code> (XMIDI, Kyrandia / Miles Sound System) are Westwood-lineage audio formats — the community working with Westwood games expects these in the same toolbox. Note: C&amp;C (TD/RA) shipped music as <code>.aud</code> digital audio, not MIDI — earlier Westwood titles used these synthesizer formats before switching to pre-rendered digital audio.</td><td><code>ra-formats</code> (IC’s game-specific layer wraps <code>cnc-formats</code> with IC asset pipeline integration)</td></tr>
 <tr><td><code>fixed-game-math</code></td><td>Deterministic fixed-point arithmetic: <code>Fixed&lt;N&gt;</code>, trig tables, CORDIC atan2, Newton sqrt, modifier chains</td><td>Any deterministic game (lockstep RTS, fighting game, physics sim) needs platform-identical math. No good Rust crate exists with game-focused API.</td><td><code>ic-sim</code>, <code>ic-protocol</code></td></tr>
 <tr><td><code>deterministic-rng</code></td><td>Seedable, platform-identical PRNG with game-oriented API: range sampling, weighted selection, shuffle, damage spread</td><td>Same audience as <code>fixed-game-math</code>. Must produce identical sequences on all platforms (x86/ARM/WASM).</td><td><code>ic-sim</code></td></tr>
 </tbody>
 </table>
 </div>
-<p><strong>Naming note:</strong> The IC crate currently called <code>ra-formats</code> stays in the IC monorepo as GPL code because it references EA’s GPL-licensed C&amp;C source for struct definitions and lookup tables (D051 rationale #2). <code>cnc-formats</code> is the <em>new</em> permissive crate containing only clean-room format parsing with no EA-derived code. <code>ra-formats</code> becomes a thin wrapper that adds EA-specific details (compression tables, game-specific constants) on top.</p>
-<p><strong>Feature-gated MiniYAML:</strong> <code>.ini</code> parsing is always available (it’s a classic C&amp;C format). MiniYAML parsing is behind <code>features = { miniyaml = [] }</code> because it’s OpenRA-specific — a <code>.mix</code> extractor tool or asset viewer doesn’t need it. The <code>cnc-formats</code> CLI binary ships in the same repo; its <code>convert</code> subcommand uses <code>--from</code>/<code>--to</code> flags for extensible format dispatch: <code>--to</code> is always required, <code>--from</code> is optional (auto-detected from file extension when unambiguous, required when reading from stdin). The <code>ConvertFormat</code> enum defines available formats with per-variant <code>#[cfg]</code> feature gating — <code>Miniyaml</code> requires the <code>miniyaml</code> feature, <code>Yaml</code> is always available. Unsupported <code>(from, to)</code> pairs print available conversions. Current conversion: <code>--from miniyaml --to yaml</code>. <code>validate</code> and <code>inspect</code> work on all formats unconditionally. <code>ra-formats</code> depends on <code>cnc-formats</code> with <code>miniyaml</code> enabled.</p>
+<p><strong>Naming note:</strong> The IC crate currently called <code>ra-formats</code> stays in the IC monorepo as GPL code because it references EA’s GPL-licensed C&amp;C source for struct definitions and lookup tables (D051 rationale #2). <code>cnc-formats</code> is the <em>new</em> permissive crate containing clean-room format parsing and encoding with no EA-derived code. <code>ra-formats</code> becomes a thin wrapper that adds EA-specific details (compression tables, game-specific constants, encoder enhancements for pixel-perfect original format matching) on top.</p>
+<p><strong>Feature-gated MiniYAML:</strong> <code>.ini</code> parsing is always available (it’s a classic C&amp;C format). MiniYAML parsing is behind <code>features = { miniyaml = [] }</code> because it’s OpenRA-specific — a <code>.mix</code> extractor tool or asset viewer doesn’t need it. The <code>cnc-formats</code> CLI binary ships in the same repo; its <code>convert</code> subcommand uses <code>--format</code>/<code>--to</code> flags for extensible format dispatch: <code>--to</code> is always required, <code>--format</code> is optional (auto-detected from file extension when unambiguous, required when reading from stdin). The <code>--format</code> flag is shared with <code>validate</code> and <code>inspect</code> — it always means “source format override.” The <code>ConvertFormat</code> enum defines available formats with per-variant <code>#[cfg]</code> feature gating — <code>Miniyaml</code> requires the <code>miniyaml</code> feature, <code>Ist</code> requires the <code>ist</code> feature, <code>Yaml</code> is always available. Unsupported <code>(format, to)</code> pairs print available conversions. Current conversions: <code>--format miniyaml --to yaml</code>, <code>--format shp --to ist</code> (requires <code>.pal</code>), <code>--format ist --to shp</code>. <code>validate</code> and <code>inspect</code> work on all formats unconditionally. <code>ra-formats</code> depends on <code>cnc-formats</code> with <code>miniyaml</code> enabled.</p>
+<p><strong>Feature-gated IST (IC Sprite Text):</strong> IST is a YAML-wrapped palette-indexed hex pixel grid format — a human-readable, diffable, version-controllable text representation of <code>.shp</code> + <code>.pal</code> sprite data. Behind <code>features = { ist = [] }</code>. Round-trip lossless: <code>.shp + .pal → IST → .shp + .pal</code> produces byte-identical output. Compact mode uses 1 hex character per pixel for ≤16 color sprites; full mode uses 2 hex characters for 17–256 colors. Useful standalone as a text-editable sprite format for any retro game engine or pixel art tool. Also serves as the token-efficient representation for LLM-based sprite generation (see <code>research/text-encoded-visual-assets-for-llm-generation.md</code>). The <code>ist</code> feature adds <code>.shp</code>/<code>.pal</code> as recognized formats for <code>convert</code>, <code>validate</code>, and <code>inspect</code>.</p>
+<p><strong>Feature-gated MIDI:</strong> MIDI (<code>.mid</code>) is the intermediate format for IC’s LLM audio generation pipeline (ABC → MIDI → SoundFont → PCM) and a universal standard in game audio tooling. Note: C&amp;C (TD/RA) shipped music as <code>.aud</code> digital audio, not MIDI — earlier Westwood titles used synthesizer formats (<code>.adl</code>, XMIDI), not standard <code>.mid</code>. Behind <code>features = { midi = ["dep:midly", "dep:nodi", "dep:rustysynth"] }</code>. Adds three pure Rust permissively licensed dependencies: <code>midly</code> (zero-allocation MIDI parser/writer, <code>no_std</code>, Unlicense), <code>nodi</code> (MIDI playback abstraction, track merging, MIT), and <code>rustysynth</code> (SoundFont SF2 synthesizer — renders MIDI to PCM, real-time capable, reverb + chorus, MIT). All three are WASM-compatible with zero C bindings. The <code>midi</code> feature enables: <code>MidFile</code> parsing/writing, <code>mid::render_to_pcm()</code>/<code>mid::render_to_wav()</code> SoundFont rendering, and <code>convert</code> support for MID→WAV (via SoundFont) and MID→AUD (SoundFont + IMA ADPCM encode). WAV/AUD→MID is explicitly not supported — audio-to-symbolic transcription is an unsolved ML problem outside the scope of a format conversion tool. <code>validate</code> and <code>inspect</code> report track count, channels, tempo, duration, and instrument programs. Useful standalone for any game modding project that needs to work with MIDI files, and as the intermediate format for IC’s LLM audio generation pipeline. See <code>research/llm-soundtrack-generation-design.md</code> for the LLM generation pipeline that uses MIDI as its intermediate format.</p>
+<p><strong>Feature-gated ADL (AdLib OPL2):</strong> Dune II (1992) shipped its soundtrack as <code>.adl</code> files — sequential OPL2 register writes driving Yamaha YM3812 FM synthesis. Behind <code>features = { adl = [] }</code>. <code>cnc-formats</code> provides a clean-room read-only parser: <code>AdlFile</code> struct containing register write sequences with timing data. <code>validate</code> reports structural integrity; <code>inspect</code> reports register count, estimated duration, and detected instrument patches. ADL→WAV rendering requires OPL2 chip emulation — the only viable pure Rust emulator (<code>opl-emu</code>) is GPL-3.0, so audio rendering lives in <code>ra-formats</code>, not <code>cnc-formats</code>. Community documentation: DOSBox source code, AdPlug project. No WASM-incompatible dependencies — the parser is pure Rust with zero external dependencies.</p>
+<p><strong>Feature-gated XMI (XMIDI / Miles Sound System):</strong> The Kyrandia series and other Miles AIL-licensed Westwood titles used <code>.xmi</code> — an extended MIDI variant in an IFF FORM:XMID container with Miles-specific extensions: IFTHEN-based absolute timing (vs. standard MIDI delta-time), for-loop markers, and multi-sequence files. Behind <code>features = { xmi = ["midi"] }</code> — implies <code>midi</code> because XMI→MID conversion produces a standard MIDI file processed by the existing pipeline. Clean-room XMI→MID converter (~300 lines): strips IFF wrapper, converts IFTHEN timing to delta-time, merges multi-sequence files into a single SMF. Once converted to MID, the existing MIDI pipeline handles SoundFont rendering to WAV/AUD. <code>validate</code> reports IFF structure integrity; <code>inspect</code> reports sequence count, timing mode, and embedded SysEx data. No external documentation needed beyond the Miles Sound System SDK specification (publicly available) and community implementations (AIL2MID, WildMIDI).</p>
 <p><strong>Encrypted <code>.mix</code> handling:</strong> Extended <code>.mix</code> files use Blowfish-encrypted header indices with a hardcoded symmetric key. Both the Blowfish algorithm (public domain) and the key derivation are publicly documented on ModEnc and implemented in community tools (XCC, OpenRA). This is clean-room knowledge — <code>cnc-formats</code> handles encrypted <code>.mix</code> archives directly using the <code>blowfish</code> RustCrypto crate (MIT/Apache-2.0). No EA-derived code is needed.</p>
 <p><strong><code>.mix</code> write support split:</strong> <code>cnc-formats pack</code> (Phase 6a) creates standard <code>.mix</code> archives — CRC hash table generation, file offset index, unencrypted format. <code>ra-formats</code> extends this with encrypted <code>.mix</code> creation (Blowfish key derivation + SHA-1 body digest) for modders who need archives matching the original game’s encrypted format. The typical community use case (mod distribution) uses unencrypted <code>.mix</code> — only replication of original game archives requires encryption.</p>
 <p><strong>Remastered format split:</strong> Remastered Collection formats divide across the crate boundary by clean-room feasibility:</p>
@@ -270,7 +274,7 @@
 <tbody>
 <tr><td><code>validate</code></td><td>0</td><td>Structural correctness check for any supported format</td></tr>
 <tr><td><code>inspect</code></td><td>0</td><td>Dump contents and metadata (<code>--json</code> for machine-readable output)</td></tr>
-<tr><td><code>convert</code></td><td>0</td><td>Extensible format conversion via <code>--from</code>/<code>--to</code> flags. <code>--to</code> required, <code>--from</code> auto-detected from extension. Current: <code>--from miniyaml --to yaml</code> (behind <code>miniyaml</code> feature). Adding future conversions is a new <code>ConvertFormat</code> enum variant + match arm — no subcommand-level change.</td></tr>
+<tr><td><code>convert</code></td><td>0</td><td>Extensible format conversion via <code>--format</code>/<code>--to</code> flags. <code>--to</code> required, <code>--format</code> auto-detected from extension. <strong>Text:</strong> <code>--format miniyaml --to yaml</code> (behind <code>miniyaml</code> feature), <code>--format shp --to ist</code> and <code>--format ist --to shp</code> (behind <code>ist</code> feature, requires <code>.pal</code>). <strong>Binary</strong> (behind <code>convert</code> feature): SHP↔PNG, SHP↔GIF, PAL→PNG, TMP→PNG, WSA↔PNG, WSA↔GIF, AUD↔WAV, VQA↔AVI, FNT→PNG. <strong>MIDI</strong> (behind <code>midi</code> feature): MID→WAV (requires SoundFont via <code>--soundfont</code>), MID→AUD (SoundFont render + IMA ADPCM encode). <strong>XMIDI</strong> (behind <code>xmi</code> feature, implies <code>midi</code>): XMI→MID (clean-room conversion), XMI→WAV (via XMI→MID then SoundFont render), XMI→AUD (via XMI→MID→WAV→AUD pipeline). Adding future conversions is a new <code>ConvertFormat</code> enum variant + match arm — no subcommand-level change.</td></tr>
 <tr><td><code>extract</code></td><td>1</td><td>Decompose <code>.mix</code> archives to individual files (<code>.meg</code>/<code>.pgm</code> support added Phase 2 via <code>meg</code> feature)</td></tr>
 <tr><td><code>list</code></td><td>1</td><td>Quick archive inventory — filenames, sizes, types (<code>.meg</code>/<code>.pgm</code> support added Phase 2 via <code>meg</code> feature)</td></tr>
 <tr><td><code>check</code></td><td>2</td><td>Deep integrity verification — CRC validation, truncation detection</td></tr>
@@ -281,6 +285,7 @@
 </table>
 </div>
 <p>All subcommands are game-agnostic. Semantic validation (missing prerequisites, circular inheritance in rule files) belongs in <code>ic mod lint</code>, not in <code>cnc-formats</code>.</p>
+<p><strong>CLI error reporting:</strong> All convert operations print status to stderr before heavy work (e.g., <code>Converting SHP → PNG (12 frames, 50×39, palette: temperat.pal)...</code>). Error reporting helpers (<code>report_parse_error</code>, <code>report_convert_error</code>) provide file path + error detail + format hints. For ambiguous file extensions (e.g., <code>.tmp</code> files that could be TD or RA format), <code>print_format_hint</code> suggests <code>--format</code> override. All status/error output goes to stderr; piped stdout stays clean.</p>
 <h3 id="tier-2a--phase-2-simulation"><a class="header" href="#tier-2a--phase-2-simulation">Tier 2a — Phase 2 (Simulation)</a></h3>
 <p>These crates emerge naturally during simulation development. Extract when the API stabilizes.</p>
 <div class="table-wrapper">
@@ -373,13 +378,28 @@
 <p><strong>Zero mandatory dependencies beyond <code>std</code>.</strong> Optional features gate integration with <code>serde</code>, <code>bevy</code>, <code>tokio</code>, etc.</p>
 </li>
 <li>
-<p><strong>Feature flags for ecosystem integration.</strong> Example for <code>fixed-game-math</code>:</p>
+<p><strong>Feature flags for ecosystem integration.</strong> Optional features gate external dependencies. Library consumers who only need parsing don’t pay for image/audio/CLI crate compilation:</p>
+<p><strong><code>cnc-formats</code> features:</strong></p>
+<pre><code class="language-toml">[features]
+default = ["encrypted-mix", "cli"]
+encrypted-mix = ["dep:blowfish", "dep:base64"]   # Blowfish-encrypted .mix header index
+miniyaml = []                                      # MiniYAML parser (OpenRA format)
+ist = []                                            # IST sprite text format
+meg = []                                            # .meg/.pgm Petroglyph archives (Phase 2)
+midi = ["dep:midly", "dep:nodi", "dep:rustysynth"] # MIDI parse/write/synth
+adl = []                                            # .adl AdLib OPL2 parser (Dune II)
+xmi = ["midi"]                                      # .xmi XMIDI parser/converter (Miles Sound System)
+cli = ["dep:clap"]                                  # Unified CLI binary (primary interface)
+convert = ["dep:png", "dep:hound", "dep:gif"]       # Bidirectional binary format conversion
+</code></pre>
+<p><strong><code>fixed-game-math</code> features:</strong></p>
 <pre><code class="language-toml">[features]
 default = ["std"]
 std = []
 serde = ["dep:serde"]
 bevy = ["dep:bevy_reflect"]
 </code></pre>
+<p>Feature flag design principles: <code>cli</code> is a default feature because the CLI is the primary user-facing interface and replaces the former single-purpose <code>miniyaml2yaml</code> binary. <code>convert</code> is opt-in because it pulls in <code>png</code>, <code>hound</code>, and <code>gif</code> — heavy dependencies unnecessary for library consumers who only need parsing. <code>encrypted-mix</code> is default because most <code>.mix</code> consumers encounter encrypted archives from the original games.</p>
 </li>
 <li>
 <p><strong>Comprehensive documentation and examples.</strong> Standalone crates must be usable without reading IC’s design docs. README, rustdoc, and examples should be self-contained.</p>
@@ -388,6 +408,29 @@ bevy = ["dep:bevy_reflect"]
 <p><strong>Property-based testing.</strong> Determinism-critical crates (<code>fixed-game-math</code>, <code>deterministic-rng</code>) include cross-platform property tests that verify identical output on x86, ARM, and WASM targets.</p>
 </li>
 </ol>
+<hr>
+<h2 id="heap-allocation-policy-cnc-formats"><a class="header" href="#heap-allocation-policy-cnc-formats">Heap Allocation Policy (cnc-formats)</a></h2>
+<p><code>cnc-formats</code> minimizes heap allocations in parsing hot paths. The <code>&amp;[u8]</code> zero-copy API is the primary interface; <code>Vec</code>-returning APIs are convenience wrappers for CLI and tool consumers.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Module</th><th>Parse-time allocs</th><th>Runtime allocs</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>mix</code></td><td>1 (entry index <code>Vec</code>)</td><td>0</td><td>File data read via offset into source slice</td></tr>
+<tr><td><code>shp</code></td><td>1 (frame offset <code>Vec</code>)</td><td>0 per frame</td><td>Frame pixels decoded into caller-provided buffer</td></tr>
+<tr><td><code>pal</code></td><td>0</td><td>0</td><td>Fixed 768-byte array, stack-allocated</td></tr>
+<tr><td><code>tmp</code></td><td>1 (tile offset <code>Vec</code>)</td><td>0</td><td>Similar to SHP — offsets into source data</td></tr>
+<tr><td><code>aud</code></td><td>1 (decoded samples <code>Vec</code>)</td><td>0</td><td>ADPCM decode produces output samples</td></tr>
+<tr><td><code>vqa::decode</code></td><td>2 (frame + audio <code>Vec</code>s)</td><td>0</td><td>Frame pixels borrowed where possible</td></tr>
+<tr><td><code>vqa::encode</code></td><td>N (codebook + frame <code>Vec</code>s)</td><td>0</td><td>Median-cut quantization allocates per-codebook-entry</td></tr>
+<tr><td><code>convert</code></td><td>varies</td><td>varies</td><td>PNG/GIF/WAV/AVI encoding — external crate allocations</td></tr>
+<tr><td><code>mid</code> (behind <code>midi</code>)</td><td>1 (track events <code>Vec</code>)</td><td>1 (PCM render <code>Vec</code>)</td><td>Parse via <code>midly</code>; SoundFont render via <code>rustysynth</code></td></tr>
+<tr><td><code>miniyaml</code></td><td>1 (node tree <code>Vec</code>)</td><td>0</td><td>Parse tree is the output</td></tr>
+<tr><td><code>ini</code></td><td>1 (section map)</td><td>0</td><td>HashMap of sections</td></tr>
+</tbody>
+</table>
+</div>
 <hr>
 <h2 id="relationship-to-existing-decisions"><a class="header" href="#relationship-to-existing-decisions">Relationship to Existing Decisions</a></h2>
 <div class="table-wrapper">
@@ -428,138 +471,15 @@ bevy = ["dep:bevy_reflect"]
 </div>
 <hr>
 <h2 id="rust-types-key-interfaces"><a class="header" href="#rust-types-key-interfaces">Rust Types (Key Interfaces)</a></h2>
-<p>These are the public-facing type signatures that define extraction boundaries. IC wraps or extends these types; it never exposes them directly to players.</p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>// cnc-formats — clean-room C&amp;C binary format parsing
-pub struct MixArchive { /* ... */ }
-pub struct ShpFile { /* ... */ }
-pub struct PalFile { /* ... */ }
-pub struct TmpFile { /* ... */ }
-pub struct AudFile { /* ... */ }
-pub struct VqaFile { /* ... */ }
-pub trait FormatReader: Read + Seek {
-    type Output;
-    fn read_from(reader: &amp;mut Self) -&gt; Result&lt;Self::Output, FormatError&gt;;
-}
-
-// cnc-formats — MEG/PGM archive parsing (Phase 2, behind `meg` feature flag)
-#[cfg(feature = "meg")]
-pub struct MegArchive {
-    pub entries: Vec&lt;MegEntry&gt;,
-}
-#[cfg(feature = "meg")]
-pub struct MegEntry {
-    pub name: String,
-    pub offset: u64,
-    pub size: u64,
-}
-
-// cnc-formats CLI — extensible format conversion via --from/--to flags
-/// Available conversion formats. Per-variant `#[cfg]` ensures the binary
-/// only includes parsers for enabled features.
-#[derive(Clone, Copy, Debug, clap::ValueEnum)]
-pub enum ConvertFormat {
-    /// Standard YAML (always available)
-    Yaml,
-    /// OpenRA MiniYAML (requires `miniyaml` feature)
-    #[cfg(feature = "miniyaml")]
-    Miniyaml,
-    /// Classic C&amp;C .ini rules (always available)
-    Ini,
-}
-
-/// `cnc-formats convert` subcommand arguments.
-#[derive(clap::Args)]
-pub struct ConvertArgs {
-    /// Source format (auto-detected from file extension when unambiguous;
-    /// required when reading from stdin).
-    #[arg(long)]
-    pub from: Option&lt;ConvertFormat&gt;,
-    /// Target format (always required).
-    #[arg(long)]
-    pub to: ConvertFormat,
-    /// Input file path (omit or use `-` for stdin).
-    pub input: Option&lt;PathBuf&gt;,
-    /// Output file path (omit for stdout).
-    #[arg(short, long)]
-    pub output: Option&lt;PathBuf&gt;,
-}
-
-/// Dispatch: match on `(from, to)` pairs. Unsupported pairs print
-/// available conversions and exit with a non-zero status code.
-fn convert(from: ConvertFormat, to: ConvertFormat, input: &amp;[u8]) -&gt; Result&lt;Vec&lt;u8&gt;&gt; {
-    match (from, to) {
-        #[cfg(feature = "miniyaml")]
-        (ConvertFormat::Miniyaml, ConvertFormat::Yaml) =&gt; miniyaml_to_yaml(input),
-        // Future: (ConvertFormat::Ini, ConvertFormat::Yaml) =&gt; ini_to_yaml(input),
-        (f, t) =&gt; Err(UnsupportedConversion { from: f, to: t }),
-    }
-}
-
-// fixed-game-math — deterministic fixed-point arithmetic
-pub struct Fixed&lt;const FRAC_BITS: u32&gt;(i64);
-pub struct WorldPos { pub x: Fixed&lt;10&gt;, pub y: Fixed&lt;10&gt;, pub z: Fixed&lt;10&gt; }
-pub struct WAngle(i32);  // 0..1024 = 0°..360°
-
-impl Fixed&lt;FRAC_BITS&gt; {
-    pub const fn from_int(v: i32) -&gt; Self;
-    pub fn sin(angle: WAngle) -&gt; Self;  // table lookup
-    pub fn cos(angle: WAngle) -&gt; Self;
-    pub fn atan2(y: Self, x: Self) -&gt; WAngle;  // CORDIC
-    pub fn sqrt(self) -&gt; Self;  // Newton's method
-}
-
-// deterministic-rng — seedable, platform-identical PRNG
-pub struct GameRng { /* xoshiro256** or similar */ }
-
-impl GameRng {
-    pub fn from_seed(seed: u64) -&gt; Self;
-    pub fn next_u32(&amp;mut self) -&gt; u32;
-    pub fn range(&amp;mut self, min: i32, max: i32) -&gt; i32;
-    pub fn weighted_select&lt;T&gt;(&amp;mut self, items: &amp;[(T, u32)]) -&gt; &amp;T;
-    pub fn shuffle&lt;T&gt;(&amp;mut self, slice: &amp;mut [T]);
-    pub fn damage_spread(&amp;mut self, base: i32, spread_pct: u32) -&gt; i32;
-}
-
-// glicko2-rts — rating system with RTS adaptations
-pub struct Rating {
-    pub mu: f64,
-    pub phi: f64,    // rating deviation
-    pub sigma: f64,  // volatility
-}
-
-pub struct MatchResult {
-    pub players: Vec&lt;(PlayerId, Rating)&gt;,
-    pub outcome: Outcome,
-    pub duration_secs: u32,
-    pub faction: Option&lt;FactionId&gt;,
-}
-
-pub fn update_ratings(results: &amp;[MatchResult], config: &amp;Glicko2Config) -&gt; Vec&lt;(PlayerId, Rating)&gt;;
-
-// lockstep-relay — game-agnostic relay core
-pub struct RelayCore&lt;T: OrderCodec&gt; { /* ... */ }
-
-impl&lt;T: OrderCodec&gt; RelayCore&lt;T&gt; {
-    pub fn new(config: RelayConfig) -&gt; Self;
-    pub fn tick(&amp;mut self) -&gt; Vec&lt;RelayEvent&lt;T&gt;&gt;;
-    pub fn submit_order(&amp;mut self, player: PlayerId, order: T);
-    pub fn player_connected(&amp;mut self, player: PlayerId);
-    pub fn player_disconnected(&amp;mut self, player: PlayerId);
-}
-
-// workshop-core — engine-agnostic mod registry (D050)
-pub struct Package { /* ... */ }
-pub struct Manifest { /* ... */ }
-pub struct Registry { /* ... */ }
-
-pub trait PackageStore {
-    fn publish(&amp;self, package: &amp;Package) -&gt; Result&lt;(), StoreError&gt;;
-    fn fetch(&amp;self, id: &amp;PackageId, version: &amp;VersionReq) -&gt; Result&lt;Package, StoreError&gt;;
-    fn resolve(&amp;self, deps: &amp;[Dependency]) -&gt; Result&lt;Vec&lt;Package&gt;, ResolveError&gt;;
-}
-<span class="boring">}</span></code></pre>
+<p>Full type signatures for all extracted crates are in the <a href="D076/D076-rust-types.html">Rust Types sub-page</a>. Key types by crate:</p>
+<ul>
+<li><strong><code>cnc-formats</code>:</strong> <code>MixArchive</code>, <code>ShpFile</code>, <code>PalFile</code>, <code>TmpFile</code>, <code>AudFile</code>, <code>VqaFile</code>, <code>MegArchive</code> (behind <code>meg</code>), <code>ConvertFormat</code> enum, <code>ConvertArgs</code>. Clean-room encoders: <code>lcw::compress()</code>, <code>shp::encode_frames()</code>, <code>aud::encode_adpcm()</code>, <code>aud::build_aud()</code>, <code>pal::encode()</code>. VQA codec: <code>vqa::decode::{VqaFrame, VqaAudio}</code>, <code>vqa::encode::{VqaEncodeParams, VqaAudioInput, encode_vqa()}</code>. MIDI (behind <code>midi</code>): <code>MidFile</code>, <code>mid::parse()</code>, <code>mid::write()</code>, <code>mid::render_to_pcm()</code>, <code>mid::render_to_wav()</code>. ADL (behind <code>adl</code>): <code>AdlFile</code>, <code>adl::parse()</code>. XMI (behind <code>xmi</code>): <code>XmiFile</code>, <code>xmi::parse()</code>, <code>xmi::to_mid()</code>.</li>
+<li><strong><code>fixed-game-math</code>:</strong> <code>Fixed&lt;N&gt;</code>, <code>WorldPos</code>, <code>WAngle</code>, trig functions</li>
+<li><strong><code>deterministic-rng</code>:</strong> <code>GameRng</code>, range/weighted/shuffle/damage_spread</li>
+<li><strong><code>glicko2-rts</code>:</strong> <code>Rating</code>, <code>MatchResult</code>, <code>update_ratings()</code></li>
+<li><strong><code>lockstep-relay</code>:</strong> <code>RelayCore&lt;T&gt;</code>, <code>RelayConfig</code>, <code>RelayEvent</code></li>
+<li><strong><code>workshop-core</code>:</strong> <code>Package</code>, <code>Manifest</code>, <code>Registry</code>, <code>PackageStore</code> trait</li>
+</ul>
 <hr>
 <h2 id="verification-checklist"><a class="header" href="#verification-checklist">Verification Checklist</a></h2>
 <ul>
@@ -581,7 +501,7 @@ pub trait PackageStore {
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../../decisions/09b-networking.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../decisions/09a/D076/D076-rust-types.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -595,7 +515,7 @@ pub trait PackageStore {
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../../decisions/09b-networking.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../decisions/09a/D076/D076-rust-types.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

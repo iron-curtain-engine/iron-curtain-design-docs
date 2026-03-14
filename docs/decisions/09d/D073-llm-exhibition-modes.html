@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-9adfe301.js"></script>
+        <script src="../../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -199,9 +199,9 @@
 <ul>
 <li><strong>Status:</strong> Accepted</li>
 <li><strong>Phase:</strong> Phase 7 experimental/custom modes first, showmatch/tournament tooling polish later</li>
-<li><strong>Canonical for:</strong> Match-level policy for LLM-vs-LLM exhibition play, prompt-coached LLM matches, spectator prompt showmatches, trust labels, and replay/privacy defaults</li>
+<li><strong>Canonical for:</strong> Match-level policy for LLM-vs-LLM exhibition play, prompt-coached matches (any AI type), spectator prompt showmatches, trust labels, and replay/privacy defaults</li>
 <li><strong>Scope:</strong> <code>ic-ai</code>, <code>ic-llm</code>, <code>ic-ui</code>, <code>ic-net</code>, replay metadata/annotation capture, server policy/config; not a new sim/netcode architecture</li>
-<li><strong>Decision:</strong> IC supports three opt-in, non-ranked LLM match surfaces: <strong>LLM Exhibition</strong>, <strong>Prompt-Coached LLM</strong>, and <strong>Director/Showmatch Prompt</strong> modes. All preserve sim determinism by recording and replaying orders only; prompts and LLM plan text are optional replay annotations with explicit privacy controls.</li>
+<li><strong>Decision:</strong> IC supports three opt-in, non-ranked match surfaces: <strong>LLM Exhibition</strong>, <strong>Prompt-Coached</strong> (any AI type), and <strong>Director/Showmatch Prompt</strong> modes. All preserve sim determinism by recording and replaying orders only; prompts and LLM plan text are optional replay annotations with explicit privacy controls.</li>
 <li><strong>Why:</strong> D044 already enables LLM AI behavior technically. D073 adds the social/tournament/server/replay policy layer so communities can safely run “LLM vs LLM” and “prompt duel” events without undermining D055 ranked integrity or D059 anti-coaching rules.</li>
 <li><strong>Non-goals:</strong> Ranked LLM assistance, hidden spectator coaching in competitive play, direct observer order injection, storing provider credentials or API keys in replays/logs</li>
 <li><strong>Invariants preserved:</strong> <code>ic-sim</code> remains pure (no LLM/network I/O), all gameplay effects still arrive as normal orders, fog/observer restrictions remain mode-dependent and explicit</li>
@@ -228,7 +228,7 @@
 <p>Define a canonical family of opt-in LLM match surfaces built on D044:</p>
 <ol>
 <li><strong>LLM Exhibition Match</strong></li>
-<li><strong>Prompt-Coached LLM Match</strong> (includes “Prompt Duel” variants)</li>
+<li><strong>Prompt-Coached Match</strong> (any AI type; includes “Prompt Duel” variants)</li>
 <li><strong>Director Prompt Showmatch</strong> (spectator-driven / audience-driven prompts)</li>
 </ol>
 <p>These are <strong>match policy + UI + replay + server controls</strong>, not new simulation or network architectures.</p>
@@ -240,18 +240,21 @@
 <li>Primary use case: “watch GPT vs Claude/Ollama” style content, AI benchmarking, sandbox experimentation</li>
 <li>Eligible for local replay recording and replay sharing like any other match</li>
 </ul>
-<h4 id="2-prompt-coached-llm-match-fair-prompting"><a class="header" href="#2-prompt-coached-llm-match-fair-prompting">2. Prompt-Coached LLM Match (fair prompting)</a></h4>
+<h4 id="2-prompt-coached-match-fair-prompting"><a class="header" href="#2-prompt-coached-match-fair-prompting">2. Prompt-Coached Match (fair prompting)</a></h4>
 <ul>
-<li>Each participating LLM side can have a <strong>designated prompt coach seat</strong></li>
-<li>The coach submits strategic directives (text prompts / structured intents)</li>
-<li>The LLM remains the entity that turns context into gameplay orders</li>
+<li>Each participating AI side can have a <strong>designated prompt coach seat</strong></li>
+<li>The coach submits strategic directives (text or structured intents: “focus anti-air”, “expand north”, “defend and tech up”)</li>
+<li>The AI retains autonomous control — the coach provides strategic direction, not direct orders</li>
 <li>The coach does <strong>not</strong> directly issue <code>PlayerOrder</code>s and is <strong>not</strong> a hidden spectator</li>
 <li>Fair-play default vision is <strong>team-shared vision only</strong> (same concept as D059 coach slot)</li>
+<li>Works with any AI configuration: <code>LlmOrchestratorAi</code>, <code>PersonalityDrivenAi</code>, or any <code>AiStrategy</code> implementation — the coached AI does not need to be LLM-powered</li>
 </ul>
+<p><strong>Relationship to D043 Puppet Master architecture:</strong> Prompt-Coached mode is the primary delivery surface for Human Puppet Masters (D043 Tier 2). The D073 infrastructure (prompt submission pipeline, rate limiting, vision scope, relay routing, replay privacy) governs the transport; the <code>HumanPuppetMaster</code> implementation in <code>ic-ai</code> translates directives into <code>StrategicGuidance</code> for the inner <code>AiStrategy</code> via <code>GuidedAi</code>. Coaching a non-LLM AI (e.g., “IC Default AI ◆ Coach: Alice”) uses identical infrastructure — the PM pattern is AI-algorithm-agnostic.</p>
 <p><strong>Player-facing variant names (recommended):</strong></p>
 <ul>
-<li><code>Prompt-Coached LLM</code></li>
-<li><code>Prompt Duel</code> (when both sides are prompt-only humans + their own LLMs)</li>
+<li><code>Prompt-Coached</code> (general — any AI type)</li>
+<li><code>Prompt-Coached LLM</code> (when the inner AI is LLM-powered)</li>
+<li><code>Prompt Duel</code> (when both sides are prompt-only humans + their AIs)</li>
 </ul>
 <h4 id="3-director-prompt-showmatch-omniscient--audience-driven"><a class="header" href="#3-director-prompt-showmatch-omniscient--audience-driven">3. Director Prompt Showmatch (omniscient / audience-driven)</a></h4>
 <ul>
@@ -346,25 +349,20 @@ pub enum PromptVisionScope {
 <li>optional moderator approval for audience prompts (showmatch mode)</li>
 <li>audit log entries for accepted/rejected prompts in tournament/showmatch operations</li>
 </ul>
-<h3 id="prompt-coached-match-variants-including-player--llm-vs-player--llm"><a class="header" href="#prompt-coached-match-variants-including-player--llm-vs-player--llm">Prompt-Coached Match Variants (Including “Player + LLM vs Player + LLM”)</a></h3>
+<h3 id="prompt-coached-match-variants-including-player--ai-vs-player--ai"><a class="header" href="#prompt-coached-match-variants-including-player--ai-vs-player--ai">Prompt-Coached Match Variants (Including “Player + AI vs Player + AI”)</a></h3>
 <p>The user-proposed format maps cleanly to D073 as a <strong>Prompt Duel</strong> variant:</p>
 <ul>
 <li>Each side has:
 <ul>
 <li>one human prompt coach (or a shared coach team)</li>
-<li>one LLM-controlled side (<code>LlmOrchestratorAi</code> recommended for v1)</li>
+<li>one AI-controlled side (any <code>AiStrategy</code> — <code>LlmOrchestratorAi</code>, <code>PersonalityDrivenAi</code>, etc.)</li>
 </ul>
 </li>
 <li>Human participants “play” through prompts only</li>
-<li>The LLM executes via D044 and emits orders</li>
+<li>The AI executes autonomously, guided by coach directives via the Puppet Master pipeline (D043)</li>
 </ul>
 <h4 id="v1-recommendation"><a class="header" href="#v1-recommendation">v1 recommendation</a></h4>
-<p>Default to <strong><code>LlmOrchestratorAi</code> + inner AI</strong> rather than full <code>LlmPlayerAi</code> for prompt duel:</p>
-<ul>
-<li>more responsive under real-world BYOLLM latency</li>
-<li>better spectator experience (less idle time)</li>
-<li>easier to compare strategy quality rather than raw model micro latency</li>
-</ul>
+<p>Default to <strong><code>LlmOrchestratorAi</code> + inner AI</strong> for LLM-focused prompt duels (more responsive under real-world BYOLLM latency, better spectator experience). For non-LLM coaching, <strong><code>PersonalityDrivenAi</code></strong> with a <code>HumanPuppetMaster</code> is the natural combination — useful for training, community events, and casual play.</p>
 <p><code>LlmPlayerAi</code> remains an explicit experimental option for sandbox/showmatch content.</p>
 <h3 id="byollm-and-provider-routing-d047-integration"><a class="header" href="#byollm-and-provider-routing-d047-integration">BYOLLM and Provider Routing (D047 Integration)</a></h3>
 <p>D073 does not create a new LLM provider system. It reuses D016/D047:</p>
@@ -562,6 +560,7 @@ replay_llm_reasoning = false
 </ol>
 <h3 id="cross-references"><a class="header" href="#cross-references">Cross-References</a></h3>
 <ul>
+<li><strong>D043 (Puppet Master architecture):</strong> Prompt-Coached mode is the primary delivery surface for Human Puppet Masters (Tier 2). D073’s prompt submission pipeline, rate limiting, vision scope rules, relay routing, and replay privacy all govern how a Human Puppet Master communicates with the AI. Director/Audience roles are specialized variants with different vision and trust policies. See <a href="D043/commanders-and-puppet-masters.html">AI Commanders &amp; Puppet Masters</a> for the full trait design and tier taxonomy.</li>
 <li><strong>D044 (LLM AI):</strong> Supplies <code>LlmOrchestratorAi</code> and <code>LlmPlayerAi</code>; D073 wraps them in match policy</li>
 <li><strong>D047 (LLM Config Manager):</strong> BYOLLM provider routing, prompt strategy profiles, capability probing</li>
 <li><strong>D057 (Skill Library):</strong> D073 adds fairness tagging rules for skill promotion eligibility</li>
@@ -598,7 +597,7 @@ replay_llm_reasoning = false
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../../decisions/09e-community.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../decisions/09d/D077-replay-highlights.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -612,7 +611,7 @@ replay_llm_reasoning = false
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../../decisions/09e-community.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../decisions/09d/D077-replay-highlights.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

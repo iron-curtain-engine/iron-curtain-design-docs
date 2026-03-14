@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-9adfe301.js"></script>
+        <script src="../../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -475,7 +475,7 @@ ic replay verify [file]    # verify relay signature chain + integrity (see 06-SE
 <p><strong>Key design points:</strong></p>
 <ol>
 <li><strong>Alias registry:</strong> <code>ra-formats</code> maintains a compile-time map of OpenRA trait names to IC component names. <code>Armament</code> → <code>combat</code>, <code>Valued</code> → <code>buildable.cost</code>, <code>AttackOmni</code> → <code>combat.mode: omni</code>, etc.</li>
-<li><strong>Bi-directional:</strong> The alias registry is used during YAML parsing (OpenRA names accepted, resolved to IC-native names at load time by <code>ra-formats</code>). <code>cnc-formats convert --from miniyaml --to yaml</code> performs schema-neutral MiniYAML→YAML structural conversion only — alias resolution is a separate <code>ra-formats</code> concern. Both OpenRA and IC-native representations are valid input.</li>
+<li><strong>Bi-directional:</strong> The alias registry is used during YAML parsing (OpenRA names accepted, resolved to IC-native names at load time by <code>ra-formats</code>). <code>cnc-formats convert --format miniyaml --to yaml</code> performs schema-neutral MiniYAML→YAML structural conversion only — alias resolution is a separate <code>ra-formats</code> concern. Both OpenRA and IC-native representations are valid input.</li>
 <li><strong>Deprecation warnings:</strong> When an OpenRA alias is used, the parser emits a warning: <code>"Armament" is accepted but deprecated; prefer "combat"</code>. Warnings can be suppressed per-mod via <code>mod.toml</code> setting.</li>
 <li><strong>No runtime cost:</strong> Aliases resolve during YAML deserialization (load time only). The ECS never sees alias names — only canonical IC component types.</li>
 </ol>

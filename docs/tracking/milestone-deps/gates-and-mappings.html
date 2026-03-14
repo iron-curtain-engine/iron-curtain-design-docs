@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-9adfe301.js"></script>
+        <script src="../../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -282,9 +282,12 @@
 </ol>
 <h3 id="deferred-feature-placement-examples-canonical-patterns"><a class="header" href="#deferred-feature-placement-examples-canonical-patterns">Deferred Feature Placement Examples (Canonical Patterns)</a></h3>
 <ul>
-<li><strong>Good (planned deferral):</strong> “Deferred to <code>M10</code> (<code>P-Creator</code>) after <code>M9.SDK.D038_SCENARIO_EDITOR_CORE</code>; not part of <code>M9</code> exit criteria.”<br>Result: add/update an <code>M10.*</code> cluster row with hard/soft edges and note the out-of-scope boundary.</li>
-<li><strong>Good (north star):</strong> “Long-term vision only; depends on <code>M7.NET.CROSS_ENGINE_BRIDGE_AND_TRUST</code> + <code>M11.VISUAL.D048_AND_RENDER_MOD_INFRA</code>; trust-labeled and not a ranked promise.”<br>Result: no new cluster if already covered, but add/update tracker risk/trust-label notes.</li>
-<li><strong>Bad (ambiguous):</strong> “Could add later if players want it.”<br>Result: rewrite into planned deferral + overlay mapping, or mark proposal-only / <code>Pxxx</code>.</li>
+<li><strong>Good (planned deferral):</strong> “Deferred to <code>M10</code> (<code>P-Creator</code>) after <code>M9.SDK.D038_SCENARIO_EDITOR_CORE</code>; not part of <code>M9</code> exit criteria.”
+Result: add/update an <code>M10.*</code> cluster row with hard/soft edges and note the out-of-scope boundary.</li>
+<li><strong>Good (north star):</strong> “Long-term vision only; depends on <code>M7.NET.CROSS_ENGINE_BRIDGE_AND_TRUST</code> + <code>M11.VISUAL.D048_AND_RENDER_MOD_INFRA</code>; trust-labeled and not a ranked promise.”
+Result: no new cluster if already covered, but add/update tracker risk/trust-label notes.</li>
+<li><strong>Bad (ambiguous):</strong> “Could add later if players want it.”
+Result: rewrite into planned deferral + overlay mapping, or mark proposal-only / <code>Pxxx</code>.</li>
 <li><strong>Good (external implementation handoff):</strong> “This introduces a new first-class subsystem boundary; update <code>CODE-INDEX.md</code> template examples and external <code>AGENTS.md</code> guidance in <code>M0</code> tooling docs.”
 Result: preserve LLM/human navigation quality across implementation repos as the architecture grows.</li>
 </ul>

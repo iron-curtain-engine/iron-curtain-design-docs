@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9adfe301.js"></script>
+        <script src="../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -211,8 +211,16 @@
 │  └─────────────┘  └─────────────┘                       │
 │                                                          │
 │  Difficulty: [Cadet ▾]  Experience: [IC Default ▾]       │
+│                         [Review Settings ⚙]              │
 └──────────────────────────────────────────────────────────┘
 </code></pre>
+<p><strong>Campaign default settings (D021):</strong> Campaigns ship a <code>default_settings</code> block in their YAML definition — the author’s baked-in configuration for difficulty, experience axes (D019/D032/D033/D043/D045/D048), and individual toggle overrides. When the player selects a campaign:</p>
+<ul>
+<li><strong>Difficulty</strong> and <strong>Experience</strong> dropdowns are pre-populated from the campaign’s <code>default_settings</code>. If the campaign defines no defaults, the player’s global preferences apply.</li>
+<li><strong>[Review Settings]</strong> opens a panel showing every active toggle (grouped by category: production, commands, UI, gameplay). Each switch shows the campaign’s default value; the player can flip individual toggles before starting. Changes are per-playthrough — they don’t alter the player’s global preferences.</li>
+<li>The first-party Allied/Soviet campaigns use <code>vanilla</code> + <code>classic</code> defaults (authentic 1996 feel). Community campaigns set whatever their author intends.</li>
+<li>If a player changes settings from the campaign’s defaults, the post-game comparison (D052/D053) groups their run separately from players who kept the defaults — ensuring fair benchmarks.</li>
+</ul>
 <p><strong>Navigation paths from this screen:</strong></p>
 <div class="table-wrapper">
 <table>
@@ -305,7 +313,7 @@
 │  │ MAP                     │  │ PLAYERS                    │ │
 │  │ [map preview image]     │  │                            │ │
 │  │                         │  │ 1. You (Allied) [color ▾]  │ │
-│  │ Coastal Fortress        │  │ 2. AI Easy (Soviet) [▾]    │ │
+│  │ Coastal Fortress        │  │ 2. Col. Volkov (Hard)  [▾]    │ │
 │  │ 2-4 players, 128×128   │  │ 3. [Add AI...]             │ │
 │  │                         │  │ 4. [Add AI...]             │ │
 │  │ [Change Map]            │  │                            │ │
@@ -319,7 +327,6 @@
 │  │ Fog of War:  [Shroud ▾]       Tech Level: [Full ▾]   │   │
 │  │ Crates:      [On ▾]           Short Game: [Off ▾]    │   │
 │  │                                                      │   │
-│  │ AI Preset:   [IC Default ▾]   AI Difficulty: [▾]     │   │
 │  │ [More options...]                                     │   │
 │  └──────────────────────────────────────────────────────┘   │
 │                                                              │
@@ -331,7 +338,7 @@
 <p><strong>Key interactions:</strong></p>
 <ul>
 <li><strong>Change Map</strong> → opens map browser (thumbnails, filters by size/players/theater, search)</li>
-<li><strong>Add AI</strong> → dropdown: difficulty (Easy/Medium/Hard/Brutal) × AI preset (Classic/OpenRA/IC Default) × faction</li>
+<li><strong>Add AI</strong> → commander picker (named persona with portrait + specialization, or unnamed preset) → difficulty (Easy/Medium/Hard/Brutal) → faction</li>
 <li><strong>More options</strong> → expands full D033 toggle panel (sim-affecting toggles for this match)</li>
 <li><strong>Experience Profile</strong> dropdown → one-click preset that sets balance + AI + pathfinding + theme</li>
 <li><strong>Start Game</strong> → Loading → InGame</li>

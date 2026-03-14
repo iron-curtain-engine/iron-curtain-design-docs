@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9adfe301.js"></script>
+        <script src="../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -296,6 +296,30 @@
 <li><strong>Moddable.</strong> Award definitions are YAML-driven (<code>awards.yaml</code>): name, icon, stat formula, threshold, flavor text. Modders can add game-module-specific awards (e.g., Tiberian Dawn: “Nod Commander” for most stealth unit kills). Workshop-publishable.</li>
 <li><strong>Anti-farming.</strong> Awards are only granted in matches that meet minimum thresholds: minimum match duration (&gt;3 minutes), minimum opponent count/difficulty, and no early surrenders. AI-only matches grant awards but they are tagged as <code>vs-AI</code> in the profile and tracked separately.</li>
 <li><strong>Replay-linked.</strong> Each award links to the replay moment that earned it (e.g., “Decimator” links to the tick of the largest battle). Clicking the award in the post-game screen jumps to that moment in the replay viewer.</li>
+</ul>
+<h4 id="play-of-the-game-d077"><a class="header" href="#play-of-the-game-d077">Play-of-the-Game (D077)</a></h4>
+<p>After each match, the highest-scoring highlight moment is displayed as a <strong>POTG viewport</strong> on the post-game screen — a 20–45 second replay clip with cinematic camera and a category label (e.g., “Decisive Assault”, “Against All Odds”, “Nuclear Option”). All players in multiplayer see the same POTG (deterministic scoring from the shared Analysis Event Stream).</p>
+<pre><code>┌──────────────────────────────────────────────────────────────┐
+│  PLAY OF THE GAME                                           │
+│                                                              │
+│  ┌────────────────────────────────────────────────┐          │
+│  │                                                │          │
+│  │   [Replay viewport: highlight camera AI]       │          │
+│  │   [20–45 second clip of top scoring moment]    │          │
+│  │                                                │          │
+│  └────────────────────────────────────────────────┘          │
+│                                                              │
+│  Category: "Against All Odds"    Player: CommanderX          │
+│                                                              │
+│  [Watch Full Replay]  [Skip to Stats →]                      │
+└──────────────────────────────────────────────────────────────┘
+</code></pre>
+<ul>
+<li><strong>Skippable</strong> — Escape or Skip button jumps to MVP awards / stats screen</li>
+<li><strong>Team games:</strong> Bonus for coordinated team actions in the same engagement window</li>
+<li><strong>Scoring:</strong> Four-dimension pipeline (engagement density 0.35, momentum swing 0.25, z-score anomaly 0.20, rarity bonus 0.20) with per-match baselines. See <code>decisions/09d/D077-replay-highlights.md</code> for the full scoring specification</li>
+<li><strong>Category labels:</strong> YAML-moddable per game module (<code>highlight-config.yaml</code>)</li>
+<li><strong>Highlight library:</strong> Top 5 moments per match stored as replay references in SQLite (<code>profile.db</code>); available in Profile → Highlights and as a main menu background option</li>
 </ul>
 <h4 id="post-play-feedback-prompt-modes--mods--campaigns-optional-d049--d053"><a class="header" href="#post-play-feedback-prompt-modes--mods--campaigns-optional-d049--d053">Post-Play Feedback Prompt (Modes / Mods / Campaigns; Optional D049 + D053)</a></h4>
 <p>The post-game screen may show a <strong>sampled, skippable</strong> feedback prompt. It is designed to help mode/mod/campaign authors improve content without blocking normal post-game actions.</p>

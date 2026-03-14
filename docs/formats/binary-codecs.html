@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9adfe301.js"></script>
+        <script src="../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -183,10 +183,11 @@
                     <main>
                         <h2 id="binary-format-codec-reference-ea-source-code"><a class="header" href="#binary-format-codec-reference-ea-source-code">Binary Format Codec Reference (EA Source Code)</a></h2>
 <blockquote>
-<p>All struct definitions in this section are taken verbatim from the GPL v3 EA source code repositories:</p>
+<p>Struct definitions in this section are sourced from the GPL v3 EA source code repositories and, where the original headers use <code>#define</code> offsets rather than packed structs (e.g., FNT), from Vanilla-Conquer’s reverse-engineered C structs:</p>
 <ul>
 <li><a href="https://github.com/electronicarts/CnC_Remastered_Collection">CnC_Remastered_Collection</a> — primary source (REDALERT/ and TIBERIANDAWN/ directories)</li>
 <li><a href="https://github.com/electronicarts/CnC_Red_Alert">CnC_Red_Alert</a> — VQA/VQ video format definitions (VQ/ and WINVQ/ directories)</li>
+<li><a href="https://github.com/TheAssemblyArmada/Vanilla-Conquer">Vanilla-Conquer</a> — decompiled structs where EA headers use only <code>#define</code> offsets (FNT <code>FontHeader</code>)</li>
 </ul>
 <p>These are the authoritative definitions for <code>ra-formats</code> crate implementation. Field names, sizes, and types must match exactly for binary compatibility.</p>
 </blockquote>
@@ -282,6 +283,27 @@ typedef struct {
 } KeyFrameHeaderType;
 </code></pre>
 <p>When <code>flags &amp; 1</code>, a 768-byte palette (256 × RGB) follows immediately after the frame offset table. Retrieved via <code>Get_Build_Frame_Palette()</code>.</p>
+<h4 id="offset-table-entry-format-keyframe-shp"><a class="header" href="#offset-table-entry-format-keyframe-shp">Offset-Table Entry Format (Keyframe SHP)</a></h4>
+<p>The offset table has <code>(frames + 2)</code> entries — one per frame, an EOF sentinel, and a zero-padding entry. Each entry is <strong>8 bytes</strong>:</p>
+<pre><code class="language-text">Offset  Size  Field
+0       u32   format_and_offset — high byte = ShpFrameFormat, low 24 bits = absolute file offset
+4       u16   ref_offset        — offset to reference frame (for delta formats)
+6       u16   ref_format        — format code of the reference frame
+</code></pre>
+<p><strong>Frame encoding formats</strong> (high byte of <code>format_and_offset</code>, from <code>common/keyframe.h</code> <code>KeyFrameType</code>):</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Value</th><th>Name</th><th>EA Constant</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>0x80</code></td><td>LCW</td><td><code>KF_KEYFRAME</code></td><td>Standalone keyframe, LCW-compressed</td></tr>
+<tr><td><code>0x40</code></td><td>XOR+LCW</td><td><code>KF_KEYDELTA</code></td><td>XOR-delta applied to a remote keyframe</td></tr>
+<tr><td><code>0x20</code></td><td>XOR+Prev</td><td><code>KF_DELTA</code></td><td>XOR-delta applied to the previous frame</td></tr>
+</tbody>
+</table>
+</div>
+<p>To extract the file offset: <code>offset = format_and_offset &amp; 0x00FFFFFF</code>. To extract the format: <code>format = (format_and_offset &gt;&gt; 24) &amp; 0xFF</code>.</p>
 <h4 id="shape-type-flags-makeshape"><a class="header" href="#shape-type-flags-makeshape">Shape Type Flags (MAKESHAPE)</a></h4>
 <div class="table-wrapper">
 <table>
@@ -772,133 +794,80 @@ typedef struct _VQHeader {
 </code></pre>
 <hr>
 <h3 id="wsa-animation-format-wsa"><a class="header" href="#wsa-animation-format-wsa">WSA Animation Format (.wsa)</a></h3>
-<p><strong>Source:</strong> <code>REDALERT/WSA.H</code>, <code>REDALERT/WSA.CPP</code></p>
+<p><strong>Source:</strong> <code>TIBERIANDAWN/WIN32LIB/WSA.CPP</code> (struct <code>WSA_FileHeaderType</code>), <code>REDALERT/WSA.H</code></p>
 <p>WSA (Westwood Studios Animation) files contain LCW-compressed delta animations. Used for menu backgrounds, installation screens, campaign map animations, and some in-game effects in both TD and RA. Each frame is an XOR-delta against the previous frame.</p>
-<h4 id="file-header-1"><a class="header" href="#file-header-1">File Header</a></h4>
-<pre><code class="language-c">// From WSA.H
+<h4 id="file-header-14-bytes"><a class="header" href="#file-header-14-bytes">File Header (14 bytes)</a></h4>
+<pre><code class="language-c">// From WSA.CPP — on-disk header is the first 14 bytes of WSA_FileHeaderType.
+// EA defines: WSA_FILE_HEADER_SIZE = sizeof(WSA_FileHeaderType) - 2*sizeof(unsigned long)
+// The trailing frame0_offset / frame0_end fields in the struct are actually
+// the first two entries of the offset table, included in the struct for convenience.
 typedef struct {
-    unsigned short NumFrames;     // Number of animation frames
-    unsigned short Width;         // Frame width in pixels
-    unsigned short Height;        // Frame height in pixels
-    unsigned short Delta;         // Delta buffer size
-    unsigned short Flags;         // (unused in RA)
-    unsigned long  Offsets[];     // (NumFrames + 2) offsets to frame data
-} WSA_Header;
+    unsigned short total_frames;        // Number of animation frames
+    unsigned short pixel_x;             // X display offset
+    unsigned short pixel_y;             // Y display offset
+    unsigned short pixel_width;         // Frame width in pixels
+    unsigned short pixel_height;        // Frame height in pixels
+    unsigned short largest_frame_size;  // Largest compressed delta (buffer alloc)
+    short          flags;               // Bit 0: embedded palette; Bit 1: frame-0-is-delta
+} WSA_FileHeaderType; // on-disk: first 14 bytes only
 </code></pre>
+<p><strong>Offset table:</strong> Immediately after the header — <code>(total_frames + 2)</code> × <code>u32</code> entries, offsets relative to the start of the data area (after header + offset table + optional palette).</p>
 <p><strong>Frame data layout:</strong></p>
 <ul>
-<li><code>Offsets[0]</code> through <code>Offsets[NumFrames-1]</code> point to each frame’s LCW-compressed XOR-delta data</li>
-<li><code>Offsets[NumFrames]</code> points to a loop-back delta (for seamless looping animations)</li>
-<li><code>Offsets[NumFrames+1]</code> marks end of data (used to compute last frame’s compressed size)</li>
+<li><code>Offsets[0]</code> through <code>Offsets[total_frames-1]</code> point to each frame’s LCW-compressed XOR-delta data</li>
+<li><code>Offsets[total_frames]</code> is the loop-back delta (transforms last frame back to frame 0 for seamless looping)</li>
+<li><code>Offsets[total_frames+1]</code> marks end of data (used to compute the loop delta’s compressed size; non-zero value indicates looping is available)</li>
 <li>If an offset is 0, that frame is identical to the previous frame (no delta)</li>
-<li>Palette data (768 bytes, 6-bit VGA) may follow the frame data if the WSA includes its own palette</li>
+<li>When <code>flags &amp; 1</code>, a 768-byte palette (256 × 6-bit VGA RGB) follows the offset table before the compressed data</li>
+<li>When <code>flags &amp; 2</code>, frame 0 is an XOR-delta against an external picture (not a standalone frame from black)</li>
 </ul>
 <p><strong>Decoding algorithm:</strong></p>
 <ol>
-<li>Allocate a frame buffer (Width × Height bytes, palette-indexed)</li>
+<li>Allocate a frame buffer (<code>pixel_width × pixel_height</code> bytes, palette-indexed)</li>
 <li>For each frame: LCW-decompress the delta data, then XOR the delta onto the frame buffer</li>
 <li>The frame buffer now contains the current frame’s pixels</li>
-<li>For looping: apply <code>Offsets[NumFrames]</code> delta to return to frame 0</li>
+<li>For looping: apply <code>Offsets[total_frames]</code> delta to return to frame 0</li>
 </ol>
 <p><strong>Security:</strong> Same defensive parsing requirements as other LCW-consuming formats — decompression ratio cap (256:1), output size cap (max 4 MB per frame), iteration counter on LCW decode loop. See V38 in <code>security/vulns-infrastructure.md</code>.</p>
 <hr>
 <h3 id="fnt-bitmap-font-format-fnt"><a class="header" href="#fnt-bitmap-font-format-fnt">FNT Bitmap Font Format (.fnt)</a></h3>
-<p><strong>Source:</strong> <code>REDALERT/WIN32LIB/FONT.H</code>, <code>REDALERT/WIN32LIB/FONT.CPP</code></p>
-<p>FNT files contain bitmap fonts used for in-game text rendering. Each file contains a fixed set of character glyphs as palette-indexed pixel bitmaps.</p>
-<h4 id="file-header-2"><a class="header" href="#file-header-2">File Header</a></h4>
-<pre><code class="language-c">// From FONT.H
-typedef struct {
-    unsigned short InfoBlock;     // Offset to font info block
-    unsigned short OffsetBlock;   // Offset to character offset table
-    unsigned short WidthBlock;    // Offset to character width table
-    unsigned short DataBlock;     // Offset to glyph bitmap data
-    unsigned short HeightBlock;   // Offset to per-character height info
-} FontHeader_Type;
+<p><strong>Source:</strong> <code>TIBERIANDAWN/WIN32LIB/FONT.H</code>, <code>FONT.CPP</code>, <code>LOADFONT.CPP</code>; Vanilla-Conquer <code>common/font.cpp</code> (decompiled <code>FontHeader</code> + <code>Buffer_Print</code>); <code>TXTPRNT.ASM</code> (confirms 4bpp rendering)</p>
+<p>FNT files contain bitmap fonts used for in-game text rendering. Each file contains a variable number of glyphs (up to 256), stored as <strong>4bpp nibble-packed</strong> palette-indexed bitmaps.</p>
+<h4 id="file-header-20-bytes"><a class="header" href="#file-header-20-bytes">File Header (20 bytes)</a></h4>
+<pre><code class="language-c">// From Vanilla-Conquer common/font.cpp — reverse-engineered FontHeader.
+// EA's FONT.H uses #define offsets (FONTINFOBLOCK=4, FONTOFFSETBLOCK=6, etc.)
+// rather than a packed struct; the struct below matches the on-disk layout.
+#pragma pack(push, 1)
+struct FontHeader {
+    unsigned short FontLength;        // Total font data size in bytes
+    unsigned char  FontCompress;      // Compression flag (0 = uncompressed; only 0 supported)
+    unsigned char  FontDataBlocks;    // Number of data blocks (must be 5 for TD/RA)
+    unsigned short InfoBlockOffset;   // Byte offset to info block (typically 0x0010)
+    unsigned short OffsetBlockOffset; // Byte offset to per-char offset table (typically 0x0014)
+    unsigned short WidthBlockOffset;  // Byte offset to per-char width table
+    unsigned short DataBlockOffset;   // Byte offset to glyph bitmap data
+    unsigned short HeightOffset;      // Byte offset to per-char height table
+    unsigned short UnknownConst;      // Always 0x1012 or 0x1011 (unused by game code)
+    unsigned char  Pad;               // Padding byte (always 0)
+    unsigned char  CharCount;         // Number of characters minus 1 (last char index)
+    unsigned char  MaxHeight;         // Maximum glyph height in pixels
+    unsigned char  MaxWidth;          // Maximum glyph width in pixels
+};
+#pragma pack(pop)
 </code></pre>
-<p><strong>Font info block</strong> (at <code>InfoBlock</code> offset):</p>
-<ul>
-<li><code>MaxHeight</code> (u8) — maximum character height in pixels</li>
-<li><code>MaxWidth</code> (u8) — maximum character width in pixels</li>
-<li><code>NumChars</code> (u16) — number of characters (typically 128 or 256)</li>
-</ul>
+<p><strong>Validation:</strong> <code>LOADFONT.CPP</code> requires <code>FontCompress == 0</code> and <code>FontDataBlocks == 5</code>.</p>
 <p><strong>Per-character data:</strong></p>
 <ul>
-<li><strong>Offset table</strong> (at <code>OffsetBlock</code>): <code>NumChars</code> × <code>u16</code> — byte offset from <code>DataBlock</code> to each character’s bitmap</li>
-<li><strong>Width table</strong> (at <code>WidthBlock</code>): <code>NumChars</code> × <code>u8</code> — pixel width of each character</li>
-<li><strong>Glyph data</strong> (at <code>DataBlock</code>): raw palette-indexed pixels, 1 byte per pixel, row-major order. Each glyph is <code>width × height</code> bytes. Index 0 = transparent background.</li>
+<li><strong>Offset table</strong> (at <code>OffsetBlockOffset</code>): <code>(CharCount+1)</code> × <code>u16</code> — byte offset from <code>DataBlockOffset</code> to each character’s glyph data</li>
+<li><strong>Width table</strong> (at <code>WidthBlockOffset</code>): <code>(CharCount+1)</code> × <code>u8</code> — pixel width of each character</li>
+<li><strong>Height table</strong> (at <code>HeightOffset</code>): <code>(CharCount+1)</code> × <code>u16</code> — packed: low byte = Y-offset of first data row within the character cell, high byte = number of data rows stored. This allows glyphs to omit leading/trailing transparent rows.</li>
+<li><strong>Glyph data</strong> (at <code>DataBlockOffset</code>): <strong>4bpp nibble-packed</strong> row-major bitmap data. Two pixels per byte: low nibble = left pixel, high nibble = right pixel. Each glyph row is <code>ceil(width / 2)</code> bytes; total glyph size is <code>ceil(width / 2) × data_rows</code> bytes. Color index 0 = transparent; indices 1–15 map through a 16-entry color translation table supplied at render time (not stored in the FNT file). Glyphs with width 0 have no pixel data (space characters).</li>
 </ul>
 <p><strong>IC usage:</strong> IC does not use <code>.fnt</code> for runtime text rendering (Bevy’s font pipeline handles modern TTF/OTF fonts with CJK/RTL support). <code>.fnt</code> parsing is needed for: (1) displaying original game fonts faithfully in Classic render mode (D048), (2) Asset Studio (D040) font preview and export.</p>
 <hr>
-<h2 id="insights-from-eas-original-source-code"><a class="header" href="#insights-from-eas-original-source-code">Insights from EA’s Original Source Code</a></h2>
-<p>Repository: https://github.com/electronicarts/CnC_Red_Alert (GPL v3, archived Feb 2025)</p>
-<h3 id="code-statistics"><a class="header" href="#code-statistics">Code Statistics</a></h3>
-<ul>
-<li>290 C++ header files, 296 implementation files, 14 x86 assembly files</li>
-<li>~222,000 lines of C++ code</li>
-<li>430+ <code>#ifdef WIN32</code> checks (no other platform implemented)</li>
-<li>Built with Watcom C/C++ v10.6 and Borland Turbo Assembler v4.0</li>
-</ul>
-<h3 id="keep-eventorder-queue-system"><a class="header" href="#keep-eventorder-queue-system">Keep: Event/Order Queue System</a></h3>
-<p>The original uses <code>OutList</code> (local player commands) and <code>DoList</code> (confirmed orders from all players), both containing <code>EventClass</code> objects:</p>
-<pre><code class="language-cpp">// From CONQUER.CPP
-OutList.Add(EventClass(EventClass::IDLE, TargetClass(tech)));
-</code></pre>
-<p>Player actions → events → queue → deterministic processing each tick. This is the same pattern as our <code>PlayerOrder → TickOrders → Simulation::apply_tick()</code> pipeline. Westwood validated this in 1996.</p>
-<h3 id="keep-integer-math-for-determinism"><a class="header" href="#keep-integer-math-for-determinism">Keep: Integer Math for Determinism</a></h3>
-<p>The original uses integer math everywhere for game logic — positions, damage, timing. No floats in the simulation. This is why multiplayer worked. Our <code>FixedPoint</code> / <code>SimCoord</code> approach mirrors this.</p>
-<h3 id="keep-data-driven-rules-ini--miniyaml--yaml"><a class="header" href="#keep-data-driven-rules-ini--miniyaml--yaml">Keep: Data-Driven Rules (INI → MiniYAML → YAML)</a></h3>
-<p>Original reads unit stats and game rules from <code>.ini</code> files at runtime. This data-driven philosophy is what made C&amp;C so moddable. The lineage: <code>INI → MiniYAML → YAML</code> — each step more expressive, same philosophy.</p>
-<h3 id="keep-mix-archive-concept"><a class="header" href="#keep-mix-archive-concept">Keep: MIX Archive Concept</a></h3>
-<p>Simple flat archive with hash-based lookup. No compression in the archive itself (individual files may be compressed). For <code>ra-formats</code>: read MIX as-is for compatibility; native format can modernize.</p>
-<h3 id="keep-compression-flexibility"><a class="header" href="#keep-compression-flexibility">Keep: Compression Flexibility</a></h3>
-<p>Original implements LCW, LZO, and LZW compression. LZO was settled on for save games:</p>
-<pre><code class="language-cpp">// From SAVELOAD.CPP
-LZOPipe pipe(LZOPipe::COMPRESS, SAVE_BLOCK_SIZE);
-// LZWPipe pipe(LZWPipe::COMPRESS, SAVE_BLOCK_SIZE);  // tried, abandoned
-// LCWPipe pipe(LCWPipe::COMPRESS, SAVE_BLOCK_SIZE);   // tried, abandoned
-</code></pre>
-<h3 id="leave-behind-session-type-branching"><a class="header" href="#leave-behind-session-type-branching">Leave Behind: Session Type Branching</a></h3>
-<p>Original code is riddled with network-type checks embedded in game logic:</p>
-<pre><code class="language-cpp">if (Session.Type == GAME_IPX || Session.Type == GAME_INTERNET) { ... }
-</code></pre>
-<p>This is the anti-pattern our <code>NetworkModel</code> trait eliminates. Separate code paths for IPX, Westwood Online, MPlayer, TEN, modem — all interleaved with <code>#ifdef</code>. The developer disliked the Westwood Online API enough to write a complete wrapper around it.</p>
-<h3 id="leave-behind-platform-specific-rendering"><a class="header" href="#leave-behind-platform-specific-rendering">Leave Behind: Platform-Specific Rendering</a></h3>
-<p>DirectDraw surface management with comments like “Aaaarrgghh!” when hardware allocation fails. Manual VGA mode detection. Custom command-line parsing. <code>wgpu</code> solves all of this.</p>
-<h3 id="leave-behind-manual-memory-checking"><a class="header" href="#leave-behind-manual-memory-checking">Leave Behind: Manual Memory Checking</a></h3>
-<p>The game allocates 13MB and checks if it succeeds. Checks that <code>sleep(1000)</code> actually advances the system clock. Checks free disk space. None of this translates to modern development.</p>
-<h3 id="interesting-historical-details"><a class="header" href="#interesting-historical-details">Interesting Historical Details</a></h3>
-<ul>
-<li>Code path for 640x400 display mode with special VGA fallback</li>
-<li><code>#ifdef FIXIT_CSII</code> for Aftermath expansion — comment explains they broke the ability to build vanilla Red Alert executables and had to fix it later</li>
-<li>Developer comments reference “Counterstrike” in VCS headers (<code>$Header: /CounterStrike/...</code>)</li>
-<li>MPEG movie playback code exists but is disabled</li>
-<li>Game refuses to start if launched from <code>f:\projects\c&amp;c0</code> (the network share)</li>
-</ul>
-<h2 id="coordinate-system-translation"><a class="header" href="#coordinate-system-translation">Coordinate System Translation</a></h2>
-<p>For cross-engine compatibility, coordinate transforms must be explicit:</p>
-<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
-</span><span class="boring">fn main() {
-</span>pub struct CoordTransform {
-    pub our_scale: i32,       // our subdivisions per cell
-    pub openra_scale: i32,    // 1024 for OpenRA (WDist/WPos)
-    pub original_scale: i32,  // original game's lepton system
-}
-
-impl CoordTransform {
-    pub fn to_wpos(&amp;self, pos: &amp;CellPos) -&gt; (i32, i32, i32) {
-        ((pos.x * self.openra_scale) / self.our_scale,
-         (pos.y * self.openra_scale) / self.our_scale,
-         (pos.z * self.openra_scale) / self.our_scale)
-    }
-    pub fn from_wpos(&amp;self, x: i32, y: i32, z: i32) -&gt; CellPos {
-        CellPos {
-            x: (x * self.our_scale) / self.openra_scale,
-            y: (y * self.our_scale) / self.openra_scale,
-            z: (z * self.our_scale) / self.openra_scale,
-        }
-    }
-}
-<span class="boring">}</span></code></pre>
+<blockquote>
+<p>Architecture lessons from EA’s GPL source code and coordinate system translation are in <a href="ea-source-insights.html">EA Source Code Insights</a>.</p>
+</blockquote>
 
                     </main>
 
@@ -908,7 +877,7 @@ impl CoordTransform {
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../formats/save-replay-formats.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../formats/ea-source-insights.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -922,7 +891,7 @@ impl CoordTransform {
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../formats/save-replay-formats.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../formats/ea-source-insights.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

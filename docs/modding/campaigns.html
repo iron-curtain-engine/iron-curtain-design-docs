@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9adfe301.js"></script>
+        <script src="../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -199,6 +199,26 @@ campaign:
   title: "Allied Campaign"
   description: "Drive back the Soviet invasion across Europe"
   start_mission: allied_01
+
+  # Campaign-authored default settings (D033/D019/D032/D043/D045/D048)
+  # These are the campaign's baked-in configuration — what the author
+  # intends the campaign to play like. Applied as defaults when the
+  # player starts a new playthrough; player can review and tweak
+  # individual switches before launching.
+  default_settings:
+    difficulty: normal           # campaign's intended starting difficulty
+    balance: classic             # D019 balance preset
+    theme: classic               # D032 UI theme
+    behavior: vanilla            # D033 QoL behavior preset
+    ai_behavior: classic_ra      # D043 AI preset
+    pathfinding: classic_ra      # D045 pathfinding feel
+    render_mode: classic         # D048 render mode
+    # Individual toggle overrides — fine-grained switches on top of
+    # the behavior preset above (same keys as D033 YAML structure)
+    toggle_overrides:
+      fog_of_war: on             # campaign requires fog
+      shroud_regrow: false       # but no shroud regrowth
+      health_bars: on_selection  # author preference for this campaign
 
   # What persists between missions (campaign-wide defaults)
   persistent_state:
@@ -433,6 +453,8 @@ pub struct CampaignComparisonScope {
     pub game_module: String,
     pub difficulty: String,
     pub balance_preset: String,
+    pub used_campaign_defaults: bool,     // true if player kept the campaign's default_settings
+    pub settings_fingerprint: [u8; 32],  // SHA-256 of resolved settings (for exact comparison grouping)
 }
 
 /// Persistent progression state for a named hero character (optional toolkit).

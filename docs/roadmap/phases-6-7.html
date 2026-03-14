@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9adfe301.js"></script>
+        <script src="../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -229,6 +229,7 @@
 <li><strong>Local CAS dedup (D049):</strong> Content-addressed blob store for Workshop packages — files stored by SHA-256 hash, deduplicated across installed mods; <code>ic mod gc</code> garbage collection; upgrades from Phase 4–5 simple <code>.icpkg</code>-on-disk storage</li>
 <li><strong><code>p2p-distribute</code> hardening &amp; control surfaces (D076):</strong> Fuzz suite, chaos tests, v2/hybrid BEP 52, storage perf tuning, web API + JSON-RPC + CLI + metrics, <code>crates.io</code> publish — production-readiness gate for full Workshop P2P delivery</li>
 <li><strong><code>ic replay recompress</code> CLI (D063):</strong> Offline replay recompression at different compression levels for archival/sharing; <code>ic mod build --compression-level</code> flag for Workshop package builds</li>
+<li><strong>Community highlight packs &amp; custom detectors (D077):</strong> Workshop-publishable highlight packs (curated moment references + keyframe-trimmed replay segments); Lua <code>Highlights.RegisterDetector()</code> API for custom highlight types; WASM <code>HighlightScorer</code> trait for total scoring replacement; <code>/highlight export</code> for video export (Phase 7)</li>
 <li><strong>Annotated replay format &amp; replay coach mode (D065):</strong> Workshop-publishable annotated replays (<code>.icrep</code> + YAML annotation track with narrator text, highlights, quizzes); replay coach mode applies post-game tip rules in real-time during any replay playback; “Learning” tab in replay browser for community tutorial replays; <code>Tutorial</code> Lua API available in user-created scenarios for community tutorial creation</li>
 <li><strong><code>ic server validate-config</code> CLI (D064):</strong> Validates a <code>server_config.toml</code> file for errors, range violations, cross-parameter inconsistencies, and unknown keys without starting a server; useful for CI/CD pipelines and pre-deployment checks</li>
 <li><strong>Mod profile publishing (D062):</strong> <code>ic mod publish-profile</code> publishes a local mod profile as a Workshop modpack; <code>ic profile import</code> imports Workshop modpacks as local profiles; in-game mod manager gains profile dropdown for one-click switching; editor provenance tooltips and per-source hot-swap for sub-second rule iteration</li>
@@ -332,6 +333,8 @@
 <li><strong>LLM player-aware generation (D034):</strong> When LLM provider is configured, <code>ic-llm</code> reads local SQLite for player context — faction preferences, unit usage patterns, win/loss streaks, campaign roster state; generates personalized missions, adaptive briefings, post-match commentary, coaching suggestions, rivalry narratives</li>
 <li><strong>LLM coaching loop (D042):</strong> When LLM provider is configured, <code>ic-llm</code> reads <code>training_sessions</code> + <code>player_profiles</code> for structured training plans (“Week 1: expansion timing”), post-session natural language coaching, multi-session arc tracking, and contextual tips during weakness review; builds on Phase 4–5 rule-based training system</li>
 <li><strong>AI training data pipeline (D031):</strong> replay-first extraction — deterministic replay files → fog-filtered TrainingPair conversion → Parquet export; telemetry enrichment (gameplay events, input patterns, pacing snapshots) as secondary signals; build order learning, engagement patterns, balance analysis; see <code>research/ml-training-pipeline-design.md</code></li>
+<li><strong>LLM audio generation — music &amp; SFX (D016):</strong> Self-contained ABC→MIDI→SoundFont pipeline: Phi-4-mini generates ABC notation, IC’s clean-room ABC parser converts to MIDI, <code>rustysynth</code> renders through bundled SoundFont (GeneralUser GS ~30 MB) to OGG/WAV; covers both 5-mood dynamic music tracks and short SFX (weapon sounds, UI feedback, ability stingers, ambient); <code>AudioGenerator</code> orchestrates prompt→ABC→MIDI→SoundFont→audio; D016 mission generation gains optional audio step (unique soundtrack + custom SFX per generated mission); validation pipeline (5 checks for music, 3 for SFX) + retry on failure; see <code>research/llm-soundtrack-generation-design.md</code></li>
+<li><strong>Demoscene-inspired parameter synthesis (optional, D016):</strong> Lightweight <code>!synth</code> YAML tag for procedural SFX defined as parameter schemas (~50–150 values) rendered to PCM at load time; ~500–1,000 lines of Rust in <code>ic-audio</code>; complements ABC→MIDI→SoundFont for noise-based/electronic SFX (explosions, lasers, impacts); LLM generates JSON parameter objects (~20–50 tokens per patch); see <code>research/demoscene-synthesizer-analysis.md</code></li>
 </ul>
 <h3 id="deliverables--wasm-editor-plugins--community-export-targets-d066"><a class="header" href="#deliverables--wasm-editor-plugins--community-export-targets-d066">Deliverables — WASM Editor Plugins &amp; Community Export Targets (D066)</a></h3>
 <ul>

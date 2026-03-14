@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-c80260ed.js";
+            window.path_to_searchindex_js = "../searchindex-ebe5ef16.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9adfe301.js"></script>
+        <script src="../toc-5aa22486.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -230,32 +230,32 @@ parameters:
     options: [small, medium, large]
     default: medium
     description: "Overall map dimensions"
-  
+
   player_faction:
     type: enum
     options: [allies, soviet]
     default: allies
     description: "Player's faction"
-  
+
   enemy_waves:
     type: integer
     min: 3
     max: 20
     default: 8
     description: "Number of enemy attack waves"
-  
+
   difficulty:
     type: enum
     options: [easy, normal, hard, brutal]
     default: normal
     description: "Controls enemy unit count and AI aggression"
-  
+
   reinforcement_type:
     type: enum
     options: [infantry, armor, air, mixed]
     default: mixed
     description: "What reinforcements the player receives"
-  
+
   enable_naval:
     type: boolean
     default: false
@@ -648,7 +648,7 @@ weather_types:
 mission:
   name: "Behind Enemy Lines — {{ difficulty | title }}"
   briefing: &gt;
-    Infiltrate the Soviet base. Destroy the radar, 
+    Infiltrate the Soviet base. Destroy the radar,
     then extract before reinforcements arrive.
 
 scenes:
