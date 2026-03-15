@@ -23,3 +23,4 @@ Pathfinding, balance presets, QoL toggles, weather, campaigns, conditions/multip
 | D070     | Asymmetric Co-op Mode — Commander & Field Ops (IC-Native Template Toolkit)                       | [D070](09d/D070-asymmetric-coop.md)        |
 | D073     | LLM Exhibition Matches & Prompt-Coached Modes — Spectacle Without Breaking Competitive Integrity | [D073](09d/D073-llm-exhibition-modes.md)   |
 | D077     | Replay Highlights & Play-of-the-Game — Auto-Detection, POTG, and Main Menu Background            | [D077](09d/D077-replay-highlights.md)      |
+| D078     | Time-Machine Mechanics — Replay Takeover, Temporal Campaigns, and Multiplayer Time Modes          | [D078](09d/D078-time-machine.md)           |

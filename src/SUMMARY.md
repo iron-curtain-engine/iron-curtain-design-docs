@@ -184,6 +184,7 @@
     - [D070 — Asymmetric Co-op](decisions/09d/D070-asymmetric-coop.md)
     - [D073 — LLM Exhibition Modes](decisions/09d/D073-llm-exhibition-modes.md)
     - [D077 — Replay Highlights & POTG](decisions/09d/D077-replay-highlights.md)
+    - [D078 — Time-Machine Mechanics](decisions/09d/D078-time-machine.md)
   - [Community & Platform](decisions/09e-community.md)
     - [D030 — Workshop Registry](decisions/09e/D030-workshop-registry.md)
       - [Deployment & Operations](decisions/09e/D030/D030-deployment-operations.md)
