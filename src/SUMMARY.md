@@ -48,6 +48,7 @@
   - [Tier 2: Lua Scripting](modding/lua-scripting.md)
   - [Tier 3: WASM Modules](modding/wasm-modules.md)
     - [WASM Mod Showcases](modding/wasm-showcases.md)
+    - [Practical Guide: Creating a WASM Mod](modding/wasm-mod-guide.md)
   - [Tera Templating](modding/tera-templating.md)
     - [Advanced Templating](modding/tera-templating-advanced.md)
   - [Resource Packs](modding/resource-packs.md)

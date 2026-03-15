@@ -349,12 +349,12 @@ This is different from pathfinders (one axis: which algorithm). AI has two ortho
 
 **Modder as consumer — selecting an AI:**
 
-A mod's YAML manifest can declare which `AiStrategy` implementations it ships with or requires:
+A mod's `mod.toml` manifest can declare which `AiStrategy` implementations it ships with or requires:
 
 ```toml
 # mod.toml — total conversion with custom AI
 [mod]
-name = "Zero Hour Remake"
+title = "Zero Hour Remake"
 default_ai = "goap-planner"
 ai_strategies = ["goap-planner", "personality-driven"]
 
@@ -409,7 +409,7 @@ The mod registers its AI in its manifest:
 ```toml
 # goap_planner/mod.toml
 [mod]
-name = "GOAP Planner AI"
+title = "GOAP Planner AI"
 type = "ai_strategy"
 ai_strategy_id = "goap-planner"
 display_name = "GOAP Planner"

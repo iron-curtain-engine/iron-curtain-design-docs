@@ -15,11 +15,14 @@ When IC is compiled to WASM for the browser target (Phase 7), Tier 3 WASM mods p
 **Implications:**
 - **Browser builds support Tier 1 (YAML) and Tier 2 (Lua) mods only.** Lua via `mlua` compiles to WASM and executes as interpreted bytecode within the browser build. YAML is pure data.
 - **Tier 3 WASM mods are desktop/server-only** (native builds where `wasmtime` runs normally).
-- **Multiplayer between browser and desktop clients** is not affected by this limitation *for the base game* — the sim, networking, and all built-in systems are native Rust compiled to WASM. The limitation only matters when a lobby requires a Tier 3 mod; browser clients cannot join such lobbies.
+- **Multiplayer between browser and desktop clients** is not affected by this limitation *for the base game* — the sim, networking, and all built-in systems are native Rust compiled to WASM.
+
+**Lobby enforcement — gameplay/load-required vs. presentation split:** The browser limitation only blocks lobbies that *require* a Tier 3 mod for gameplay or asset loading. Consistent with D068's gameplay/presentation fingerprint split:
+
+- **Gameplay/load-required Tier 3 mods** (pathfinder, AI strategy — run during sim ticks; format loading — run at asset load time): part of the lobby gameplay fingerprint. If the lobby requires one, browser clients **cannot join** (they can't run the WASM binary, and the game would either desync or fail to load assets). Platform restriction badge shown. Note: format loaders don't affect sim ticks, but they are still required for the game to load correctly — a missing format loader means assets can't be decoded.
+- **Presentation-only Tier 3 mods** (render overlays, UI mods): per-player optional, not part of the gameplay fingerprint (§ Multiplayer Capability Rules). Browser clients **can join** these lobbies — they simply don't run the presentation mod. Desktop players see the overlay; browser players don't. No desync because presentation mods never affect the sim or asset loading.
 
 **Future mitigation:** A WASM interpreter written in pure Rust (e.g., `wasmi`) can itself compile to `wasm32-unknown-unknown`, enabling Tier 3 mods in the browser at reduced performance (~10-50x slower than native `wasmtime`). This is acceptable for lightweight WASM mods (AI strategies, format loaders) but likely too slow for complex pathfinder or render mods. When/if this becomes viable, the engine would use `wasmtime` on native builds and `wasmi` on browser builds — same mod binary, different execution speed. This is a Phase 7+ concern.
-
-**Lobby enforcement:** Servers advertise their Tier 3 support level. Browser clients filter the server browser to show only lobbies they can join. A lobby requiring a Tier 3 WASM mod displays a platform restriction badge.
 
 ### WASM Host API (Security Boundary)
 
@@ -49,25 +52,226 @@ fn get_unit_position(unit_handle: u32) -> Option<(i32, i32)> {
 
 ```rust
 pub struct ModCapabilities {
+    // --- Standard capabilities (sandbox-internal, no I/O) ---
     pub read_own_state: bool,
-    pub read_visible_state: bool,
+    pub read_visible_state: bool,     // Fog-filtered visible unit/building queries (ic_query_* API)
     // Can NEVER read fogged state (API doesn't exist)
     pub issue_orders: bool,           // For AI mods
     pub render: bool,                 // For render mods (ic_render_* API)
     pub pathfinding: bool,            // For pathfinder mods (ic_pathfind_* API)
     pub ai_strategy: bool,            // For AI mods (ic_ai_* API + AiStrategy trait)
-    pub filesystem: FileAccess,       // Usually None
-    pub network: NetworkAccess,       // Usually None
+    pub format_loading: bool,         // For format loader mods (ic_format_* API) — runs at asset load time, not during sim ticks
+
+    // --- Elevated capabilities (extend beyond sandbox, require player review) ---
+    // INVARIANT: filesystem and network are FORBIDDEN for sim-tick mods
+    // (pathfinding, ai_strategy). ic-sim is pure and no-I/O
+    // (crate-graph.md § ic-sim). These capabilities are available ONLY to
+    // mods that never execute during sim ticks: presentation-layer mods
+    // (render, UI overlay) and format loaders (which run at asset load
+    // time, not during deterministic simulation).
+    pub filesystem: FileAccess,       // Presentation + format loaders only. None for sim-tick mods
+    pub network: NetworkAccess,       // Presentation mods only. None for sim-tick or format mods
+}
+
+pub enum FileAccess {
+    None,                          // Most mods (and ALL sim-tick mods)
+    ReadOnly(Vec<String>),         // Scoped read access to specific paths (format loaders, presentation mods)
+    // NEVER write access. NEVER unrestricted path access.
+    // Paths are relative to the mod's data directory or the game's asset directory.
+    // Absolute paths and path traversal (../) are rejected at load time.
 }
 
 pub enum NetworkAccess {
-    None,                          // Most mods
-    AllowList(Vec<String>),        // UI mods fetching assets
+    None,                          // Most mods (and ALL sim-tick mods, ALL format loaders)
+    AllowList(Vec<String>),        // Presentation/UI mods fetching assets from specific domains
     // NEVER unrestricted
 }
 ```
 
+**Sim-tick capability exclusion rule:** WASM mods that declare `pathfinding` or `ai_strategy` capabilities **cannot** also declare `network` or `filesystem`. The Workshop rejects manifests that combine sim-tick and elevated capabilities. At load time, the runtime validates this exclusion — a mod binary requesting both is not loaded. This preserves `ic-sim`'s no-I/O invariant: code running during deterministic sim ticks never touches the network or filesystem.
+
+**Format loaders** (`format_loading`) are a special case: they run at **asset load time** (during `Loading` state), not during sim ticks. By default, format loaders access file data through the engine-mediated `ic_format_read_bytes()` host function, which reads through the engine's archive abstraction (`.mix` files, mounted directories) — no elevated `filesystem` capability needed. The elevated `filesystem` capability is only required if a format loader needs to read files **outside** the engine's archive system (e.g., reading companion metadata files from the mod's own data directory). Format loaders **cannot** declare `network` (asset loading must be local/deterministic — network-fetched assets would create load-order non-determinism). The Workshop validates this: `format_loading + filesystem` is allowed; `format_loading + network` is rejected.
+
 > **Security (V43):** Domain-based `AllowList` is vulnerable to DNS rebinding — an approved domain can be re-pointed to `127.0.0.1` or `192.168.x.x` after capability review. Mitigations: block RFC 1918/loopback/link-local IP ranges after DNS resolution, pin DNS at mod load time, validate resolved IP on every request. See `06-SECURITY.md` § Vulnerability 43.
+
+#### Network Host API (Presentation Mods Only)
+
+WASM mods with `NetworkAccess::AllowList` access the network **exclusively** through these host-provided functions. No WASI networking capabilities are granted — raw sockets, DNS resolution, and TCP/UDP are never available to WASM modules (`wasmtime::Config` explicitly denies all WASI networking proposals — `06-SECURITY.md` § F10).
+
+```rust
+// === Network Host API (ic_http_* namespace) ===
+// Available only to mods with ModCapabilities.network = AllowList(...)
+// Domain is validated against the AllowList BEFORE the request is made.
+// Resolved IP is checked against blocked ranges (RFC 1918, loopback, link-local).
+
+/// HTTP GET request. Domain must be in the mod's AllowList.
+/// Returns response body as bytes, or Err if domain denied / request failed.
+/// Runs asynchronously — the mod yields until the response arrives.
+#[wasm_host_fn] fn ic_http_get(url: &str) -> Result<Vec<u8>, HttpError>;
+
+/// HTTP POST request. Domain must be in the mod's AllowList.
+/// Body is limited to 1 MB. Response limited to 4 MB.
+#[wasm_host_fn] fn ic_http_post(url: &str, body: &[u8], content_type: &str) -> Result<Vec<u8>, HttpError>;
+
+pub enum HttpError {
+    DomainDenied,       // URL domain not in AllowList
+    IpBlocked,          // Resolved IP is in blocked range (RFC 1918, loopback, etc.)
+    Timeout,            // Request exceeded 10-second timeout
+    NetworkError,       // Connection failed
+    ResponseTooLarge,   // Response exceeded 4 MB limit
+}
+```
+
+#### Filesystem Host API (Presentation + Format Loader Mods Only)
+
+WASM mods with `FileAccess::ReadOnly` access files through these host-provided functions. No WASI filesystem capabilities are granted — `std::fs`, directory listing, and write access are never available.
+
+```rust
+// === Filesystem Host API (ic_fs_* namespace) ===
+// Available only to mods with ModCapabilities.filesystem = ReadOnly(...)
+// Path is validated against the mod's declared path scope BEFORE the read.
+// Absolute paths and path traversal (../) are rejected.
+
+/// Read a file's contents. Path must be within the mod's declared scope.
+#[wasm_host_fn] fn ic_fs_read(path: &str) -> Result<Vec<u8>, FsError>;
+
+/// Check if a file exists within the mod's declared scope.
+#[wasm_host_fn] fn ic_fs_exists(path: &str) -> Result<bool, FsError>;
+
+pub enum FsError {
+    PathDenied,         // Path outside declared scope or contains traversal
+    NotFound,           // File does not exist
+    ReadError,          // I/O error
+}
+```
+
+### Install-Time Capability Review & Player Control
+
+The capability model above defines *what* a mod can access. This section defines *how the player sees and controls those capabilities*.
+
+> **D074 policy revision:** D074-federated-moderation.md § Layer 3 states IC does not prompt players with capability permission dialogs because "mods cannot access files regardless of what the player clicks." This is true for Tier 1 (YAML) and Tier 2 (Lua) mods, which operate within fixed sandboxes. However, Tier 3 WASM mods **can** request `network` and `filesystem` capabilities that extend beyond the base sandbox — the `ModCapabilities` struct explicitly includes `filesystem: FileAccess` and `network: NetworkAccess` fields. For these elevated capabilities, player awareness is warranted.
+>
+> This section revises D074 Layer 3 specifically for **Tier 3 WASM mods that request network or filesystem access, or above-default resource limits**. The principle remains: the sandbox enforces limits regardless of player choice. But the player should know *which* elevated capabilities a WASM mod declares, and should be able to deny optional ones. This is a targeted extension, not a general permission dialog — Tier 1/2 mods are unaffected, and WASM mods that request only standard capabilities (`read_own_state`, `read_visible_state`, `issue_orders`, `render`, `pathfinding`, `ai_strategy`, `format_loading`) with default-or-below resource limits do not trigger a review prompt.
+>
+> **D074 Layer 4 is preserved:** Capability information on the Workshop listing page remains *informational* for standard capabilities. The review prompt triggers for network/filesystem capabilities (that reach outside the game sandbox) or above-default resource limits.
+
+#### Modder Side — Declaring Capabilities
+
+WASM mod authors declare capabilities in `mod.toml`. Capabilities that extend beyond the sandbox (network, filesystem) include a mandatory `reason` field:
+
+```toml
+# mod.toml — capability declaration
+[mod]
+id = "tactical-overlay"
+title = "Tactical Overlay"           # canonical field is 'title', not 'name' (mod-sdk.md § mod.toml)
+type = "render"
+wasm_module = "tactical_overlay.wasm"
+
+[capabilities]
+render = true
+read_visible_state = true
+network = { essential = false, domains = ["api.example.com"], reason = "Fetches community overlay presets (optional — works offline with built-in presets)" }
+filesystem = { essential = false, access = "read", paths = ["overlay-presets/"], reason = "Loads user-saved overlay configurations (optional)" }
+# essential = true  → mod cannot function without this capability; denying it disables the mod
+# essential = false → mod works with reduced functionality if denied (default)
+
+[capabilities.limits]
+fuel_per_tick = 500_000
+max_memory_bytes = 8_388_608
+```
+
+The `reason` field is **mandatory for network and filesystem capabilities** — Workshop submission rejects manifests with missing reasons for these capabilities. Standard capabilities (`read_own_state`, `read_visible_state`, `issue_orders`, `render`, `pathfinding`, `ai_strategy`, `format_loading`) do not require reason fields — they are within the sandbox boundary.
+
+#### Player Side — Capability Review
+
+**When a review prompt is shown:** When a WASM mod declares `network` or `filesystem` capabilities, OR when it requests execution limits above defaults (§ WASM Execution Resource Limits). WASM mods with only standard capabilities AND default-or-below limits install silently (consistent with D074 Layer 3). A pure AI/pathfinder mod with no elevated capabilities but higher fuel/memory limits will trigger the review screen showing the resource usage section only.
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  Install: Tactical Overlay v1.2.0                         │
+│  by MapMaster ✓  |  Tier 3 (WASM)  |  2.1 MB             │
+│                                                           │
+│  This mod requests elevated capabilities:                 │
+│                                                           │
+│  ┌────────────────────────────────────────────────────┐   │
+│  │ 🔲 Network access                       [Toggle]  │   │
+│  │    api.example.com                                 │   │
+│  │    Fetches community overlay presets                │   │
+│  │    (works offline with built-in presets)            │   │
+│  │                                                    │   │
+│  │ 🔲 File read access                     [Toggle]  │   │
+│  │    overlay-presets/                                 │   │
+│  │    Loads user-saved overlay configurations          │   │
+│  └────────────────────────────────────────────────────┘   │
+│                                                           │
+│  Standard capabilities (render, read visible units):      │
+│  granted automatically by the sandbox.                    │
+│                                                           │
+│  [Install]    [Cancel]                                    │
+└──────────────────────────────────────────────────────────┘
+```
+
+**UX rules:**
+
+| Rule | Behavior |
+|------|----------|
+| **Standard capabilities** (`read_own_state`, `read_visible_state`, `issue_orders`, `render`, `pathfinding`, `ai_strategy`, `format_loading`) | Granted automatically. No prompt. Listed as informational summary only |
+| **Elevated capabilities** (network, filesystem) | Shown with toggle switches. Default: off. Player opts in per capability |
+| **Reason text** | Mandatory for elevated capabilities, shown under each toggle |
+| **Network domains** | Each allowed domain listed explicitly |
+| **Filesystem paths** | Scoped paths listed explicitly |
+| **No review needed** | WASM mods without network/filesystem AND with default-or-below limits install silently. Tier 1/2 mods always install silently |
+| **Updates** | Re-prompt if elevated capabilities changed ("New: network access to api.example.com") OR if above-default resource limits changed ("CPU increased from 1M to 2M instructions/tick"). Keyed by `capability_manifest_hash` — unchanged manifests across version bumps skip re-review |
+
+#### Managing Capabilities After Install
+
+Elevated capabilities (network, filesystem) are adjustable via the mod management UI. Changes take effect at **next match start** — never mid-match.
+
+> **Why not immediate:** D066 establishes install/update-time review as the safe pattern for extension permissions. Elevated capabilities are only available to presentation-layer mods and format loaders (never sim-tick mods — see § Sim-tick capability exclusion rule), but a uniform "next match" rule avoids edge cases and is simpler to implement.
+
+Revoking an elevated capability that the mod declared as `essential = true` disables the mod entirely (with confirmation: "This mod requires [network access] to function. Disable the mod?"). Revoking an `essential = false` capability keeps the mod active with reduced functionality — the mod's host function calls for that capability return `Err(CapabilityDenied)`.
+
+#### Capability Storage
+
+Granted capabilities are stored in local SQLite (D034), keyed by mod ID + capability manifest hash:
+
+```rust
+/// Per-mod granted capabilities. Stored in local SQLite (D034).
+pub struct GrantedCapabilities {
+    /// Mod identity — uses mod.id from mod.toml (not WorkshopPackageId,
+    /// since the same flow covers Workshop and local file installs).
+    pub mod_id: ModId,
+    /// Hash of the mod's capability declaration section.
+    /// When capabilities change across versions, the hash changes and
+    /// triggers re-review. When capabilities are unchanged, the hash
+    /// stays the same — no re-prompt even on version bumps.
+    pub capability_manifest_hash: Sha256Digest,
+    /// Which elevated capabilities the player granted.
+    pub granted_elevated: ElevatedCapabilities,
+    pub granted_at: i64,
+    pub last_reviewed_at: i64,
+}
+
+pub struct ElevatedCapabilities {
+    pub network: Option<NetworkAccess>,   // None = denied, Some = granted with domain list
+    pub filesystem: Option<FileAccess>,   // None = denied, Some = granted with path scope
+}
+```
+
+#### Workshop Publication Flow
+
+1. `ic mod publish` reads `mod.toml` capabilities and includes them in the package manifest
+2. Workshop validates: every `network` and `filesystem` capability has a non-empty `reason` field
+3. **Capability change detection:** If a mod update adds new elevated capabilities, the Workshop flags the update for moderation review (V25). Players with the mod installed see: "Update requests new capability: network access. Review before updating."
+4. The Workshop listing shows the capability summary on the mod page (informational — consistent with D074 Layer 4)
+
+#### Multiplayer Capability Rules
+
+**Sim-tick mods** (pathfinder, AI strategy) **cannot declare elevated capabilities** (network, filesystem) — see § Sim-tick capability exclusion rule. Their capability sets are always identical across clients (standard capabilities are granted automatically). **Format loaders** may declare `filesystem` but not `network`; since format loading runs at asset load time (not sim ticks), filesystem access doesn't affect deterministic sim state — but the granted filesystem capability must still match across clients in the lobby fingerprint (D062) because it affects which assets load successfully. The lobby fingerprint includes the mod's execution limit grants, which must also match across clients for all sim-affecting and format-loading mods.
+
+**Presentation-only mods** (render, UI overlay) allow per-player capability differences. These mods never affect the deterministic sim — Player A can have network-enabled overlays while Player B does not. No fingerprint impact.
+
+> **Settings IA note:** The current settings panel (`settings.md`) does not have a "Mods" tab. Mod capability management should be accessible from the Workshop → Installed panel or a new Mods section in Settings. This is a `settings.md` / `player-flow/workshop.md` update deferred until this section moves from design to implementation.
 
 ### WASM Execution Resource Limits
 
@@ -79,6 +283,7 @@ Capability-based API controls *what* a mod can do. Execution resource limits con
 /// without the mod's remaining contributions for that tick.
 pub struct WasmExecutionLimits {
     pub fuel_per_tick: u64,              // wasmtime fuel units (~1 per wasm instruction)
+    pub pathfinder_fuel_per_tick: u64,   // aggregate budget across ALL path requests in one tick (not per-request)
     pub max_memory_bytes: usize,         // WASM linear memory cap (default: 16 MB)
     pub max_entity_spawns_per_tick: u32, // Prevents chain-reactive entity explosions (default: 32)
     pub max_orders_per_tick: u32,        // AI mods can't flood the order pipeline (default: 64)
@@ -89,6 +294,7 @@ impl Default for WasmExecutionLimits {
     fn default() -> Self {
         Self {
             fuel_per_tick: 1_000_000,       // ~1M instructions — generous for most mods
+            pathfinder_fuel_per_tick: 5_000_000, // aggregate per-tick budget (5M — 5× standard, reflects many path requests per tick)
             max_memory_bytes: 16 * 1024 * 1024,  // 16 MB
             max_entity_spawns_per_tick: 32,
             max_orders_per_tick: 64,
@@ -100,7 +306,12 @@ impl Default for WasmExecutionLimits {
 
 **Why this matters for multiplayer:** In deterministic lockstep, all clients run the same mods. A mod that consumes excessive CPU causes tick overruns on slower machines, triggering adaptive run-ahead increases for everyone. A mod that spawns hundreds of entities per tick inflates state size and network traffic. The execution limits prevent a single mod from degrading the experience — and because the limits are deterministic (same fuel budget, same cutoff point), all clients agree on when a mod is throttled.
 
-**Mod authors can request higher limits** via their mod manifest. The lobby displays requested limits and players can accept or reject. Tournament/ranked play enforces stricter defaults.
+**Mod authors can request higher limits** via their mod manifest's `[capabilities.limits]` section. Resource limit requests above defaults are handled via the same review surface as elevated capabilities:
+
+- **Install-time:** If a mod requests limits above defaults, the capability review screen (§ Install-Time Capability Review) shows a "Resource usage" section with the requested values and how they compare to defaults (e.g., "CPU: 2M instructions/tick — 2× default"). The player can accept or cancel the install.
+- **Lobby:** Sim-affecting mods with above-default limits require all players to accept the same limits (deterministic execution requires identical fuel budgets). The lobby fingerprint (D062) includes the granted limit values.
+- **Storage:** Granted limits are stored alongside `GrantedCapabilities` in local SQLite (D034), keyed by `ModId + capability_manifest_hash` — same key as elevated capability grants.
+- **Ranked/tournament:** Stricter defaults enforced. Mods requesting above-default limits are rejected in ranked queues unless whitelisted by the competitive committee (D037).
 
 ### WASM Float Determinism
 
@@ -176,6 +387,50 @@ pub enum CameraMode {
 // Zoom behavior is controlled by the GameCamera resource (02-ARCHITECTURE.md § Camera).
 // WASM render mods that provide a custom ScreenToWorld impl interpret the zoom value
 // appropriately for their camera type (orthographic scale vs. dolly distance vs. FOV).
+
+// === Render-Side State Query API (ic_query_* namespace) ===
+// Available only to mods with ModCapabilities.read_visible_state = true
+// AND ModCapabilities.render = true.
+// These are read-only, fog-filtered queries for rendering purposes —
+// the same visibility rules as the AI query API, but returning
+// presentation-friendly data (positions, health bars, unit types).
+// This API runs OUTSIDE the sim context (render thread, not sim thread)
+// and reads from the post-tick render snapshot, not live sim state.
+
+/// Get all visible units for the local player (fog-filtered).
+/// Returns presentation data (position, type, health fraction, facing).
+#[wasm_host_fn] fn ic_query_visible_units() -> Vec<RenderUnitInfo>;
+
+/// Get all visible buildings for the local player (fog-filtered).
+#[wasm_host_fn] fn ic_query_visible_buildings() -> Vec<RenderBuildingInfo>;
+
+/// Get the local player's resource state (for UI overlays).
+#[wasm_host_fn] fn ic_query_resources() -> PlayerResources;
+
+/// Check if a world position is currently visible (not fogged).
+#[wasm_host_fn] fn ic_query_is_visible(pos: WorldPos) -> bool;
+
+/// Check if a world position has been explored (shroud removed).
+#[wasm_host_fn] fn ic_query_is_explored(pos: WorldPos) -> bool;
+
+pub struct RenderUnitInfo {
+    pub handle: u32,          // opaque render handle (not sim EntityId)
+    pub unit_type: u32,       // unit type enum
+    pub position: WorldPos,
+    pub facing: u8,
+    pub health_fraction: f32, // 0.0 – 1.0
+    pub owner_slot: u8,       // player slot
+    pub is_selected: bool,
+}
+
+pub struct RenderBuildingInfo {
+    pub handle: u32,
+    pub building_type: u32,
+    pub position: WorldPos,
+    pub health_fraction: f32,
+    pub owner_slot: u8,
+    pub build_progress: f32,  // 0.0 – 1.0 (1.0 = complete)
+}
 ```
 
 **Render mod registration:** A render mod implements the `Renderable` and `ScreenToWorld` traits (see `02-ARCHITECTURE.md` § "3D Rendering as a Mod"). It registers via `ic_render_register()` for each actor type it handles. Unregistered actor types fall through to the default sprite renderer. This allows **partial** render overrides — a mod can replace tank rendering with 3D meshes while leaving infantry as sprites.
@@ -254,7 +509,7 @@ The C&C Generals source code (GPL v3, `electronicarts/CnC_Generals_Zero_Hour`) u
 ```toml
 # generals_pathfinder/mod.toml
 [mod]
-name = "Generals Pathfinder"
+title = "Generals Pathfinder"
 type = "pathfinder"
 pathfinder_id = "layered-grid-generals"
 display_name = "Generals (Layered Grid)"
@@ -417,6 +672,12 @@ These signatures are the **logical API** — the Rust-idiomatic interface that m
 
 /// Engine scaling opt-out.
 #[wasm_export] fn ai_uses_engine_difficulty_scaling() -> bool;
+
+/// Tick budget hint — how many fuel units this AI expects per decide() call.
+/// Called once at load time by the engine to tune fuel allocation.
+/// Maps to the AiStrategy::tick_budget_hint() seam in crate-graph.md.
+/// If not exported, the engine uses WasmExecutionLimits.fuel_per_tick default.
+#[wasm_export] fn ai_tick_budget_hint() -> u64;
 ```
 
 **Raw ABI shape:** The generated WASM ABI for a function like `ai_decide(player_id: u32, tick: u64) -> Vec<PlayerOrder>` is:

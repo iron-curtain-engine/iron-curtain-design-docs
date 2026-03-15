@@ -209,6 +209,69 @@ summary = "Alternate-timeline total conversion with new factions and units"
 gameplay_tags = ["total_conversion", "alternate_history", "new_factions"]
 ```
 
+#### Tier 3 Provider Extension Fields
+
+WASM mods that implement engine trait providers (pathfinder, AI strategy, render backend, format loader) declare additional fields in `mod.toml`. These are added alongside the base `[mod]` fields above. Each example below is a **self-contained fragment** showing only the additional fields for that provider type — not a full `mod.toml`.
+
+**Pathfinder provider** — implements the `Pathfinder` trait:
+```toml
+# Fragment: add these fields to [mod] for a pathfinder provider mod
+type = "pathfinder"
+pathfinder_id = "layered-grid-generals"   # unique ID other mods use to select this pathfinder
+display_name = "Generals (Layered Grid)"  # shown in lobby pathfinder picker
+wasm_module = "generals_pathfinder.wasm"  # entrypoint .wasm binary (relative to mod root)
+```
+
+**AI strategy provider** — implements the `AiStrategy` trait:
+```toml
+# Fragment: add these fields to [mod] for an AI strategy provider mod
+type = "ai_strategy"
+ai_strategy_id = "goap-planner"
+display_name = "GOAP Planner"
+wasm_module = "goap_planner.wasm"
+```
+
+**Render backend provider** — implements the `Renderable`/`ScreenToWorld` traits:
+```toml
+# Fragment: add these fields to [mod] for a render provider mod
+type = "render"
+wasm_module = "my_render_mod.wasm"
+```
+
+**Format loader provider** — implements custom asset format decoding:
+```toml
+# Fragment: add these fields to [mod] for a format loader provider mod
+type = "format_loader"
+wasm_module = "custom_format.wasm"
+```
+
+**`wasm_module` vs `[assets].wasm_modules`:** For provider mods, `wasm_module` is the canonical entrypoint declaration — the engine loads this specific binary as the trait implementation. The `[assets].wasm_modules` glob in the base schema (e.g., `wasm/*.wasm`) is for general-purpose WASM assets loaded by the mod's Lua scripts or other mechanisms. For provider mods, `wasm_module` takes precedence and the engine does not require the entrypoint to also appear in `assets.wasm_modules`. If a provider mod ships additional WASM helpers alongside the entrypoint, those should be listed in `[assets].wasm_modules`; the entrypoint itself should not.
+
+Mods that *consume* a Tier 3 provider (rather than providing one) reference it by ID:
+
+```toml
+# A total conversion selecting its pathfinder and AI:
+[mod]
+pathfinder = "layered-grid-generals"   # use this pathfinder (must be installed)
+default_ai = "goap-planner"            # default AI strategy for skirmish
+ai_strategies = ["goap-planner", "personality-driven"]  # all AI strategies this mod ships
+```
+
+**Field reference:**
+
+| Field | Section | Type | Description |
+|-------|---------|------|-------------|
+| `type` | `[mod]` | string | Provider kind: `"pathfinder"`, `"ai_strategy"`, `"render"`, `"format_loader"` |
+| `wasm_module` | `[mod]` | string | Relative path to the compiled `.wasm` binary |
+| `pathfinder_id` | `[mod]` | string | Unique ID for a pathfinder provider (slug, e.g. `"layered-grid-generals"`) |
+| `ai_strategy_id` | `[mod]` | string | Unique ID for an AI strategy provider |
+| `display_name` | `[mod]` | string | Human-readable name shown in lobby pickers |
+| `pathfinder` | `[mod]` | string | ID of the pathfinder this mod uses (consumer field) |
+| `default_ai` | `[mod]` | string | Default AI strategy ID for skirmish (consumer field) |
+| `ai_strategies` | `[mod]` | list of strings | All AI strategy IDs this mod makes available (consumer field) |
+
+> **Cross-reference:** The full WASM capability and execution limit schema (the `[capabilities]` and `[capabilities.limits]` sections) is documented in `modding/wasm-modules.md` § Mod Capabilities System.
+
 ### Standardized Mod Directory Layout
 
 ```

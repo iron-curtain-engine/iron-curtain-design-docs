@@ -170,12 +170,12 @@ The three built-in presets are the **first-party** `Pathfinder` implementations.
 
 **Modder as consumer — selecting a pathfinder:**
 
-A mod's YAML manifest can declare which pathfinder it uses. The modder picks from any available implementation — first-party or community:
+A mod's `mod.toml` manifest can declare which pathfinder it uses. The modder picks from any available implementation — first-party or community:
 
 ```toml
 # mod.toml — total conversion mod that uses IC's modern pathfinding
 [mod]
-name = "Desert Strike"
+title = "Desert Strike"
 pathfinder = "ic-default"    # Use IC's multi-layer hybrid
 # Or: remastered, openra, layered-grid-generals, community/navmesh-pro, etc.
 ```
@@ -206,7 +206,7 @@ The mod registers its pathfinder in its manifest with a config section (like the
 ```toml
 # mod.toml — community pathfinder distributed via Workshop
 [mod]
-name = "Generals Pathfinder"
+title = "Generals Pathfinder"
 type = "pathfinder"                      # declares this mod provides a Pathfinder impl
 pathfinder_id = "layered-grid-generals"
 display_name = "Generals (Layered Grid)"
@@ -221,7 +221,14 @@ surface_types = ["ground", "water", "cliff", "air", "rubble"]
 
 Once installed, the community pathfinder appears alongside first-party presets in the lobby's Level 2 per-axis override ("Movement: Classic / OpenRA / Modern / Generals") and is selectable by other mods via `pathfinder: layered-grid-generals`.
 
-**Workshop distribution:** Community pathfinders are Workshop resources (D030) like any other mod. They can be rated, reviewed, and depended upon. A total conversion mod declares `depends: community/generals-pathfinder@^1.0` and the engine auto-downloads it on lobby join (same as CS:GO-style auto-download).
+**Workshop distribution:** Community pathfinders are Workshop resources (D030) like any other mod. They can be rated, reviewed, and depended upon. A total conversion mod declares the dependency via the canonical `[dependencies]` TOML table in `mod.toml` (D030 § mod manifest):
+
+```toml
+[dependencies]
+"community/generals-pathfinder" = "^1.0"
+```
+
+The engine auto-downloads missing dependencies on lobby join (same as CS:GO-style auto-download).
 
 **Sim-affecting implications:** Because pathfinding is deterministic and sim-affecting, all players in a multiplayer game must use the same pathfinder. A community pathfinder is synced like a first-party preset — the lobby validates that all clients have the same pathfinder WASM module (by SHA-256 hash), same config, same version.
 

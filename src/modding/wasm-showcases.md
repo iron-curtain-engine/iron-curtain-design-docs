@@ -104,7 +104,7 @@ impl Pathfinder for LayeredGridPathfinder {
 ```toml
 # generals_pathfinder/mod.toml
 [mod]
-name = "Generals Pathfinder"
+title = "Generals Pathfinder"
 type = "pathfinder"
 pathfinder_id = "layered-grid-generals"
 display_name = "Generals (Layered Grid)"
@@ -124,7 +124,7 @@ surface_types = ["ground", "water", "cliff", "air", "rubble"]
 ```toml
 # desert_strike_mod/mod.toml — a total conversion using the Generals pathfinder
 [mod]
-name = "Desert Strike"
+title = "Desert Strike"
 pathfinder = "layered-grid-generals"
 
 [dependencies]
@@ -202,7 +202,7 @@ impl AiStrategy for GoapPlannerAi {
 ```toml
 # goap_ai/mod.toml
 [mod]
-name = "GOAP Planner AI"
+title = "GOAP Planner AI"
 type = "ai_strategy"
 ai_strategy_id = "goap-planner"
 display_name = "GOAP Planner"
@@ -225,7 +225,7 @@ replan_interval = 30
 ```toml
 # zero_hour_mod/mod.toml — a total conversion using the GOAP AI
 [mod]
-name = "Zero Hour Remake"
+title = "Zero Hour Remake"
 default_ai = "goap-planner"
 
 [dependencies]

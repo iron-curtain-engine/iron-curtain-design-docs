@@ -190,3 +190,133 @@ impl Default for LuaExecutionLimits {
 **Mod authors can request higher limits** via their mod manifest, same as WASM mods. The lobby displays requested limits and players can accept or reject. Campaign/mission scripts bundled with the game use elevated limits since they are trusted first-party content.
 
 > **Security (V39):** Three edge cases in Lua limit enforcement: `string.rep` memory amplification (allocates before limit fires), coroutine instruction counter resets at yield/resume, and `pcall` suppressing limit violation errors. Mitigations: intercept `string.rep` with pre-allocation size check, verify instruction counting spans coroutines, make limit violations non-catchable (fatal to script context, not Lua errors). See `06-SECURITY.md` § Vulnerability 39.
+
+### Lua Callback-Driven Engine Extensions (Bridging Tier 2 and Tier 3)
+
+The gap between Tier 2 (Lua scripting) and Tier 3 (WASM algorithm replacement) is wide. Most modders who want to customize pathfinding, AI targeting, or damage resolution don't need to replace the *entire algorithm* — they need to change the *rules* the algorithm uses. Writing a full A* pathfinder in WASM is overkill for "I want hovercraft to cross water" or "forests should cost more to traverse."
+
+The solution: **callback-driven APIs** where the algorithm runs in native Rust at full speed, but the modder supplies Lua functions that define the rules. The engine calls the Lua function per-cell/per-unit/per-event, keeping the hot loop native.
+
+This follows the Factorio model: Lua defines *what* (rules, costs, conditions); native code handles *how* (algorithms, data structures, search).
+
+#### Pathfinding Customization
+
+```lua
+-- Register a custom locomotor with Lua-defined passability and cost rules.
+-- The pathfinding ALGORITHM (flowfield, A*, etc.) runs natively.
+-- Your Lua functions are called per-cell to evaluate passability and cost.
+
+Pathfinder.register_locomotor("hovercraft", {
+    -- Called per-cell during path search. Return true if this cell is passable.
+    -- The native pathfinder skips cells where this returns false.
+    passable = function(terrain, cell)
+        -- Hovercraft can cross water and land, but not cliffs
+        return terrain ~= "cliff"
+    end,
+
+    -- Called per-cell during path search. Return the movement cost (integer).
+    -- Higher cost = pathfinder prefers other routes. 100 = default land cost.
+    cost = function(terrain, cell)
+        if terrain == "water" then return 80 end    -- slightly cheaper on water
+        if terrain == "road" then return 50 end     -- fast on roads
+        if terrain == "forest" then return 200 end  -- slow through forests
+        return 100                                  -- default
+    end,
+
+    -- Optional: speed multiplier on this terrain (affects movement animation, not pathfinding)
+    speed_multiplier = function(terrain)
+        if terrain == "road" then return 1.5 end
+        if terrain == "water" then return 1.2 end
+        return 1.0
+    end,
+})
+```
+
+**How it works under the hood:**
+
+1. Modder registers a locomotor with Lua callbacks
+2. When a unit with this locomotor requests a path, the native pathfinder runs its algorithm (flowfield/A*)
+3. For each candidate cell, the native code calls the Lua `passable()` and `cost()` callbacks
+4. The pathfinder uses the Lua-returned values in its native data structures and search logic
+5. The final path is computed entirely in native Rust — Lua only answered "is this cell OK?" and "how expensive is it?"
+
+**Performance characteristic:** The Lua callbacks are called O(cells_searched) times per path request — typically 100-1000 calls for a medium-length path. At ~0.1μs per Lua call, that's 0.01-0.1ms per path. Acceptable for 50-100 path requests per tick. For 500+ concurrent paths, the per-call overhead accumulates — that's when WASM (Tier 3) makes sense.
+
+**Caching optimization:** The engine caches Lua passability/cost results per-cell in a grid. The cache is invalidated when `Pathfinder.invalidate_area()` is called (terrain change). This reduces Lua calls from "per-cell-per-search" to "per-cell-once-until-invalidated" — dramatically improving performance for repeated searches over the same terrain.
+
+#### AI Targeting Customization
+
+```lua
+-- Customize how the built-in AI evaluates targets.
+-- The targeting ALGORITHM (priority queue, threat assessment) runs natively.
+-- Your Lua function scores each potential target.
+
+Ai.register_targeting_rule("plasma-turret", {
+    -- Called per-visible-enemy when this unit type is selecting a target.
+    -- Return a priority score (integer). Highest score = preferred target.
+    -- Return 0 to skip this target entirely.
+    score = function(shooter, target)
+        -- Plasma turrets prioritize armored vehicles
+        if target.armor_class == "heavy" then return 200 end
+        if target.armor_class == "medium" then return 150 end
+        if target.armor_class == "light" then return 50 end
+        -- Don't waste plasma on infantry
+        if target.armor_class == "infantry" then return 10 end
+        return 100
+    end,
+})
+```
+
+#### Damage Resolution Customization
+
+```lua
+-- Customize how damage is calculated for a specific weapon or warhead.
+-- The damage PIPELINE (validation, armor lookup, health deduction) runs natively.
+-- Your Lua function modifies the damage value before it's applied.
+
+Combat.register_damage_modifier("cryo-warhead", {
+    -- Called when this warhead hits a target. Modify the damage before application.
+    -- 'context' contains attacker info, target info, terrain, distance.
+    modify = function(base_damage, context)
+        -- Cryo warhead: double damage vs. vehicles, half damage vs. buildings
+        if context.target.category == "vehicle" then
+            return base_damage * 2
+        end
+        if context.target.category == "building" then
+            return math.floor(base_damage / 2)
+        end
+        return base_damage
+    end,
+
+    -- Optional: apply a status effect after damage
+    on_hit = function(context)
+        if context.target.category == "vehicle" then
+            -- Slow the target for 5 seconds
+            context.target:apply_condition("slowed", { duration = 100, speed_mult = 50 })
+        end
+    end,
+})
+```
+
+#### When to Use Lua Callbacks vs. WASM
+
+| Scenario | Use | Why |
+|----------|-----|-----|
+| "My hex game needs different passability rules" | Lua `passable()` callback | You're customizing *rules*, not the algorithm. Native pathfinder handles the search |
+| "My game uses portal-based pathfinding instead of flowfield" | WASM pathfinder | You're replacing the *algorithm*. Lua callbacks can't change how the search works |
+| "I want AI to prioritize healers" | Lua `score()` callback | You're customizing targeting *priorities*. The targeting system is still the engine's |
+| "I want AI that plays like Starcraft's build-order optimizer" | WASM AI strategy | You're replacing the *entire decision-making algorithm* |
+| "Cryo weapons should slow targets" | Lua `on_hit()` callback | You're adding an *effect* to the existing damage pipeline |
+| "My game uses a completely different health/armor/shield system" | WASM damage resolver | You're replacing the *entire damage model* |
+
+**The practical rule:** If your sentence starts with "I want X to behave differently" → Lua callbacks. If it starts with "I want to replace the entire X system" → WASM.
+
+#### Determinism Guarantee
+
+Lua callbacks used by the pathfinder/AI/damage systems are **sim-affecting** and must be deterministic:
+
+- No `math.random()` — use `SimRng` via the Lua API (seeded, deterministic)
+- No `os.time()` or `os.clock()` — these are removed from the Lua sandbox
+- Integer math only (IC's Lua has no float library — `math.floor` etc. operate on fixed-point via `fixed-game-math` bindings)
+- Callbacks are called in deterministic order (same cell order, same unit order) across all clients
+- The instruction limit (`LuaExecutionLimits.max_instructions_per_tick`) applies — a callback that loops forever is terminated, and all clients terminate at the same point (deterministic cutoff)
