@@ -16,7 +16,7 @@ For improved agentic retrieval / RAG summaries, see the reusable **Decision Caps
 | [Gameplay & AI](decisions/09d-gameplay.md)              | Pathfinding, balance, QoL, AI systems, render modes, trait-abstracted subsystems, asymmetric co-op, LLM exhibition modes, replay highlights, time-machine mechanics | D013, D019, D021, D022, D028, D029, D033, D041–D045, D048, D054, D070, D073, D077, D078 |
 | [Community & Platform](decisions/09e-community.md)      | Workshop, telemetry, storage, achievements, governance, profiles, data portability                                                          | D030, D031, D034–D037, D046, D049, D053, D061                                     |
 | [Tools & Editor](decisions/09f-tools.md)                | LLM mission generation, scenario editor, asset studio, mod SDK, foreign replays, skill library                                              | D016, D020, D038, D040, D047, D056, D057                                          |
-| [In-Game Interaction](decisions/09g-interaction.md)     | Command console, communication systems (chat, voice, pings), tutorial/new player experience, installation/setup wizard UX                   | D058, D059, D065, D069                                                            |
+| [In-Game Interaction](decisions/09g-interaction.md)     | Command console, communication systems (chat, voice, pings), voice-text bridge, tutorial/new player experience, installation/setup wizard UX | D058, D059, D065, D069, D079                                                      |
 
 ---
 
@@ -102,6 +102,7 @@ For improved agentic retrieval / RAG summaries, see the reusable **Decision Caps
 | D076 | Standalone MIT/Apache-Licensed Crate Extraction Strategy  | [Foundation](decisions/09a/D076-standalone-crates.md)       |
 | D077 | Replay Highlights & Play-of-the-Game                      | [Gameplay](decisions/09d/D077-replay-highlights.md)         |
 | D078 | Time-Machine Mechanics — Replay Takeover, Temporal Campaigns, Multiplayer Time Modes | [Gameplay](decisions/09d/D078-time-machine.md) |
+| D079 | Voice-Text Bridge — STT Captions, TTS Synthesis, AI Voice Personas | [Interaction](decisions/09g/D079-voice-text-bridge.md) |
 
 ---
 

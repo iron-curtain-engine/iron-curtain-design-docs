@@ -248,6 +248,7 @@
       - [New Player Pipeline & Pacing](decisions/09g/D065/D065-new-player-pacing.md)
       - [Post-Game, API & Integration](decisions/09g/D065/D065-postgame-api-integration.md)
     - [D069 — Install Wizard](decisions/09g/D069-install-wizard.md)
+    - [D079 — Voice-Text Bridge](decisions/09g/D079-voice-text-bridge.md)
 - [Performance Philosophy](10-PERFORMANCE.md)
   - [Efficiency Pyramid](performance/efficiency-pyramid.md)
   - [Targets & Comparisons](performance/targets.md)

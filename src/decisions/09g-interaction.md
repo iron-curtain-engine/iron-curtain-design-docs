@@ -10,3 +10,4 @@ Command console, text/voice chat, beacons, tutorial/onboarding, and installation
 | D059 | In-Game Communication — Text Chat, Voice, Beacons, and Coordination | [D059](09g/D059-communication.md) |
 | D065 | Tutorial & New Player Experience — Five-Layer Onboarding System | [D065](09g/D065-tutorial.md) |
 | D069 | Installation & First-Run Setup Wizard — Player-First, Offline-First, Cross-Platform | [D069](09g/D069-install-wizard.md) |
+| D079 | Voice-Text Bridge — STT Captions, TTS Synthesis, AI Voice Personas | [D079](09g/D079-voice-text-bridge.md) |
