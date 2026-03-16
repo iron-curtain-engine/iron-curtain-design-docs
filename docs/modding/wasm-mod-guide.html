@@ -1,0 +1,751 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Practical Guide: Creating a WASM Mod - Iron Curtain — Design Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Design docs for a Rust-native Red Alert RTS engine">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-29075ff1.svg">
+        <link rel="shortcut icon" href="../favicon-96291481.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-2459343d.css">
+        <link rel="stylesheet" href="../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../css/sidebar-logo-511465a2.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-9b234216.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-a18c07f4.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Iron Curtain — Design Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs/edit/main/src/modding/wasm-mod-guide.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="practical-guide-creating-a-wasm-mod-tier-3"><a class="header" href="#practical-guide-creating-a-wasm-mod-tier-3">Practical Guide: Creating a WASM Mod (Tier 3)</a></h1>
+<p>This is a step-by-step walkthrough for creating, testing, and publishing a Tier 3 WASM mod. It uses a <strong>custom pathfinder mod</strong> as the running example — the same approach applies to AI strategy mods, render mods, and format loaders.</p>
+<blockquote>
+<p><strong>Prerequisite knowledge:</strong> You should be comfortable with Rust (or another language that compiles to WASM). You don’t need to know IC internals — this guide covers everything from the modder’s perspective.</p>
+</blockquote>
+<blockquote>
+<p><strong>When to use Tier 3:</strong> Most mods don’t need WASM. If you’re changing unit stats, use YAML (Tier 1). If you’re scripting a campaign mission, use Lua (Tier 2). WASM is for when you need to <strong>replace an engine algorithm</strong> — a different pathfinding system, a different AI strategy, a 3D render backend, or a custom file format loader. See <code>04-MODDING.md</code> for the tier decision guide.</p>
+</blockquote>
+<hr>
+<h2 id="step-1-scaffold-the-project"><a class="header" href="#step-1-scaffold-the-project">Step 1: Scaffold the Project</a></h2>
+<pre><code class="language-bash"># Create a new WASM mod project from the pathfinder template
+ic mod init --template pathfinder my-hex-pathfinder
+
+# This generates:
+my-hex-pathfinder/
+├── mod.toml              # Mod manifest (identity, capabilities, limits)
+├── Cargo.toml            # Rust project (targets wasm32-unknown-unknown)
+├── src/
+│   └── lib.rs            # Your pathfinder implementation
+├── tests/
+│   └── basic_paths.lua   # Test scenarios (Lua-based, run via ic mod test)
+└── README.md
+</code></pre>
+<p>The template includes the IC SDK crate (<code>ic-mod-sdk</code>) as a dependency, which provides:</p>
+<ul>
+<li>The <code>#[wasm_export]</code> proc-macro (generates ABI glue — you write normal Rust signatures)</li>
+<li>Type definitions (<code>WorldPos</code>, <code>PathId</code>, <code>LocomotorType</code>, <code>TerrainType</code>, etc.)</li>
+<li>The <code>#[wasm_host_fn]</code> declarations (functions you can call into the engine)</li>
+</ul>
+<pre><code class="language-toml"># Cargo.toml (generated by template)
+[package]
+name = "my-hex-pathfinder"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]    # compiles to .wasm
+
+[dependencies]
+ic-mod-sdk = "0.1"         # IC's WASM mod SDK (types + macros)
+
+[profile.release]
+opt-level = "z"            # optimize for size (smaller .wasm)
+lto = true
+</code></pre>
+<h2 id="step-2-write-the-mod-manifest"><a class="header" href="#step-2-write-the-mod-manifest">Step 2: Write the Mod Manifest</a></h2>
+<pre><code class="language-toml"># mod.toml — your mod's identity and capability declaration
+[mod]
+id = "my-hex-pathfinder"
+title = "Hex Grid Pathfinder"
+version = "0.1.0"
+authors = ["YourName"]
+description = "A* pathfinding on hex grids for hex-based total conversions"
+license = "MIT"
+engine_version = "^0.5.0"
+wasm_module = "target/wasm32-unknown-unknown/release/my_hex_pathfinder.wasm"
+
+# What this mod does — which engine trait it implements
+[mod.type]
+kind = "pathfinder"        # tells the engine this implements the Pathfinder trait
+                           # other options: "ai_strategy", "render", "format_loader"
+
+# Capabilities this mod needs
+[capabilities]
+pathfinding = true         # required — this IS a pathfinder mod
+
+# No elevated capabilities needed (no network, no filesystem)
+# If you needed network access, you'd add:
+# network = { essential = false, domains = ["api.example.com"], reason = "..." }
+# But pathfinder mods CANNOT request network/filesystem (sim-tick exclusion rule)
+
+# Execution limits (optional — defaults are usually fine)
+[capabilities.limits]
+pathfinder_fuel_per_tick = 6_000_000  # slightly above default 5M (hex math is heavier)
+max_memory_bytes = 8_388_608         # 8 MB (we cache the hex grid)
+</code></pre>
+<h2 id="step-3-implement-the-pathfinder"><a class="header" href="#step-3-implement-the-pathfinder">Step 3: Implement the Pathfinder</a></h2>
+<p>This is where you write your actual algorithm. The IC SDK provides the trait contract as a set of functions you must export:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>// src/lib.rs
+use ic_mod_sdk::prelude::*;
+
+// ============================================================
+// REGISTRATION — called once when the engine loads your mod
+// ============================================================
+
+#[wasm_export]
+fn pathfinder_register() -&gt; &amp;'static str {
+    // Return your pathfinder's identifier
+    "hex-grid-astar"
+}
+
+// ============================================================
+// TRAIT IMPLEMENTATION — these map to Pathfinder trait methods
+// ============================================================
+
+/// Called by the engine when a unit needs a path.
+/// You receive the start position, destination, and what kind of
+/// unit is moving (infantry, vehicle, naval, air).
+/// Return a PathId handle — the engine will call get_path() later.
+#[wasm_export]
+fn pathfinder_request_path(
+    origin: WorldPos,
+    dest: WorldPos,
+    locomotor: LocomotorType,
+) -&gt; PathId {
+    // Your pathfinding algorithm goes here.
+    // You can call engine functions to query the map:
+    let terrain = ic_pathfind_get_terrain(origin);
+    let obstacles = ic_pathfind_query_obstacles(origin, 1000);
+    let (min, max) = ic_pathfind_map_bounds();
+
+    // Run A* on your hex grid...
+    let path = my_hex_astar(origin, dest, locomotor, &amp;obstacles);
+
+    // Store the result and return a handle
+    PATHS.store(path)
+}
+
+/// Called by the engine to retrieve a completed path.
+#[wasm_export]
+fn pathfinder_get_path(id: PathId) -&gt; Option&lt;Vec&lt;WorldPos&gt;&gt; {
+    PATHS.get(id)
+}
+
+/// Called by the engine to check if a position is passable.
+#[wasm_export]
+fn pathfinder_is_passable(pos: WorldPos, locomotor: LocomotorType) -&gt; bool {
+    let terrain = ic_pathfind_get_terrain(pos);
+    match locomotor {
+        LocomotorType::Infantry =&gt; terrain != TerrainType::Water,
+        LocomotorType::Vehicle =&gt; terrain == TerrainType::Clear || terrain == TerrainType::Road,
+        LocomotorType::Naval =&gt; terrain == TerrainType::Water,
+        LocomotorType::Air =&gt; true,
+        _ =&gt; false,
+    }
+}
+
+/// Called when terrain changes (building placed, bridge destroyed).
+/// Invalidate cached paths in the affected area.
+#[wasm_export]
+fn pathfinder_invalidate_area(center: WorldPos, radius: SimCoord) {
+    PATHS.invalidate_near(center, radius);
+    // Rebuild hex grid cache for this area
+    rebuild_hex_cache(center, radius);
+}
+
+// ============================================================
+// YOUR ALGORITHM — private to your mod
+// ============================================================
+
+fn my_hex_astar(
+    origin: WorldPos,
+    dest: WorldPos,
+    locomotor: LocomotorType,
+    obstacles: &amp;[(WorldPos, SimCoord)],
+) -&gt; Vec&lt;WorldPos&gt; {
+    // ... your hex grid A* implementation ...
+    // Use fixed-point math (ic-mod-sdk re-exports fixed-game-math)
+    // Never use f32/f64 in pathfinding — determinism required
+    todo!()
+}
+
+// Global path storage (WASM linear memory)
+static PATHS: PathStore = PathStore::new();
+<span class="boring">}</span></code></pre>
+<p><strong>Key points for the modder:</strong></p>
+<ol>
+<li>
+<p><strong>You write normal Rust.</strong> The <code>#[wasm_export]</code> macro generates the primitive ABI wrapper (pointer serialization, u64 splitting, etc.). You never deal with raw pointers or MessagePack yourself.</p>
+</li>
+<li>
+<p><strong>You call engine functions freely.</strong> <code>ic_pathfind_get_terrain()</code>, <code>ic_pathfind_query_obstacles()</code>, etc. are available because your manifest declares <code>pathfinding = true</code>. If you tried to call <code>ic_ai_get_own_units()</code> (an AI function), it would fail at load time — your mod doesn’t have the <code>ai_strategy</code> capability.</p>
+</li>
+<li>
+<p><strong>Use fixed-point math.</strong> The <code>ic-mod-sdk</code> crate re-exports <code>fixed-game-math</code> (D076). Never use <code>f32</code>/<code>f64</code> in sim-affecting code — the engine enforces NaN canonicalization, but integer math is safer and faster.</p>
+</li>
+<li>
+<p><strong>Your algorithm is your own.</strong> Everything inside <code>my_hex_astar()</code> is your private implementation. The engine doesn’t care how you pathfind — only that you implement the four exported functions.</p>
+</li>
+</ol>
+<h2 id="step-4-build-the-wasm-binary"><a class="header" href="#step-4-build-the-wasm-binary">Step 4: Build the WASM Binary</a></h2>
+<pre><code class="language-bash"># Build the WASM binary (release mode)
+ic mod build
+
+# This runs:
+#   cargo build --target wasm32-unknown-unknown --release
+#   wasm-opt -Oz target/.../my_hex_pathfinder.wasm  (size optimization)
+#   ic mod validate  (checks exports match mod.toml type, verifies capabilities)
+
+# Output:
+#   target/wasm32-unknown-unknown/release/my_hex_pathfinder.wasm  (~50-200 KB)
+</code></pre>
+<p><code>ic mod build</code> does three things:</p>
+<ol>
+<li>Compiles your Rust code to WASM via <code>cargo build --target wasm32-unknown-unknown</code></li>
+<li>Runs <code>wasm-opt</code> to shrink the binary (optional but recommended)</li>
+<li>Validates the binary: checks that the expected exports exist (<code>pathfinder_register</code>, <code>pathfinder_request_path</code>, etc.) and that your <code>mod.toml</code> capabilities match what the binary actually imports</li>
+</ol>
+<h2 id="step-5-test-locally"><a class="header" href="#step-5-test-locally">Step 5: Test Locally</a></h2>
+<pre><code class="language-bash"># Run the mod test suite (headless — no game window)
+ic mod test
+
+# This:
+# 1. Loads your WASM binary in a sandboxed wasmtime instance
+# 2. Runs each test scenario in tests/*.lua
+# 3. Verifies path results against expected outputs
+# 4. Checks fuel consumption (did you stay within budget?)
+# 5. Reports pass/fail
+
+# Run determinism tests (critical for multiplayer — same inputs = same output)
+ic mod test --determinism
+
+# This runs the same tests on two platforms (x86_64 + aarch64 via cross-compilation)
+# and compares results tick-by-tick. Any divergence = fail.
+
+# Run conformance tests (required for pathfinder certification)
+ic mod test --conformance pathfinder
+
+# This runs the engine's built-in pathfinder conformance suite:
+# - Path validity (does the path actually connect origin to destination?)
+# - Determinism (same request = same result, always)
+# - Invalidation (does invalidate_area() actually clear stale paths?)
+# - Snapshot/restore (does the pathfinder survive save/load?)
+</code></pre>
+<p><strong>Test file example:</strong></p>
+<pre><code class="language-lua">-- tests/basic_paths.lua
+Test.describe("basic hex pathfinding", function()
+    Test.it("finds a straight-line path on open terrain", function()
+        local map = Test.load_map("test-maps/open-hex-16x16.yaml")
+        local path_id = Pathfinder.request_path(
+            { x = 0, y = 0 },      -- origin
+            { x = 10, y = 10 },    -- destination
+            "infantry"
+        )
+        local path = Pathfinder.get_path(path_id)
+        Test.assert_not_nil(path, "path should exist")
+        Test.assert_eq(path[1], { x = 0, y = 0 }, "starts at origin")
+        Test.assert_eq(path[#path], { x = 10, y = 10 }, "ends at destination")
+    end)
+
+    Test.it("returns nil for unreachable destination", function()
+        local map = Test.load_map("test-maps/island-hex.yaml")
+        local path_id = Pathfinder.request_path(
+            { x = 0, y = 0 },
+            { x = 15, y = 15 },    -- on a disconnected island
+            "vehicle"
+        )
+        local path = Pathfinder.get_path(path_id)
+        Test.assert_nil(path, "path should not exist (unreachable)")
+    end)
+end)
+</code></pre>
+<h2 id="step-6-test-in-game"><a class="header" href="#step-6-test-in-game">Step 6: Test In-Game</a></h2>
+<pre><code class="language-bash"># Launch the game with your mod loaded
+ic mod run
+
+# This starts IC with your mod active. You can:
+# - Play a skirmish and see your pathfinder in action
+# - Use /debug pathfinding to visualize paths
+# - Check the console for fuel usage warnings
+</code></pre>
+<h2 id="step-7-package-and-publish"><a class="header" href="#step-7-package-and-publish">Step 7: Package and Publish</a></h2>
+<pre><code class="language-bash"># Package for Workshop distribution
+ic mod package
+
+# This creates:
+#   dist/my-hex-pathfinder-0.1.0.icmod
+# Contents:
+#   mod.toml
+#   my_hex_pathfinder.wasm  (the compiled binary)
+#   tests/  (included for reproducibility)
+#   README.md
+
+# Publish to Workshop
+ic mod publish
+
+# This:
+# 1. Reads mod.toml capabilities
+# 2. Validates: every elevated capability has a reason field
+# 3. Computes content digest (SHA-256 of the package)
+# 4. Signs with your Ed25519 author key
+# 5. Uploads to Workshop
+# 6. Workshop validates WASM integrity + capability declaration
+# 7. If capabilities changed since last version, flags for moderator review
+</code></pre>
+<hr>
+<h2 id="what-happens-on-the-engine-side"><a class="header" href="#what-happens-on-the-engine-side">What Happens on the Engine Side</a></h2>
+<p>When a player installs and uses your mod, here’s what the engine does:</p>
+<h3 id="at-install-time"><a class="header" href="#at-install-time">At Install Time</a></h3>
+<pre><code>1. Player clicks [Install] in Workshop browser
+2. Package downloaded, signature verified (author + registry)
+3. If mod declares elevated capabilities (network/filesystem):
+   → Capability review screen shown (§ Install-Time Capability Review)
+   → Player grants/denies optional capabilities
+4. WASM binary hash recorded for lobby fingerprinting
+5. Mod available in mod profile (D062)
+</code></pre>
+<h3 id="at-lobby--game-start"><a class="header" href="#at-lobby--game-start">At Lobby / Game Start</a></h3>
+<pre><code>1. Host configures lobby — selects mod profile including your pathfinder
+2. All players must have the same pathfinder mod (sim-affecting → gameplay fingerprint)
+3. Lobby verifies: matching mod hash + matching execution limits
+4. Loading screen:
+   a. Engine instantiates wasmtime runtime
+   b. Loads your .wasm binary into a sandboxed wasmtime instance
+   c. Validates exports: checks pathfinder_register, pathfinder_request_path,
+      pathfinder_get_path, pathfinder_is_passable, pathfinder_invalidate_area exist
+   d. Calls pathfinder_register() → your mod returns "hex-grid-astar"
+   e. Engine creates WasmPathfinderAdapter — a native Rust struct that:
+      - Implements the Pathfinder trait
+      - Dispatches trait method calls to your WASM exports
+      - Handles MessagePack serialization across the ABI boundary
+      - Enforces fuel metering per call
+   f. Registers the adapter as the active Pathfinder via GameModule
+   g. Sim starts — your pathfinder is now live
+</code></pre>
+<h3 id="during-gameplay-every-tick"><a class="header" href="#during-gameplay-every-tick">During Gameplay (Every Tick)</a></h3>
+<pre><code>1. A unit needs to move → sim calls pathfinder.request_path(origin, dest, locomotor)
+2. WasmPathfinderAdapter:
+   a. Serializes arguments to MessagePack
+   b. Sets fuel budget (pathfinder_fuel_per_tick from limits)
+   c. Calls your WASM export: pathfinder_request_path(origin, dest, locomotor)
+   d. Your code runs inside wasmtime sandbox:
+      - Can call ic_pathfind_get_terrain(), ic_pathfind_query_obstacles(), etc.
+      - Each host call counted against max_host_calls_per_tick
+      - Each WASM instruction counted against fuel budget
+   e. Your code returns a PathId
+   f. Adapter deserializes the return value
+   g. Returns PathId to the sim
+3. If fuel exhausted mid-execution:
+   → Your function is terminated early
+   → Adapter returns PathResult::Deferred (path not ready this tick)
+   → Sim continues — unit idles for one tick, retries next tick
+   → This is deterministic: all clients hit the same fuel limit at the same point
+</code></pre>
+<h3 id="the-adapter-what-the-engine-generates"><a class="header" href="#the-adapter-what-the-engine-generates">The Adapter (What the Engine Generates)</a></h3>
+<p>This is the bridge between the native trait and your WASM exports. You never write this — the engine generates it:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Auto-generated wrapper. Implements native Pathfinder trait
+/// by dispatching to WASM exports.
+struct WasmPathfinderAdapter {
+    instance: wasmtime::Instance,
+    store: wasmtime::Store&lt;ModState&gt;,
+    // Cached function references (resolved once at load time)
+    fn_request_path: wasmtime::TypedFunc&lt;(i32, i32, i32, i32, i32, i32, i32), i64&gt;,
+    fn_get_path: wasmtime::TypedFunc&lt;i64, i64&gt;,
+    fn_is_passable: wasmtime::TypedFunc&lt;(i32, i32, i32, i32), i32&gt;,
+    fn_invalidate_area: wasmtime::TypedFunc&lt;(i32, i32, i32, i32), ()&gt;,
+    limits: WasmExecutionLimits,
+}
+
+impl Pathfinder for WasmPathfinderAdapter {
+    fn request_path(
+        &amp;mut self,
+        origin: WorldPos,
+        dest: WorldPos,
+        locomotor: LocomotorType,
+    ) -&gt; PathId {
+        // 1. Set fuel budget
+        self.store.set_fuel(self.limits.pathfinder_fuel_per_tick);
+
+        // 2. Serialize arguments to WASM primitives
+        let (ox, oy, oz) = origin.to_raw();
+        let (dx, dy, dz) = dest.to_raw();
+        let loc = locomotor as i32;
+
+        // 3. Call WASM export
+        match self.fn_request_path.call(
+            &amp;mut self.store,
+            (ox, oy, oz, dx, dy, dz, loc),
+        ) {
+            Ok(raw_id) =&gt; PathId::from_raw(raw_id),
+            Err(wasmtime::Trap::OutOfFuel) =&gt; PathId::DEFERRED,
+            Err(e) =&gt; {
+                log::warn!("WASM pathfinder trapped: {e}");
+                PathId::FAILED
+            }
+        }
+    }
+
+    fn get_path(&amp;self, id: PathId) -&gt; Option&lt;Vec&lt;WorldPos&gt;&gt; {
+        // Similar: call fn_get_path, deserialize Vec&lt;WorldPos&gt; from
+        // MessagePack in guest linear memory
+        // ...
+    }
+
+    fn is_passable(&amp;self, pos: WorldPos, locomotor: LocomotorType) -&gt; bool {
+        // ...
+    }
+
+    fn invalidate_area(&amp;mut self, center: WorldPos, radius: SimCoord) {
+        // ...
+    }
+}
+<span class="boring">}</span></code></pre>
+<h3 id="replay-and-saveload"><a class="header" href="#replay-and-saveload">Replay and Save/Load</a></h3>
+<pre><code>1. Replay records which WASM mods were active (mod hash in replay metadata)
+2. Replay playback requires the same WASM binary (hash must match)
+3. Save games snapshot the WASM module's linear memory (wasmtime supports this)
+4. Load restores the WASM memory → your mod's internal state is preserved
+</code></pre>
+<hr>
+<h2 id="quick-reference-what-you-export-vs-what-you-call"><a class="header" href="#quick-reference-what-you-export-vs-what-you-call">Quick Reference: What You Export vs. What You Call</a></h2>
+<h3 id="pathfinder-mod"><a class="header" href="#pathfinder-mod">Pathfinder Mod</a></h3>
+<p><strong>You export (engine calls these):</strong></p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pathfinder_register() -&gt; &amp;str
+pathfinder_request_path(origin, dest, locomotor) -&gt; PathId
+pathfinder_get_path(id) -&gt; Option&lt;Vec&lt;WorldPos&gt;&gt;
+pathfinder_is_passable(pos, locomotor) -&gt; bool
+pathfinder_invalidate_area(center, radius)
+<span class="boring">}</span></code></pre>
+<p><strong>You call (engine provides these):</strong></p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ic_pathfind_get_terrain(pos) -&gt; TerrainType
+ic_pathfind_get_height(pos) -&gt; SimCoord
+ic_pathfind_query_obstacles(center, radius) -&gt; Vec&lt;(WorldPos, SimCoord)&gt;
+ic_pathfind_map_bounds() -&gt; (WorldPos, WorldPos)
+ic_pathfind_scratch_alloc(bytes) -&gt; ptr     // scratch memory from engine
+<span class="boring">}</span></code></pre>
+<h3 id="ai-strategy-mod"><a class="header" href="#ai-strategy-mod">AI Strategy Mod</a></h3>
+<p><strong>You export:</strong></p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ai_decide(player_id, tick) -&gt; Vec&lt;PlayerOrder&gt;
+ai_on_unit_created(handle, type)            // optional event callbacks
+ai_on_unit_destroyed(handle, attacker)
+ai_on_enemy_spotted(handle, type)
+ai_get_parameters() -&gt; Vec&lt;ParameterSpec&gt;   // lobby-visible settings
+ai_set_parameter(name, value)
+ai_tick_budget_hint() -&gt; u64
+<span class="boring">}</span></code></pre>
+<p><strong>You call:</strong></p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ic_ai_get_own_units() -&gt; Vec&lt;AiUnitInfo&gt;
+ic_ai_get_visible_enemies() -&gt; Vec&lt;AiUnitInfo&gt;
+ic_ai_get_resources() -&gt; AiResourceInfo
+ic_ai_get_production_queues() -&gt; Vec&lt;AiProductionQueue&gt;
+ic_ai_can_build(unit_type) -&gt; bool
+ic_ai_issue_order(order) -&gt; bool
+<span class="boring">}</span></code></pre>
+<h3 id="render-mod"><a class="header" href="#render-mod">Render Mod</a></h3>
+<p><strong>You export:</strong></p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>renderable_init()
+renderable_render(entity_type, state)
+screen_to_world(screen_x, screen_y) -&gt; WorldPos
+<span class="boring">}</span></code></pre>
+<p><strong>You call:</strong></p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>ic_render_draw_sprite(sprite_id, frame, pos, facing, palette)
+ic_render_draw_mesh(mesh, pos, rotation, scale)
+ic_render_draw_line(start, end, color, width)
+ic_render_load_asset(path) -&gt; handle
+ic_query_visible_units() -&gt; Vec&lt;RenderUnitInfo&gt;     // if read_visible_state enabled
+ic_query_visible_buildings() -&gt; Vec&lt;RenderBuildingInfo&gt;
+<span class="boring">}</span></code></pre>
+<hr>
+<h2 id="common-pitfalls"><a class="header" href="#common-pitfalls">Common Pitfalls</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Pitfall</th><th>Symptom</th><th>Fix</th></tr>
+</thead>
+<tbody>
+<tr><td>Using <code>f32</code>/<code>f64</code> in pathfinding</td><td><code>ic mod test --determinism</code> fails (different results on x86 vs ARM)</td><td>Use <code>FixedPoint</code> from <code>fixed-game-math</code>. The SDK re-exports it</td></tr>
+<tr><td>Exceeding fuel budget</td><td>Path requests return <code>DEFERRED</code>, units stutter</td><td>Optimize your algorithm, or request higher <code>pathfinder_fuel_per_tick</code> in mod.toml</td></tr>
+<tr><td>Calling functions you don’t have capabilities for</td><td>Mod fails to load (“missing capability: ai_strategy”)</td><td>Add the capability to mod.toml. Remember: pathfinder mods can’t request network/filesystem</td></tr>
+<tr><td>Not handling <code>invalidate_area()</code></td><td>Stale paths after terrain changes — units walk through buildings</td><td>Clear your path cache in the invalidation radius</td></tr>
+<tr><td>Allocating too much WASM memory</td><td>Mod terminated (“exceeded max_memory_bytes”)</td><td>Use <code>ic_pathfind_scratch_alloc()</code> for temp data, or request higher memory limit</td></tr>
+<tr><td>Publishing without conformance tests</td><td>Workshop rejects submission for pathfinder certification</td><td>Run <code>ic mod test --conformance pathfinder</code> and fix all failures</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="end-to-end-example-from-zero-to-published-mod"><a class="header" href="#end-to-end-example-from-zero-to-published-mod">End-to-End Example: From Zero to Published Mod</a></h2>
+<pre><code class="language-bash"># 1. Create project
+ic mod init --template pathfinder hex-pathfinder
+cd hex-pathfinder
+
+# 2. Edit src/lib.rs — implement your hex A* algorithm
+# 3. Edit mod.toml — set your mod identity and limits
+
+# 4. Build
+ic mod build
+
+# 5. Test
+ic mod test                          # unit tests
+ic mod test --determinism            # cross-platform determinism
+ic mod test --conformance pathfinder # engine conformance suite
+
+# 6. Play-test
+ic mod run                           # launch game with mod
+
+# 7. Package
+ic mod package                       # creates .icmod file
+
+# 8. Publish
+ic mod publish                       # upload to Workshop
+
+# Done. Players can now install your pathfinder from the Workshop
+# and select it in their mod profile (D062).
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../modding/wasm-showcases.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../modding/tera-templating.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../modding/wasm-showcases.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../modding/tera-templating.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-c2a407aa.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

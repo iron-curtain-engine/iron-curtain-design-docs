@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-50eef387.js";
+            window.path_to_searchindex_js = "../searchindex-9b234216.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-f491df3e.js"></script>
+        <script src="../toc-a18c07f4.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -385,6 +385,61 @@ balance_preset = "classic"           # default balance preset for this mod
 summary = "Alternate-timeline total conversion with new factions and units"
 gameplay_tags = ["total_conversion", "alternate_history", "new_factions"]
 </code></pre>
+<h4 id="tier-3-provider-extension-fields"><a class="header" href="#tier-3-provider-extension-fields">Tier 3 Provider Extension Fields</a></h4>
+<p>WASM mods that implement engine trait providers (pathfinder, AI strategy, render backend, format loader) declare additional fields in <code>mod.toml</code>. These are added alongside the base <code>[mod]</code> fields above. Each example below is a <strong>self-contained fragment</strong> showing only the additional fields for that provider type — not a full <code>mod.toml</code>.</p>
+<p><strong>Pathfinder provider</strong> — implements the <code>Pathfinder</code> trait:</p>
+<pre><code class="language-toml"># Fragment: add these fields to [mod] for a pathfinder provider mod
+type = "pathfinder"
+pathfinder_id = "layered-grid-generals"   # unique ID other mods use to select this pathfinder
+display_name = "Generals (Layered Grid)"  # shown in lobby pathfinder picker
+wasm_module = "generals_pathfinder.wasm"  # entrypoint .wasm binary (relative to mod root)
+</code></pre>
+<p><strong>AI strategy provider</strong> — implements the <code>AiStrategy</code> trait:</p>
+<pre><code class="language-toml"># Fragment: add these fields to [mod] for an AI strategy provider mod
+type = "ai_strategy"
+ai_strategy_id = "goap-planner"
+display_name = "GOAP Planner"
+wasm_module = "goap_planner.wasm"
+</code></pre>
+<p><strong>Render backend provider</strong> — implements the <code>Renderable</code>/<code>ScreenToWorld</code> traits:</p>
+<pre><code class="language-toml"># Fragment: add these fields to [mod] for a render provider mod
+type = "render"
+wasm_module = "my_render_mod.wasm"
+</code></pre>
+<p><strong>Format loader provider</strong> — implements custom asset format decoding:</p>
+<pre><code class="language-toml"># Fragment: add these fields to [mod] for a format loader provider mod
+type = "format_loader"
+wasm_module = "custom_format.wasm"
+</code></pre>
+<p><strong><code>wasm_module</code> vs <code>[assets].wasm_modules</code>:</strong> For provider mods, <code>wasm_module</code> is the canonical entrypoint declaration — the engine loads this specific binary as the trait implementation. The <code>[assets].wasm_modules</code> glob in the base schema (e.g., <code>wasm/*.wasm</code>) is for general-purpose WASM assets loaded by the mod’s Lua scripts or other mechanisms. For provider mods, <code>wasm_module</code> takes precedence and the engine does not require the entrypoint to also appear in <code>assets.wasm_modules</code>. If a provider mod ships additional WASM helpers alongside the entrypoint, those should be listed in <code>[assets].wasm_modules</code>; the entrypoint itself should not.</p>
+<p>Mods that <em>consume</em> a Tier 3 provider (rather than providing one) reference it by ID:</p>
+<pre><code class="language-toml"># A total conversion selecting its pathfinder and AI:
+[mod]
+pathfinder = "layered-grid-generals"   # use this pathfinder (must be installed)
+default_ai = "goap-planner"            # default AI strategy for skirmish
+ai_strategies = ["goap-planner", "personality-driven"]  # all AI strategies this mod ships
+</code></pre>
+<p><strong>Field reference:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Field</th><th>Section</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>type</code></td><td><code>[mod]</code></td><td>string</td><td>Provider kind: <code>"pathfinder"</code>, <code>"ai_strategy"</code>, <code>"render"</code>, <code>"format_loader"</code></td></tr>
+<tr><td><code>wasm_module</code></td><td><code>[mod]</code></td><td>string</td><td>Relative path to the compiled <code>.wasm</code> binary</td></tr>
+<tr><td><code>pathfinder_id</code></td><td><code>[mod]</code></td><td>string</td><td>Unique ID for a pathfinder provider (slug, e.g. <code>"layered-grid-generals"</code>)</td></tr>
+<tr><td><code>ai_strategy_id</code></td><td><code>[mod]</code></td><td>string</td><td>Unique ID for an AI strategy provider</td></tr>
+<tr><td><code>display_name</code></td><td><code>[mod]</code></td><td>string</td><td>Human-readable name shown in lobby pickers</td></tr>
+<tr><td><code>pathfinder</code></td><td><code>[mod]</code></td><td>string</td><td>ID of the pathfinder this mod uses (consumer field)</td></tr>
+<tr><td><code>default_ai</code></td><td><code>[mod]</code></td><td>string</td><td>Default AI strategy ID for skirmish (consumer field)</td></tr>
+<tr><td><code>ai_strategies</code></td><td><code>[mod]</code></td><td>list of strings</td><td>All AI strategy IDs this mod makes available (consumer field)</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<p><strong>Cross-reference:</strong> The full WASM capability and execution limit schema (the <code>[capabilities]</code> and <code>[capabilities.limits]</code> sections) is documented in <code>modding/wasm-modules.md</code> § Mod Capabilities System.</p>
+</blockquote>
 <h3 id="standardized-mod-directory-layout"><a class="header" href="#standardized-mod-directory-layout">Standardized Mod Directory Layout</a></h3>
 <pre><code>my-mod/
 ├── mod.toml                  # manifest (required)

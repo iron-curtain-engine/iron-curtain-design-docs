@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-50eef387.js";
+            window.path_to_searchindex_js = "../searchindex-9b234216.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-f491df3e.js"></script>
+        <script src="../toc-a18c07f4.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -269,7 +269,7 @@ impl Pathfinder for LayeredGridPathfinder {
 <p><strong>Mod manifest and config:</strong></p>
 <pre><code class="language-toml"># generals_pathfinder/mod.toml
 [mod]
-name = "Generals Pathfinder"
+title = "Generals Pathfinder"
 type = "pathfinder"
 pathfinder_id = "layered-grid-generals"
 display_name = "Generals (Layered Grid)"
@@ -286,7 +286,7 @@ surface_types = ["ground", "water", "cliff", "air", "rubble"]
 <p><strong>How other mods use it:</strong></p>
 <pre><code class="language-toml"># desert_strike_mod/mod.toml — a total conversion using the Generals pathfinder
 [mod]
-name = "Desert Strike"
+title = "Desert Strike"
 pathfinder = "layered-grid-generals"
 
 [dependencies]
@@ -353,7 +353,7 @@ impl AiStrategy for GoapPlannerAi {
 <p><strong>Mod manifest:</strong></p>
 <pre><code class="language-toml"># goap_ai/mod.toml
 [mod]
-name = "GOAP Planner AI"
+title = "GOAP Planner AI"
 type = "ai_strategy"
 ai_strategy_id = "goap-planner"
 display_name = "GOAP Planner"
@@ -373,7 +373,7 @@ replan_interval = 30
 <p><strong>How other mods use it:</strong></p>
 <pre><code class="language-toml"># zero_hour_mod/mod.toml — a total conversion using the GOAP AI
 [mod]
-name = "Zero Hour Remake"
+title = "Zero Hour Remake"
 default_ai = "goap-planner"
 
 [dependencies]
@@ -390,7 +390,7 @@ default_ai = "goap-planner"
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../modding/tera-templating.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../modding/wasm-mod-guide.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -404,7 +404,7 @@ default_ai = "goap-planner"
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../modding/tera-templating.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../modding/wasm-mod-guide.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

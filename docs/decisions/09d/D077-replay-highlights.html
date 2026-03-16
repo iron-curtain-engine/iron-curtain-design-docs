@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-50eef387.js";
+            window.path_to_searchindex_js = "../../searchindex-9b234216.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-f491df3e.js"></script>
+        <script src="../../toc-a18c07f4.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -308,10 +308,11 @@
 <tr><td><code>shellmap_ai</code></td><td>Live AI battle (existing)</td><td>Remastered/Modern themes</td></tr>
 <tr><td><code>personal_highlights</code></td><td>Player’s top moments cycling (D077)</td><td>None (opt-in)</td></tr>
 <tr><td><code>community_highlights</code></td><td>Workshop highlight packs from tournaments/streamers</td><td>None (opt-in)</td></tr>
+<tr><td><code>campaign_scene</code></td><td>Scene reflecting player’s current campaign progress (shellmap scenario, video loop, or static image — defined per campaign in <code>modding/campaigns.md</code> § Campaign Menu Scenes)</td><td>None (opt-in; campaign default if authored)</td></tr>
 </tbody>
 </table>
 </div>
-<p><strong>Fallback:</strong> If player has fewer than 3 valid highlights, falls back to shellmap AI.</p>
+<p><strong>Fallback chain:</strong> <code>campaign_scene</code> → <code>personal_highlights</code> → <code>shellmap_ai</code> → <code>static_image</code>. Each option falls back to the next if unavailable (no active campaign, fewer than 3 highlights, etc.).</p>
 <p><strong>Performance:</strong> Replay re-simulation from nearest keyframe (worst case ~100ms). Runs at reduced priority behind menu UI.</p>
 <h4 id="6-highlight-camera-ai"><a class="header" href="#6-highlight-camera-ai">6. Highlight Camera AI</a></h4>
 <p>Extends the existing Directed Camera mode with cinematic behaviors tuned for short clips:</p>
@@ -453,7 +454,7 @@ highlight_scoring:
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../../decisions/09e-community.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../../decisions/09d/D078-time-machine.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -467,7 +468,7 @@ highlight_scoring:
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../../decisions/09e-community.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../../decisions/09d/D078-time-machine.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

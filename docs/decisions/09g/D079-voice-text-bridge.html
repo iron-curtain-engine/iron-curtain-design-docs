@@ -1,0 +1,926 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>D079 — Voice-Text Bridge - Iron Curtain — Design Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Design docs for a Rust-native Red Alert RTS engine">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon-29075ff1.svg">
+        <link rel="shortcut icon" href="../../favicon-96291481.png">
+        <link rel="stylesheet" href="../../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../../css/general-2459343d.css">
+        <link rel="stylesheet" href="../../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../css/sidebar-logo-511465a2.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../../searchindex-9b234216.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc-a18c07f4.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Iron Curtain — Design Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs/edit/main/src/decisions/09g/D079-voice-text-bridge.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="d079-voice-text-bridge--speech-to-text-captions-text-to-voice-synthesis-and-ai-voice-personas"><a class="header" href="#d079-voice-text-bridge--speech-to-text-captions-text-to-voice-synthesis-and-ai-voice-personas">D079: Voice-Text Bridge — Speech-to-Text Captions, Text-to-Voice Synthesis, and AI Voice Personas</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th></th><th></th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Status</strong></td><td>Draft</td></tr>
+<tr><td><strong>Phase</strong></td><td>Phase 5 (basic STT captions + basic TTS), Phase 6a (AI voice personas, pluggable backends), Phase 7 (cross-language translation)</td></tr>
+<tr><td><strong>Depends on</strong></td><td>D059 (communication system — VoIP, text chat, muting), D034 (SQLite for mute preferences), D052 (community servers — relay forwarding)</td></tr>
+<tr><td><strong>Driver</strong></td><td>Xbox shipped party chat STT/TTS in 2021 (Xbox Accessibility Guideline 119). Google Meet shipped AI voice mimicry in 2025. VRChat’s mute community (~30% of users choose not to speak) proved the demand for text-based voice alternatives. No RTS has integrated STT/TTS as a first-class communication mode. IC’s existing Opus VoIP pipeline (D059) and pluggable LLM/AI backend pattern (<code>player-flow/llm-setup-guide.md</code>) make this architecturally natural.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="philosophy--scope-note"><a class="header" href="#philosophy--scope-note">Philosophy &amp; Scope Note</a></h3>
+<blockquote>
+<p><strong>This decision is Draft — experimental, requires community validation before Accepted.</strong></p>
+<p><strong>What is proven:</strong> Platform-level STT/TTS is an accessibility standard (Xbox Guideline 119, Sea of Thieves, Forza Horizon 5). Auto-generated captions for voice chat are a top community request across Discord, VRChat, and competitive gaming communities.</p>
+<p><strong>What is experimental:</strong> Per-player AI voice personas and the “shy player pipeline” (type → hear a unique AI voice) are novel as integrated game features. VRChat community mods prove demand exists; Google Meet proves the technology works. But no game ships this as a first-class feature — community validation is needed.</p>
+<p><strong>Philosophy alignment:</strong> This is accessibility-first design (Philosophy Principle 10: “Build with the community”). STT captions and basic TTS directly address the needs of deaf/HoH players and non-verbal players. AI voice personas are experimental flavor on top.</p>
+</blockquote>
+<h3 id="decision-capsule-llmrag-summary"><a class="header" href="#decision-capsule-llmrag-summary">Decision Capsule (LLM/RAG Summary)</a></h3>
+<ul>
+<li><strong>Status:</strong> Draft</li>
+<li><strong>Phase:</strong> Phase 5 (STT captions + basic TTS) → Phase 6a (AI voice personas, pluggable backends) → Phase 7 (cross-language translation)</li>
+<li><strong>Canonical for:</strong> Voice-to-text transcription, text-to-voice synthesis, AI voice personas, pluggable STT/TTS backends, voice accessibility in multiplayer</li>
+<li><strong>Scope:</strong> <code>ic-audio</code> (STT/TTS processing), <code>ic-ui</code> (caption overlay, voice persona settings), <code>ic-net</code> (<code>SynthChatMessage</code> order routing, <code>is_synthetic</code> VoicePacket flag), <code>ic-game</code> (backend orchestration)</li>
+<li><strong>Decision:</strong> IC provides a bidirectional voice-text bridge with two independent formats: (1) auto-generated captions that transcribe incoming voice into text overlays, and (2) a text-to-voice pipeline where typed chat is synthesized into per-player AI voices. Both are opt-in per player, independently controllable, and pluggable (local or cloud backends). Muting operates on three independent channels: voice, synthesized voice, and text.</li>
+<li><strong>Why:</strong>
+<ul>
+<li>Accessibility: deaf/HoH players need captions; non-verbal players need a voice alternative (Xbox Guideline 119)</li>
+<li>Social comfort: shy players, players in noisy environments, or players uncomfortable with their voice can participate in voice-culture lobbies without speaking</li>
+<li>Cross-language play: STT + translation + TTS enables communication across language barriers (Phase 7)</li>
+<li>IC’s VoIP pipeline (D059 Opus encoding, relay forwarding) and LLM provider pattern already provide the infrastructure</li>
+</ul>
+</li>
+<li><strong>Non-goals:</strong> Real-time voice moderation via STT (explicitly rejected in D059 § Alternatives Rejected — compute-intensive, privacy-invasive, unreliable across accents). Voice cloning of other players without consent. Replacing voice chat — this augments it.</li>
+<li><strong>Out of current scope:</strong> Emotion detection in voice. Voice style transfer (making your voice sound like someone else’s in real-time). Real-time voice translation during ranked matches (latency concern).</li>
+<li><strong>Invariants preserved:</strong> Deterministic sim unaffected (STT is listener-local cosmetic processing; TTS synthesis is client-side and never affects sim state). <code>SynthChatMessage</code> is a <code>PlayerOrder</code> variant in the order stream (same lane as <code>ChatMessage</code> per D059), not a separate message lane. VoIP relay architecture unchanged for Mode B (default); Mode A adds <code>is_synthetic</code> bit to <code>VoicePacket</code>. Muting model (D059) extended, not replaced.</li>
+<li><strong>Defaults / UX behavior:</strong> Both STT and TTS are <strong>off by default</strong>. Players opt in via Settings → Communication → Voice-Text Bridge. Default synthesis mode is <strong>receiver-side (Mode B)</strong> — no player hears an AI voice unless they personally enable TTS playback on their own client. Sender-side synthesis (Mode A) requires explicit opt-in from both sender AND receiver (<code>accept_synthetic_voice</code> flag). Local models are downloadable model packs (~250MB), not bundled with the base install.</li>
+<li><strong>Security / Trust impact:</strong> STT runs on the listener’s client (the speaker’s voice is not transcribed server-side — privacy preserved). Default TTS mode (receiver-side) keeps text on the wire — synthesis is local to the listener. Sender-side TTS (Mode A) adds an <code>is_synthetic</code> bit to <code>VoicePacket</code> for independent mute routing. <code>SynthChatMessage</code> is a new <code>PlayerOrder</code> variant (protocol change, replay-visible).</li>
+<li><strong>Performance impact:</strong> Local STT (Whisper turbo): ~50-200ms per utterance, ~200MB downloadable model pack. Local TTS (Piper/ONNX): &lt;100ms, ~50MB downloadable model pack. Cloud backends: ~75-300ms round-trip. Native platforms: processing on background threads — no frame budget impact. WASM: local models unavailable (no <code>std::thread</code>), cloud-only via async fetch on single-threaded executor.</li>
+<li><strong>Public interfaces / types / commands:</strong> <code>VoiceTextBridge</code>, <code>SttBackend</code>, <code>TtsBackend</code>, <code>VoicePersonaId</code> (namespaced <code>ResourceId</code>), <code>VoiceBridgeCapability</code> (session advertisement), <code>SynthChatMessage</code> (order variant), <code>PlayerMuteState</code> (extended), <code>CaptionOverlay</code>, <code>/captions</code>, <code>/tts</code>, <code>/voice-persona</code>, <code>/player &lt;name&gt; mute</code></li>
+<li><strong>Affected docs:</strong> <code>decisions/09g/D059-communication.md</code> (muting model extension, <code>VoicePacket</code> <code>is_synthetic</code> flag, <code>PlayerOrder::SynthChatMessage</code> variant — protocol version bump), <code>player-flow/multiplayer.md</code> (<code>VoiceBridgeCapability</code> lobby exchange during ready-up), <code>player-flow/settings.md</code> (voice-text bridge settings panel), <code>player-flow/llm-setup-guide.md</code> (backend configuration pattern), <code>formats/save-replay-formats.md</code> (replay protocol version for <code>SynthChatMessage</code>)</li>
+<li><strong>Keywords:</strong> speech to text, text to speech, STT, TTS, captions, voice accessibility, AI voice, voice persona, voice synthesis, shy player, mute player, cross-language, pluggable backend, Whisper, ElevenLabs, Piper</li>
+</ul>
+<hr>
+<h3 id="problem"><a class="header" href="#problem">Problem</a></h3>
+<p>IC’s communication system (D059) provides text chat channels and relay-forwarded VoIP. Players can mute voice, mute text, or mute both per player. But there is no bridge between the two modalities:</p>
+<ul>
+<li>A deaf player cannot read what a speaking player says (no captions)</li>
+<li>A non-verbal player cannot be “heard” in voice-culture lobbies (no text-to-voice)</li>
+<li>Players who are shy about their voice, in noisy environments, or speaking a different language have no alternative to raw voice chat</li>
+<li>Cross-language teams cannot communicate via voice at all</li>
+</ul>
+<p>These gaps are solved by other platforms:</p>
+<ul>
+<li>Xbox Party Chat (2021) ships STT + TTS as platform-level features</li>
+<li>Google Meet (2025) ships AI voice mimicry for translation</li>
+<li>VRChat’s community built TTS Voice Wizard because ~30% of users choose to be mute</li>
+</ul>
+<h3 id="prior-art"><a class="header" href="#prior-art">Prior Art</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Platform</th><th>STT (Voice→Text)</th><th>TTS (Text→Voice)</th><th>Personalized Voice</th><th>Cross-Language</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Xbox Party Chat</strong> (2021)</td><td>Yes — real-time overlay</td><td>Yes — typed text read to party</td><td>No — generic system voices</td><td>English (US) only</td><td>Accessibility gold standard. Uses Azure Cognitive Services via PlayFab Party. Ships as platform feature, not per-game</td></tr>
+<tr><td><strong>Sea of Thieves</strong></td><td>Yes — voice→text overlay</td><td>Yes — text→voice for typed chat</td><td>No</td><td>English (US) only</td><td>Built on Xbox’s PlayFab Party API</td></tr>
+<tr><td><strong>Google Meet</strong> (2025)</td><td>Yes — 80+ languages</td><td>Yes — AI speech translation</td><td><strong>Yes</strong> — synthetic voice mimics speaker’s tone, rhythm, pacing</td><td>English↔Spanish (expanding)</td><td>Uses Gemini AI. The personalized voice feature is the closest precedent to IC’s AI voice personas</td></tr>
+<tr><td><strong>Microsoft Teams</strong> (2025)</td><td>Yes — 34 languages</td><td>Yes — Interpreter Agent</td><td>Partial</td><td>9 languages</td><td>Interpreter Agent translates speech in real-time</td></tr>
+<tr><td><strong>VRChat</strong> (community)</td><td>Yes — TTS Voice Wizard, TaSTT</td><td>Yes — 100+ voices</td><td><strong>Yes</strong> — voice cloning, character voices</td><td>50+ languages</td><td>Community-built tools, not official. Proves demand from mute/shy players</td></tr>
+<tr><td><strong>Discord</strong></td><td>Not native (bot-only)</td><td><code>/tts</code> (basic)</td><td>No</td><td>Limited</td><td>Most-requested accessibility feature, still not native</td></tr>
+<tr><td><strong>ElevenLabs</strong> (API)</td><td>No</td><td>Yes — 10K+ voices</td><td><strong>Yes</strong> — clone from 10s audio</td><td>32+ languages</td><td>~75ms latency. Leading personalized TTS API</td></tr>
+<tr><td><strong>OpenAI Whisper</strong> (open-source)</td><td>Yes — state-of-the-art accuracy</td><td>No</td><td>N/A</td><td>99 languages</td><td>Open-source, runs locally. Turbo model: 216x real-time speed. Privacy-safe (no cloud). ~200MB model</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="decision"><a class="header" href="#decision">Decision</a></h3>
+<p>IC implements a <strong>Voice-Text Bridge</strong> — a bidirectional, opt-in system with two independent formats and pluggable backends.</p>
+<hr>
+<h4 id="format-1-auto-generated-captions-stt--voicetext"><a class="header" href="#format-1-auto-generated-captions-stt--voicetext">Format 1: Auto-Generated Captions (STT — Voice→Text)</a></h4>
+<p>Incoming voice chat is transcribed into text and displayed as a caption overlay on the listener’s screen. <strong>Processing happens entirely on the listener’s client</strong> — the speaker’s voice is never transcribed server-side.</p>
+<h5 id="ux-flow"><a class="header" href="#ux-flow">UX Flow</a></h5>
+<ol>
+<li>Listener enables captions in Settings → Communication → Voice-Text Bridge → Captions: On</li>
+<li>When a teammate speaks, the listener’s STT backend transcribes the Opus audio stream</li>
+<li>Transcribed text appears as a caption overlay at the bottom of the screen (configurable position)</li>
+<li>Captions are attributed to the speaker (player name + faction color)</li>
+<li>Captions fade after 5 seconds (configurable)</li>
+</ol>
+<h5 id="caption-overlay"><a class="header" href="#caption-overlay">Caption Overlay</a></h5>
+<pre><code>┌──────────────────────────────────────────────────────┐
+│                    GAME VIEW                          │
+│                                                      │
+│                                                      │
+│                                                      │
+│  ┌────────────────────────────────────────────┐      │
+│  │ [Alice] Attack the north bridge             │      │
+│  │ [Bob]   I'll send tanks to support          │      │
+│  └────────────────────────────────────────────┘      │
+│  ▲ Caption overlay (position/size configurable)       │
+└──────────────────────────────────────────────────────┘
+</code></pre>
+<h5 id="multi-language-captions-phase-7"><a class="header" href="#multi-language-captions-phase-7">Multi-Language Captions (Phase 7)</a></h5>
+<p>When cross-language translation is enabled, captions are displayed in the listener’s preferred language:</p>
+<ol>
+<li>STT transcribes voice → source-language text</li>
+<li>Translation engine translates source text → listener’s language</li>
+<li>Caption shows translated text with a language indicator <strong>and machine-translation trust label</strong> (per D068 § Machine-Translated Content Labeling): <code>[Alice 🇫🇷→🇬🇧 ⚙️MT] Attack the north bridge</code></li>
+</ol>
+<p>The <code>⚙️MT</code> (machine-translated) label follows the same pattern D068 uses for machine-translated UI strings and mod descriptions — the player must always know when text has been machine-translated rather than human-authored. The label is non-dismissible (always visible when translation is active).</p>
+<h5 id="caption-interaction-with-chat"><a class="header" href="#caption-interaction-with-chat">Caption Interaction with Chat</a></h5>
+<p>Captions are <strong>not injected into the text chat channel</strong> — they appear only in the caption overlay. D059 treats the chat panel as deterministic order-stream data preserved for replay/review (<code>D059-overview-text-chat-voip-core.md</code> § Chat Architecture). STT transcripts are listener-local, non-deterministic artifacts (different listeners may get different transcriptions of the same speech) and must never be mixed into the canonical chat stream.</p>
+<p>If the player wants scrollback review of transcripts, they are displayed in a <strong>separate transcript panel</strong> (a secondary tab or collapsible section below the chat panel), visually distinct from chat:</p>
+<ul>
+<li>Transcript entries are tagged with a <code>🎤 STT</code> prefix and rendered in italic or a muted color</li>
+<li>They are <strong>not</strong> stored in the replay’s chat log (they are ephemeral, listener-local)</li>
+<li>They are <strong>not</strong> visible to other players (each listener’s transcription is private to their client)</li>
+</ul>
+<hr>
+<h4 id="format-2-text-to-voice-pipeline-tts--textvoice"><a class="header" href="#format-2-text-to-voice-pipeline-tts--textvoice">Format 2: Text-to-Voice Pipeline (TTS — Text→Voice)</a></h4>
+<p>A player types in text chat, and the receiving player hears it as synthesized speech. The sender’s text is transmitted as a chat order; the receiver’s client synthesizes it into audio locally.</p>
+<h5 id="two-synthesis-modes"><a class="header" href="#two-synthesis-modes">Two Synthesis Modes</a></h5>
+<p><strong>Mode B — Receiver-Side Synthesis (default):</strong></p>
+<p>The flow: <strong>Player A configures voice parameters → sends chat message → Player B has TTS enabled → Player B’s TTS engine reads Player A’s text using Player A’s voice parameters, after preprocessing the text for the engine.</strong></p>
+<ol>
+<li><strong>Player A</strong> configures their voice persona (voice model, pitch, speed, style) in Settings. These parameters are exchanged with all players during the <strong>lobby waiting room</strong> (ready-up phase) via <code>VoiceBridgeCapability</code> — before the game starts. The receiver’s client can pre-load the correct TTS voice model during the loading screen</li>
+<li><strong>Player A</strong> types a message in text chat. Their client sends a <code>SynthChatMessage</code> order containing the text + Player A’s <code>persona_id</code></li>
+<li><strong>Player B</strong> receives the <code>SynthChatMessage</code>. Player B’s client checks: does Player B have TTS playback enabled? If no → display as normal text, done. If yes → continue</li>
+<li>Player B’s client looks up Player A’s voice parameters (received earlier via <code>VoiceBridgeCapability</code>): persona ID, pitch, speed, style</li>
+<li>Player B’s TTS engine preprocesses the text (rule-based + spell correction — see § TTS Text Preprocessing) and synthesizes it using <strong>Player A’s configured voice parameters</strong> — not Player B’s own</li>
+<li>Player B hears the message spoken in Player A’s chosen voice. Player B controls <em>whether</em> to hear TTS, but the <em>voice characteristics</em> are Player A’s</li>
+</ol>
+<p>This is the default because it respects the stated UX rule: “no player hears an AI voice unless they personally enable TTS playback.” The sender configures <em>how</em> they sound; the receiver decides <em>whether</em> to listen.</p>
+<p><strong>Mode A — Sender-Side Synthesis (opt-in, requires receiver consent):</strong></p>
+<ol>
+<li>Player types a message in text chat</li>
+<li>Player’s client synthesizes the text into audio using their configured TTS backend and voice persona</li>
+<li>The synthesized Opus audio is transmitted via the VoIP relay lane with <code>is_synthetic: true</code> in the voice packet (see § Voice Packet Extension below)</li>
+<li>Receivers who have “Accept synthesized voice” enabled hear it as voice</li>
+<li>Receivers who have NOT opted in, or who have the sender’s synth muted, silently drop the packet — the message still arrives as text via the parallel <code>SynthChatMessage</code> order</li>
+</ol>
+<p>Mode A is opt-in for <strong>both</strong> sender and receiver. The sender must enable “Send as voice” and the receiver must enable “Accept synthesized voice.” This prevents unsolicited AI voice injection into lobbies.</p>
+<p><strong>D059 competitive voice restrictions apply fully to synthetic voice.</strong> Mode A synthesized packets inherit all <code>VoiceTarget</code> routing rules from D059:</p>
+<ul>
+<li><strong>Ranked:</strong> <code>VoiceTarget::All</code> is disabled — synthetic voice is team-only, same as real voice (D059 § Ranked voice channel restrictions)</li>
+<li><strong>Observers:</strong> Synthetic voice from observers is never forwarded to players during live games (D059 § Anti-coaching)</li>
+<li><strong>Tournament:</strong> Organizer controls whether synthetic voice is allowed via <code>TournamentConfig</code></li>
+<li>Synthetic voice packets are subject to the same relay mute/moderation pipeline as real voice (admin mute, abuse penalties, etc.)</li>
+</ul>
+<p>Synthetic voice does <strong>not</strong> bypass these restrictions. The relay enforces routing rules identically for <code>is_synthetic: true</code> and <code>is_synthetic: false</code> packets — the flag is used only for per-player synth muting, not for routing policy.</p>
+<p><strong>Trade-offs:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Aspect</th><th>Sender-Side (Mode A)</th><th>Receiver-Side (Mode B, default)</th></tr>
+</thead>
+<tbody>
+<tr><td>Network</td><td>Uses VoIP bandwidth (Opus audio) + text</td><td>Uses text bandwidth only (minimal)</td></tr>
+<tr><td>Latency</td><td>Sender’s TTS latency + network</td><td>Network + receiver’s TTS latency</td></tr>
+<tr><td>Voice consistency</td><td>All opted-in receivers hear the same voice</td><td>Each receiver uses their own TTS backend/quality</td></tr>
+<tr><td>Privacy</td><td>Synthesized audio leaves sender’s machine</td><td>Only text leaves sender’s machine (better)</td></tr>
+<tr><td>Opt-in guarantee</td><td>Requires receiver consent flag</td><td>Preserved by design (receiver controls synthesis)</td></tr>
+<tr><td>Replay</td><td>Heard as voice in replay (if voice-in-replay enabled)</td><td>Text in order stream + voice params in replay metadata (see below)</td></tr>
+<tr><td>Muting</td><td>Requires <code>is_synthetic</code> packet flag for independent synth muting</td><td>Receiver controls locally — trivial to mute</td></tr>
+</tbody>
+</table>
+</div>
+<h5 id="replay-voice-reproduction-mode-b"><a class="header" href="#replay-voice-reproduction-mode-b">Replay Voice Reproduction (Mode B)</a></h5>
+<p>Mode B records <code>SynthChatMessage</code> orders (with <code>persona_id</code>) in the replay’s tick order stream, but the sender’s <code>VoiceParams</code> (pitch, speed) are exchanged at lobby time, not per-message. To enable replay viewers to synthesize the same voice:</p>
+<ul>
+<li>All players’ <code>VoiceBridgeCapability</code> data is stored in the <strong>replay metadata JSON</strong> (alongside player names, factions, and other session info). This adds ~50 bytes per player — negligible.</li>
+<li>On replay playback, the viewer reads the capability set from metadata, resolves each player’s persona + voice params, and can synthesize <code>SynthChatMessage</code> text in the correct voice if the viewer has TTS enabled.</li>
+<li>If the replay viewer does not have TTS enabled or lacks the persona’s model, <code>SynthChatMessage</code> orders display as normal text — the text is always preserved regardless of TTS capability.</li>
+</ul>
+<pre><code class="language-json">{
+  "players": [
+    { "slot": 0, "name": "Alice", "faction": "allies", ... },
+    { "slot": 1, "name": "Bob", "faction": "soviet", ... }
+  ],
+  "voice_bridge_capabilities": [
+    { "slot": 0, "tts_enabled": true, "persona_id": "official/commander-alpha", "pitch": 0.9, "speed": 1.1 },
+    { "slot": 1, "tts_enabled": false, "persona_id": null, "pitch": 1.0, "speed": 1.0 }
+  ]
+}
+</code></pre>
+<h5 id="chat-order-extension"><a class="header" href="#chat-order-extension">Chat Order Extension</a></h5>
+<p>The current <code>PlayerOrder::ChatMessage { channel, text }</code> has no metadata field. D079 adds a new order variant for TTS-eligible messages:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Extension to PlayerOrder for voice-text bridge (D079).
+/// When the sender has TTS enabled, SynthChatMessage is sent INSTEAD OF
+/// ChatMessage (not alongside — one canonical order per message, no
+/// duplicates in the order stream or replay). Receivers who don't have
+/// TTS enabled display the text field as a normal chat message and
+/// ignore persona_id.
+pub enum PlayerOrder {
+    // ... existing variants ...
+    ChatMessage { channel: ChatChannel, text: String },
+
+    /// TTS-eligible chat message. Same as ChatMessage but includes
+    /// the sender's voice persona ID for receiver-side synthesis.
+    SynthChatMessage {
+        channel: ChatChannel,
+        text: String,
+        /// Sender's voice persona ID (namespaced ResourceId).
+        /// Receivers use this to select the TTS voice for synthesis.
+        /// e.g., "official/commander-alpha", "community/modx-voices/tactical".
+        /// "local/*" IDs trigger fallback to a built-in persona on receivers
+        /// who don't have the local definition.
+        persona_id: Option&lt;VoicePersonaId&gt;,
+    },
+}
+<span class="boring">}</span></code></pre>
+<p>This is a <strong>replay-visible protocol change requiring a protocol version bump.</strong> <code>SynthChatMessage</code> is a new <code>PlayerOrder</code> discriminant. Per <code>api-misuse-defense.md</code> § O4, unknown <code>PlayerOrder</code> discriminants are deserialization errors — not silently skipped — and protocol version mismatch terminates the handshake before orders flow. There is no graceful mixed-version decoding. Clients must match protocol versions to play together. The version bump is reflected in the replay header’s <code>version</code> field and the wire format’s protocol version header.</p>
+<h5 id="voice-packet-extension-mode-a-only"><a class="header" href="#voice-packet-extension-mode-a-only">Voice Packet Extension (Mode A only)</a></h5>
+<p>For sender-side synthesis, the <code>VoicePacket</code> struct (D059) gains a <code>is_synthetic</code> flag to enable independent muting:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct VoicePacket {
+    pub speaker: PlayerId,
+    pub sequence: u32,
+    pub is_synthetic: bool,    // D079: true if this packet is TTS-synthesized, not real voice
+    // ... existing fields ...
+}
+<span class="boring">}</span></code></pre>
+<p>This <strong>is</strong> a protocol change to D059’s voice packet format — the <code>is_synthetic</code> flag occupies one bit in the packet header. Relay routing uses it: if a receiver has <code>synth_voice_muted</code> for this speaker, the relay skips forwarding synthetic packets (same bandwidth-saving pattern as D059’s mute hint). This change is part of the same protocol version bump as <code>SynthChatMessage</code> — voice packets are versioned alongside the order protocol. No mixed-version voice decoding.</p>
+<h5 id="tts-text-preprocessing-optional"><a class="header" href="#tts-text-preprocessing-optional">TTS Text Preprocessing (Optional)</a></h5>
+<p>Raw chat text often contains typos, abbreviations, gaming slang, special symbols, emoji, and non-standard grammar that TTS engines handle poorly — producing garbled, robotic, or nonsensical speech. A <strong>preprocessing step</strong> normalizes the text for the TTS engine before synthesis, while leaving the original chat text untouched for display.</p>
+<p><strong>What it fixes:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Input Pattern</th><th>Problem for TTS</th><th>Preprocessed Output</th></tr>
+</thead>
+<tbody>
+<tr><td><code>atk north w/ tanks asap</code></td><td>Abbreviations read literally (“ay tee kay”, “double-you slash”)</td><td>“Attack north with tanks, ASAP”</td></tr>
+<tr><td><code>gg wp</code></td><td>Read as individual letters</td><td>“Good game, well played”</td></tr>
+<tr><td><code>lol ur base is ded 😂</code></td><td>Emoji read as unicode name, slang mispronounced</td><td>“Ha, your base is dead”</td></tr>
+<tr><td><code>need $$ for mamoth tank</code></td><td>Symbols read literally, typo mispronounced</td><td>“Need money for mammoth tank”</td></tr>
+<tr><td><code>!!!!! HELP HELP</code></td><td>Excessive punctuation causes stutter/pause spam</td><td>“Help! Help!”</td></tr>
+<tr><td><code>сука блять</code> (Cyrillic in English chat)</td><td>TTS engine for English can’t pronounce Cyrillic</td><td>Transliterated or skipped with notification</td></tr>
+<tr><td><code>&lt;script&gt;alert('xss')&lt;/script&gt;</code></td><td>Not a TTS issue, but sanitization</td><td>Stripped (sanitized before display anyway)</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Implementation tiers (lightest to heaviest):</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Tier</th><th>Approach</th><th>Latency</th><th>Size</th><th>Quality</th><th>Phase</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>1. Rule-based</strong> (default)</td><td>YAML dictionary of abbreviations/slang → expansions. Regex symbol stripping. Emoji → description mapping. Punctuation collapsing. WFST-style number/currency/unit expansion (“$5k” → “five thousand dollars”). Moddable per game module</td><td>&lt;1ms</td><td>~50KB dictionary</td><td>Good for common cases</td><td>Phase 5</td></tr>
+<tr><td><strong>2. Spell correction</strong> (optional)</td><td>SymSpell algorithm (symmetric delete, edit distance 2). Pre-computed dictionary of valid words. 1M× faster than Norvig’s approach, O(1) lookup. Catches typos like “mamoth” → “mammoth”, “atack” → “attack”. Language-independent</td><td>&lt;1ms</td><td>~5MB dictionary</td><td>Excellent for typos</td><td>Phase 5</td></tr>
+<tr><td><strong>3. Statistical normalization</strong> (optional)</td><td>Ekphrasis-style word segmentation + normalization using word frequency statistics (from gaming corpora). Handles hashtag splitting, elongation normalization (“nooooo” → “no”), social-media-style text. No neural network</td><td>~5ms</td><td>~20MB frequency tables</td><td>Good for slang/shorthand</td><td>Phase 6a</td></tr>
+<tr><td><strong>4. WFST text normalization</strong> (optional)</td><td>Weighted Finite State Transducer grammars (NeMo-style). Deterministic, rule-compiled. Handles complex number formats, dates, addresses, unit conversions. Production-grade TTS preprocessing used by NVIDIA and Google</td><td>&lt;5ms</td><td>~10MB compiled grammar</td><td>Excellent for structured text</td><td>Phase 6a</td></tr>
+<tr><td><strong>5. LLM/SLM-enhanced</strong> (optional, advanced)</td><td>Small local model or cloud LLM for context-aware normalization. Handles novel abbreviations, ambiguous intent, mixed-language input</td><td>50-500ms</td><td>~500MB+ (local)</td><td>Best for edge cases</td><td>Phase 7</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Default stack:</strong> Tier 1 (rules) + Tier 2 (spell correction) ship in Phase 5. Both are &lt;1ms, zero neural dependencies, fully offline. Tiers 3-5 are opt-in upgrades for players who want higher quality preprocessing.</p>
+<p><strong>Rule-based dictionary (YAML, moddable):</strong></p>
+<pre><code class="language-yaml"># tts-preprocessing/en.yaml — shipped with IC, moddable per game module
+abbreviations:
+  gg: "good game"
+  wp: "well played"
+  glhf: "good luck, have fun"
+  asap: "as soon as possible"
+  atk: "attack"
+  def: "defend"
+  w/: "with"
+  ur: "your"
+  u: "you"
+  plz: "please"
+  thx: "thanks"
+  omw: "on my way"
+  brb: "be right back"
+  afk: "away from keyboard"
+  ez: "easy"
+  imo: "in my opinion"
+  tbh: "to be honest"
+  nvm: "never mind"
+
+# Game-specific terms (ra1 module)
+game_terms:
+  mamoth: "mammoth"        # common typo
+  mig: "MiG"               # pronunciation hint
+  mcv: "M.C.V."            # spell out abbreviation
+  apc: "A.P.C."
+  gdi: "G.D.I."
+  nod: "Nod"
+
+emoji_map:
+  "😂": "(laughing)"
+  "💀": "(skull)"
+  "🔥": "(fire)"
+  "👍": "(thumbs up)"
+  "❤️": "(heart)"
+
+rules:
+  collapse_repeated_punctuation: true   # "!!!!" → "!"
+  collapse_repeated_letters: true       # "nooooo" → "nooo" (preserve some emphasis)
+  max_repeated_chars: 3
+  strip_markdown: true                  # remove **bold**, *italic* markers
+  strip_html_tags: true                 # sanitization
+</code></pre>
+<p><strong>Tier 5 — LLM/SLM-enhanced preprocessing (Phase 7, optional, advanced):</strong></p>
+<p>For players who have a local LLM configured (same provider pattern as D047/<code>llm-setup-guide.md</code>), text can pass through a context-aware normalization prompt. This is the heaviest tier and is <strong>not recommended as the default</strong> — Tiers 1-2 cover the vast majority of cases. Use only when dealing with highly novel slang, mixed-language input, or ambiguous abbreviations that rule-based and statistical tiers can’t handle.</p>
+<pre><code>System: You are a text normalizer for a text-to-speech engine in a military RTS game.
+Convert the input chat message into clean, natural spoken English.
+Fix typos, expand abbreviations, remove excessive punctuation, describe relevant emoji.
+Keep it brief. Do not add content. Do not censor. Output only the normalized text.
+
+Input: "atk north w/ tanks asap, ur base is ded lol 😂"
+Output: "Attack north with tanks, ASAP. Your base is dead. Ha!"
+</code></pre>
+<p><strong>Settings:</strong></p>
+<pre><code class="language-yaml">[voice_text_bridge.tts.preprocessing]
+enabled = true                           # on by default when TTS is enabled
+tier = "rules+spell"                     # "rules" | "rules+spell" (default) | "statistical" | "wfst" | "llm" | "disabled"
+dictionary = "tts-preprocessing/en.yaml" # Tier 1 rules dictionary (moddable per game module / language)
+spell_dictionary = "tts-preprocessing/en-spell.txt"  # Tier 2 SymSpell word frequency list
+llm_provider = ""                        # only used when tier = "llm"
+</code></pre>
+<p><strong>The original chat text is never modified.</strong> Preprocessing produces a parallel normalized string that is fed to the TTS engine only. Other players see the original text in the chat panel. The sender sees their original text too — the preprocessing is invisible to everyone except the TTS engine.</p>
+<hr>
+<h4 id="ai-voice-personas-phase-6a"><a class="header" href="#ai-voice-personas-phase-6a">AI Voice Personas (Phase 6a)</a></h4>
+<p>Each player can be assigned (or choose) a unique AI-generated voice persona that is used for their TTS synthesis. This ensures that when multiple players use text-to-voice, each sounds distinct — not the same generic robot voice.</p>
+<h5 id="persona-assignment"><a class="header" href="#persona-assignment">Persona Assignment</a></h5>
+<pre><code class="language-yaml"># Voice persona definition (stored in &lt;data_dir&gt;/voice-personas/ or shipped in packs)
+voice_persona:
+  id: "official/commander-alpha"      # namespaced ResourceId
+  display_name: "Commander Alpha"
+  pitch: 0.9                     # relative pitch adjustment (0.5 = deep, 1.0 = neutral, 1.5 = high)
+  speed: 1.1                     # speaking rate (0.5 = slow, 1.0 = normal, 1.5 = fast)
+  language: en-US
+  tts_model: "piper:en_US-lessac-medium"  # local model reference
+  # OR: tts_model: "elevenlabs:voice_id_abc123"  # cloud model reference
+</code></pre>
+<h5 id="unified-voice-identity-arma-pattern"><a class="header" href="#unified-voice-identity-arma-pattern">Unified Voice Identity (ArmA Pattern)</a></h5>
+<p>Inspired by ArmA’s player voice system — where players pick a voice type and pitch that is used for all radio commands. In IC, the voice persona is a <strong>unified voice identity</strong>: whenever <em>any</em> text is synthesized for a player (typed chat, chat wheel phrase, beacon alert, quick command), the TTS engine uses that player’s configured voice parameters.</p>
+<p>The key insight: the TTS engine doesn’t care whether the input text is a player’s typed message or a system-generated “Affirmative” string. It’s all text → voice. The player’s persona parameters (voice model, pitch, speed, style) are applied uniformly to all synthesis for that player.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Text Source</th><th>Example Text</th><th>TTS Treatment</th></tr>
+</thead>
+<tbody>
+<tr><td>Player types in chat</td><td>“atk north with tanks”</td><td>Synthesized with player’s persona voice</td></tr>
+<tr><td>Chat wheel phrase (D059)</td><td>“Affirmative” / “Need backup”</td><td>Same persona voice — the phrase text is just fed to the TTS engine</td></tr>
+<tr><td>Beacon alert (D059)</td><td>“Enemy spotted at north bridge”</td><td>Same persona voice</td></tr>
+<tr><td>Quick command</td><td>“Moving out” / “Understood”</td><td>Same persona voice</td></tr>
+</tbody>
+</table>
+</div>
+<p>This means each player in a match sounds distinct — not because they picked from pre-recorded audio samples, but because the TTS engine produces different-sounding output based on each player’s voice/pitch/speed configuration. Two players saying “Affirmative” sound different because their personas have different parameters.</p>
+<p><strong>Player-facing settings (Settings → Communication → Voice Persona):</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Setting</th><th>Range</th><th>Default</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td>Voice</td><td>Built-in library or custom</td><td>Auto-assigned</td><td>Base TTS model/voice — the “raw material” the engine synthesizes from</td></tr>
+<tr><td>Pitch</td><td>0.5 – 1.5 slider</td><td>1.0 (neutral)</td><td>Lower = deeper, higher = lighter</td></tr>
+<tr><td>Speed</td><td>0.5 – 1.5 slider</td><td>1.0 (normal)</td><td>Speaking rate</td></tr>
+<tr><td>Preview</td><td>[Play Sample] button</td><td>—</td><td>Hear your persona say a sample phrase before committing</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Note on style/post-processing:</strong> D059’s voice effects rule is that the <strong>listener</strong> controls audio post-processing (radio filter, reverb, clean audio — see <code>D059-voip-effects-ecs.md</code> § Voice Effects). The sender controls voice <em>identity</em> (which voice, pitch, speed); the receiver controls <em>how they hear it</em> (effects, spatial audio, filter). Style post-processing is therefore <strong>not</strong> part of <code>VoiceParams</code> — it stays receiver-side, consistent with D059.</p>
+<p>These parameters are stored in the player’s local settings and advertised as part of the <code>VoiceBridgeCapability</code> session advertisement (see § Persistence Model). The receiver’s TTS engine uses them when synthesizing any text attributed to that player.</p>
+<h5 id="persona-sources"><a class="header" href="#persona-sources">Persona Sources</a></h5>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Source</th><th>How It Works</th><th>Phase</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Built-in voices</strong></td><td>IC ships 8-12 built-in personas per language (varied gender, age, style). Assigned round-robin to players who don’t choose one</td><td>Phase 5</td></tr>
+<tr><td><strong>Player-selected</strong></td><td>Player picks from built-in library or configures a custom persona in Settings</td><td>Phase 6a</td></tr>
+<tr><td><strong>Faction-themed</strong></td><td>Allied voices sound Western/NATO; Soviet voices sound Eastern European. Automatic based on faction</td><td>Phase 6a</td></tr>
+<tr><td><strong>Workshop voices</strong></td><td>Community-created voice persona packs (D050). Must pass content moderation (D037)</td><td>Phase 6a</td></tr>
+<tr><td><strong>Cloud-cloned</strong></td><td>Player uses a cloud TTS API (ElevenLabs) to create a voice from a short recording. The cloud voice ID is stored in the player’s local settings. <strong>Receiver-side limitation:</strong> cloud-cloned voices only work in sender-side synthesis (Mode A), because the receiver cannot access the sender’s cloud API credentials. In receiver-side synthesis (Mode B, default), cloud-cloned personas <strong>fall back to the nearest matching built-in persona</strong> (matched by pitch/speed/style parameters). The sender hears their cloud voice locally in preview; teammates hear the built-in fallback unless Mode A is used</td><td>Phase 6a</td></tr>
+</tbody>
+</table>
+</div>
+<h5 id="persona-transmission"><a class="header" href="#persona-transmission">Persona Transmission</a></h5>
+<p>When using sender-side synthesis (Mode A), the synthesized audio already carries the persona’s characteristics — no additional metadata needed beyond <code>is_synthetic</code> in the voice packet. When using receiver-side synthesis (Mode B, default), the sender’s <code>persona_id</code> is included in the <code>SynthChatMessage</code> order (see § Chat Order Extension) so the receiver’s client can select the correct TTS voice.</p>
+<hr>
+<h4 id="pluggable-backend-architecture"><a class="header" href="#pluggable-backend-architecture">Pluggable Backend Architecture</a></h4>
+<p>STT and TTS backends are independently pluggable, following the same provider pattern as the LLM setup guide (<code>player-flow/llm-setup-guide.md</code>).</p>
+<h5 id="persistence-model--what-lives-where"><a class="header" href="#persistence-model--what-lives-where">Persistence Model — What Lives Where</a></h5>
+<p>Three systems, three purposes — no overlap:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Data</th><th>Home</th><th>Why</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Backend config</strong> (which STT/TTS engine, API keys, model paths, caption position)</td><td><code>settings.toml</code> § <code>[voice_text_bridge]</code></td><td>Local machine preferences. Not shared. Same pattern as <code>[llm]</code> and <code>[audio]</code> settings</td></tr>
+<tr><td><strong>Voice persona handle</strong> (selected persona ID — a namespaced <code>ResourceId</code>, not the full definition)</td><td><code>settings.toml</code> + session capability advertisement</td><td>Local preference stored in settings. Transmitted to teammates via lobby capability exchange (not via D053 profile — see rationale below). ~40 bytes</td></tr>
+<tr><td><strong>Custom persona definitions</strong> (full TTS model refs, pitch/speed/style, cloud vendor refs)</td><td>Local data dir (<code>&lt;data_dir&gt;/voice-personas/</code>)</td><td>Too large and too private for the shared profile. D053 assumes ~2KB profile responses. Custom blobs may include vendor API refs that shouldn’t be advertised</td></tr>
+<tr><td><strong>Per-player mute state</strong> (voice/synth/text mute decisions)</td><td>Local SQLite (D034), keyed by Ed25519 public key</td><td>Local preference — same pattern as D059’s existing mute persistence. Not synced</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Settings IA note:</strong> The current settings panel (<code>settings.md</code>) has <strong>Audio</strong> and <strong>Social</strong> tabs but no <strong>Communication</strong> tab. Voice-text bridge settings should be added as a new <strong>Communication</strong> sub-section under <strong>Social</strong> (where voice/chat settings naturally belong), or as a new top-level tab if the surface area warrants it. This is a <code>settings.md</code> update deferred until D079 moves to Accepted.</p>
+<p><strong>Voice persona is NOT in D053 player profile.</strong> D053 requires every profile field to have visibility controls (D053 § Design Principles: “Privacy by default. Every profile field has visibility controls”). But teammates <strong>must</strong> always receive the persona ID for receiver-side TTS to work — a privacy toggle would break synthesis. This makes it a poor fit for the privacy-controlled profile model.</p>
+<p>Instead, the voice persona ID is transmitted as a <strong>session capability advertisement</strong> during lobby join — the same mechanism used for engine version, mod fingerprint, and other per-session metadata. It’s ephemeral (valid for this session only), always visible to participants, and not part of the persistent public profile.</p>
+<p><strong>Namespaced <code>ResourceId</code> format:</strong> Persona IDs follow the project’s standard namespaced resource pattern (D068, D062):</p>
+<pre><code>official/commander-alpha          # built-in persona shipped with IC
+official/soviet-officer           # built-in faction-themed persona
+community/modx-custom-voices/tactical  # Workshop persona pack
+local/my-custom-voice             # locally-defined persona (not resolvable by others — fallback to built-in)
+</code></pre>
+<p>Bare strings like <code>"custom_42"</code> are rejected — the namespace prefix is mandatory. This prevents collisions across packs/machines and makes resolution unambiguous: <code>official/</code> resolves from built-in data, <code>community/</code> resolves from installed Workshop packs, <code>local/</code> triggers fallback on receivers who don’t have it.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Voice persona ID — namespaced ResourceId, not a freeform string.
+/// Transmitted in SynthChatMessage.persona_id and lobby capability exchange.
+/// NOT part of D053 PlayerProfile (see rationale above).
+pub struct VoicePersonaId(pub ResourceId);  // e.g., "official/commander-alpha"
+
+/// Lobby/waiting room capability advertisement for voice-text bridge.
+/// Exchanged during the lobby ready-up phase (before the game starts),
+/// alongside engine version, mod fingerprint, and other session metadata.
+/// Each player's voice configuration is available to all participants
+/// before the first tick — the receiver's TTS engine can pre-load the
+/// correct voice model during the loading screen.
+/// See player-flow/multiplayer.md § Lobby for the ready-up flow.
+pub struct VoiceBridgeCapability {
+    /// Whether this player sends SynthChatMessage orders (has TTS enabled).
+    pub tts_enabled: bool,
+    /// The player's selected voice persona (namespaced ResourceId).
+    /// Determines which base TTS model/voice the receiver's engine loads.
+    pub persona_id: Option&lt;VoicePersonaId&gt;,
+    /// The player's voice parameters — applied ON TOP of the base persona
+    /// by the receiver's TTS engine. These are the sender's configured
+    /// pitch/speed/style, not the receiver's preferences.
+    pub voice_params: Option&lt;VoiceParams&gt;,
+}
+
+/// Player-configured voice parameters. Advertised to teammates via
+/// VoiceBridgeCapability so the receiver's TTS engine can reproduce
+/// the sender's chosen voice characteristics.
+pub struct VoiceParams {
+    pub pitch: f32,     // 0.5 (deep) – 1.5 (high), default 1.0
+    pub speed: f32,     // 0.5 (slow) – 1.5 (fast), default 1.0
+    // NOTE: No `style` field. Post-processing (radio filter, reverb, etc.)
+    // is receiver-controlled per D059 § Voice Effects. The sender controls
+    // voice identity (model + pitch + speed); the receiver controls effects.
+}
+<span class="boring">}</span></code></pre>
+<p>Full custom persona definitions remain in <code>&lt;data_dir&gt;/voice-personas/</code> (local data, shareable via Workshop packs). <code>accept_synthetic_voice</code> remains in <code>settings.toml</code> (local receive preference).</p>
+<p><strong>Reconnect and late-observer rule:</strong> <code>VoiceBridgeCapability</code> is exchanged at lobby ready-up, but players may reconnect mid-match (D059 § desync recovery) and observers may join after launch (D059 § spectator). For these cases, the relay includes all active players’ <code>VoiceBridgeCapability</code> data in the reconnection snapshot metadata — the same mechanism used for player names, factions, and other session info that a reconnecting client needs to reconstruct the game state. Late-joining observers receive the capability set as part of the mid-game join handshake. No separate resend protocol is needed — it piggybacks on existing reconnection infrastructure.</p>
+<h5 id="settings-configuration"><a class="header" href="#settings-configuration">Settings Configuration</a></h5>
+<pre><code class="language-toml"># settings.toml — local machine config (NOT social/profile state)
+[voice_text_bridge]
+enabled = false                          # master toggle (off by default)
+
+[voice_text_bridge.stt]
+enabled = false                          # captions off by default
+backend = "local"                        # "local" | "cloud" | "disabled"
+local_model = "whisper-turbo"            # model pack name (downloaded via D068, not bundled)
+cloud_provider = ""                      # "azure" | "google" | "deepgram" (requires API key)
+cloud_api_key_ref = ""                   # reference to credential in ic-paths keystore
+language = "auto"                        # auto-detect or explicit language code
+caption_position = "bottom"              # "bottom" | "top" | "left" | "right"
+caption_duration_sec = 5.0
+show_transcript_panel = false            # show separate transcript panel (scrollback review, never in chat log)
+
+[voice_text_bridge.tts]
+enabled = false                          # text-to-voice off by default
+backend = "local"                        # "local" | "cloud" | "disabled"
+local_model = "piper:en_US-lessac-medium"  # model pack name (downloaded via D068)
+cloud_provider = ""                      # "elevenlabs" | "azure" | "google"
+cloud_api_key_ref = ""
+synthesis_mode = "receiver"              # "receiver" (Mode B, default) | "sender" (Mode A, requires receiver consent)
+accept_synthetic_voice = false           # opt-in to hear Mode A synthesized voice from other players
+
+[voice_text_bridge.tts.preprocessing]
+enabled = true                           # on by default when TTS is enabled
+tier = "rules+spell"                     # "rules" | "rules+spell" (default) | "statistical" | "wfst" | "llm" | "disabled"
+dictionary = "tts-preprocessing/en.yaml"
+spell_dictionary = "tts-preprocessing/en-spell.txt"
+
+[voice_text_bridge.translation]
+enabled = false                          # Phase 7
+target_language = ""                     # translate captions to this language
+</code></pre>
+<h5 id="backend-options"><a class="header" href="#backend-options">Backend Options</a></h5>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Backend</th><th>STT</th><th>TTS</th><th>Latency</th><th>Privacy</th><th>Quality</th><th>Delivery</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Local Whisper (ONNX)</strong></td><td>Yes</td><td>No</td><td>~100-500ms</td><td>Full (on-device)</td><td>High</td><td>Downloadable model pack (~200MB)</td></tr>
+<tr><td><strong>Local Piper</strong></td><td>No</td><td>Yes</td><td>&lt;100ms</td><td>Full (on-device)</td><td>Medium</td><td>Downloadable model pack (~50MB)</td></tr>
+<tr><td><strong>Azure Cognitive Services</strong></td><td>Yes</td><td>Yes</td><td>~200-400ms</td><td>Cloud (Microsoft)</td><td>Very high</td><td>API key (no local model)</td></tr>
+<tr><td><strong>Google Cloud Speech/TTS</strong></td><td>Yes</td><td>Yes</td><td>~200-400ms</td><td>Cloud (Google)</td><td>Very high</td><td>API key (no local model)</td></tr>
+<tr><td><strong>ElevenLabs</strong></td><td>No</td><td>Yes</td><td>~75ms</td><td>Cloud (ElevenLabs)</td><td>Excellent</td><td>API key (no local model)</td></tr>
+<tr><td><strong>Deepgram</strong></td><td>Yes</td><td>No</td><td>~100-300ms</td><td>Cloud (Deepgram)</td><td>Very high</td><td>API key (no local model)</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Model delivery:</strong> Local STT/TTS models are <strong>not bundled with the base IC install</strong> — they are downloadable model packs following the same pattern as LLM model packs (<code>llm-setup-guide.md</code> § Quickest Start) and optional content packs (D068 selective install, D069 install wizard). When a player enables voice-text bridge for the first time:</p>
+<ol>
+<li>Settings → Communication → Voice-Text Bridge → Enable</li>
+<li>IC prompts: “Voice-text bridge requires a model pack (~250MB for STT + TTS). Download now?”</li>
+<li>Model pack downloaded from Workshop (D050) or IC CDN — installed into <code>&lt;data_dir&gt;/models/voice-bridge/</code></li>
+<li>Done — local STT/TTS active, works offline from this point</li>
+</ol>
+<p>This respects the project’s install philosophy: the base binary is small; large optional content (models, HD assets, campaigns) is downloaded on demand via managed packs. Players who only use cloud backends (API key) need no local models at all.</p>
+<p><strong>Default experience (after model download):</strong> Local Whisper for STT + Local Piper for TTS. Works offline, no cloud dependency, acceptable quality. Players who want higher quality or personalized voices configure a cloud provider via the same setup flow as LLM providers.</p>
+<hr>
+<h4 id="extended-muting-model"><a class="header" href="#extended-muting-model">Extended Muting Model</a></h4>
+<p>D059’s existing mute model supports per-player voice and text muting. D079 extends this with a third independent channel — synthesized voice:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Extended per-player mute state (D059 + D079).
+pub struct PlayerMuteState {
+    /// Mute the player's real voice (Opus VoIP stream)
+    pub voice_muted: bool,
+    /// Mute the player's text chat messages
+    pub text_muted: bool,
+    /// Mute the player's synthesized voice (TTS playback of their text)
+    /// Independent from voice_muted — a player might mute someone's real
+    /// voice but still hear their typed messages as synthesized speech,
+    /// or vice versa.
+    pub synth_voice_muted: bool,
+}
+<span class="boring">}</span></code></pre>
+<p><strong>Mute combinations and their effects:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>voice_muted</th><th>text_muted</th><th>synth_voice_muted</th><th>Effect</th></tr>
+</thead>
+<tbody>
+<tr><td>false</td><td>false</td><td>false</td><td>Hear everything (real voice + text + synth)</td></tr>
+<tr><td>true</td><td>false</td><td>false</td><td>No real voice; see text; hear synth of their text</td></tr>
+<tr><td>false</td><td>true</td><td>false</td><td>Hear real voice; no text; no synth (nothing to synthesize)</td></tr>
+<tr><td>false</td><td>false</td><td>true</td><td>Hear real voice; see text; no synth playback</td></tr>
+<tr><td>true</td><td>false</td><td>true</td><td>No voice at all; see text only</td></tr>
+<tr><td>true</td><td>true</td><td>true</td><td>Fully muted — no communication received</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Console commands (D058):</strong></p>
+<blockquote>
+<p><strong>Namespace note:</strong> <code>/mute</code> is already overloaded across three systems — D058 uses <code>/mute &lt;player&gt;</code> for admin chat mute and <code>/mute [master|music|sfx|voice]</code> for audio mixing; D059 uses <code>/mute &lt;player&gt;</code> for local player mute. D079 does <strong>not</strong> add another <code>/mute</code> variant. Instead, it uses the <code>/player</code> namespace for per-player communication control, keeping <code>/mute</code> for its existing admin and audio uses.</p>
+</blockquote>
+<pre><code>/captions on|off                                -- toggle STT captions
+/captions language &lt;code&gt;                       -- set caption language (or 'auto')
+/tts on|off                                     -- toggle TTS for your outgoing text (mid-match: toggles SynthChatMessage emission)
+/tts mode sender|receiver                       -- set synthesis mode (lobby only — locked after match start)
+/voice-persona list                             -- show available personas
+/voice-persona set &lt;id&gt;                         -- set your voice persona (lobby only — locked after match start)
+/voice-persona preview &lt;id&gt;                     -- hear a sample of a persona (lobby only)
+/player &lt;name&gt; mute voice|text|synth|all        -- mute specific channels for a player
+/player &lt;name&gt; unmute voice|text|synth|all      -- unmute specific channels
+/player &lt;name&gt; mute-status                      -- show current mute state for a player
+</code></pre>
+<p>D058 currently has <code>/players</code> (list connected players) but no <code>/player &lt;name&gt; ...</code> command family. D079 <strong>introduces</strong> the <code>/player &lt;name&gt;</code> namespace for per-player communication control, avoiding further overload of <code>/mute</code> (which D058 uses for both admin chat mute and audio mixing). D058 should be updated to formalize this namespace when D079 moves to Accepted. The existing D059 <code>/mute &lt;player&gt;</code> shorthand (which mutes voice + text) continues to work as a convenience alias for <code>/player &lt;name&gt; mute all</code>.</p>
+<p><strong>Session-lock rule:</strong> Voice persona and synthesis mode are <strong>locked after match start</strong>. <code>VoiceBridgeCapability</code> is exchanged once during lobby ready-up — there is no runtime capability-update path. Changing persona mid-match would require re-broadcasting to all participants and potentially re-loading TTS models on every receiver, which is disruptive and complex. <code>/tts on|off</code> remains toggleable mid-match (it only controls whether the local client emits <code>SynthChatMessage</code> orders — no capability re-broadcast needed). <code>/voice-persona set</code> and <code>/tts mode</code> are rejected with a message after match start: “Voice persona and synthesis mode can only be changed in the lobby.”</p>
+<hr>
+<h4 id="implementation-architecture"><a class="header" href="#implementation-architecture">Implementation Architecture</a></h4>
+<h5 id="processing-pipeline"><a class="header" href="#processing-pipeline">Processing Pipeline</a></h5>
+<pre><code>CAPTION PATH (speaker → caption on listener's screen):
+  Mic → Opus encode → Relay → Opus decode → [Listener's STT] → Caption overlay
+                                                                     ↓
+                                                        (optional) Chat log
+
+TTS PATH (typist → voice on listener's speakers):
+  Keyboard → Text message → [Preprocess] → [Sender's TTS] → Opus encode → Relay → Speaker
+       (Mode A: sender-side)     ↑                                              ↓
+                          Rule-based or                                   Listener hears voice
+                          LLM normalize
+                          (original text
+                           untouched in chat)
+  OR:
+
+  Keyboard → Text message → Relay → [Preprocess] → [Listener's TTS] → Speaker
+       (Mode B: receiver-side)            ↑                           ↓
+                                   Rule-based or               Listener hears voice
+                                   LLM normalize
+</code></pre>
+<h5 id="threading-model"><a class="header" href="#threading-model">Threading Model</a></h5>
+<p>STT and TTS run on <strong>background threads</strong> on native platforms — never on the game loop or render thread:</p>
+<pre><code>Native (Windows/macOS/Linux/Steam Deck):
+  Main thread (GameLoop):  Orders, sim, render — unaffected
+  Audio thread:            Opus encode/decode, jitter buffer (existing D059)
+  STT thread:              Whisper inference (background, feeds captions to UI via channel)
+  TTS thread:              Piper/cloud synthesis (background, feeds Opus frames to audio thread)
+
+Browser (WASM):
+  Single-threaded executor (crate-graph.md § WASM: no std::thread).
+  Local STT/TTS models are NOT available (Whisper/Piper require background threads).
+  Cloud-only backends work via async fetch (non-blocking HTTP calls on the main executor).
+  If no cloud backend is configured, voice-text bridge is disabled on WASM with a
+  settings note: "Local voice models require the native app. Use a cloud provider
+  for browser play."
+</code></pre>
+<p><strong>Per-platform policy:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Platform</th><th>Local STT/TTS</th><th>Cloud STT/TTS</th><th>Threading</th></tr>
+</thead>
+<tbody>
+<tr><td>Windows, macOS, Linux, Steam Deck</td><td>Yes (background threads)</td><td>Yes (async HTTP on background thread)</td><td><code>std::thread</code></td></tr>
+<tr><td>Mobile (iOS/Android)</td><td>Yes (background threads, but battery/thermal concern — default off, cloud preferred)</td><td>Yes</td><td>Platform threads</td></tr>
+<tr><td>Browser (WASM)</td><td><strong>No</strong> (no <code>std::thread</code>, models too large for browser)</td><td>Yes (async fetch on single-threaded executor)</td><td>Single-threaded async</td></tr>
+</tbody>
+</table>
+</div>
+<h5 id="relay-impact"><a class="header" href="#relay-impact">Relay Impact</a></h5>
+<p><strong>Two protocol changes (require protocol version bump — no mixed-version decoding per <code>api-misuse-defense.md</code> § O4):</strong></p>
+<ol>
+<li>
+<p><strong><code>SynthChatMessage</code> order variant</strong> — a new <code>PlayerOrder</code> variant alongside <code>ChatMessage</code>. Adds <code>persona_id: Option&lt;VoicePersonaId&gt;</code> (namespaced <code>ResourceId</code>). Relay routes it identically to <code>ChatMessage</code> (same lane, same filtering).</p>
+</li>
+<li>
+<p><strong><code>is_synthetic</code> bit in <code>VoicePacket</code></strong> (Mode A only) — one bit in the packet header. Relay reads it for mute-hint routing: if a receiver has <code>synth_voice_muted</code> for this speaker, the relay skips forwarding (same bandwidth-saving pattern as D059’s per-player mute hint). Older clients that don’t understand the flag treat the packet as normal voice.</p>
+</li>
+</ol>
+<p>For the default Mode B (receiver-side synthesis), the relay sees only a <code>SynthChatMessage</code> order — no voice traffic generated. The receiver’s client synthesizes locally.</p>
+<hr>
+<h3 id="implementation-estimate"><a class="header" href="#implementation-estimate">Implementation Estimate</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Component</th><th>Crate(s)</th><th>Est. Lines</th><th>Phase</th></tr>
+</thead>
+<tbody>
+<tr><td>STT backend trait + local Whisper</td><td><code>ic-audio</code></td><td>~400</td><td>Phase 5</td></tr>
+<tr><td>TTS backend trait + local Piper</td><td><code>ic-audio</code></td><td>~350</td><td>Phase 5</td></tr>
+<tr><td>Caption overlay UI</td><td><code>ic-ui</code></td><td>~250</td><td>Phase 5</td></tr>
+<tr><td>Sender-side TTS pipeline</td><td><code>ic-audio</code>, <code>ic-net</code></td><td>~200</td><td>Phase 5</td></tr>
+<tr><td>TTS text preprocessing (rule-based)</td><td><code>ic-audio</code></td><td>~150</td><td>Phase 5</td></tr>
+<tr><td>Extended mute model</td><td><code>ic-game</code></td><td>~80</td><td>Phase 5</td></tr>
+<tr><td>Console commands</td><td><code>ic-game</code></td><td>~100</td><td>Phase 5</td></tr>
+<tr><td>Settings UI (voice-text bridge panel)</td><td><code>ic-ui</code></td><td>~200</td><td>Phase 5</td></tr>
+<tr><td>Cloud backend adapters (Azure, Google, ElevenLabs, Deepgram)</td><td><code>ic-audio</code></td><td>~300</td><td>Phase 6a</td></tr>
+<tr><td>Voice persona system + Workshop packs</td><td><code>ic-audio</code>, <code>ic-game</code></td><td>~350</td><td>Phase 6a</td></tr>
+<tr><td>Faction-themed auto-assignment</td><td><code>ic-game</code></td><td>~100</td><td>Phase 6a</td></tr>
+<tr><td>TTS preprocessing (spell + statistical + WFST)</td><td><code>ic-audio</code></td><td>~200</td><td>Phase 6a</td></tr>
+<tr><td>TTS preprocessing (LLM/SLM tier, optional)</td><td><code>ic-audio</code></td><td>~100</td><td>Phase 7</td></tr>
+<tr><td>Receiver-side TTS pipeline (Mode B)</td><td><code>ic-audio</code>, <code>ic-net</code></td><td>~150</td><td>Phase 5</td></tr>
+<tr><td>Cross-language translation pipeline</td><td><code>ic-audio</code></td><td>~250</td><td>Phase 7</td></tr>
+<tr><td><strong>Total</strong></td><td></td><td><strong>~3,180</strong></td><td></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="alternatives-considered"><a class="header" href="#alternatives-considered">Alternatives Considered</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Alternative</th><th>Verdict</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr><td>Platform-level only (rely on Xbox/OS STT/TTS)</td><td>Rejected</td><td>Only works on Xbox/Windows. Linux, macOS, WASM, Steam Deck have no platform STT/TTS. IC must be cross-platform</td></tr>
+<tr><td>Always-on captions (opt-out instead of opt-in)</td><td>Rejected</td><td>STT processing costs CPU. Default-off respects players who don’t need it and avoids surprise resource usage</td></tr>
+<tr><td>Single TTS voice for all players</td><td>Rejected</td><td>Multiple players using the same voice is confusing — “who said that?” Per-player personas solve attribution</td></tr>
+<tr><td>Cloud-only backends</td><td>Rejected</td><td>Privacy concern (voice data leaves device). Offline play broken. Local backends must be the default; cloud is optional upgrade</td></tr>
+<tr><td>Voice cloning of other players</td><td>Rejected</td><td>Consent and safety concern. Players can only clone/customize their <em>own</em> voice persona. Impersonation is explicitly blocked</td></tr>
+<tr><td>Real-time voice style transfer (voice changer)</td><td>Deferred</td><td>Different from TTS — this is modifying live voice, not synthesizing from text. Interesting but orthogonal to the voice-text bridge. Could be a future D059 extension</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="cross-references"><a class="header" href="#cross-references">Cross-References</a></h3>
+<ul>
+<li><strong>Communication system:</strong> <a href="D059-communication.html">D059</a> (VoIP architecture, text chat, muting model, relay forwarding, Opus codec)</li>
+<li><strong>Player profile:</strong> <a href="../09e/D053-player-profile.html">D053</a> (reference only — D079 explicitly does NOT store voice persona in D053 profile; uses session capability advertisement instead)</li>
+<li><strong>Community servers:</strong> <a href="../09b/D052-community-servers.html">D052</a> (relay forwarding, moderation)</li>
+<li><strong>LLM provider setup:</strong> <a href="../../player-flow/llm-setup-guide.html"><code>player-flow/llm-setup-guide.md</code></a> (pluggable backend configuration pattern)</li>
+<li><strong>Workshop:</strong> <a href="../09c/D050-workshop-library.html">D050</a> (community voice persona packs)</li>
+<li><strong>Settings:</strong> <a href="../../player-flow/settings.html"><code>player-flow/settings.md</code></a> (voice-text bridge settings panel)</li>
+<li><strong>Console commands:</strong> <a href="D058-command-console.html">D058</a> (<code>/captions</code>, <code>/tts</code>, <code>/voice-persona</code>, <code>/player &lt;name&gt; mute</code>)</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../decisions/09g/D069-install-wizard.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../../10-PERFORMANCE.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../decisions/09g/D069-install-wizard.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../../10-PERFORMANCE.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../../mark-09e88c2c.min.js"></script>
+        <script src="../../searcher-c2a407aa.js"></script>
+
+        <script src="../../clipboard-1626706a.min.js"></script>
+        <script src="../../highlight-abc7f01d.js"></script>
+        <script src="../../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-50eef387.js";
+            window.path_to_searchindex_js = "../searchindex-9b234216.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-f491df3e.js"></script>
+        <script src="../toc-a18c07f4.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -242,17 +242,20 @@ campaign:
           next: allied_02a
           debrief: briefings/allied-01-debrief-bridge.yaml
           state_effects:
-            set_flag: { bridge_status: intact }
+            set_flag:
+              bridge_status: intact
         victory_bridge_destroyed:
           description: "Won but bridge was destroyed"
           next: allied_02b
           state_effects:
-            set_flag: { bridge_status: destroyed }
+            set_flag:
+              bridge_status: destroyed
         defeat:
           description: "Base overrun"
           next: allied_01_fallback
           state_effects:
-            set_flag: { retreat_count: +1 }
+            set_flag:
+              retreat_count: +1
 
     allied_02a:
       map: missions/allied-02a    # different map — bridge crossing
@@ -262,7 +265,8 @@ campaign:
         veterancy: keep           # their experience carries
         equipment: keep           # captured Soviet tanks too
       conditions:                 # optional entry conditions
-        require_flag: { bridge_status: intact }
+        require_flag:
+          bridge_status: intact
       outcomes:
         victory:
           next: allied_03
@@ -291,7 +295,8 @@ campaign:
         victory:
           next: allied_02b        # after retreating, you take the harder path
           state_effects:
-            set_flag: { morale: low }
+            set_flag:
+              morale: low
 
     allied_03:
       map: missions/allied-03
@@ -317,6 +322,508 @@ campaign:
           └─────────────┘
 </code></pre>
 <p>This is a <strong>directed acyclic graph</strong> (with optional cycles for retry loops). The engine validates campaign graphs at load time: no orphan nodes, all outcome targets exist, start mission is defined.</p>
+<h3 id="campaign-graph-extensions-optional-side-missions"><a class="header" href="#campaign-graph-extensions-optional-side-missions">Campaign Graph Extensions (Optional Side Missions)</a></h3>
+<p>Campaign graphs are extensible — external mods can inject new mission nodes into an existing campaign’s graph without modifying the original campaign files. This enables:</p>
+<ol>
+<li><strong>First-party expansion content</strong> — IC ships optional “Enhanced Campaign” missions that branch off the original RA1/TD campaign graph, using IC’s new mechanics (hero progression, branching, dynamic weather, asymmetric co-op) while the classic missions remain untouched</li>
+<li><strong>Community side missions</strong> — Workshop authors publish side-mission packs that attach to specific points in official or community campaigns</li>
+<li><strong>Campaign DLC pattern</strong> — new story arcs that branch off after specific missions and rejoin (or don’t) later in the original graph</li>
+</ol>
+<p><strong>How it works:</strong> Campaign extensions use the same YAML graph format as primary campaigns but declare an <code>extends</code> field pointing to the parent campaign. The engine merges the extension graph into the parent at load time.</p>
+<pre><code class="language-yaml"># Extension campaign — adds optional side missions to the Allied campaign
+campaign:
+  id: allied_campaign_enhanced
+  extends: allied_campaign               # parent campaign this extends
+
+  # Extension metadata
+  title: "Allied Campaign — Enhanced Edition"
+  description: "Optional missions exploring new IC mechanics alongside the classic Allied campaign"
+  optional: true                         # player can enable/disable in campaign settings
+  badge: "IC Enhanced"                   # shown in mission select to distinguish extended content
+
+  # New missions that attach to the parent graph
+  missions:
+    # Side mission: branches off after allied_03 as an OPTIONAL path
+    allied_03_tanya_ops:
+      extends_from:
+        parent_mission: allied_03        # attach point in the parent campaign
+        parent_outcome: victory          # which outcome edge to branch from
+        insertion: optional_branch       # 'optional_branch' = new choice, not replacement
+      map: missions/enhanced/tanya_ops_01
+      briefing: briefings/enhanced/tanya_ops_01.yaml
+      badge: "IC Enhanced"               # UI badge distinguishing this from original missions
+      type: embedded_task_force          # uses new IC mission archetype
+      hero: tanya
+      outcomes:
+        victory:
+          next: allied_04                # rejoin the original campaign graph
+          state_effects:
+            set_flag:
+              tanya_ops_complete: true
+              tanya_reputation: hero
+        defeat:
+          next: allied_04                # still continues — side mission failure isn't campaign-ending
+          state_effects:
+            set_flag:
+              tanya_ops_failed: true
+
+    # Side mission: available only if the player chose a specific path
+    allied_06_spy_network:
+      extends_from:
+        parent_mission: allied_06
+        parent_outcome: victory
+        insertion: optional_branch
+        condition:                       # only available if a specific flag is set
+          require_flag:
+            tanya_ops_complete: true
+      map: missions/enhanced/spy_network
+      type: spy_infiltration
+      outcomes:
+        victory:
+          next: allied_07
+          state_effects:
+            set_flag:
+              spy_network_active: true
+
+    # Replacement mission: same graph position but uses new IC mechanics
+    allied_05_remastered:
+      extends_from:
+        parent_mission: allied_05
+        insertion: alternative            # 'alternative' = offered alongside the original
+        label: "Enhanced Version"         # shown in mission select
+      map: missions/enhanced/allied_05_remastered
+      type: embedded_task_force           # new IC archetype instead of classic scripting
+      outcomes:
+        victory:
+          next: allied_06                 # same destination as original
+        defeat:
+          next: allied_05_fallback        # same fallback as original
+</code></pre>
+<p><strong>Insertion modes:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mode</th><th>Behavior</th><th>UX</th></tr>
+</thead>
+<tbody>
+<tr><td><code>optional_branch</code></td><td>Adds a new choice alongside existing outcome edges. Player can take the side mission or continue the original path. If the side mission is skipped, the original graph is unchanged</td><td>Mission select shows: “Continue to Mission 4” / “Side Mission: Tanya Ops (IC Enhanced)”</td></tr>
+<tr><td><code>alternative</code></td><td>Offers an alternative version of an existing mission. Player chooses between original and enhanced. Both lead to the same next-mission targets</td><td>Mission select shows: “Mission 5 (Classic)” / “Mission 5 (Enhanced Version)”</td></tr>
+<tr><td><code>insert_before</code></td><td>Adds a new mission that must be completed before the original mission. The extension mission’s victory outcome leads to the original mission</td><td>The new mission appears in the graph between the parent and its original next mission</td></tr>
+<tr><td><code>post_campaign</code></td><td>Attaches after the campaign’s ending node(s). Extends the story beyond the original ending</td><td>Available after campaign completion. Shows as “Epilogue: …”</td></tr>
+</tbody>
+</table>
+</div>
+<p>Some first-party plans may intentionally keep a branch pending across a bounded future window, such as a rescue mission that remains available for the next one or two nodes while penalties escalate. That is an explicit campaign-layer extension, not implicit behavior of every <code>optional_branch</code>.
+When this happens, the campaign map/intermission UI may show multiple available missions at once. <code>Continue Campaign</code> should reopen that campaign map/intermission state rather than auto-launching an arbitrary node.</p>
+<p><strong>Graph merge at load time:</strong></p>
+<ol>
+<li>Engine loads the parent campaign graph (e.g., <code>allied_campaign</code>)</li>
+<li>Engine scans for installed campaign extensions that declare <code>extends: allied_campaign</code></li>
+<li>For each enabled extension, the engine validates:
+<ul>
+<li><code>parent_mission</code> exists in the parent graph</li>
+<li><code>parent_outcome</code> is a valid outcome for that mission</li>
+<li>No conflicting insertions (two extensions trying to <code>insert_before</code> the same mission)</li>
+<li>Extension missions don’t create graph cycles</li>
+</ul>
+</li>
+<li>Extension missions are merged into the combined graph with their <code>badge</code> metadata</li>
+<li>The combined graph is what the player sees in mission select</li>
+</ol>
+<p><strong>Player control:</strong></p>
+<ul>
+<li>Extensions are <strong>opt-in</strong>. The campaign settings screen shows installed extensions with toggle switches:
+<pre><code>Allied Campaign
+  ✅ Classic missions (always on)
+  🔲 IC Enhanced Edition — optional side missions using new mechanics
+  🔲 Community: "Tanya Chronicles" by MapMaster — 5 additional commando missions
+</code></pre>
+</li>
+<li>Disabling an extension removes its missions from the graph. The original campaign is always playable without any extensions</li>
+<li>Campaign progress (D021 <code>CampaignState</code>) tracks which extension missions were completed, so enabling/disabling extensions mid-campaign is safe — completed extension missions remain in history, and the player continues from wherever they are in the original graph</li>
+</ul>
+<p><strong>Workshop support:</strong> Campaign extensions are Workshop packages (D030/D049) with <code>type = "campaign_extension"</code> in their <code>mod.toml</code>. The Workshop listing shows which parent campaign they extend. Installing an extension automatically associates it with the parent campaign in the mission select UI.</p>
+<pre><code class="language-toml"># mod.toml for a campaign extension
+[mod]
+id = "allied-enhanced"
+title = "Allied Campaign — Enhanced Edition"
+type = "campaign_extension"
+extends_campaign = "allied_campaign"    # which campaign this extends
+
+[dependencies]
+"official/ra1" = "^1.0"               # requires the base RA1 module
+</code></pre>
+<h3 id="first-party-enhanced-campaigns-ic-enhanced-edition"><a class="header" href="#first-party-enhanced-campaigns-ic-enhanced-edition">First-Party Enhanced Campaigns (IC Enhanced Edition)</a></h3>
+<p>IC ships the classic RA1 Allied and Soviet campaigns faithfully reproduced (Phase 4). Alongside them, IC offers an <strong>optional “Enhanced Edition”</strong> — a campaign extension that weaves Counterstrike/Aftermath expansion missions into the main campaign graph, adds IC-original missions showcasing new mechanics, and introduces branching decisions. Like XCOM: Enemy Within to Enemy Unknown, or Baldur’s Gate Enhanced Edition — the same campaign, but richer.</p>
+<p><strong>Guiding principle:</strong> The classic campaign is always available untouched. Enhanced Edition is opt-in. A player who wants the 1996 experience gets it. A player who wants to see what a modern engine adds enables the extension. Both are first-class.</p>
+<h4 id="what-the-enhanced-edition-adds"><a class="header" href="#what-the-enhanced-edition-adds">What the Enhanced Edition Adds</a></h4>
+<p><strong>1. Counterstrike &amp; Aftermath missions integrated into the campaign graph</strong></p>
+<p>The original expansion packs (Counterstrike: 16 missions, Aftermath: 18 missions) shipped as standalone, play-in-any-order mission sets with no campaign integration. The Enhanced Edition places them into the main campaign graph at chronologically appropriate points, as optional side missions:</p>
+<pre><code>Classic Allied Campaign (linear):
+  A01 → A02 → A03 → A04 → ... → A14
+
+Enhanced Edition (branching, with expansion missions woven in):
+  A01 → A02 → A03 ─┬─ A04 → A05 ─┬─ A06 → ...
+                    │              │
+                    └─ CS-A03      └─ AM-A02
+                    (Counterstrike  (Aftermath
+                     side mission,   side mission,
+                     optional)       optional)
+</code></pre>
+<p>Some expansion missions become alternative versions of main missions (offering the enhanced IC version alongside the classic). Some become side-mission branches that the player can take or skip. A few become mandatory in the Enhanced Edition flow where they fill narrative gaps.</p>
+<p><strong>2. IC-original missions showcasing platform capabilities</strong></p>
+<p>New missions designed specifically to demonstrate what IC’s engine can do that the original couldn’t:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>IC Feature</th><th>Enhanced Edition Mission</th><th>What It Demonstrates</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Hero progression (D021)</strong></td><td>“Tanya: First Blood” — a prologue mission before A01 where Tanya earns her first skill points</td><td>Hero XP, skill tree, persistent progression across the entire campaign</td></tr>
+<tr><td><strong>Embedded task force (§ Special Ops Archetypes)</strong></td><td>“Evidence: Enhanced” — Tanya + squad operate inside a live battle around the facility approach</td><td>Hero-in-battle gameplay: live AI-vs-AI combat around the player’s special ops objectives</td></tr>
+<tr><td><strong>Branching decisions</strong></td><td>After M10A, choose: classic interior raid, embedded task-force variant, or commander-led siege</td><td>Multiple paths with different rewards and persistent consequences</td></tr>
+<tr><td><strong>Air campaign</strong></td><td>“Operation Skyfall” — coordinate air strikes and recon flights supporting a ground resistance attack</td><td>Air commander gameplay: sortie management, target designation, no base building</td></tr>
+<tr><td><strong>Spy infiltration</strong></td><td>“Behind Enemy Lines” — Tanya infiltrates a Soviet facility for Iron Curtain intel</td><td>Detection/alert system, sabotage effects weakening later Soviet operations</td></tr>
+<tr><td><strong>Dynamic weather (D022)</strong></td><td>“Protect the Chronosphere” — a storm rolls in during the defense, reducing visibility and slowing vehicles</td><td>Weather as gameplay: the battlefield changes mid-mission, not just visually</td></tr>
+<tr><td><strong>Asymmetric co-op (D070, Phase 6b add-on)</strong></td><td>“Joint Operations” — optional co-op variant where Player 1 is Commander (base) and Player 2 is SpecOps (Tanya’s squad)</td><td>The full Commander &amp; SpecOps experience within the campaign once D070 ships</td></tr>
+<tr><td><strong>Campaign menu scenes</strong></td><td>Each act changes the main menu background — Act 1: naval convoy, Act 2: night air patrol, Act 3: ground assault, Victory: sunrise over liberated city</td><td>Evolving title screen tied to campaign progress</td></tr>
+<tr><td><strong>Unit roster carryover (D021)</strong></td><td>Surviving units from “Tanya: First Blood” appear in A01 as veteran reinforcements</td><td>Persistent roster: lose a unit and they’re gone for the rest of the campaign</td></tr>
+<tr><td><strong>Failure as branching</strong></td><td>If “Behind Enemy Lines” fails, Tanya is captured and the rescue branch can stay pending for a bounded window while penalties escalate; ignoring it leaves permanent consequences</td><td>No game-over screen: failure changes the next branch and mission conditions instead of forcing a reload</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>3. Decision points that create campaign variety</strong></p>
+<p>At key moments, the Enhanced Edition offers the player a choice:</p>
+<pre><code class="language-yaml"># Example: after completing mission A05, the player chooses
+missions:
+  allied_05:
+    outcomes:
+      victory:
+        # Enhanced Edition adds a decision point here
+        decision:
+          prompt: "Command has two plans for the next phase."
+          choices:
+            - label: "Frontal Assault (Classic)"
+              description: "Attack the Soviet base directly with full armor support."
+              next: allied_06                    # original mission
+              badge: "Classic"
+            - label: "Sewer Infiltration (Enhanced)"
+              description: "Send Tanya through the sewers to sabotage the base from within before the assault."
+              next: allied_05b_infiltration      # new IC mission
+              badge: "IC Enhanced"
+              requires_hero: tanya               # only available if Tanya is alive
+            - label: "Air Strike First (Counterstrike)"
+              description: "Soften the target with a bombing campaign before committing ground forces."
+              next: cs_allied_04                 # Counterstrike expansion mission
+              badge: "Counterstrike"
+              unchosen_effects:
+                set_flag:
+                  air_strike_window_missed: true
+</code></pre>
+<p>Choices may optionally define <code>unchosen_effects</code> on individual entries. When the player picks one branch, the engine applies the <code>unchosen_effects</code> from every branch not taken. This lets authors build XCOM-style “the world moved without you” decision points using the same D021 <code>decision</code> primitive instead of inventing a separate timed-choice node.</p>
+<p><strong>4. Expansion mission enhancements</strong></p>
+<p>When Counterstrike/Aftermath missions are played within the Enhanced Edition, they gain IC features they didn’t originally have:</p>
+<ul>
+<li><strong>Briefing/debrief flow</strong> — continuous narrative instead of standalone mission select</li>
+<li><strong>Roster carryover</strong> — units from the previous mission carry over (the originals had no persistence)</li>
+<li><strong>Weather effects</strong> — maps gain dynamic weather appropriate to their setting (Italian missions get Mediterranean sun; Polish missions get winter conditions)</li>
+<li><strong>Veterancy</strong> — units earn experience and carry it forward</li>
+<li><strong>Multiple outcomes</strong> — original missions had win/lose; Enhanced Edition adds alternative victory conditions (“won with low casualties” → bonus reinforcements next mission)</li>
+</ul>
+<p><strong>5. Ideas drawn from other successful enhanced editions</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Source</th><th>What They Did</th><th>IC Application</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>XCOM: Enemy Within</strong></td><td>Added new resources (Meld), new soldier class (MEC), new mission types woven into the same campaign timeline. Toggleable mission chains (Operation Progeny)</td><td>IC adds new resource mechanics (hero XP), new mission types (task force, air campaign, spy infiltration) woven into RA1 timeline. Each chain is toggleable</td></tr>
+<tr><td><strong>Baldur’s Gate Enhanced Edition</strong></td><td>Added 3 new companion characters with unique quest lines that interleave with the main story. New arena mode. QoL improvements</td><td>IC adds Tanya hero progression as a “companion” quest line threading through the campaign. Highlight reel POTG after each mission</td></tr>
+<tr><td><strong>StarCraft: Brood War</strong></td><td>“Final Fantasy type events” during missions — scripted narrative beats within gameplay. Tactical decisions over which objectives to pursue</td><td>IC’s embedded task force missions do exactly this — live battle with narrative events and objective choices</td></tr>
+<tr><td><strong>Warcraft III: Frozen Throne</strong></td><td>Each campaign had a distinct tone/gameplay style (RPG-heavy Rexxar campaign vs. base-building Scourge campaign)</td><td>Enhanced Edition missions vary: some are base-building (classic), some are hero-focused (task force), some are air-only (air campaign)</td></tr>
+<tr><td><strong>C&amp;C Remastered Collection</strong></td><td>Bonus gallery content — behind-the-scenes art, remastered music, developer commentary</td><td>IC Enhanced Edition could include mission designer commentary (text/audio notes the player can toggle during briefings)</td></tr>
+<tr><td><strong>Halo: Reach</strong></td><td>Menu background and music change per campaign chapter</td><td>Campaign menu scenes: each act of the Enhanced Edition changes the main menu</td></tr>
+<tr><td><strong>Fire Emblem</strong></td><td>Permadeath creates emotional investment in individual units; branching paths based on who survives</td><td>IC’s roster carryover does this — lose Tanya early and the entire campaign arc changes. Some missions only exist if specific heroes survived</td></tr>
+</tbody>
+</table>
+</div>
+<h4 id="campaign-structure-overview"><a class="header" href="#campaign-structure-overview">Campaign Structure Overview</a></h4>
+<pre><code>                        ┌──────────────────────────────────────────────┐
+                        │  ALLIED ENHANCED EDITION CAMPAIGN GRAPH       │
+                        │                                              │
+  Prologue (IC)         │  [Tanya: First Blood]                       │
+                        │        │                                    │
+  Act 1: Coastal War    │  A01 ──┤── CS-A01 (optional Counterstrike)  │
+  (Classic + Expansion) │  A02 ──┤── CS-A02 (optional)                │
+                        │  A03 ──┼── IC: Dead End / operative branch   │
+                        │        │                                    │
+  Decision Point ───────│────────┼── Choose: A04 (classic) OR         │
+                        │        │   IC: Behind Enemy Lines (spy)      │
+                        │        │                                    │
+  Act 2: Interior Push  │  A05 ──┤── AM-A01 (optional Aftermath)      │
+  (Classic + Enhanced)  │  A06 ──┤── IC: Protect the Chronosphere (weather) │
+                        │  A07 ──┤── IC: Operation Skyfall (air)      │
+                        │        │── CS-A03 (optional)                │
+                        │        │                                    │
+  Decision Point ───────│────────┼── Choose: A08 (classic) OR         │
+                        │        │   IC: Evidence variant / siege      │
+                        │        │                                    │
+  Act 3: Final Push     │  A09 ──┤── AM-A02 (optional)                │
+  (Classic + Add-ons)   │  A10 ──┤── IC: Joint Ops (co-op, D070, Phase 6b add-on) │
+                        │  ...   │                                    │
+                        │  A14 ──┤── IC: Epilogue (post-campaign)     │
+                        │        │                                    │
+                        └──────────────────────────────────────────────┘
+</code></pre>
+<h4 id="player-settings"><a class="header" href="#player-settings">Player Settings</a></h4>
+<pre><code>Campaign Settings — Allied Campaign
+  ✅ Classic Missions (14 missions — always available)
+  🔲 IC Enhanced Edition
+      ✅ Counterstrike Missions (woven into campaign timeline)
+      ✅ Aftermath Missions (woven into campaign timeline)
+      ✅ IC Original Missions (task force, air campaign, spy ops)
+      ✅ Hero Progression (Tanya XP/skills across all missions)
+      ✅ Decision Points (choose your path at key moments)
+      ✅ Dynamic Weather
+      ✅ Campaign Menu Scenes
+      🔲 Co-op Missions (requires second player)
+</code></pre>
+<p>Each sub-feature is independently toggleable. A player can enable Counterstrike integration but disable IC original missions. The campaign graph adjusts — disabled branches are hidden, and the graph reconnects through the classic path.</p>
+<h4 id="side-mission-rewards--making-optional-content-meaningful"><a class="header" href="#side-mission-rewards--making-optional-content-meaningful">Side Mission Rewards — Making Optional Content Meaningful</a></h4>
+<p>Side missions must feed back into the main campaign in tangible, visible ways. A side mission that doesn’t affect anything feels disconnected — the player notices when the world doesn’t react to what they did. The goal: completing a side mission should make the player <em>feel</em> the result in the next main mission.</p>
+<p><strong>Reward design principles:</strong></p>
+<ol>
+<li><strong>Specific, not generic.</strong> “Enemy has no air support next mission” is meaningful. “+500 credits” is forgettable.</li>
+<li><strong>Visible consequence.</strong> The next main mission briefing references the side mission: <em>“Thanks to your sabotage, Soviet air defenses are offline.”</em> The world notices.</li>
+<li><strong>Real cost for skipping.</strong> Missing a side mission means a harder next mission, a missed unit, or a closed branch — not just slightly less XP.</li>
+<li><strong>Cumulative bonuses.</strong> Multiple side missions in the same act compound: spy network + radar destroyed = full intel on the enemy base layout.</li>
+<li><strong>Exclusive content.</strong> Some branches/missions/units only exist if specific side missions were completed — rewards thorough players with content casual players never see.</li>
+</ol>
+<p><strong>Reward categories:</strong></p>
+<pre><code class="language-yaml"># Side mission outcome → main campaign effect
+# All implemented via existing D021 state_effects + flags + Lua
+
+# ── Direct tactical advantage ──────────────────────────────────────
+side_mission_rewards:
+  destroy_radar_station:
+    flags:
+      soviet_radar_destroyed: true
+    main_mission_effect: "Next mission: no enemy air strikes (MiGs grounded)"
+    briefing_line: "Thanks to your raid on the radar station, Soviet air command is blind."
+
+  sabotage_ammo_dump:
+    flags:
+      ammo_supply_disrupted: true
+    main_mission_effect: "Next mission: enemy units start at Rookie veterancy (supplies lost)"
+    briefing_line: "Without ammunition reserves, their veterans are fighting with scraps."
+
+  destroy_power_grid:
+    flags:
+      power_grid_down: true
+    main_mission_effect: "Next mission: enemy Tesla Coils and SAM sites are offline for 3 minutes"
+    briefing_line: "The power grid is still down. Their base defenses are dark — move fast."
+
+# ── Roster additions (persistent units) ────────────────────────────
+  rescue_engineer:
+    roster_add: [ engineer ]
+    main_mission_effect: "Engineer joins your roster permanently — can repair and capture"
+    briefing_line: "The engineer you rescued has volunteered to join your task force."
+
+  capture_prototype_tank:
+    roster_add: [ mammoth_tank_prototype, mammoth_tank_prototype ]
+    main_mission_effect: "2 prototype Mammoth Tanks available for the final assault"
+    briefing_line: "Soviet R&amp;D won't be needing these anymore."
+
+  liberate_resistance_fighters:
+    roster_add: [ resistance_squad, resistance_squad, resistance_squad ]
+    main_mission_effect: "3 Resistance squads join as reinforcements in Act 3"
+
+# ── Intelligence &amp; fog advantage ───────────────────────────────────
+  establish_spy_network:
+    flags:
+      spy_network_active: true
+    main_mission_effect: "Future missions: start with partial shroud revealed (intel from spy network)"
+    briefing_line: "Our agents have mapped their positions. You'll know where they are."
+
+  intercept_communications:
+    flags:
+      comms_intercepted: true
+    main_mission_effect: "Enemy AI coordination disrupted — units respond slower to threats"
+
+# ── Compound bonuses (multiple side missions stack) ────────────────
+  # If both spy network AND radar destroyed:
+  compound_full_intel:
+    requires:
+      spy_network_active: true
+      soviet_radar_destroyed: true
+    main_mission_effect: "Full battlefield intel — all enemy units visible at mission start"
+    briefing_line: "Between our spies and the radar blackout, we see everything. They see nothing."
+
+# ── Exclusive content unlocks ──────────────────────────────────────
+  all_act1_sides_complete:
+    requires:
+      act1_side_missions_complete: 3  # completed 3+ side missions in Act 1
+    unlocks_mission: allied_06b_secret_path       # a mission that only exists for thorough players
+    briefing_line: "Command is impressed. They're authorizing a classified operation."
+
+  tanya_max_level:
+    requires_hero: { tanya: { level_gte: 4 } }
+    unlocks_mission: tanya_solo_finale            # Tanya-only final mission variant
+    briefing_line: "Tanya, you've proven you can handle this alone."
+</code></pre>
+<p><strong>Lua implementation (reads flags set by side missions):</strong></p>
+<pre><code class="language-lua">-- Main mission setup: check what side missions the player completed
+Events.on("mission_start", function()
+  -- Direct tactical advantage
+  if Campaign.get_flag("soviet_radar_destroyed") then
+    Ai.modify("soviet_ai", { disable_ability = "air_strike" })
+  end
+
+  if Campaign.get_flag("ammo_supply_disrupted") then
+    Ai.modify("soviet_ai", { max_veterancy = "rookie" })
+  end
+
+  if Campaign.get_flag("power_grid_down") then
+    Trigger.schedule(0, function()
+      Trigger.disable_structures_by_type("tesla_coil", { duration_ticks = 3600 })
+      Trigger.disable_structures_by_type("sam_site", { duration_ticks = 3600 })
+    end)
+  end
+
+  -- Intelligence advantage
+  if Campaign.get_flag("spy_network_active") then
+    Player.reveal_shroud_percentage(0.4)  -- reveal 40% of the map
+  end
+
+  -- Compound bonus: full intel
+  if Campaign.get_flag("spy_network_active") and Campaign.get_flag("soviet_radar_destroyed") then
+    Player.reveal_all_enemies()  -- show all enemy units at mission start
+    UI.show_notification("Full battlefield intel active. All enemy positions known.")
+  end
+
+  -- Roster additions from side missions appear as reinforcements
+  local rescued = Campaign.get_roster_by_flag("rescued_in_side_mission")
+  if #rescued &gt; 0 then
+    Trigger.spawn_reinforcements_from_roster(rescued, "allied_reinforcement_zone")
+    UI.show_notification(#rescued .. " units from your previous operations have joined the fight.")
+  end
+end)
+</code></pre>
+<p><strong>How the briefing acknowledges side mission results:</strong></p>
+<pre><code class="language-yaml"># Main mission briefing with conditional lines
+mission:
+  id: allied_06
+  briefing:
+    base_text: "Commander, the assault on the Soviet forward base begins at dawn."
+    conditional_lines:
+      - flag: soviet_radar_destroyed
+        text: "Good news — the radar station you destroyed last week has left their air command blind. No MiG support expected."
+      - flag: ammo_supply_disrupted
+        text: "Intelligence reports the ammo dump sabotage has taken effect. Enemy units are under-supplied."
+      - flag: spy_network_active
+        text: "Our spy network has provided detailed positions of their defenses. You'll have partial intel."
+      - flag_absent: soviet_radar_destroyed
+        text: "Be warned — Soviet air support is fully operational. Expect MiG patrols."
+      - compound: { spy_network_active: true, soviet_radar_destroyed: true }
+        text: "Between our spies and the radar blackout, we have full battlefield awareness. Press the advantage."
+</code></pre>
+<p>The briefing dynamically assembles based on which side missions the player completed. A player who did everything hears good news. A player who skipped everything hears warnings. The same mission, different context — the world reacts to what you did (or didn’t do).</p>
+<h4 id="failure-as-consequence-not-game-over-spectrum-outcomes"><a class="header" href="#failure-as-consequence-not-game-over-spectrum-outcomes">Failure as Consequence, Not Game Over (Spectrum Outcomes)</a></h4>
+<p>Classic C&amp;C missions have two outcomes: win or lose. Lose means retry. The Enhanced Edition uses <strong>spectrum outcomes</strong> — the same mission can have 3-4 named results, each leading to a different next mission with different consequences. Failure doesn’t end the campaign; it makes the campaign harder and different.</p>
+<p><strong>Planned example — “Destroy the Bridges” (Tanya mission):</strong></p>
+<p>This is the <strong>simple direct-branch pattern</strong>: capture routes immediately into a rescue mission or harder follow-up. Campaigns that want “rescue now, later, or never” escalation across later nodes should use the bounded pending-branch extension described above, not overload this simpler pattern.</p>
+<pre><code class="language-yaml">mission:
+  id: enhanced_bridge_assault
+  type: embedded_task_force
+  hero: tanya
+  description: "Tanya must destroy three bridges to cut off Soviet reinforcements before the main assault."
+
+  outcomes:
+    # Best case: all bridges destroyed
+    total_success:
+      condition: "bridges_destroyed == 3"
+      next: allied_08a_easy
+      state_effects:
+        set_flag:
+          bridges_destroyed: 3
+          reinforcement_route: severed
+      briefing_next: "All three bridges are down. The Soviets are completely cut off. This will be a clean sweep."
+
+    # Partial success: some bridges destroyed
+    partial_success:
+      condition: "bridges_destroyed &gt;= 1 AND bridges_destroyed &lt; 3"
+      next: allied_08a_medium
+      state_effects:
+        set_flag:
+          bridges_destroyed: $bridges_destroyed
+          reinforcement_route: reduced
+      briefing_next: "We got some of the bridges, but enemy reinforcements are still trickling through. Expect heavier resistance."
+
+    # Failed but Tanya escaped
+    failed_escaped:
+      condition: "bridges_destroyed == 0 AND hero_alive(tanya)"
+      next: allied_08b_hard
+      state_effects:
+        set_flag:
+          bridges_intact: true
+          reinforcement_route: full
+          tanya_reputation: setback
+      briefing_next: "The bridges are intact. The full Soviet armored division is rolling across. Commander, prepare for a hard fight."
+
+    # Failed and Tanya captured
+    tanya_captured:
+      condition: "bridges_destroyed == 0 AND NOT hero_alive(tanya)"
+      next: allied_08c_rescue
+      state_effects:
+        set_flag:
+          bridges_intact: true
+          tanya_captured: true
+        hero_status:
+          tanya: captured
+      briefing_next: "We've lost contact with Tanya. Intel suggests she's been taken to the Soviet detention facility. New priority: rescue operation."
+
+    # Failed but Tanya killed (hero death_policy: wounded)
+    tanya_wounded:
+      condition: "hero_wounded(tanya)"
+      next: allied_08b_hard
+      state_effects:
+        set_flag:
+          bridges_intact: true
+          tanya_wounded: true
+        hero_status:
+          tanya: wounded   # Tanya unavailable for 2 missions (recovery)
+      briefing_next: "Tanya is wounded and being evacuated. She'll be out of action for a while. We proceed without her."
+</code></pre>
+<p><strong>How the next main mission reacts (Lua):</strong></p>
+<pre><code class="language-lua">-- allied_08 setup: adapts based on bridge mission outcome
+Events.on("mission_start", function()
+  local bridges = Campaign.get_flag("bridges_destroyed") or 0
+
+  if bridges == 3 then
+    -- Easy variant: enemy has no reinforcements
+    Ai.modify("soviet_ai", { disable_reinforcements = true })
+    Ai.modify("soviet_ai", { starting_units_multiplier = 0.5 })
+  elseif bridges &gt;= 1 then
+    -- Medium: reduced reinforcements
+    Ai.modify("soviet_ai", { reinforcement_delay_ticks = 3600 })  -- delayed by 3 min
+    Ai.modify("soviet_ai", { starting_units_multiplier = 0.75 })
+  else
+    -- Hard: full enemy force, bridges intact
+    Ai.modify("soviet_ai", { reinforcement_interval_ticks = 1200 })  -- every 60 seconds
+    Ai.modify("soviet_ai", { starting_units_multiplier = 1.0 })
+  end
+
+  -- Tanya unavailable if captured or wounded
+  if Campaign.get_flag("tanya_captured") then
+    -- This mission becomes harder without Tanya
+    UI.show_notification("Tanya is being held at the detention facility. You're on your own.")
+  elseif Campaign.get_flag("tanya_wounded") then
+    UI.show_notification("Tanya is recovering from her injuries. She'll rejoin in two missions.")
+  end
+end)
+</code></pre>
+<p><strong>The spectrum:</strong> The player never sees a “Mission Failed” screen. Every outcome — total success, partial success, failure with escape, capture, wounding — leads to a <em>different</em> next mission or a <em>different version</em> of the same mission. The campaign continues, but the player’s performance shapes what comes next. A player who destroyed all three bridges gets a victory lap. A player who got Tanya captured gets a rescue mission they wouldn’t have otherwise seen. Both paths are content. Both are valid. Neither is “wrong.” In more advanced campaign designs, that capture branch can instead become a bounded pending rescue opportunity with escalating penalties.</p>
+<p>This pattern applies to any Enhanced Edition mission — not just the bridge example. Every mission should have at least 2-3 meaningfully different outcomes that branch the campaign or modify the next mission’s conditions.</p>
 <h3 id="unit-roster--persistence"><a class="header" href="#unit-roster--persistence">Unit Roster &amp; Persistence</a></h3>
 <p>Inspired by Operation Flashpoint: Resistance — surviving units are precious resources that carry forward, creating emotional investment and strategic consequences.</p>
 <p><strong>Unit Roster:</strong></p>
@@ -725,6 +1232,395 @@ pub struct NamedCharacterPresentationConfig {
                 - { id: intel_keycard, qty: 1 }
 </code></pre>
 <p><strong>Why this fits the design:</strong> The engine core stays game-agnostic (hero progression is campaign/game-module content, not an engine-core assumption), and the feature composes cleanly with D021 branches, D038 intermissions, and D065 tutorial/onboarding flows.</p>
+<h3 id="special-operations-mission-archetypes-hero-in-battle"><a class="header" href="#special-operations-mission-archetypes-hero-in-battle">Special Operations Mission Archetypes (Hero-in-Battle)</a></h3>
+<p>The hero toolkit above handles hero progression (XP, skills, loadouts). This section defines <strong>mission design patterns</strong> where the hero operates inside a live, dynamic battle — not on a separate scripted commando map.</p>
+<p>The key difference from classic C&amp;C commando missions: in traditional commando missions, Tanya infiltrates a static, scripted map alone. In these archetypes, the player controls a hero + squad <strong>embedded inside an ongoing AI-vs-AI battle</strong>. The larger battle is dynamic, affects the player, and the player affects it. Think Dota’s hero-in-a-war model applied to RTS campaigns.</p>
+<h4 id="archetype-embedded-task-force"><a class="header" href="#archetype-embedded-task-force">Archetype: Embedded Task Force</a></h4>
+<p>The player controls a hero (Tanya) + a small squad (5-15 units) inside a <strong>live battle between AI factions</strong>. Tanks, aircraft, and infantry fight around the player. The player’s objectives are special-ops tasks (sabotage, rescue, assassination) that take place within and alongside the larger engagement.</p>
+<pre><code class="language-yaml">mission:
+  id: allied_07_bridge_assault
+  type: embedded_task_force
+
+  # The live battle — two AI factions fight each other on the same map
+  battle_context:
+    allied_ai:
+      faction: allies
+      preset: aggressive          # AI preset (D043)
+      relationship_to_player: allied   # same team as player's squad
+      base: true                  # has a base, produces units
+      objective: "Push across the river and establish a beachhead"
+    soviet_ai:
+      faction: soviet
+      preset: defensive
+      relationship_to_player: enemy
+      base: true
+      objective: "Hold the river crossing at all costs"
+
+  # The player's task force — hero + squad, embedded in the battle
+  player:
+    hero: tanya                   # hero character (D021 hero toolkit)
+    squad_roster: extracted       # squad comes from campaign roster (D021 carryover)
+    max_squad_size: 12
+    starting_position: behind_allied_lines
+    can_build: false              # player has no base — task force only
+    can_call_reinforcements: true # request reinforcements from allied AI (see below)
+
+  # Special-ops objectives — the player's job within the battle
+  objectives:
+    primary:
+      - id: destroy_bridge_charges
+        description: "Reach the bridge and disarm Soviet demolition charges before they detonate"
+        location: river_bridge
+        time_limit_ticks: 6000    # 5 minutes — the Soviets will blow the bridge
+    secondary:
+      - id: rescue_engineer
+        description: "Free the captured Allied engineer from the Soviet camp"
+        location: soviet_prison_camp
+        reward:
+          roster_add: engineer     # engineer joins your squad for future missions
+      - id: destroy_radar
+        description: "Take out the Soviet radar to blind their air defenses"
+        reward:
+          battle_effect: allied_air_support_unlocked   # changes the live battle
+
+  # How the player interacts with the larger battle
+  reinforcement_system:
+    enabled: true
+    request_cooldown_ticks: 1200  # can request every 60 seconds
+    options:
+      - type: infantry_squad
+        description: "Request a rifle squad from the Allied front line"
+        cost: none                # free but cooldown-limited
+      - type: apc_extraction
+        description: "Call an APC to extract wounded squad members"
+        cost: none
+      - type: artillery_strike
+        description: "Request a 10-second artillery barrage on a target area"
+        cost: secondary_objective  # unlocked by completing 'destroy_radar'
+        requires_flag: allied_air_support_unlocked
+
+  # How the player's actions affect the larger battle
+  battle_effects:
+    - trigger: objective_complete("destroy_bridge_charges")
+      effect: "Allied AI gains a crossing point — sends armor across the bridge"
+    - trigger: objective_complete("destroy_radar")
+      effect: "Soviet AI loses radar — no longer calls in air strikes"
+    - trigger: hero_dies("tanya")
+      effect: "Allied AI morale drops — retreats to defensive positions"
+    - trigger: squad_losses_exceed(75%)
+      effect: "Allied AI sends reinforcements to player's position"
+
+  outcomes:
+    victory_bridge_saved:
+      condition: "bridge_charges_disarmed AND bridge_intact"
+      next: allied_08a
+      state_effects:
+        set_flag:
+          bridge_status: intact
+          tanya_reputation: hero
+    victory_bridge_lost:
+      condition: "bridge_charges_not_disarmed OR bridge_destroyed"
+      next: allied_08b
+      state_effects:
+        set_flag:
+          bridge_status: destroyed
+          tanya_reputation: survivor
+    defeat:
+      condition: "hero_dead AND no_reinforcements"
+      next: allied_07_fallback
+</code></pre>
+<p><strong>Lua mission script for the live battle interaction:</strong></p>
+<pre><code class="language-lua">-- allied_07_bridge_assault.lua
+
+Events.on("mission_start", function()
+  -- Start the AI battle — both sides begin fighting immediately
+  Ai.activate("allied_ai")
+  Ai.activate("soviet_ai")
+
+  -- Player's squad spawns behind allied lines
+  local squad = Campaign.get_roster()
+  local tanya = Campaign.hero_get("tanya")
+  Trigger.spawn_roster_at("player_spawn_zone", squad)
+
+  -- The bridge has a 5-minute timer
+  Trigger.start_timer("bridge_demolition", 6000, function()
+    if not Var.get("bridge_charges_disarmed") then
+      Trigger.destroy_bridge("river_bridge")
+      UI.show_notification("The Soviets have destroyed the bridge!")
+    end
+  end)
+end)
+
+-- Player completes a secondary objective → changes the live battle
+Events.on("objective_complete", function(ctx)
+  if ctx.id == "destroy_radar" then
+    -- Soviet AI loses air support capability
+    Ai.modify("soviet_ai", { disable_ability = "air_strike" })
+    -- Allied AI gains air support
+    Ai.modify("allied_ai", { enable_ability = "air_support" })
+    Campaign.set_flag("allied_air_support_unlocked", true)
+    UI.show_timeline_effect("Soviet radar destroyed. Allied air support now available!")
+  end
+end)
+
+-- Player is in trouble → allied AI reacts
+Events.on("squad_losses", function(ctx)
+  if ctx.losses_percent &gt; 50 then
+    -- Allied AI sends a relief force to the player's position
+    Ai.send_reinforcements("allied_ai", {
+      to = Player.get_hero_position(),
+      units = { "rifle_squad", "medic" },
+      priority = "urgent"
+    })
+    UI.show_notification("Command: 'Hold tight, reinforcements inbound!'")
+  end
+end)
+
+-- Player calls for reinforcements manually (via request wheel / D059 beacons)
+Events.on("reinforcement_request", function(ctx)
+  if ctx.type == "artillery_strike" then
+    if Campaign.get_flag("allied_air_support_unlocked") then
+      Trigger.artillery_barrage(ctx.target_position, {
+        duration_ticks = 200,
+        radius = 5,
+        damage = 500
+      })
+    else
+      UI.show_notification("Command: 'Negative — enemy radar still active. Take it out first.'")
+    end
+  end
+end)
+
+-- Hero death affects the larger battle
+Events.on("hero_killed", function(ctx)
+  if ctx.character_id == "tanya" then
+    Ai.modify("allied_ai", { morale = "low", posture = "defensive" })
+    UI.show_notification("Allied forces fall back after losing their commando.")
+  end
+end)
+</code></pre>
+<h4 id="archetype-air-campaign-ground-support"><a class="header" href="#archetype-air-campaign-ground-support">Archetype: Air Campaign (Ground Support)</a></h4>
+<p>The player commands air assets and coordinates with ground forces (AI-controlled allied army + local resistance). The player doesn’t build — they manage sortie assignments, target designation, and extraction timing.</p>
+<pre><code class="language-yaml">mission:
+  id: allied_12_air_superiority
+  type: air_campaign
+
+  player:
+    role: air_commander
+    assets:
+      - { type: attack_helicopter, count: 4 }
+      - { type: spy_plane, count: 1 }
+      - { type: transport_chinook, count: 2 }
+    can_build: false
+    resupply_point: allied_airfield    # units return here to rearm/repair
+
+  # Ground forces the player coordinates with but doesn't directly control
+  ground_allies:
+    - id: resistance_cells
+      faction: allies
+      ai_preset: guerrilla            # hit-and-run, avoids direct engagement
+      controllable: false             # player can't give them direct orders
+      requestable: true               # player can designate targets for them
+    - id: allied_armor
+      faction: allies
+      ai_preset: cautious
+      controllable: false
+      requestable: true               # player can call in armor support to a location
+
+  # Spy mechanics — player uses spy plane for recon
+  recon:
+    spy_plane_reveals: 30             # cells revealed per flyover
+    intel_persists: true              # revealed areas stay revealed (shroud removal)
+    mark_targets: true                # player can mark spotted targets for ground forces
+
+  objectives:
+    primary:
+      - id: destroy_sam_sites
+        description: "Neutralize all 4 SAM sites to secure air corridors"
+      - id: extract_spy
+        description: "Land transport at extraction point, load the spy, return to airfield"
+    secondary:
+      - id: support_resistance_raid
+        description: "Provide air cover for the resistance attack on the supply depot"
+</code></pre>
+<pre><code class="language-lua">-- Air campaign Lua — player designates targets for AI ground forces
+
+-- Player marks a target with spy plane recon
+Events.on("target_designated", function(ctx)
+  -- Resistance cells receive the target and plan an attack
+  Ai.assign_target("resistance_cells", ctx.target_position, {
+    attack_type = "raid",
+    wait_for_air_cover = true  -- they won't attack until player provides air support
+  })
+  UI.show_notification("Resistance: 'Target received. Awaiting your air cover.'")
+end)
+
+-- Player provides air cover → resistance attacks
+Events.on("air_units_in_area", function(ctx)
+  if ctx.area == Ai.get_pending_target("resistance_cells") then
+    Ai.execute_attack("resistance_cells")
+    UI.show_notification("Resistance: 'Air cover confirmed. Moving in!'")
+  end
+end)
+</code></pre>
+<h4 id="archetype-spy-infiltration-behind-enemy-lines"><a class="header" href="#archetype-spy-infiltration-behind-enemy-lines">Archetype: Spy Infiltration (Behind Enemy Lines)</a></h4>
+<p>The player controls a spy + small cell operating behind enemy lines. The larger battle happens on the “front” — the player operates in the enemy rear. The player’s sabotage actions weaken the enemy’s front-line forces.</p>
+<pre><code class="language-yaml">mission:
+  id: soviet_05_behind_the_lines
+  type: spy_infiltration
+
+  player:
+    hero: spy
+    squad: [ spy, saboteur, sniper ]
+    can_build: false
+    detection_system:
+      enabled: true
+      alert_levels: [ undetected, suspicious, alerted, hunted ]
+      # Player actions affect alert level:
+      # - killing guards quietly: no change
+      # - explosions: +1 level
+      # - spotted by patrol: +1 level
+      # - destroying radar: resets to 'undetected'
+
+  # The front-line battle (player can see its effects but operates separately)
+  front_line:
+    soviet_ai:
+      faction: soviet
+      objective: "Hold the front line against Allied assault"
+    allied_ai:
+      faction: allies
+      objective: "Break through Soviet defenses"
+    # Player's sabotage actions weaken the Soviet front:
+    sabotage_effects:
+      - action: "destroy_ammo_dump"
+        front_effect: "Soviet AI loses artillery support for 3 minutes"
+      - action: "cut_supply_line"
+        front_effect: "Soviet AI unit production slowed by 50% for 2 minutes"
+      - action: "hack_comms"
+        front_effect: "Soviet AI coordination disrupted — units fight independently"
+
+  outcomes:
+    victory_front_collapses:
+      condition: "3+ sabotage_effects_active AND allied_ai_breaks_through"
+      description: "Your sabotage broke the Soviet lines. The Allies pour through."
+    victory_extraction:
+      condition: "all_primary_objectives_complete AND squad_extracted"
+      description: "Mission complete. The intel will change the course of the war."
+</code></pre>
+<h4 id="how-these-archetypes-use-existing-systems"><a class="header" href="#how-these-archetypes-use-existing-systems">How These Archetypes Use Existing Systems</a></h4>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>System</th><th>Role in Hero-in-Battle Missions</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>D021 Campaign Graph</strong></td><td>Missions are nodes in the branching graph. Outcomes (bridge saved/lost, hero alive/dead) create branches</td></tr>
+<tr><td><strong>D021 Hero Toolkit</strong></td><td>Tanya gains XP from mission objectives. Skills unlock across the campaign arc</td></tr>
+<tr><td><strong>D021 Roster Carryover</strong></td><td>Squad members survive between missions. Lost units stay lost</td></tr>
+<tr><td><strong>D043 AI Presets</strong></td><td>Allied and enemy AI factions use preset behaviors (aggressive, defensive, guerrilla)</td></tr>
+<tr><td><strong>D070 Commander &amp; SpecOps</strong></td><td>In co-op, one player can be the Commander (controlling the allied AI’s base/production) while another is the SpecOps player (controlling Tanya’s squad). The request economy (reinforcements, air support) maps directly to D070’s coordination surfaces</td></tr>
+<tr><td><strong>D059 Beacons &amp; Coordination</strong></td><td>The reinforcement request wheel uses D059’s beacon/ping system. “Need CAS”, “Need Extraction” are D059 request types</td></tr>
+<tr><td><strong>Lua Scripting (Tier 2)</strong></td><td>All battle interactions (AI modification, reinforcement triggers, objective effects) are Lua scripts. No WASM needed</td></tr>
+<tr><td><strong>D022 Dynamic Weather</strong></td><td>Weather affects the battle (fog reduces air effectiveness, rain slows armor)</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>No new engine systems required.</strong> These mission archetypes compose existing systems: AI presets run the battle, Lua scripts connect player actions to battle effects, the hero toolkit handles progression, and the campaign graph handles branching. The only new content is the mission YAML and Lua scripts — all authored by campaign designers, not engine developers.</p>
+<h3 id="campaign-menu-scenes-evolving-main-menu-background"><a class="header" href="#campaign-menu-scenes-evolving-main-menu-background">Campaign Menu Scenes (Evolving Main Menu Background)</a></h3>
+<p>Campaign authors can define <strong>menu scenes</strong> that change the main menu background to reflect the player’s current campaign progress. When the player returns to the main menu during a campaign playthrough, the background shows a scene tied to where they are in the story — an evolving title screen pattern used by Half-Life 2, Halo: Reach, Warcraft III, and others (see <code>player-flow/main-menu.md</code> § Campaign-Progress Menu Background for prior art).</p>
+<p>This is an authoring feature, not an engine system. The engine reads the <code>menu_scenes</code> table from the campaign YAML and matches the player’s <code>CampaignState</code> to select the active scene. No new engine code — just YAML configuration + scene assets.</p>
+<pre><code class="language-yaml"># Campaign YAML — menu scene definitions
+campaign:
+  id: allied_campaign
+  title: "Allied Campaign"
+
+  # Menu scenes — matched in order, first match wins
+  menu_scenes:
+    # Act 1: Early war — daylight naval scene
+    - match:
+        missions_completed_lt: 3       # before mission 3
+      scene:
+        type: video_loop               # pre-rendered video
+        video: "media/menu/act1_naval_fleet.webm"
+        audio: "media/menu/act1_radio_chatter.opus"  # ambient radio, plays under menu music
+        audio_volume: 0.3
+
+    # Act 2: Night operations — air campaign
+    - match:
+        missions_completed_gte: 3
+        missions_completed_lt: 7
+        flag: { current_theater: "air_campaign" }  # optional flag condition
+      scene:
+        type: video_loop
+        video: "media/menu/act2_night_flight.webm"   # cockpit view, aircraft in formation
+        audio: "media/menu/act2_pilot_radio.opus"     # radio chatter + engine hum
+
+    # Act 3: Ground assault — live shellmap scenario
+    - match:
+        missions_completed_gte: 7
+        missions_completed_lt: 11
+      scene:
+        type: shellmap                  # live in-game scene
+        map: "maps/menu_scenes/act3_beachhead.yaml"
+        script: "scripts/menu_scenes/act3_battle.lua"  # lightweight AI battle script
+        duration_ticks: 6000            # loops after 5 minutes
+
+    # Act 3 variant: if the bridge was destroyed
+    - match:
+        missions_completed_gte: 7
+        flag: { bridge_status: destroyed }
+      scene:
+        type: shellmap
+        map: "maps/menu_scenes/act3_ruins.yaml"       # different scene — bombed-out bridge
+        script: "scripts/menu_scenes/act3_ruins_battle.lua"
+
+    # Final act: victory aftermath
+    - match:
+        flag: { campaign_complete: true }
+      scene:
+        type: static_image
+        image: "media/menu/victory_sunrise.png"
+        audio: "media/menu/victory_theme.opus"
+        audio_volume: 0.5
+
+    # Default fallback (no match — e.g., campaign just started)
+    - match: {}                         # matches everything
+      scene:
+        type: shellmap
+        map: "maps/menu_scenes/default_skirmish.yaml"
+</code></pre>
+<p><strong>Scene types:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Type</th><th>What It Is</th><th>Best For</th></tr>
+</thead>
+<tbody>
+<tr><td><code>shellmap</code></td><td>Live in-game scene — a small map with a Lua script running AI units. Uses the existing shellmap infrastructure. Renders behind the menu at reduced priority</td><td>Dynamic scenes: a base under siege, a patrol formation, a naval convoy. The player sees a living piece of the campaign world</td></tr>
+<tr><td><code>video_loop</code></td><td>A <code>.webm</code> video playing in a seamless loop. Optional ambient audio track (radio chatter, engine noise, wind) plays behind menu music at configurable volume</td><td>Cinematic scenes: cockpit view of night flight, war room briefing, satellite surveillance footage. Pre-rendered = consistent quality, no sim overhead</td></tr>
+<tr><td><code>static_image</code></td><td>A single image (artwork, screenshot, concept art)</td><td>Simple scenes: victory aftermath, chapter title cards, faction banners</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Match rules:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Condition</th><th>Type</th><th>Description</th></tr>
+</thead>
+<tbody>
+<tr><td><code>missions_completed_lt</code></td><td>integer</td><td>Current <code>CampaignState.completed_missions.len()</code> &lt; value</td></tr>
+<tr><td><code>missions_completed_gte</code></td><td>integer</td><td>Current <code>CampaignState.completed_missions.len()</code> &gt;= value</td></tr>
+<tr><td><code>current_mission</code></td><td>string</td><td><code>CampaignState.current_mission</code> matches this mission ID</td></tr>
+<tr><td><code>flag</code></td><td>map</td><td>All specified flags match their values in <code>CampaignState.flags</code></td></tr>
+<tr><td><code>hero_level_gte</code></td><td>map</td><td>Hero character’s level &gt;= value (e.g., <code>{ tanya: 3 }</code>)</td></tr>
+<tr><td><code>{}</code> (empty)</td><td>—</td><td>Matches everything — use as fallback</td></tr>
+</tbody>
+</table>
+</div>
+<p>Conditions are evaluated <strong>in order</strong>; the first matching entry wins. This allows flag-based branching: the bridge-destroyed variant (with its <code>flag: { bridge_status: destroyed }</code> condition) is listed before the generic Act 3 entry, so it takes priority when the flag is set.</p>
+<p><strong>Workshop support:</strong> Community campaigns published via Workshop include their <code>menu_scenes</code> table and all referenced assets (videos, images, shellmap maps/scripts). The Workshop packaging system (D049) bundles scene assets as part of the campaign package. The SDK Campaign Editor (D038) provides a “Menu Scenes” panel for authoring and previewing scenes per campaign stage.</p>
+<p><strong>Player override:</strong> The player can always override the campaign scene by selecting a different background style in Settings → Video (static image, shellmap AI, personal highlights, community highlights). Campaign scenes are the default <em>when authored by the campaign</em> and <em>when the player hasn’t chosen something else</em>.</p>
 <h3 id="lua-campaign-api"><a class="header" href="#lua-campaign-api">Lua Campaign API</a></h3>
 <p>Mission scripts interact with campaign state through a sandboxed API:</p>
 <pre><code class="language-lua">-- === Reading campaign state ===
@@ -1037,7 +1933,7 @@ LLM generates:
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../modding/workshop.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../modding/enhanced-campaign-plan.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -1051,7 +1947,7 @@ LLM generates:
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../modding/workshop.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../modding/enhanced-campaign-plan.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

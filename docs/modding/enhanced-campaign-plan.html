@@ -1,0 +1,1419 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Enhanced Edition Campaign Plan - Iron Curtain — Design Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Design docs for a Rust-native Red Alert RTS engine">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-29075ff1.svg">
+        <link rel="shortcut icon" href="../favicon-96291481.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-2459343d.css">
+        <link rel="stylesheet" href="../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../css/sidebar-logo-511465a2.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-9b234216.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-a18c07f4.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Iron Curtain — Design Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs/edit/main/src/modding/enhanced-campaign-plan.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="enhanced-edition-campaign-plan--allied--soviet"><a class="header" href="#enhanced-edition-campaign-plan--allied--soviet">Enhanced Edition Campaign Plan — Allied &amp; Soviet</a></h1>
+<p>This is the concrete content plan for IC’s first-party “Enhanced Edition” campaign extensions. It weaves the original 14+14 main campaign missions, 34 Counterstrike/Aftermath expansion missions, and IC-original missions into two unified branching campaign graphs.</p>
+<p><strong>Source material:</strong> 28 base game missions + 20 Counterstrike missions + 18 Aftermath missions + 4 Ant missions = 70 total existing missions. IC adds ~15-20 original missions showcasing platform features.</p>
+<p><strong>Design principle:</strong> The classic campaign is always available as a straight-line path through the graph. Enhanced Edition content branches off as optional/alternative paths. IC-original missions are toggleable per-mission; Counterstrike and Aftermath missions are toggleable per-chain (following D021’s sub-feature toggle model in <code>modding/campaigns.md</code>).</p>
+<hr>
+<h2 id="campaign-design-rules"><a class="header" href="#campaign-design-rules">Campaign Design Rules</a></h2>
+<p>These rules govern how the Enhanced Edition missions are designed. They address problems in the original campaigns — awkward character introductions, unexplained difficulty spikes, disconnected side missions — and establish IC’s standard for campaign quality.</p>
+<h3 id="rule-1-no-awkward-character-introductions"><a class="header" href="#rule-1-no-awkward-character-introductions">Rule 1: No Awkward Character Introductions</a></h3>
+<p>The original RA1 cutscenes often introduced characters with a “am I supposed to know this person?” feeling. Von Esling, Stavros, Tanya, Einstein — they all appear in briefing videos assuming the player knows who they are and why they matter.</p>
+<p><strong>IC rule:</strong> Every named character gets a <strong>gameplay introduction before their cutscene introduction</strong>. The player meets the character through gameplay (controlling them, fighting alongside them, or hearing about them) before seeing them in a briefing video.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Character</th><th>Original Problem</th><th>IC Fix</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Stavros</strong></td><td>Appears in M1 briefing with no introduction. Who is this Greek officer?</td><td>Player fights alongside him in Fall of Greece prologue missions BEFORE M1</td></tr>
+<tr><td><strong>Tanya</strong></td><td>Appears in M1 briefing. Stavros objects but the player doesn’t know either of them</td><td>Player plays Tanya’s prologue mission (First Blood) BEFORE M1. Now the M1 confrontation between Stavros and Tanya is a clash between two known characters</td></tr>
+<tr><td><strong>Einstein</strong></td><td>Appears as a rescue target in M1 but the player has no emotional connection to him</td><td>IC prologue includes a brief Einstein moment — his voice on a radio transmission during the Fall of Greece, explaining what the Soviets are building. The player knows his voice before rescuing him</td></tr>
+<tr><td><strong>Volkov</strong> (Soviet)</td><td>Appears in a CS expansion mission with no setup</td><td>Player meets Volkov in the Soviet prologue mission (Awakening) before the CS missions</td></tr>
+<tr><td><strong>Kosygin</strong> (M9)</td><td>Soviet defector — the player is told to rescue someone they’ve never heard of</td><td>IC adds intel references to Kosygin in earlier missions (intercepted communications, spy reports). By M9, the player knows who he is and why he matters</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="rule-2-progressive-difficulty-and-mechanics-teaching"><a class="header" href="#rule-2-progressive-difficulty-and-mechanics-teaching">Rule 2: Progressive Difficulty and Mechanics Teaching</a></h3>
+<p>The original RA1 campaign has inconsistent difficulty — some early missions are harder than late ones, and new mechanics appear without introduction. IC’s Enhanced Edition follows D065 (Tutorial) principles: each mission teaches one new thing, difficulty escalates smoothly, and the player is never overwhelmed.</p>
+<p><strong>Difficulty curve for the Enhanced Edition prologue and Act 1:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mission</th><th>Difficulty</th><th>New Mechanic Introduced</th><th>Why This Order</th></tr>
+</thead>
+<tbody>
+<tr><td>CS “Personal War” (prologue)</td><td>Very Easy</td><td>Basic unit control, movement, escort</td><td>First mission ever — the player learns to move units. Stavros must survive</td></tr>
+<tr><td>CS “Evacuation” (prologue)</td><td>Easy</td><td>Time pressure, civilian escort, multiple objectives</td><td>Adds urgency and multi-tasking. Still small scale</td></tr>
+<tr><td>IC “Tanya: First Blood” (prologue)</td><td>Easy-Medium</td><td>Hero unit, special abilities, skill points</td><td>Introduces hero mechanics with a powerful unit. Tanya can’t die but it’s okay to struggle</td></tr>
+<tr><td>[M1] “In the Thick of It”</td><td>Medium</td><td>Base assault, combined arms (Tanya + support)</td><td>First “real” mission — but player already knows unit control, escort, and hero mechanics</td></tr>
+<tr><td>[M2] “Five to One”</td><td>Medium</td><td>Time-limited defense, convoy mechanics</td><td>Adds time pressure at larger scale</td></tr>
+<tr><td>[M3] “Dead End”</td><td>Medium</td><td>Bridge destruction, terrain objectives, stealth</td><td>Tanya-focused mission — player is now comfortable with hero gameplay</td></tr>
+<tr><td>[M4] “Ten to One”</td><td>Medium-Hard</td><td>Full base defense, counterattack</td><td>First genuinely hard mission — but by now the player has 6+ missions of experience</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Side missions are exempt from this curve.</strong> Optional content (Counterstrike, Aftermath, IC side missions) can be any difficulty — the player chooses to take them. A warning label in the mission select indicates difficulty: “This is a challenging optional mission.”</p>
+<p><strong>New IC mechanics are introduced through gameplay, not text:</strong></p>
+<ul>
+<li><strong>Hero progression:</strong> Introduced in prologue (Tanya: First Blood). The player earns skill points and sees the skill tree for the first time in a low-stakes mission</li>
+<li><strong>Spectrum outcomes:</strong> First experienced in M3 (bridge destruction with partial success). Low consequence — the next mission is harder, not game-ending</li>
+<li><strong>Dynamic weather:</strong> First appears in M8 (Chronosphere defense storm at minute 30). The storm is progressive — starts mild, gets worse — giving the player time to adapt before it’s severe</li>
+<li><strong>Embedded task force:</strong> First appears as an optional alternative in M10B (“Evidence: Enhanced”). Players who choose the classic M10B path never encounter it until M14: Enhanced (also optional)</li>
+</ul>
+<h3 id="rule-3-the-world-moves-without-you-xcom-style-timed-choices"><a class="header" href="#rule-3-the-world-moves-without-you-xcom-style-timed-choices">Rule 3: The World Moves Without You (XCOM-Style Timed Choices)</a></h3>
+<p>Between certain main missions, the Enhanced Edition presents <strong>timed strategic choices</strong> — multiple operations happening simultaneously, and the player can only address one before the window closes. The others resolve without the player, with consequences.</p>
+<p>This is the XCOM: Enemy Unknown model: three abduction sites appear, you pick one, the other two have consequences. Applied to RA1:</p>
+<p><strong>How it works:</strong> Timed choices are implemented as <strong>standard D021 decision nodes</strong> with <code>state_effects</code> that set flags for the unchosen options. No new campaign primitive needed — the existing <code>decision</code> mechanism (D021 § Campaign Graph) handles the branching, and Lua <code>Events.on("mission_start")</code> reads the flags to apply consequences.</p>
+<pre><code class="language-yaml"># Between M4 and M5: a D021 decision node with 3 options
+# Unchosen options have their flags set automatically by the decision node
+missions:
+  act1_strategic_choice:
+    type: decision                            # standard D021 decision node
+    prompt: "Command has identified three urgent situations. We can only respond to one."
+    choices:
+      - label: "Rescue Operation — Tanya"
+        description: "Tanya's team has gone silent. Send a rescue force now."
+        next: ic_behind_enemy_lines
+        unchosen_effects:                     # applied if NOT chosen
+          set_flag:
+            tanya_captured: true             # Tanya captured off-screen
+      - label: "Chemical Threat — Greece"
+        description: "Soviet Sarin gas facilities detected. Neutralize before they go active."
+        next: cs_sarin_gas_1
+        unchosen_effects:
+          set_flag:
+            sarin_active: true               # chemical weapons in M8
+      - label: "Flanking Opportunity — Siberia"
+        description: "A window to establish a second front. It won't last."
+        next: cs_siberian_1
+        unchosen_effects:
+          set_flag:
+            siberian_window_closed: true    # arc permanently closed
+</code></pre>
+<p>The <code>unchosen_effects</code> field is the one extension to D021’s existing decision node: when the player picks one option, all other options’ <code>unchosen_effects</code> are applied automatically. This is a small addition to the campaign YAML schema (a few lines in the decision node handler), not a new primitive. The flags are read by subsequent mission Lua scripts via <code>Campaign.get_flag()</code> as documented in § Side Mission Rewards.</p>
+<p><strong>Design rules for timed choices:</strong></p>
+<ol>
+<li><strong>Never more than 3 options.</strong> The player can process three choices; more creates decision paralysis</li>
+<li><strong>All options are good; the loss is opportunity cost.</strong> No “trap” choice. Each has clear value. The tension is what you DON’T get</li>
+<li><strong>Consequences are visible and referenced.</strong> If Tanya gets captured because you chose Siberia, the M5 briefing says so. If Sarin goes active because you chose Tanya, M8 is harder and the briefing explains why</li>
+<li><strong>Main campaign is never blocked.</strong> The timed choice affects difficulty and available content, never whether the player can continue</li>
+<li><strong>Placed between acts, not mid-mission.</strong> Timed choices appear in the campaign map/intermission screen, not during gameplay. The player has time to think</li>
+<li><strong>2-3 per campaign maximum.</strong> Too many and the mechanic loses weight. Each timed choice should feel momentous</li>
+</ol>
+<p><strong>Timed choice placement in Allied Enhanced Edition:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Between</th><th>Options</th><th>Theme</th></tr>
+</thead>
+<tbody>
+<tr><td>M4 → M5</td><td>Rescue Tanya / Sarin Gas / Siberia</td><td>“Three fires burning — which one do you fight?”</td></tr>
+<tr><td>M9 → M10</td><td>Poland liberation / Aftermath Italy / IC air campaign</td><td>“Where do we push next?”</td></tr>
+<tr><td>M12 → M14</td><td>Final prep choice — one last operation before Moscow</td><td>“One more shot before the endgame”</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="rule-4-optional-content-has-real-stakes"><a class="header" href="#rule-4-optional-content-has-real-stakes">Rule 4: Optional Content Has Real Stakes</a></h3>
+<p>If the player doesn’t get involved in Tanya’s mission, she gets captured. If the player doesn’t neutralize the Sarin facilities, chemical weapons appear in later missions. This is the core Enhanced Edition promise: <strong>side content matters because skipping it has consequences.</strong></p>
+<p>But the inverse must also be true: <strong>completing side content must visibly improve the main campaign.</strong> This is covered in § Side Mission Rewards — the briefing references what the player did or didn’t do, the next mission is harder or easier, unique units and abilities appear or don’t.</p>
+<p>The worst design sin: optional content that exists in a vacuum. If a side mission has no effect on the main campaign — if completing it and skipping it produce identical experiences — it shouldn’t be in the Enhanced Edition.</p>
+<h3 id="rule-5-two-lanes--commander-mandatory-and-operative-optional"><a class="header" href="#rule-5-two-lanes--commander-mandatory-and-operative-optional">Rule 5: Two Lanes — Commander (Mandatory) and Operative (Optional)</a></h3>
+<p>The Enhanced Edition campaign has two parallel gameplay lanes:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Lane</th><th>Player Role</th><th>Gameplay</th><th>Mandatory?</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Commander Lane</strong></td><td>Strategic commander</td><td>Base building, army management, combined-arms warfare</td><td><strong>Always mandatory</strong> — these ARE the campaign</td><td>M1, M2, M4, M7, M8, M12, M14</td></tr>
+<tr><td><strong>Operative Lane</strong></td><td>Tanya / Volkov</td><td>Commando missions, hero abilities, stealth, infiltration, task force ops</td><td><strong>Optional (recommended)</strong> — side missions that reward the main campaign</td><td>Behind Enemy Lines, Evidence: Enhanced, Spy Network, Operation Skyfall</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Why this separation matters:</strong></p>
+<ol>
+<li>
+<p><strong>Respects player preference.</strong> Some players love commando missions. Others find them frustrating and just want to build bases and crush armies. Neither preference is wrong. The Commander lane always works alone.</p>
+</li>
+<li>
+<p><strong>Creates a meaningful investment loop.</strong> Tanya missions are optional, but doing them makes the main missions easier. Skip them, and you face full-strength enemies with no intel, no sabotage bonuses, no captured equipment. The choice is real.</p>
+</li>
+<li>
+<p><strong>Hero progression becomes opt-in depth.</strong> Tanya’s skill tree, veterancy, and equipment only matter if you play her missions. A Commander-only player never sees the skill tree UI. An operative-focused player builds Tanya into a legend across 8+ side missions.</p>
+</li>
+<li>
+<p><strong>Co-op maps naturally to lanes.</strong> In D070 co-op mode, Player 1 takes the Commander lane and Player 2 takes the Operative lane simultaneously — the Commander runs the base while SpecOps runs the commando mission. The lane separation is already the co-op architecture.</p>
+</li>
+</ol>
+<p><strong>The exception:</strong> Allied M1 (“In the Thick of It”) is the one mission where Tanya is integral to the objective — Einstein’s rescue requires her. This is the only mandatory operative-lane mission in either campaign. Every other commando/spy mission (M3, M5, M6, M9, M10B, M13) has a Commander-lane alternative. A player who dislikes commando gameplay can complete the entire campaign through base building and army warfare after M1.</p>
+<p><strong>Canonical rule: every operative mission has a Commander alternative.</strong> The alternatives are documented in the lane diagram below and in the full campaign graph. Commander alternatives achieve the same narrative result with reduced rewards (less intel, more casualties, cruder outcome) — making the operative route attractive without making it mandatory.</p>
+<p><strong>How it looks in practice:</strong></p>
+<pre><code>Commander Lane (mandatory):        Operative Lane (optional):
+─────────────────────────          ─────────────────────────
+                                   [CS] Personal War (Stavros)
+                                   [CS] Evacuation (Stavros)
+                                   [IC] Tanya: First Blood
+[M1] Rescue Einstein ──────────── (Tanya used IN this mission — exception*)
+[M2] Supply Convoy
+                                   [IC] Supply Line Security
+                                   [M3] Destroy Bridges (Tanya commando)
+                                   ↓ bridges destroyed → M4 easier
+[M4] Hold the Pass ────────────── if bridges intact → full enemy force
+                                   [IC] Behind Enemy Lines (Tanya spy)
+                                   ↓ results affect M5/M6
+                                   [M5] Rescue Tanya (conditional, spy+commando)
+                                   [M6] Iron Curtain Infiltration (spy)†
+                                   ↓ intel affects M7/M8
+                                   [CS] Sarin Gas 1-3
+[M7] Sunken Treasure ──────────── affected by intel + Sarin results
+                                   [IC] Operation Skyfall (air)
+[M8] Protect Chronosphere ─────── affected by Skyfall + Sarin results
+                                   [M9] Extract Kosygin (spy+escort)†
+                                   ↓ Kosygin intel affects M10-M14
+                                   [AM] Poland missions
+[M10A] Suspicion ──────────────── affected by Kosygin intel + Poland
+                                   [M10B] Evidence (interior commando)†
+[M11] Naval Supremacy
+                                   [IC] Joint Operations (co-op)
+[M12] Takedown ─────────────────── affected by all side missions
+                                   [M13] Focused Blast (interior commando)†
+[M14] Moscow ───────────────────── EVERYTHING accumulates
+
+*  M1 is the one exception where Tanya is mandatory — she's integral
+   to Einstein's rescue. In co-op (D070), Commander handles the base
+   assault while SpecOps handles Tanya's infiltration path.
+
+†  ORIGINAL COMMANDO MISSIONS MOVED TO OPERATIVE LANE:
+   These four missions (M6, M9, M10B, M13) are spy/commando gameplay
+   in the original with no base building. In Enhanced Edition, each
+   gets a Commander-lane alternative for players who prefer army
+   gameplay:
+
+   M6 (spy infiltration) → Commander alternative: full assault on
+      the Tech Center. You get the intel but the facility is destroyed
+      (less intel quality than the spy route — a trade-off, not a freebie)
+
+   M9 (spy+escort) → Commander alternative: armored extraction.
+      Send a tank column to the compound, blast through, grab Kosygin.
+      Louder, more casualties, but no spy required. Kosygin provides
+      less intel (he was roughed up in the fighting)
+
+   M10B (interior commando) → already has IC "Evidence: Enhanced"
+      as an embedded task force alternative
+
+   M13 (interior commando) → Commander alternative: full base assault
+      on the facility exterior. Destroy the Iron Curtain facility with
+      artillery and air strikes instead of planting charges inside.
+      Same narrative result, different gameplay
+
+   In each case: the Commander alternative achieves the same story
+   outcome but with REDUCED rewards (less intel, more casualties,
+   cruder result). The operative route is the "clean" option with
+   better rewards. This makes the operative lane attractive without
+   making it mandatory.
+</code></pre>
+<p>The arrows show influence: operative results flow INTO commander missions as difficulty modifiers, briefing context, and bonus resources. Commander missions never require operative missions to be completable — they just benefit from them.</p>
+<p><strong>Soviet campaign equivalent:</strong> Volkov replaces Tanya in the operative lane. The Soviet campaign has fewer commando missions than the Allied one, but the same principle applies:</p>
+<pre><code>Soviet Commander Lane (mandatory):   Soviet Operative Lane (optional):
+──────────────────────────────────   ─────────────────────────────────
+                                     [IC] Volkov: Awakening
+                                     [AM] Testing Grounds
+[M1] Lesson in Blood
+[M2] Guard Duty
+                                     [M3] Covert Cleanup (spy chase)†
+                                     [IC] Mole Hunt (counter-intel)
+[M4] Behind the Lines ─────────────  affected by Mole Hunt results
+[M5] Distant Thunder
+[M6] Bridge over Grotzny ──────────  roster + resources from M5 carry over
+                                     [CS] Volkov &amp; Chitzkoi (hero)
+                                     [CS] Legacy of Tesla
+[M7] Core of the Matter ──────────── Volkov vs Tanya if available
+[M8] Elba Island
+                                     [CS] Paradox Equation
+                                     [CS] Mousetrap (hunt Stavros)
+                                     [M9] Liability Elimination†
+                                     [IC] Stalin's Shadow (spy)
+[M10] Overseer (or Strike alt.)
+[M11] Sunk Costs ──────────────────  affected by Legacy of Tesla
+[M12] Capture Tech Centers
+                                     [IC] Operation Tempest (air)
+[M13] Capture Chronosphere ────────  Volkov commando approach if avail.
+[M14] Soviet Supremacy ────────────  EVERYTHING accumulates
+
+†  SOVIET COMMANDO MISSIONS MOVED TO OPERATIVE LANE:
+
+   M3 (spy chase) → Commander alternative: cordon and sweep.
+      Deploy infantry squads to lock down the district and
+      flush the spy out with overwhelming force. Less elegant
+      than a precise chase — spy may escape with partial intel
+      (worse for you in future missions)
+
+   M9 (assassination) → Commander alternative: arrest operation.
+      Send an armored column to detain the target publicly.
+      Same political result but cruder — creates more internal
+      unrest (a flag that affects Act 3 stability)
+</code></pre>
+<h3 id="rule-6-hero-capture-creates-escalating-rescue-pressure"><a class="header" href="#rule-6-hero-capture-creates-escalating-rescue-pressure">Rule 6: Hero Capture Creates Escalating Rescue Pressure</a></h3>
+<p>When a hero operative (Tanya, Volkov) is captured in a failed mission, the enemy doesn’t just hold them — they <strong>interrogate</strong> them. The intended mechanic is <strong>escalation</strong>: the longer the hero remains captured, the more intel or technology the enemy extracts.</p>
+<p>This is one of the few places where the first-party Enhanced Edition deliberately extends the base D021 campaign graph model. The rescue mission is a <strong>bounded pending branch</strong>: it can be taken immediately, taken later within a limited window, or ignored entirely. Each intervening mission increases the compromise level until the window closes.</p>
+<p>The original M5 cutscene already implies this urgency: a Soviet interrogator presses Tanya for information. IC makes those stakes real and mechanical.</p>
+<h4 id="tanya-capture-escalation-allied-campaign"><a class="header" href="#tanya-capture-escalation-allied-campaign">Tanya Capture Escalation (Allied Campaign)</a></h4>
+<p>Tanya knows Allied troop positions, the Chronosphere project, spy network identities, and battle plans. The Soviets want all of it.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Rescue Outcome</th><th>What Soviets Extract</th><th>Main Campaign Consequence</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Rescued immediately</strong> (M5 taken right away)</td><td>Nothing — she held out</td><td>No penalty. Tanya returns to roster at full strength. Briefing: <em>“Tanya didn’t break. She never does.”</em></td></tr>
+<tr><td><strong>Rescued after 1 intervening mission</strong></td><td>Partial troop positions, reconnaissance routes</td><td>Tanya returns wounded and unavailable for 1 mission. The next main mission gets enemy ambushes at likely approach routes. Briefing: <em>“Soviet forces seem to know our staging areas. Tanya may have been forced to reveal positions before we got her out.”</em></td></tr>
+<tr><td><strong>Rescued after 2+ intervening missions</strong></td><td>Chronosphere project details, battle plans, spy contacts</td><td><strong>Severe compound penalty for Act 2+:</strong> Enemy knows Chronosphere location (M8 defense starts under immediate attack, no setup time). Spy network is partially rolled up (operative M6 route is degraded or unavailable). Enemy AI gains strong intel advantages through the rest of the act. Briefing: <em>“We’ve intercepted Soviet communications referencing detailed knowledge of our Chronosphere project and spy network. They could only have gotten this from Tanya. We waited too long.”</em></td></tr>
+<tr><td><strong>Never rescued</strong></td><td>Everything they can get before Tanya breaks or is transferred</td><td>Worst version of the severe penalty. Tanya is lost from the roster for the rest of the campaign unless a later special recovery beat is authored. Briefing: <em>“We failed Tanya. The Soviets are now acting on intelligence they could only have extracted from her.”</em></td></tr>
+<tr><td><strong>Never rescued + never captured</strong> (Behind Enemy Lines succeeded)</td><td>N/A — Tanya was never captured</td><td>No penalty, no rescue needed. Best outcome.</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Rescue quality also matters:</strong> If M5 is completed but with heavy casualties or a long mission time, Tanya returns wounded (hero status: <code>wounded</code>, unavailable for 1 mission). A fast, clean rescue returns her at full strength.</p>
+<h4 id="volkov-capture-escalation-soviet-campaign"><a class="header" href="#volkov-capture-escalation-soviet-campaign">Volkov Capture Escalation (Soviet Campaign)</a></h4>
+<p>Volkov is a cybernetic super-soldier. He knows Soviet military secrets, but his real value to the Allies isn’t intel — it’s <strong>technology</strong>. If the Allies capture Volkov, they reverse-engineer his cybernetics.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Rescue Outcome</th><th>What Allies Extract</th><th>Main Campaign Consequence</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Rescued immediately</strong> (<code>Deus Ex Machina</code> taken right away)</td><td>Nothing — they couldn’t crack his armor</td><td>No penalty. Volkov returns to roster. Briefing: <em>“Volkov’s armor held. They couldn’t access his systems.”</em></td></tr>
+<tr><td><strong>Rescued after 1 intervening mission</strong></td><td>Armor composition data</td><td>Volkov returns damaged / downgraded for 1 mission. Allied units in future missions gain improved armor-piercing capability. Briefing: <em>“Allied intelligence reports suggest they’ve analyzed Volkov’s armor plating.”</em></td></tr>
+<tr><td><strong>Rescued after 2+ intervening missions</strong></td><td>Armor composition + subsystem schematics</td><td><strong>Major penalty for Act 3:</strong> Allies field improved anti-armor weapons and limited cyborg prototypes in M12-M14. Volkov returns scarred and with reduced availability. Briefing: <em>“The Allies have learned too much from Volkov’s systems. We’ll face our own technology soon enough.”</em></td></tr>
+<tr><td><strong>Never rescued</strong></td><td>Complete technology transfer</td><td><strong>Severe penalty for Act 3:</strong> Allies have full cyborg infantry squads in M12-M14. Volkov permanently lost from roster. Briefing: <em>“The Allies have weaponized Volkov’s technology against us. Our greatest soldier has become our greatest liability.”</em></td></tr>
+<tr><td><strong>Never captured</strong> (Volkov missions succeeded or not attempted)</td><td>N/A</td><td>No penalty, no rescue needed.</td></tr>
+</tbody>
+</table>
+</div>
+<h4 id="implementation"><a class="header" href="#implementation">Implementation</a></h4>
+<p>The first-party plan uses a bounded pending-rescue state with explicit escalation, rather than collapsing capture into a one-node yes/no:</p>
+<pre><code class="language-yaml"># CampaignState flags set when a hero is captured
+hero_capture:
+  tanya:
+    captured: true
+    pending_rescue: true
+    rescue_mission_id: allied_05_rescue
+    missions_since_capture: 0
+    rescue_window_closes_after: 2         # after 2 intervening missions, severe/terminal state
+    compromise_level: none                # none | partial | severe | terminal
+  volkov:
+    captured: false
+</code></pre>
+<pre><code class="language-lua">-- Example controller logic run when the player commits to another
+-- non-rescue mission while the rescue branch is still pending.
+-- Campaigns can execute this from mission_start of the next mission
+-- or from their intermission / mission-launch script.
+local capture = Campaign.get_flag("hero_capture.tanya")
+if capture and capture.pending_rescue then
+  capture.missions_since_capture = capture.missions_since_capture + 1
+
+  if capture.missions_since_capture == 1 then
+    capture.compromise_level = "partial"
+    Campaign.set_flag("spy_network_compromised", true)
+  elseif capture.missions_since_capture &gt;= 2 then
+    capture.compromise_level = "severe"
+    Campaign.set_flag("chronosphere_location_known", true)
+    Campaign.set_flag("operative_m6_degraded", true)
+  end
+
+  if capture.missions_since_capture &gt; capture.rescue_window_closes_after then
+    capture.compromise_level = "terminal"
+    capture.pending_rescue = false
+    Campaign.set_flag("tanya_lost", true)
+  end
+
+  Campaign.set_flag("hero_capture.tanya", capture)
+end
+</code></pre>
+<p><strong>Briefing integration:</strong> The dynamic briefing system (§ Side Mission Rewards) assembles conditional lines based on the current compromise level. Immediate rescue, delayed rescue, and abandoned rescue each get distinct lines in the next briefing.</p>
+<p><strong>Cross-campaign echo:</strong> The Soviet M7 briefing always includes a line about an Allied commando operating in the facility — regardless of Allied campaign state. <em>“Our interrogators have extracted valuable information from the captured Allied commando. Use it well.”</em> This is always-present authored flavor text, not conditional on cross-campaign data (see § Cross-Campaign Continuity).</p>
+<h3 id="rule-7-teach-every-mechanic-at-the-right-moment"><a class="header" href="#rule-7-teach-every-mechanic-at-the-right-moment">Rule 7: Teach Every Mechanic at the Right Moment</a></h3>
+<p>Campaign mechanics (capture consequences, side mission rewards, timed choices, spectrum outcomes, hero progression, two-lane structure) are powerful but only if the player understands them. The Enhanced Edition uses <strong>progressive disclosure</strong> — each mechanic is explained exactly when the player first encounters it, never before, never after. No front-loaded tutorials, no walls of text, no unexplained mechanics.</p>
+<p>This follows D065 (Tutorial &amp; New Player Experience) § progressive disclosure and hint systems.</p>
+<p><strong>When each mechanic is explained:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mechanic</th><th>First Encountered</th><th>How It’s Explained</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Hero progression</strong></td><td>End of prologue (Tanya: First Blood) — first skill point earned</td><td>Skill tree opens with a brief tooltip: <em>“Tanya has earned a skill point. Choose an ability to unlock. Skills persist across all missions.”</em></td><td>Player sees the skill tree for 10 seconds with one clear choice. No overwhelm</td></tr>
+<tr><td><strong>Roster carryover</strong></td><td>M1 → M2 transition — surviving prologue units appear</td><td>Briefing note: <em>“Troops from your previous operation have been reassigned to this front.”</em> A tooltip highlights the carried-over units on the map</td><td>Player sees familiar faces from the prologue. The connection is obvious</td></tr>
+<tr><td><strong>Spectrum outcomes</strong></td><td>M3 (Destroy Bridges) — first mission with partial success</td><td>Debrief screen shows which bridges were destroyed and explicitly states the consequence: <em>“2 of 4 bridges destroyed. Enemy reinforcements will be partially reduced next mission.”</em></td><td>Not hidden — the debrief tells the player exactly what their performance means</td></tr>
+<tr><td><strong>Side mission rewards</strong></td><td>First optional mission completed — reward shown in next briefing</td><td>Briefing line highlighted: <em>“Thanks to your supply line operation, Chrono reinforcements are available.”</em> Tooltip: <em>“Side mission rewards affect main missions. Completed operations provide tactical advantages.”</em></td><td>The cause-and-effect is spelled out the first time. After that, the player understands the pattern</td></tr>
+<tr><td><strong>Timed choices</strong></td><td>First timed choice (between M4 and M5)</td><td>A dedicated intermission screen explains: <em>“Multiple operations require your attention. You can only commit forces to one before the window closes. The others will resolve without you — with consequences.”</em> Each option shows its reward AND the consequence of not choosing it</td><td>The stakes are visible before the player commits. No hidden information</td></tr>
+<tr><td><strong>Two-lane structure</strong></td><td>First time an operative mission appears alongside a main mission</td><td>Campaign map shows both lanes visually. Tooltip on the operative mission: <em>“Optional special operation. Completing this will affect the next main mission. Skipping it is valid — the campaign continues either way.”</em></td><td>The word “optional” is explicit. The reward preview is explicit. No guessing</td></tr>
+<tr><td><strong>Capture consequences</strong></td><td>First time a hero is captured (Behind Enemy Lines fails)</td><td>Immediate notification: <em>“Tanya has been captured. The longer she is held, the more intel the enemy may extract. Rescue her when possible.”</em> A priority marker / urgency indicator appears on the campaign map or intermission mission list next to M5</td><td>The escalation mechanic is explained at the moment it becomes relevant — not in a tutorial before it happens</td></tr>
+<tr><td><strong>Dynamic weather</strong></td><td>First mission with weather (M8 storm or side mission)</td><td>Brief in-mission tooltip when weather changes: <em>“A storm is approaching. Visibility will decrease and vehicle movement will slow.”</em> Gameplay effect is immediate and visible</td><td>Learn by experiencing. The tooltip explains what’s happening; the gameplay proves it</td></tr>
+<tr><td><strong>Commander alternatives</strong></td><td>First time a commando mission appears with a Commander alternative</td><td>Mission select shows both options side by side with labels: <em>“Operative approach: infiltrate with Tanya. Stealthier, better rewards.”</em> / <em>“Commander approach: assault with your army. Direct, but fewer intelligence gains.”</em></td><td>Both options visible, both labeled with trade-offs. The player chooses their style</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Explanation principles:</strong></p>
+<ol>
+<li><strong>Explain at the moment of encounter, not before.</strong> Don’t explain timed choices in the prologue. Explain them when the first timed choice appears</li>
+<li><strong>Show, don’t tell.</strong> The first spectrum outcome isn’t explained in a tutorial — the debrief screen SHOWS the player what their partial success means for the next mission</li>
+<li><strong>Make consequences visible before they happen.</strong> Timed choices show both the reward of choosing AND the consequence of not choosing. No hidden penalties</li>
+<li><strong>Explain once, then trust the player.</strong> The first side mission reward gets a highlighted briefing line and tooltip. The second one just gets the briefing line. By the third, the player understands the pattern</li>
+<li><strong>Never interrupt gameplay to explain.</strong> All explanations happen in briefings, debriefs, intermission screens, or small in-game tooltips — never a pause-the-game tutorial popup during combat</li>
+<li><strong>Use the briefing officer’s voice.</strong> Von Esling (Allied) and Nadia (Soviet) explain mechanics in character. <em>“Commander, we can only commit to one operation”</em> is both a narrative moment and a mechanics explanation. The UI reinforces with tooltips, but the character delivers the message</li>
+</ol>
+<p><strong>D065 integration:</strong> These explanations use the existing <code>feature_discovery</code> hint category from D065 § Feature Smart Tips. Each mechanic has a hint entry in <code>hints/campaign-mechanics.yaml</code> that triggers on first encounter and is dismissible. Players who’ve already learned the mechanic (from a previous playthrough or the tutorial) never see the hint again.</p>
+<hr>
+<h2 id="side-campaign-thread-einsteins-burden"><a class="header" href="#side-campaign-thread-einsteins-burden">Side-Campaign Thread: Einstein’s Burden</a></h2>
+<p>A narrative thread that runs underneath the main war campaign, surfacing at key moments and paying off in Act 3. This is not a separate campaign — it’s woven into the existing missions as optional discoverable content, briefing moments, and one pivotal reveal mission.</p>
+<p>The thread answers the question every player eventually asks: <em>“Einstein used a time machine to remove Hitler and created this entire war. Does he feel guilty? Could he undo it? Why doesn’t he?”</em></p>
+<blockquote>
+<p><strong>Scope note:</strong> The narrative thread itself is baseline Enhanced Edition content. The actual <strong>time-machine gameplay unlocks</strong> tied to <code>Einstein's Confession</code> / <code>Temporal Experiment</code> are <strong>experimental D078 add-ons only</strong> while <a href="/mnt/c/git/games/iron-curtain-design-docs/src/decisions/09d/D078-time-machine.html">D078</a> remains Draft. If D078 never graduates, these missions remain lore reveals with no gameplay unlock.</p>
+</blockquote>
+<h3 id="thread-structure"><a class="header" href="#thread-structure">Thread Structure</a></h3>
+<p><strong>Prologue — The Voice</strong></p>
+<p>Einstein is heard but not seen. During the Fall of Greece prologue missions, his voice comes through on a radio transmission to Stavros:</p>
+<blockquote>
+<p><em>“Stavros, listen to me. The Soviets have developed weapons beyond anything we anticipated. I… I bear some responsibility for this. Get your people out. I will explain when we meet.”</em></p>
+</blockquote>
+<p>The player doesn’t know what “some responsibility” means yet. It’s a hook — filed away, not explained.</p>
+<p><strong>M1 — The Rescue</strong></p>
+<p>The player rescues Einstein. In the debrief, Einstein thanks the Commander but is visibly troubled. A brief exchange (text in the briefing, not a cutscene — IC doesn’t add FMV):</p>
+<blockquote>
+<p><em>“Commander, thank you. I owe you my life. And… I owe the world an explanation. But not today. Today we have a war to win. A war that exists because of me.”</em></p>
+</blockquote>
+<p>Von Esling cuts him off: <em>“Professor, that’s enough. Commander, your next assignment.”</em> The moment passes. The player notices Einstein said something strange but the campaign moves on.</p>
+<p><strong>Acts 1-2 — Intel Fragments (Collectible Narrative)</strong></p>
+<p>During operative-lane missions (Behind Enemy Lines, Spy Network, Sarin Gas facilities, Italy operations), the player can find <strong>Einstein’s Research Fragments</strong> — optional collectibles hidden in mission maps. These are short text entries that gradually reveal the Trinity story. Finding them is never required — they’re rewards for thorough exploration.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Fragment</th><th>Found In</th><th>Content</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Fragment 1: Soviet Intelligence File</strong></td><td>Behind Enemy Lines (Tanya infiltrates Soviet facility)</td><td>A Soviet report: <em>“Subject: Allied Scientist — Priority capture target. His research predates the Chronosphere program by decades. Original experiments conducted in the American Southwest, 1946. Nature of experiments: CLASSIFIED — temporal displacement.”</em></td></tr>
+<tr><td><strong>Fragment 2: Einstein’s Personal Note</strong></td><td>Spy Network (recruiting agents in Soviet territory)</td><td>A handwritten note found in an Allied dead drop: <em>“I have seen what happens when one man decides to change history. I removed a monster and created a war. Millions dead because I played God. I will not make that mistake again.”</em></td></tr>
+<tr><td><strong>Fragment 3: Captured Soviet Briefing</strong></td><td>Sarin Gas facility (CS mission)</td><td>Soviet briefing document: <em>“Priority directive from Moscow: locate and secure Einstein’s pre-war research notes. The Chronosphere is useful but limited. His original work — the temporal displacement device — is the true prize.”</em></td></tr>
+<tr><td><strong>Fragment 4: Einstein’s Hidden Journal</strong></td><td>Italy operations (AM mission) — hidden in a captured Allied lab</td><td>Einstein’s journal: <em>“I kept one copy of my Trinity notes. I told myself it was insurance — that if things became desperate enough, I would consider rebuilding the device. I pray that day never comes. But I see how this war is going, and I am losing faith in prayer.”</em></td></tr>
+<tr><td><strong>Fragment 5: Trinity Test Report</strong></td><td>Poland operations (AM mission) — Soviet archive</td><td>Original 1946 test report: <em>“Test designation: TRINITY-TEMPORAL. Subject successfully displaced from 1946 to 1924. Target individual removed from timeline. Side effects: unknown. Researcher’s note: ‘It worked. God help us all. — A. Einstein’”</em></td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Fragment discovery UX:</strong> When the player finds a fragment, a brief notification appears: <em>“Intel discovered: Einstein’s Research Fragment 3/5”</em>. The fragments are readable in the campaign journal/intermission screen. They’re short (2-3 sentences each) — enough to build the picture without interrupting gameplay.</p>
+<p><strong>Act 2 (after M8) — The Confession</strong></p>
+<p>The <code>Einstein's Confession</code> mission (documented in the campaign graph) is always the narrative reveal. If the experimental D078 add-on is enabled, it also offers the rebuilt prototype gameplay unlock.</p>
+<p><strong>If the player found fragments:</strong> Einstein’s briefing is richer. He references specific things the player already discovered:</p>
+<blockquote>
+<p><em>“You’ve seen the Soviet files. You know what I did in Trinity. You’ve read my journal — you know I kept one copy of the notes. I cannot hide from you any longer. Here is what I built.”</em></p>
+</blockquote>
+<p>The player feels rewarded for their exploration — they pieced the story together before the reveal.</p>
+<p><strong>If the player found no fragments:</strong> Einstein’s confession is the first the player hears of Trinity. It still works — but it’s a surprise rather than a confirmation. The fragments are enrichment, not prerequisites.</p>
+<p><strong>Act 3 — The Weight</strong></p>
+<p>If the experimental time-machine add-on is enabled and the player uses the capability, Einstein reacts. A brief briefing line after each use:</p>
+<ul>
+<li>First use: <em>“It worked. Commander… please use this power sparingly. I know what it costs.”</em></li>
+<li>Second use: <em>“Again? I… understand. The stakes are high. But each use destabilizes the temporal field. There may not be a third.”</em></li>
+<li>If the player uses all charges: <em>“It is done. The device is spent. Perhaps that is for the best.”</em></li>
+</ul>
+<p><strong>Epilogue — Closure</strong></p>
+<p>In the Allied epilogue mission (“Aftermath”), Einstein appears one final time. His dialogue depends on whether the player used the time machine:</p>
+<ul>
+<li><strong>Used it:</strong> <em>“You used my device. I don’t blame you — I used it too, once. The difference is that you used it to save lives. I used it to play God. Perhaps that makes you wiser than me.”</em></li>
+<li><strong>Never used it:</strong> <em>“You won this war without my device. You have no idea how much that means to me. Perhaps humanity doesn’t need to meddle with time to find its way.”</em></li>
+<li><strong>Never unlocked it (skipped the Confession mission):</strong> <em>“Commander, there is something I never told you about my past. Perhaps someday. But today… today we celebrate. The war is over.”</em></li>
+</ul>
+<h3 id="soviet-campaign-mirror"><a class="header" href="#soviet-campaign-mirror">Soviet Campaign Mirror</a></h3>
+<p>The Soviet campaign has a parallel thread — seen from the other side:</p>
+<ul>
+<li><strong>M7 briefing:</strong> Soviet intelligence references Einstein’s “pre-war research” as a capture priority</li>
+<li><strong>Paradox Equation (CS):</strong> Temporal anomalies foreshadow that Einstein’s deeper research exists</li>
+<li><strong>Temporal Experiment (after M13):</strong> Soviet scientists recover Einstein’s notes and build their own prototype. Nadia’s briefing: <em>“The Americans buried this knowledge. We will use it.”</em></li>
+<li><strong>Soviet epilogue:</strong> If the experimental time-machine add-on was used, the ending references temporal instability — a hint that the Soviets’ reckless experimentation will have consequences beyond this war (foreshadowing RA2/RA3 timeline)</li>
+</ul>
+<h3 id="implementation-1"><a class="header" href="#implementation-1">Implementation</a></h3>
+<p>The thread uses existing and one new UI surface:</p>
+<ul>
+<li><strong>Fragments:</strong> Campaign flags (<code>einstein_fragment_1: true</code> through <code>einstein_fragment_5: true</code>) set when the player enters a trigger zone in the mission map — standard Lua trigger, no new system</li>
+<li><strong>Conditional briefing lines:</strong> Same <code>conditional_lines</code> system documented in § Side Mission Rewards — no new system</li>
+<li><strong>Fragment reader (new UI):</strong> A new “Intel” tab in the campaign intermission screen displays collected fragments as short readable entries. The current intermission screen (<code>single-player.md</code>) exposes roster/heroes/stats — the Intel tab is an addition, not an existing viewer. Small scope: a list of 2-3 sentence text entries, readable between missions. Requires a new tab in the intermission UI but no new campaign state infrastructure beyond the flags already defined</li>
+</ul>
+<hr>
+<h2 id="narrative-framework--making-the-lore-coherent"><a class="header" href="#narrative-framework--making-the-lore-coherent">Narrative Framework — Making the Lore Coherent</a></h2>
+<h3 id="the-questions-the-original-never-answered"><a class="header" href="#the-questions-the-original-never-answered">The Questions the Original Never Answered</a></h3>
+<p>The original RA1 and its expansions leave significant narrative gaps. Some are worth filling; others are better left mysterious. The Enhanced Edition’s job: fill the gaps that hurt the story, leave open the mysteries that enrich it.</p>
+<h4 id="design-principle-cutscene-alignment"><a class="header" href="#design-principle-cutscene-alignment">Design Principle: Cutscene Alignment</a></h4>
+<p>The original FMV cutscenes (briefing videos with live actors) are preserved exactly as they are — IC doesn’t re-film them. Instead, the Enhanced Edition <strong>aligns gameplay to make the cutscenes land better</strong>. Every cutscene moment that felt abrupt or unexplained in the original gets a gameplay setup so the video makes sense in context.</p>
+<p><strong>Key example — M1 briefing video:</strong></p>
+<p>The original M1 video shows Stavros objecting to Tanya’s presence: <em>“General Von Esling, she is a civilian!”</em> In the original game, this is the player’s first encounter with BOTH characters — neither introduction lands because the player has no context for either person.</p>
+<p>The Enhanced Edition plays two prologue missions before M1: one with Stavros (Fall of Greece) and one with Tanya (First Blood). When the M1 briefing video plays, the player recognizes both characters. Stavros’s objection becomes a meaningful character moment: the player fought alongside him in Greece and understands his military pride. Tanya’s cocky reply (“That’s why I don’t get killed”) resonates because the player just saw her rescue POWs. The same unmodified video, but now it has emotional weight.</p>
+<p><strong>This principle applies throughout:</strong> IC missions are designed so that original cutscenes feel like they were always meant to be watched at this point in the story. The videos are untouchable; the gameplay around them is what changes.</p>
+<h4 id="questions-we-answer-fills-narrative-gaps"><a class="header" href="#questions-we-answer-fills-narrative-gaps">Questions We Answer (fills narrative gaps)</a></h4>
+<p><strong>Q: How did Einstein get captured by the Soviets?</strong>
+The original intro shows Einstein using a time machine in Trinity, New Mexico (1946) to remove Hitler. He reappears in the RA timeline as a prisoner of the Soviets in Allied Mission 1. The game never explains how he went from Trinity to a Soviet firing squad.</p>
+<p>IC Enhanced Edition answer: Einstein is the same person — he remembers the original timeline. After removing Hitler, he found himself in a world where the Soviets expanded unchecked. Wracked with guilt, he tried to help the European Allies covertly, developing the Chronosphere from his time machine research. The Soviets discovered his work, invaded Switzerland (where he was hiding), and captured him. Allied Mission 1 picks up at the moment of his scheduled execution. The IC prologue mission can show Einstein’s final days in Switzerland — the player helps evacuate his research before the Soviets close in, but Einstein himself is captured to protect the escaping data.</p>
+<p><strong>Q: How did Tanya get captured between Allied M4 and M5?</strong>
+Addressed in the campaign graph: IC adds “Behind Enemy Lines” — the mission where Tanya infiltrates a Soviet facility for Iron Curtain intel. If Tanya succeeds or escapes, no rescue branch opens. If she is captured, the M5 rescue branch becomes available and the later penalties depend on how long the player waits.</p>
+<p><strong>Q: Why does Tanya appear at the Soviet nuclear facility in Soviet M7?</strong>
+In the original, Tanya just shows up at “Core of the Matter” with no explanation. IC links this to the Allied campaign: if the Allied “Behind Enemy Lines” mission was played, Tanya’s presence is the Allied side of that same operation. From the Soviet perspective, an enemy commando has infiltrated the facility.</p>
+<p><strong>Q: What are the expansion missions about? They seem random.</strong>
+The Counterstrike/Aftermath missions were designed as standalone challenges with no campaign integration. IC gives them narrative purpose:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Expansion Missions</th><th>Original Context</th><th>IC Narrative Integration</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Sarin Gas trilogy</strong> (CS Allied)</td><td>Standalone: destroy chemical facilities in Greece</td><td>Einstein’s intel from M1 reveals a parallel Soviet weapons program beyond the Iron Curtain — chemical weapons. The Sarin facilities are part of the same research complex that produced the Iron Curtain technology. Destroying them prevents chemical attacks during the Chronosphere defense (M8)</td></tr>
+<tr><td><strong>Fall of Greece</strong> (CS Allied)</td><td>Standalone: Stavros escapes occupied Greece</td><td>Stavros’s personal story — his homeland falls, he barely escapes. This is Act 1 content that establishes Stavros’s character and motivation (he’s driven by the loss of Greece). His rescue contacts become the spy network used later in M5-M6</td></tr>
+<tr><td><strong>Siberian Conflict</strong> (CS Allied)</td><td>Standalone: establish Allied presence in Siberia</td><td>Strategic flanking operation — the Allies open a second front to divide Soviet forces. A long-arc side campaign that spans Acts 1-3, with compound rewards (Siberian front collapse weakens Soviet reinforcements in the final Moscow assault)</td></tr>
+<tr><td><strong>Volkov &amp; Chitzkoi</strong> (CS Soviet)</td><td>Standalone: use a cybernetic super-soldier</td><td>The Soviet answer to Tanya. Where the Allies have a skilled human operative, the Soviets build a machine. Volkov is the Soviet hero character with his own progression arc. His missions parallel Tanya’s — a mirror narrative</td></tr>
+<tr><td><strong>Legacy of Tesla</strong> (CS Soviet)</td><td>Standalone: capture an Allied prototype</td><td>The arms race escalates — both sides steal each other’s technology. This is the Soviet side of the tech war that the Allied spy missions represent</td></tr>
+<tr><td><strong>Paradox Equation</strong> (CS Soviet)</td><td>Standalone: Chronosphere causes weird effects</td><td>The Chronosphere’s teleportation mechanics interact with residual temporal energy from Einstein’s original 1946 time machine research (separate technology, same scientific lineage). Tanks behaving as different units is a “temporal bleed” — the Chronosphere accidentally tapping into time-displacement side effects. Foreshadows that Einstein’s deeper research exists</td></tr>
+<tr><td><strong>Giant Ants</strong> (CS secret)</td><td>Standalone: giant mutant ants attack</td><td>Radiation from an abandoned Soviet nuclear facility mutated local ant colonies. The facility was part of the same nuclear program that powers the Iron Curtain. The ants are an unintended consequence of the superweapon arms race — nature fights back</td></tr>
+<tr><td><strong>Aftermath Italy</strong> (AM Allied)</td><td>Standalone: Mediterranean operations</td><td>The war expands south. Italy becomes a second theater as the Allies push to cut Soviet supply lines through the Mediterranean. Chrono Tank prototypes recovered here become available for the endgame</td></tr>
+<tr><td><strong>Aftermath Poland</strong> (AM Allied)</td><td>Standalone: Polish operations</td><td>The push toward Moscow goes through Poland. Liberating Poland secures the Allied flank and provides resistance fighters for the final assault</td></tr>
+<tr><td><strong>Aftermath France/Spain</strong> (AM Soviet)</td><td>Standalone: Western European operations</td><td>The Soviets consolidate control of Western Europe. These missions show the occupation from the Soviet side — suppressing resistance, testing new weapons, dealing with internal dissent</td></tr>
+<tr><td><strong>Deus Ex Machina</strong> (AM Soviet)</td><td>Standalone: rescue Volkov</td><td>Volkov was captured by the Allies after a failed operation. This becomes a narrative continuation of the Volkov arc — if Volkov is captured, this is the rescue mission. If he was never captured, this mission doesn’t appear</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong>Q: What’s Kane doing in the Soviet ending?</strong>
+The original reveals Kane (from Tiberian Dawn) advising Nadia after she poisons Stalin. IC leaves this mystery intact — it’s too important to the larger C&amp;C universe to alter. But IC adds subtle foreshadowing: in the Soviet “Stalin’s Shadow” side mission, the player encounters references to a mysterious advisor who has been influencing Soviet politics from behind the scenes. Players who recognize Kane from Tiberian Dawn get the connection; others experience it as a Cold War thriller twist.</p>
+<h4 id="questions-we-leave-open-enriches-the-mystery"><a class="header" href="#questions-we-leave-open-enriches-the-mystery">Questions We Leave Open (enriches the mystery)</a></h4>
+<p><strong>Q: Is this the same Einstein, or an alternate version?</strong>
+The game’s intro shows Einstein physically walking into the past and shaking Hitler’s hand before Hitler vanishes. This is the <em>same</em> Einstein — he remembers both timelines. But IC doesn’t over-explain this. Einstein’s dialogue in briefings can hint at his burden (“I have seen what happens when we meddle with time…”) without spelling out the metaphysics. The player should feel the weight, not read a physics lecture.</p>
+<p><strong>Q: Could the Chronosphere undo all of this?</strong>
+Einstein knows the Chronosphere <em>could</em> theoretically reverse his original intervention — send someone back to prevent him from removing Hitler. But he also knows the consequences of another temporal intervention could be even worse. This tension — “we have the power to fix everything, but using it might break everything worse” — is the thematic core of the time machine campaign mechanic (D078). Some players will wonder “why not just use the Chronosphere to fix it all?” The answer is that Einstein refuses, and the Enhanced Edition campaign shows why.</p>
+<p><strong>Q: What happened in the “original” timeline that Einstein left?</strong>
+Without Hitler, WWII as we know it never happened. But what filled the vacuum? IC leaves this deliberately unanswered — it’s the road not taken. However, the “Paradox Equation” mission (CS Soviet) shows temporal anomalies where the “original” timeline bleeds through — ghostly echoes of a world that might have been. This is atmospheric, not explanatory.</p>
+<h3 id="how-ic-features-connect-to-the-story"><a class="header" href="#how-ic-features-connect-to-the-story">How IC Features Connect to the Story</a></h3>
+<p>The Enhanced Edition doesn’t just bolt new features onto old missions — each IC feature has a <strong>narrative reason</strong> for existing within the RA1 story.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>IC Feature</th><th>Narrative Justification</th><th>Story Role</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Hero progression (Tanya)</strong></td><td>Tanya is a legendary commando whose skills develop across the war. Her reputation grows with each mission — soldiers talk about her, Soviets fear her</td><td>The player’s investment in Tanya’s skill tree mirrors the in-universe legend building. Losing her is emotionally devastating because you built her up</td></tr>
+<tr><td><strong>Hero progression (Volkov)</strong></td><td>The Soviets’ answer to Tanya — a machine built to match a legend. But is he still human? His progression represents the Soviets investing in technology over humanity</td><td>Volkov’s upgrades are the Soviet tech tree made personal. Each skill point is another piece of his humanity replaced by machinery</td></tr>
+<tr><td><strong>Time machine (D078, experimental add-on)</strong></td><td>Einstein’s original 1946 time travel research is rediscovered. If D078 graduates from Draft, the narrative reveal can also unlock a rebuilt prototype that transmits information back in time</td><td>The time machine is Einstein’s worst fear: his original Trinity research weaponized. The campaign explores “what if someone rebuilt the device he used to remove Hitler?”</td></tr>
+<tr><td><strong>Branching decisions</strong></td><td>War is chaos. Plans change. The commander makes choices with incomplete information, and those choices have consequences</td><td>Decision points aren’t meta-game options — they’re the fog of war. The briefing presents two plans; the commander picks one. Neither is “right”</td></tr>
+<tr><td><strong>Spectrum outcomes</strong></td><td>Missions don’t end in binary victory/defeat. Partial success, pyrrhic victory, tactical retreat — all are valid outcomes</td><td>This is how real military operations work. “We took the objective but lost half our force” is a common outcome, and the campaign should reflect it</td></tr>
+<tr><td><strong>Dynamic weather (D022)</strong></td><td>The Eastern Front was defined by weather — Russian winters destroyed Napoleon and nearly destroyed the Wehrmacht. Weather should matter in a war set in Europe</td><td>The Moscow blizzard in M14, the Channel storm in Soviet M14, the Mediterranean heat — weather isn’t decoration, it’s strategy</td></tr>
+<tr><td><strong>Asymmetric co-op (D070)</strong></td><td>Special operations require coordination between a strategic commander and a tactical field team. This is how modern militaries actually operate</td><td>Co-op missions are the most realistic depiction of combined-arms warfare in an RTS. One player thinks strategically; the other thinks tactically</td></tr>
+<tr><td><strong>Spy infiltration</strong></td><td>Intelligence won the war as much as firepower. The Allied spy network (MI6, OSS) was critical to defeating the Axis — and in the RA timeline, the Soviets</td><td>Spy missions aren’t filler — they’re the invisible war that determines whether the visible war is winnable</td></tr>
+<tr><td><strong>Air campaigns</strong></td><td>Air superiority was the decisive factor in WWII. The side that controlled the skies controlled the battlefield</td><td>Air campaign missions are the player experiencing what it means to <em>not</em> have boots on the ground — you support, you coordinate, but you can’t hold territory from the air</td></tr>
+<tr><td><strong>Campaign menu scenes</strong></td><td>The war is always present. Even when the player is in the menu, the campaign’s mood follows them</td><td>The evolving menu background isn’t a feature — it’s the war haunting you. Act 1’s hopeful naval scene gives way to Act 3’s grim ground assault. The menu tells you where the war is</td></tr>
+<tr><td><strong>Failure as consequence</strong></td><td>In war, failure doesn’t mean “retry.” It means “deal with what happened and keep going”</td><td>The bridge isn’t destroyed? The enemy crosses it. Tanya is captured? Go rescue her — or don’t, and fight without your best soldier. The campaign adapts to your failures</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="expansion-missions--the-unified-story"><a class="header" href="#expansion-missions--the-unified-story">Expansion Missions — The Unified Story</a></h3>
+<p>With narrative integration, the 34 expansion missions stop being random standalone challenges and become chapters in a larger war story:</p>
+<p><strong>Act 1 — The War Begins (M1-M4 + Fall of Greece + early Aftermath)</strong>
+The war erupts across Europe. Greece falls (Stavros’s personal tragedy). The Allies scramble to respond. Einstein is rescued. Bridges are destroyed. Lines are drawn.</p>
+<p><strong>Act 2 — The Arms Race (M5-M9 + Sarin Gas + Volkov + Italy)</strong>
+Both sides escalate: the Allies develop the Chronosphere; the Soviets build the Iron Curtain, develop chemical weapons (Sarin), and create Volkov. The Mediterranean becomes a second theater. Intelligence operations (spies, infiltration) become as important as firepower.</p>
+<p><strong>Act 3 — Total War (M10-M14 + Siberian + Poland + final operations)</strong>
+Everything converges. The Siberian front collapses. Poland is liberated. The Allied fleet clears the river. Every side mission’s reward (or absence) shapes the final assault. The war ends in Moscow (Allied) or London (Soviet).</p>
+<p><strong>Epilogue — Consequences</strong>
+The war is over, but what comes next? Allied: cleanup operations with moral decisions. Soviet: the internal power struggle (Stalin/Nadia/Kane). Both: the Ant crisis emerges from the war’s radiation legacy.</p>
+<hr>
+<h2 id="allied-enhanced-edition-campaign"><a class="header" href="#allied-enhanced-edition-campaign">Allied Enhanced Edition Campaign</a></h2>
+<h3 id="narrative-gaps-identified-in-the-original"><a class="header" href="#narrative-gaps-identified-in-the-original">Narrative Gaps Identified in the Original</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Gap</th><th>Between</th><th>Problem</th><th>IC Fix</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Tanya captured off-screen</strong></td><td>M4 → M5</td><td>M4 ends with a defensive victory. M5 briefing says Tanya was “captured during an intelligence operation.” The capture is never shown — the player goes from defending a pass to suddenly rescuing Tanya from prison</td><td>IC adds the mission where Tanya gets captured: a spec-ops intelligence mission where success means no rescue branch opens, while capture opens the M5 rescue branch and starts the escalation clock</td></tr>
+<tr><td><strong>Supply convoy disconnected</strong></td><td>M2 → M3</td><td>M2 clears Soviet forces for a convoy. M3 destroys bridges. No narrative link between them</td><td>IC links them: the supply convoy in M2 was carrying demolition equipment for the bridge mission in M3. Side mission to secure additional explosives affects M3’s difficulty</td></tr>
+<tr><td><strong>Spy arc appears from nowhere</strong></td><td>M5 → M6</td><td>M5 uses a spy to rescue Tanya. M6 is a spy infiltration mission. The spy capability isn’t introduced — it just appears</td><td>IC adds a spy recruitment side mission between M4-M5 where the player establishes the spy network</td></tr>
+<tr><td><strong>Naval missions disconnected</strong></td><td>M7</td><td>Submarine pen destruction feels disconnected from the Iron Curtain investigation arc</td><td>IC links it: intel from M6 reveals the Iron Curtain components are being shipped by submarine. Destroying the sub pens cuts the supply line</td></tr>
+<tr><td><strong>Abrupt format change</strong></td><td>M10A → M10B</td><td>Jump from outdoor base-building to interior commando mission with no transition</td><td>IC adds a transition briefing and an optional prep mission (reconnoiter the facility exterior before the interior raid)</td></tr>
+<tr><td><strong>Naval gap</strong></td><td>M11</td><td>Naval supremacy mission appears without setup for why naval control matters now</td><td>IC links it: Kosygin’s intel (M9) reveals the final Soviet defenses require a naval approach — the river must be cleared for the ground assault</td></tr>
+<tr><td><strong>Final push too linear</strong></td><td>M12 → M13 → M14</td><td>Three missions in a row with no branching, no decisions, just “destroy everything”</td><td>IC adds decision points and alternative approaches for the endgame</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="full-campaign-graph"><a class="header" href="#full-campaign-graph">Full Campaign Graph</a></h3>
+<pre><code>PROLOGUE — STAVROS'S WAR (IC Original + Counterstrike)
+│  Character intro: STAVROS (before any cutscene appearance)
+│  Character intro: TANYA (before M1 cutscene)
+│  Character intro: EINSTEIN (voice on radio during Fall of Greece)
+│
+├─ [CS] "Personal War" (Fall of Greece 1) ★ VERY EASY
+│  │  Stavros's intro. Parachutes into occupied Athens to rescue family.
+│  │  Player commands small resistance force. Teaches: basic movement,
+│  │  unit selection, named character escort.
+│  │  Einstein heard on radio: "Stavros, the Soviets have a weapon...
+│  │  I've seen what they're capable of. Get your people out."
+│  │  Menu scene: Mediterranean coast at dawn
+│  │
+│  └─ [CS] "Evacuation" (Fall of Greece 2) ★ EASY
+│     Stavros evacuates Greek civilians before Soviets close the ports.
+│     Teaches: time pressure, multi-objective, civilian escort.
+│     Reward: Greek resistance contacts (spy network foundation)
+│
+├─ [IC] "Tanya: First Blood" ★ EASY-MEDIUM
+│  │  Tanya rescues Allied POWs from a Soviet outpost.
+│  │  Teaches: hero abilities, skill points, C4 charges.
+│  │  First skill tree selection at mission end.
+│  │  Menu scene: naval convoy at dawn
+│  │
+│  CUTSCENE ALIGNMENT: M1 briefing video plays here.
+│  Stavros (seated) → player recognizes him from Fall of Greece.
+│  Tanya (walks in) → player recognizes her from First Blood.
+│  "She is a civilian!" — now a clash between two known characters.
+│
+ACT 1: LIBERATION OF EUROPE ─────────────────────────────────────────
+│
+├─ [M1] "In the Thick of It" ★ MEDIUM — Rescue Einstein.
+│  │  Teaches: combined arms (Tanya + support units), base assault.
+│  │  Einstein becomes a character the player heard in the prologue.
+│  │
+│  └─ [IC] "Supply Line Security" ★ MEDIUM — OPTIONAL
+│     Escort Chrono tech convoy. Teaches: escort + defend.
+│     Reward: Chrono reinforcement available in M4
+│
+├─ [M2] "Five to One" ★ MEDIUM — Clear road for supply convoy.
+│  │  IC link: convoy carries demolition equipment for M3.
+│  │  Teaches: time-limited clearing, area control.
+│  │  Spectrum: convoy intact → full explosives for M3.
+│  │  Convoy damaged → M3 is harder (fewer charges).
+│  │
+│  └─ [CS] "Fresh Tracks" (Siberian 1) ★ MEDIUM — OPTIONAL
+│     Opens Siberian flanking arc (long-term investment).
+│     Reward: Siberian arc unlocked for Act 3
+│
+├─ [M3] "Dead End" ★ MEDIUM — Destroy bridges. Tanya must survive.
+│  │  Teaches: stealth, terrain objectives, hero preservation.
+│  │  Spectrum: all destroyed → M4 easy / some → M4 harder /
+│  │  none → M4 very hard. First real spectrum outcome.
+│
+├─ [M4] "Ten to One" ★ MEDIUM-HARD — Defend the pass.
+│  │  First genuinely hard mission — but player has 6+ missions'
+│  │  experience by now. Difficulty scales with M3 bridge results.
+│  │  If Greek resistance contacted: partial shroud reveal.
+│  │
+│  ═══ TIMED CHOICE 1 ═══════════════════════════════════════════
+│  │  "Three fires burning — which one do you fight?"
+│  │  The world moves without you. Pick ONE. The other two
+│  │  resolve with consequences.
+│  │
+│  │  OPTION A: [IC] "Behind Enemy Lines" ★ HARD
+│  │  │  Tanya infiltrates Soviet facility for Iron Curtain intel.
+│  │  │  Type: spy_infiltration. Teaches: detection/alert system.
+│  │  │  Spectrum outcomes:
+│  │  │  ├─ Success + escape → No rescue branch opens. Full intel for M6.
+│  │  │  ├─ Success + captured → M5 rescue branch opens. Partial intel for M6.
+│  │  │  ├─ Failed + escaped → No intel. M6 blind. Tanya available.
+│  │  │  └─ Failed + captured → M5 rescue branch opens + M6 blind. Worst case.
+│  │  │
+│  │  IF NOT CHOSEN → Tanya is captured off-screen (world moved).
+│  │  │  M5 (Rescue Tanya) enters a pending rescue queue.
+│  │  │  The player can take it now, after M6, or ignore it entirely.
+│  │  │  Each intervening mission escalates the intel leak (Rule 6).
+│  │  │  After the rescue window closes, Tanya is lost and the
+│  │  │  severe compromise state becomes permanent.
+│  │  │  No intel for M6. Briefing: "Tanya went behind enemy lines
+│  │  │  without support. She's been captured."
+│  │
+│  │  OPTION B: [CS] "Crackdown" (Sarin Gas 1) ★ HARD
+│  │  │  Neutralize Sarin gas facilities in Greece.
+│  │  │  IF CHOSEN → No chemical attacks in M8.
+│  │  │  IF NOT CHOSEN → Sarin goes active. M8 includes gas attacks.
+│  │  │  Briefing: "Chemical weapons reports from the eastern front.
+│  │  │  We didn't act in time."
+│  │
+│  │  OPTION C: [CS] "Fresh Tracks" (Siberian 1) ★ MEDIUM
+│  │     Open second front in Siberia.
+│  │     IF CHOSEN → Siberian arc available in Act 3.
+│  │     IF NOT CHOSEN → Siberian window closes permanently.
+│  │     Briefing: "The Siberian opportunity has passed."
+│  │     (Only appears if not already completed as optional earlier)
+│  │
+│  [IC] "Spy Network" ★ MEDIUM — OPTIONAL (if Tanya escaped)
+│     Recruit a spy network. Reward: spy for M6, intel.
+│
+├─ [M5] "Tanya's Tale" ★ MEDIUM — Rescue Tanya. OPERATIVE LANE.
+│  │  AVAILABLE (not mandatory) if Tanya was captured.
+│  │  May be taken immediately or delayed for a limited number of missions.
+│  │  Each delay increases compromise level and later-mission penalties.
+│  │  Ignoring it entirely leaves Tanya lost and the Soviet intel haul intact.
+│  │  Commander alternative: send an armored assault to the prison
+│  │  compound. Louder, Tanya is rescued but wounded (unavailable
+│  │  for 1 mission). Operative approach: spy+commando, clean rescue.
+│  │  If Tanya was never captured → M5 doesn't appear. Skip to M6.
+│  │  Menu scene: if captured → dark war room / if free → confident HQ
+│
+ACT 2: THE IRON CURTAIN ─────────────────────────────────────────────
+│
+├─ [M6] "Iron Curtain Infiltration" ★ MEDIUM-HARD — OPERATIVE LANE.
+│  │  Spy infiltrates Soviet Tech Center for Iron Curtain intel.
+│  │  Difficulty varies: full intel → spy has access codes.
+│  │  No intel → blind infiltration, tighter timers.
+│  │  Commander alternative: full assault on the Tech Center. You
+│  │  destroy it and recover partial intel from the wreckage — less
+│  │  intelligence than the spy route, but no commando gameplay.
+│  │  Character intro: KOSYGIN mentioned in intercepted comms.
+│  │
+│  ├─ [CS] "Down Under" (Sarin Gas 2) ★ HARD — OPTIONAL
+│  │  │  Continue Sarin campaign. Only if Sarin 1 was chosen/completed.
+│  │  │  Reward: Greek theater secured → bonus naval units for M7
+│  │  │
+│  │  └─ [CS] "Controlled Burn" (Sarin Gas 3) ★ HARD — OPTIONAL
+│  │     Capture Sarin facilities. Requires Sarin 2.
+│  │     Reward: chemical expertise → special weapon in Act 3
+│  │
+│  ├─ [AM] "Harbor Reclamation" (Italy 1) ★ MEDIUM — OPTIONAL
+│  │  Secure Italian harbor. Reward: Mediterranean staging base
+│  │
+│  └─ [AM] "In the Nick of Time" + "Caught in the Act" +
+│     "Production Disruption" (Italy 2-4) ★ MEDIUM-HARD — OPTIONAL
+│     Italian theater chain. Compound reward: Chrono Tank prototypes
+│     + southern flank secured for final assault
+│
+├─ [M7] "Sunken Treasure" ★ MEDIUM-HARD — Destroy sub pens.
+│  │  IC link: M6 intel → Iron Curtain parts shipped by sub.
+│  │  If Sarin missions done: bonus naval units.
+│  │  If Italy done: Mediterranean staging base support.
+│  │  Teaches: naval combat.
+│  │
+│  └─ [IC] "Operation Skyfall" ★ HARD — OPTIONAL air campaign
+│     Coordinate air strikes on AA around Chronosphere perimeter.
+│     Type: air_campaign. Teaches: sortie management, no base.
+│     Reward: M8 starts with AA destroyed (fewer air attacks).
+│
+├─ [M8] "Protect the Chronosphere" ★ HARD — Defend 45 minutes.
+│  │  If Sarin NOT neutralized → chemical attacks during assault.
+│  │  If Skyfall completed → Soviet AA pre-destroyed.
+│  │  Dynamic weather: storm at minute 30 (D022 showcase).
+│  │
+│  └─ [IC] "Einstein's Confession" ★ MEDIUM — OPTIONAL
+│     After the Chronosphere defense, Einstein reveals something
+│     he's kept hidden: his original time machine research from
+│     1946 — the device he used to remove Hitler. His notes still
+│     exist. He buried them after seeing what his intervention
+│     created. Now, with the war reaching a crisis, he's reconsidered.
+│
+│     Einstein's briefing:
+│     "Commander... my original research — the experiment I conducted
+│     in Trinity, New Mexico — I destroyed my notes after I saw what
+│     I had done to the world. But I kept one copy. I told myself it
+│     was insurance. Now I am not sure if offering it to you is
+│     courage or cowardice."
+│
+│     Einstein has rebuilt a limited prototype from his original
+│     research. It can only transmit information — tactical intel,
+│     warnings, exploration data.
+│
+│     EXPERIMENTAL D078 ADD-ON ONLY:
+│     If D078 graduates from Draft, this mission can also unlock
+│     the TIME MACHINE capability (Layer 2):
+│     - 1-2 uses available for Act 3 (limited, not infinite)
+│     - Can rewind to a previous Act 3 mission-start checkpoint
+│     - Knowledge (exploration, intel flags) carries back
+│     - Army does NOT carry back (knowledge &gt; power)
+│     - Butterfly effects: enemy AI adapts ("something has changed")
+│
+│     If D078 stays Draft / cut, the mission remains a pure narrative
+│     reveal with no gameplay unlock. The classic campaign path works
+│     either way.
+│
+│     Menu scene changes: Einstein's lab with prototype device
+│
+├─ [M9] "Extract Kosygin" ★ MEDIUM-HARD — OPERATIVE LANE.
+│  │  Spy infiltrates Soviet compound, frees defector, escorts out.
+│  │  Character payoff: heard Kosygin in M6 comms. Now rescue him.
+│  │  Commander alternative: armored extraction. Tank column blasts
+│  │  into the compound, grabs Kosygin. Louder, more casualties,
+│  │  Kosygin provides less intel (roughed up in the fighting).
+│  │  His intel quality drives the endgame.
+│  │
+│  ═══ TIMED CHOICE 2 ═══════════════════════════════════════════
+│  │  "Where do we push next? Pick one front."
+│  │
+│  │  OPTION A: [AM] "Monster Tank Madness" (Poland 1) ★ HARD
+│  │  │  Rescue Dr. Demitri + Super Tanks.
+│  │  │  IF CHOSEN → 2 Super Tanks for M14. Unlocks Poland 2-5.
+│  │  │  IF NOT CHOSEN → No Super Tanks. Poland arc closed.
+│  │
+│  │  OPTION B: [IC] "Air Superiority" ★ HARD
+│  │  │  Establish air dominance over the eastern front.
+│  │  │  Type: air_campaign.
+│  │  │  IF CHOSEN → Air support available in M12 and M14.
+│  │  │  IF NOT CHOSEN → No strategic air support in endgame.
+│  │
+│  │  OPTION C: [CS] "Trapped" (Siberian 2) ★ HARD
+│  │     Continue Siberian arc (only if Fresh Tracks was done).
+│  │     IF CHOSEN → Siberian front weakens. Unlocks Wasteland.
+│  │     IF NOT CHOSEN → Siberian gains lost. No Act 3 benefit.
+│
+│  [AM] Poland 2-5 ★ HARD — OPTIONAL (if Poland 1 was chosen)
+│  │  "Negotiations" / "Time Flies" / "Absolute M.A.D.ness" / "PAWN"
+│  │  Compound reward: Poland liberated → flanking + resistance
+│
+│  [CS] "Wasteland" (Siberian 3) ★ HARD — OPTIONAL (if Siberian 2 done)
+│     Final Siberian operation. Reward: Siberian front collapses →
+│     Soviet M14 reinforcements halved.
+│
+ACT 3: ENDGAME ──────────────────────────────────────────────────────
+│  Menu scene: ground assault — tanks, artillery, dark skies
+│
+├─ [M10A] "Suspicion" ★ HARD — Destroy Soviet nuclear silos.
+│  │  COMMANDER LANE — base building, army assault. Always available.
+│  │
+│  │  After M10A, choose approach for the underground facility:
+│  │  ├─ [OPERATIVE] [M10B] "Evidence" ★ HARD — Interior commando.
+│  │  │  Tanya infiltrates underground facility. Better intel yield.
+│  │  │
+│  │  ├─ [OPERATIVE] [IC] "Evidence: Enhanced" ★ HARD
+│  │  │  Embedded task force: Tanya + squad inside a live battle.
+│  │  │
+│  │  └─ [COMMANDER] [IC] "Evidence: Siege" ★ HARD
+│  │     Bomb the facility from above. Artillery + air strikes
+│  │     collapse the underground complex. Cruder but no commando
+│  │     gameplay. Reduced intel yield (facility partially destroyed).
+│
+├─ [M11] "Naval Supremacy" ★ HARD — Clear river for final push.
+│  │  IC link: Kosygin's intel → this is the only approach.
+│  │
+│  └─ [IC] "Joint Operations" ★ HARD — OPTIONAL (Phase 6b add-on, D070)
+│     Co-op variant: Commander (naval base) + SpecOps (shore batteries).
+│     Not part of the Phase 4 baseline — requires D070 co-op infrastructure.
+│
+├─ [M12] "Takedown" ★ VERY HARD — Destroy Iron Curtain bases.
+│  │  If Poland done → flanking approach (attack from two sides).
+│  │  If Italy done → no southern naval threat.
+│  │  If air superiority → bombing runs available.
+│  │
+│  ═══ TIMED CHOICE 3 ═══════════════════════════════════════════
+│  │  "One last operation before Moscow. Make it count."
+│  │
+│  │  OPTION A: [OPERATIVE] [M13] "Focused Blast" ★ VERY HARD
+│  │  │  Interior commando. Plant charges in underground facility.
+│  │  │  IF CHOSEN → Iron Curtain facility destroyed from inside.
+│  │
+│  │  OPTION B: [OPERATIVE] [IC] "Focused Blast: Enhanced" ★ VERY HARD
+│  │  │  Tanya's full skill tree affects the mission.
+│  │  │  Silent Step → easier stealth. Chain Detonation → fewer
+│  │  │  charges needed. Hero progression payoff.
+│  │  │  (Only available if Tanya is alive and level 3+)
+│  │
+│  │  OPTION C: [COMMANDER] [IC] "Iron Curtain: Siege" ★ VERY HARD
+│  │     Full base assault + artillery bombardment of the facility.
+│  │     No commando gameplay. Same narrative result (facility destroyed).
+│  │     Trade-off: higher casualties, no precision destruction —
+│  │     some Iron Curtain tech survives (enemy retains partial
+│  │     Iron Curtain capability in M14).
+│
+├─ [M14] "No Remorse" ★ VERY HARD — Final assault on Moscow.
+│  │  EVERYTHING ACCUMULATES HERE:
+│  │  ├─ Siberian arc done → reduced reinforcements
+│  │  ├─ Poland liberated → Polish resistance arrives
+│  │  ├─ Super Tanks → available as heavy armor
+│  │  ├─ Sarin expertise → chemical defense
+│  │  ├─ Italy secured → no southern counterattack
+│  │  ├─ Air superiority → bombing runs
+│  │  ├─ Tanya max level → leads assault squad
+│  │  ├─ Nothing done → MAXIMUM difficulty, no bonuses
+│  │  Briefing dynamically references every choice.
+│  │
+│  └─ [IC] "Moscow: Enhanced" ★ VERY HARD — ALTERNATIVE
+│     Dynamic weather (blizzard). Embedded task force (Kremlin
+│     infiltration during siege). Co-op option (Phase 6b add-on, D070).
+│
+EPILOGUE ────────────────────────────────────────────────────────────
+│
+├─ [IC] "Aftermath" ★ MEDIUM — Post-victory moral decisions
+│  Cleanup in Moscow. Choices affect ending.
+│  Menu scene: sunrise over liberated city
+│
+└─ [ANT] "It Came From Red Alert!" ★ VARIES — Secret campaign
+   Unlocked after Allied completion. 4 ant missions.
+   Uses campaign roster from completion.
+</code></pre>
+<h3 id="allied-campaign-summary"><a class="header" href="#allied-campaign-summary">Allied Campaign Summary</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Content Type</th><th>Count</th><th>Toggleable</th></tr>
+</thead>
+<tbody>
+<tr><td>Classic main missions</td><td>14</td><td>Always on</td></tr>
+<tr><td>IC-original missions</td><td>~8 (prologue, Behind Enemy Lines, Spy Network, Skyfall, Joint Ops, enhanced alternatives, epilogue)</td><td>Per-mission</td></tr>
+<tr><td>Counterstrike missions</td><td>8 (Sarin Gas 1-3, Fall of Greece 1-2, Siberian 1-3)</td><td>Per-chain</td></tr>
+<tr><td>Aftermath missions</td><td>9 (Italy 1-4, Poland 1-5)</td><td>Per-chain</td></tr>
+<tr><td>Ant campaign</td><td>4</td><td>Post-completion unlock</td></tr>
+<tr><td><strong>Total missions available</strong></td><td><strong>~43</strong></td><td>—</td></tr>
+<tr><td><strong>Minimum path (classic only)</strong></td><td><strong>14</strong></td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="soviet-enhanced-edition-campaign"><a class="header" href="#soviet-enhanced-edition-campaign">Soviet Enhanced Edition Campaign</a></h2>
+<h3 id="narrative-gaps-identified-in-the-original-1"><a class="header" href="#narrative-gaps-identified-in-the-original-1">Narrative Gaps Identified in the Original</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Gap</th><th>Between</th><th>Problem</th><th>IC Fix</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Abrupt spy chase</strong></td><td>M2 → M3</td><td>Guard duty (infantry bridges) → suddenly chasing a spy. No narrative bridge</td><td>IC adds context: the spy was spotted during M2’s operations. Optional mission to track the spy’s contacts before the chase</td></tr>
+<tr><td><strong>Berlin jump</strong></td><td>M3 → M4</td><td>Spy chase in unknown location → assault on Berlin. Huge geographic/narrative leap</td><td>IC adds an optional advance-to-Berlin logistics mission</td></tr>
+<tr><td><strong>Generic base building</strong></td><td>M5</td><td>“Distant Thunder” is a standalone base-building exercise with no story purpose</td><td>IC links it: this base becomes the staging ground for M6’s convoy escort. The base you build in M5 is the base you defend in M6</td></tr>
+<tr><td><strong>Tanya appears from nowhere</strong></td><td>M7</td><td>“Core of the Matter” — Tanya is sabotaging a nuclear facility, but there’s no setup for her presence</td><td>IC adds context in the Soviet M7 briefing: Nadia explains that Allied commando activity was detected near the facility. This is always present — no cross-campaign data needed. Tanya’s appearance is framed as a known Allied threat, not a surprise</td></tr>
+<tr><td><strong>Internal politics jarring</strong></td><td>M8 → M9</td><td>Jump from destroying the Chronosphere (war front) to killing a political rival (internal intrigue)</td><td>IC adds a transition: Kosygin’s defection (Allied M9) is referenced here — the “liability” in M9 is someone who helped Kosygin escape</td></tr>
+<tr><td><strong>Two escort missions back-to-back</strong></td><td>M9 → M10</td><td>Both are “escort something across the map” — repetitive</td><td>IC offers an alternative to M10 (different mission type, same narrative purpose)</td></tr>
+<tr><td><strong>Repetitive endgame</strong></td><td>M12-14</td><td>Three “capture/destroy everything” missions in a row</td><td>IC adds variety: alternative approaches, co-op options, and decision points for the final push</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="full-campaign-graph-1"><a class="header" href="#full-campaign-graph-1">Full Campaign Graph</a></h3>
+<pre><code>PROLOGUE — THE PARTY'S WILL (IC Original + Aftermath)
+│  Character intro: STALIN (voice in propaganda broadcast)
+│  Character intro: NADIA (briefing officer, gives first orders)
+│  Character intro: VOLKOV (Soviet hero, playable in prologue)
+│  Character intro: GRADENKO (mentioned as political rival — foreshadowing)
+│
+├─ [IC] "Volkov: Awakening" ★ VERY EASY
+│  │  Volkov + Chitzkoi activated for a field test. Destroy a small
+│  │  Allied outpost. Teaches: hero unit control, special abilities.
+│  │  Nadia briefs: "Comrade, the Party has invested greatly in you.
+│  │  Do not disappoint." Stalin's voice on radio: propaganda.
+│  │  Gradenko mentioned: "General Gradenko questions the Volkov
+│  │  program's cost. Prove him wrong."
+│  │  Menu scene: Soviet war room, red lighting, propaganda posters
+│  │
+│  └─ [AM] "Testing Grounds" (France 1) ★ EASY — OPTIONAL
+│     Test new Soviet weapons. Introduces Shock Troopers.
+│     Teaches: new unit types, combined arms.
+│     Reward: Shock Troopers available from Act 1
+│
+ACT 1: THE IRON FIST ───────────────────────────────────────────────
+│
+├─ [M1] "Lesson in Blood" ★ EASY — Village assault. Tutorial.
+│  │  Classic, enhanced with Nadia briefing context.
+│  │  Teaches: basic base assault, unit production.
+│
+├─ [M2] "Guard Duty" ★ EASY-MEDIUM — Infantry bridge assault.
+│  │  IC: spy spotted during battle (foreshadows M3).
+│  │  If player kills spy → M3 is easier.
+│  │  Teaches: multi-unit coordination, bridge tactics.
+│  │
+│  └─ [AM] "Shock Therapy" (Spain 1) ★ MEDIUM — OPTIONAL
+│     Punish a border town. Reward: Shock Trooper veterancy boost
+│
+├─ [M3] "Covert Cleanup" ★ MEDIUM — OPERATIVE LANE. Chase a spy.
+│  │  If spy killed in M2 → timer extended to 20 min.
+│  │  Commander alternative: cordon and sweep. Deploy infantry
+│  │  squads to lock down the district. Less elegant — spy may
+│  │  escape with partial intel (worse for future missions).
+│  │  Teaches: time pressure, pursuit, area sweep.
+│  │
+│  └─ [IC] "Mole Hunt" ★ MEDIUM — OPTIONAL
+│     Hunt Allied agents inside Soviet command. Reversed spy mission.
+│     Reward: future missions — Allies don't know your composition.
+│     Character development: Nadia assigns this personally —
+│     she's watching everyone. Foreshadows her true nature.
+│
+├─ [IC] "Road to Berlin" ★ EASY-MEDIUM — OPTIONAL logistics mission.
+│  │  Bridges the geographic leap from the spy-chase theater to Berlin.
+│  │  Advance Soviet forces through contested territory, secure a
+│  │  staging area, and establish supply lines for the Berlin assault.
+│  │  No base building — move existing forces across a multi-zone map.
+│  │  Reward: M4 starts with a forward position (shorter approach,
+│  │  more time to complete the radar objective).
+│  │  If skipped: M4 starts from further back (harder time limit).
+│
+├─ [M4] "Behind the Lines" ★ MEDIUM — Destroy Allied radar in Berlin.
+│  │  If Mole Hunt done → Allies don't expect you (no pre-defenses).
+│  │  If Road to Berlin done → forward position, more time.
+│  │  Teaches: deep strike behind enemy lines.
+│  │
+│  ├─ [AM] "Let's Make a Steal" (France 2) ★ MEDIUM — OPTIONAL
+│  │  Steal Allied tech. Reward: vehicle tech upgrade.
+│  │
+│  └─ [AM] "Test Drive" (France 3) ★ MEDIUM — OPTIONAL
+│     Test stolen vehicles. Reward: captured units in roster.
+│
+├─ [M5] "Distant Thunder" ★ MEDIUM — Build and defend a base.
+│  │  IC link: surviving units and unspent resources carry over to M6
+│  │  via D021 roster carryover (not literal base layout — structures
+│  │  are map-specific). Over-investing in static defenses here means
+│  │  fewer mobile units for M6's convoy escort.
+│  │  Teaches: base building, resource management, investment trade-offs.
+│  │
+│  └─ [AM] "Don't Drink the Water" (France 4) ★ MEDIUM-HARD — OPTIONAL
+│     Poison water supply, capture Chronosphere.
+│     Reward: Chronosphere intel for M8.
+│
+├─ [M6] "Bridge over the River Grotzny" ★ MEDIUM-HARD — Convoy escort.
+│  │  IC: surviving units and unspent resources from M5 carry over
+│  │  via D021 roster carryover. M6 starts with a pre-built base
+│  │  (map-authored) but your M5 troops are available as reinforcements.
+│  │  Spectrum: full convoy → max supplies / partial → less /
+│  │  lost → M7 starts with minimal forces.
+│  │  Teaches: escort + defend with limited resources.
+│  │
+│  ═══ TIMED CHOICE 1 ═══════════════════════════════════════════
+│  │  "The front is wide. Where do we strike?"
+│  │
+│  │  OPTION A: [CS] "Soldier Volkov &amp; Chitzkoi" ★ HARD
+│  │  │  Volkov commando mission behind Allied lines.
+│  │  │  IF CHOSEN → Volkov gains veteran status for Act 2+.
+│  │  │  IF NOT CHOSEN → Volkov stays in reserve (no veterancy).
+│  │
+│  │  OPTION B: [CS] "Legacy of Tesla" ★ HARD
+│  │  │  Capture Allied nuclear MiG prototype.
+│  │  │  IF CHOSEN → Prototype MiG available in M11 naval battle.
+│  │  │  IF NOT CHOSEN → No air prototype. M11 is naval-only.
+│  │
+│  │  OPTION C: [AM] "Situation Critical" (Spain) ★ MEDIUM-HARD
+│  │     Secure Mediterranean sea lanes.
+│  │     IF CHOSEN → Naval advantage in M11. Unlocks Spain arc.
+│  │     IF NOT CHOSEN → Allied naval threat from south persists.
+│
+ACT 2: SUPERWEAPONS ────────────────────────────────────────────────
+│
+├─ [M7] "Core of the Matter" ★ HARD — Nuclear facility vs Tanya.
+│  │  Tanya's presence is always explained in the Soviet briefing
+│  │  (IC adds context regardless of whether Allied campaign was played —
+│  │  cross-campaign references are flavor text in briefing lines only,
+│  │  not gating state. No global/legacy persistence layer needed).
+│  │  If Volkov is veteran → Volkov vs Tanya encounter (hero vs hero).
+│  │  If Volkov not available → standard mission, Tanya is a boss unit.
+│  │  Teaches: facility defense + counter-commando operations.
+│  │
+│  └─ [AM] "Brothers in Arms" (Spain 2) ★ HARD — OPTIONAL
+│     Soviet traitors. Only if Spain arc opened in timed choice.
+│     Reward: loyal tank crews → heavy armor veterancy bonus.
+│
+├─ [M8] "Elba Island" ★ HARD — Destroy Allied Chronosphere.
+│  │  If "Don't Drink the Water" done → know weak points.
+│  │  If Volkov veteran → solo insertion option (sabotage before assault).
+│  │  Teaches: combined naval + ground assault.
+│  │
+│  ├─ [CS] "Paradox Equation" ★ HARD — OPTIONAL
+│  │  Chronosphere anomalies — tanks behave as other units.
+│  │  Reward: Chrono tech understanding → advantage in M13.
+│  │
+│  └─ [CS] "Mousetrap" ★ HARD — OPTIONAL
+│     Hunt Stavros at a Chronosphere research center.
+│     Reward: Stavros eliminated → intel on Allied command structure.
+│
+├─ [M9] "Liability Elimination" ★ MEDIUM-HARD — OPERATIVE LANE.
+│  │  Assassination mission. The "liability" helped Kosygin escape.
+│  │  Character shift: the war turns inward. Stalin's paranoia.
+│  │  Nadia's briefing is colder — she's consolidating power.
+│  │  Commander alternative: arrest operation. Send an armored
+│  │  column to detain the target publicly. Same political result
+│  │  but cruder — creates more internal unrest (affects Act 3).
+│  │
+│  └─ [IC] "Stalin's Shadow" ★ HARD — OPTIONAL
+│     Nadia's secret mission: evidence against Gradenko.
+│     Foreshadows the Stalin/Nadia/Kane ending.
+│     Reward: Gradenko neutralized → simpler politics in Act 3.
+│     Character reveal: Nadia is not who she seems.
+│
+├─ [M10] "Overseer" ★ MEDIUM-HARD — Escort supply trucks.
+│  │
+│  ├─ [CLASSIC] M10 as-is ★ MEDIUM-HARD
+│  │
+│  └─ [IC] "Overseer: Strike" ★ HARD — ALTERNATIVE
+│     Armored assault instead of escort. Same narrative result.
+│     Teaches: offensive operations as alternative to escort.
+│
+ACT 3: CONQUEST ────────────────────────────────────────────────────
+│  Menu scene: naval fleet mobilizing, Channel crossing preparation
+│
+├─ [M11] "Sunk Costs" ★ HARD — Naval defense vs Allied cruisers.
+│  │  If MiG prototype captured → air support available.
+│  │  If Spain secured → no Allied southern reinforcements.
+│  │
+│  ├─ [AM] "Deus Ex Machina" (Spain 3) ★ HARD — OPTIONAL
+│  │  Rescue Volkov (if he was captured).
+│  │  Can be taken immediately or after delay, but Allied tech extraction
+│  │  escalates each mission he remains in custody.
+│  │  Reward quality depends on how late the rescue happens.
+│  │
+│  └─ [AM] "Grunyev Revolution" (Spain 4) ★ MEDIUM-HARD — OPTIONAL
+│     Crush a revolution. Reward: rear secured → no uprisings
+│     during England invasion.
+│
+├─ [M12] "Capture the Tech Centers" ★ VERY HARD — Capture 3 centers.
+│  │  Compound rewards from all side missions affect difficulty.
+│  │
+│  ═══ TIMED CHOICE 2 ═══════════════════════════════════════════
+│  │  "The invasion of England approaches. One final preparation."
+│  │
+│  │  OPTION A: [IC] "Operation Tempest" ★ VERY HARD
+│  │  │  Air/naval pre-invasion bombardment.
+│  │  │  Type: air_campaign.
+│  │  │  IF CHOSEN → M14 starts with damaged coastal defenses.
+│  │  │  IF NOT CHOSEN → Full Allied coastal defense in M14.
+│  │
+│  │  OPTION B: [CS] "Nuclear Escalation" ★ VERY HARD
+│  │     Prevent Allied air-fuel bomb testing.
+│  │     IF CHOSEN → No Allied superweapon in M14.
+│  │     IF NOT CHOSEN → Allied air-fuel bombs in M14.
+│
+├─ [M13] "Capture the Chronosphere" ★ VERY HARD
+│  │  If Paradox Equation done → faster capture.
+│  │  If Volkov available → commando approach option.
+│  │
+│  ├─ [IC] "Chronosphere: Enhanced" ★ VERY HARD — ALTERNATIVE
+│  │  Co-op (Phase 6b add-on, D070): Commander sieges, SpecOps infiltrates.
+│  │
+│  └─ [IC] "Temporal Experiment" ★ HARD — OPTIONAL
+│     Soviet intelligence recovers fragments of Einstein's original
+│     1946 time travel research — notes hidden in a captured Allied
+│     research facility. Soviet scientists build a crude prototype
+│     from these notes. Less refined than Einstein's version, more
+│     powerful, and dangerously unstable.
+│
+│     Nadia's briefing: "Our scientists found Einstein's original
+│     time travel research in a captured laboratory. His notes
+│     describe something extraordinary. The Americans buried this
+│     knowledge. We will use it."
+│
+│     EXPERIMENTAL D078 ADD-ON ONLY:
+│     If D078 graduates from Draft, this mission can also unlock the
+│     TIME MACHINE capability (Layer 2):
+│     - 1-2 uses available for M14 (the invasion)
+│     - Can rewind to M14's mission-start checkpoint with knowledge
+│     - Soviet version is more aggressive with KNOWLEDGE carryover:
+│       full enemy patrol routes, base layouts, weapon positions carried
+│       back (the Soviets squeeze every drop of intel from the temporal
+│       transmission, where Einstein is more cautious)
+│     - Army does NOT carry back — D078 Layer 2 rule, same for both factions
+│     - Chrono Vortex hazards are Layer 3 / Phase 5 content — NOT included
+│       in this Phase 4 campaign mechanic
+│     - If Volkov was the test subject: his briefing dialogue hints
+│       at residual temporal effects ("Something is... different.
+│       I remember things I should not know.") — narrative flavor only
+│
+│     If D078 stays Draft / cut, the mission remains a narrative
+│     demonstration of Soviet interest in Einstein's research with
+│     no gameplay unlock.
+│
+│     Showcases: D078 campaign time machine with faction-specific rules
+│     If Paradox Equation was completed: the temporal experiment
+│     is more stable (fewer vortices — prior Chrono understanding helps)
+│
+├─ [M14] "Soviet Supremacy" ★ VERY HARD — Invade England.
+│  │  EVERYTHING ACCUMULATES:
+│  │  ├─ Spain secured → no southern counterattack
+│  │  ├─ Volkov available → leads armor spearhead
+│  │  ├─ Pre-invasion bombardment → damaged coastal defenses
+│  │  ├─ Nuclear Escalation done → no Allied superweapon
+│  │  ├─ Chrono tech → counter Allied Chronoshifts
+│  │  ├─ Grunyev done → no rear uprisings
+│  │  ├─ Nothing done → MAXIMUM difficulty
+│  │  Dynamic weather: Channel storm clears mid-invasion.
+│  │  Briefing references every choice.
+│  │
+│  └─ [IC] "Supremacy: Enhanced" ★ VERY HARD — ALTERNATIVE
+│     Dynamic weather + Volkov commando insertion on White Cliffs
+│     + embedded task force + co-op option (Phase 6b add-on).
+│
+EPILOGUE ────────────────────────────────────────────────────────────
+│
+└─ [IC] "Red Dawn" ★ MEDIUM — Stalin's betrayal.
+   Player witnesses the power struggle from inside — not just
+   cutscenes. Nadia, Gradenko (if alive), Kane's shadow.
+   Decisions affect ending variant. Kane reveal lands harder
+   if "Stalin's Shadow" was completed (foreshadowing pays off).
+   Menu scene: Kremlin at night, red star glowing
+</code></pre>
+<h3 id="soviet-campaign-summary"><a class="header" href="#soviet-campaign-summary">Soviet Campaign Summary</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Content Type</th><th>Count</th><th>Toggleable</th></tr>
+</thead>
+<tbody>
+<tr><td>Classic main missions</td><td>14</td><td>Always on</td></tr>
+<tr><td>IC-original missions</td><td>~7 (prologue, Mole Hunt, Stalin’s Shadow, Overseer: Strike, Operation Tempest, enhanced alternatives, epilogue)</td><td>Per-mission</td></tr>
+<tr><td>Counterstrike missions</td><td>6 (Volkov &amp; Chitzkoi, Legacy of Tesla, Paradox Equation, Mousetrap, Testing Grounds, Nuclear Escalation)</td><td>Per-chain</td></tr>
+<tr><td>Aftermath missions</td><td>9 (France 1-4, Spain 1-4, Grunyev Revolution)</td><td>Per-chain</td></tr>
+<tr><td><strong>Total missions available</strong></td><td><strong>~36</strong></td><td>—</td></tr>
+<tr><td><strong>Minimum path (classic only)</strong></td><td><strong>14</strong></td><td>—</td></tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="cross-campaign-continuity-flavor-text-only"><a class="header" href="#cross-campaign-continuity-flavor-text-only">Cross-Campaign Continuity (Flavor Text Only)</a></h2>
+<p>If the player plays both campaigns, certain thematic echoes emerge. These are <strong>briefing flavor text only</strong> — not gated by any cross-campaign state. Neither campaign reads data from the other. No global/legacy persistence layer is needed. Each campaign’s <code>CampaignState</code> (D021) is fully independent.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Allied Event</th><th>Soviet Briefing Echo</th></tr>
+</thead>
+<tbody>
+<tr><td>Tanya infiltrates Soviet facility (IC “Behind Enemy Lines”)</td><td>M7 briefing mentions “an enemy commando was detected” — always present, not conditional</td></tr>
+<tr><td>Allied spy network established</td><td>M3 briefing mentions “increased Allied intelligence activity” — always present</td></tr>
+<tr><td>Kosygin extracted by Allies (M9)</td><td>Soviet M9 briefing references “a high-ranking defection” — always present</td></tr>
+<tr><td>Stavros rescued in Greece (CS)</td><td>CS “Mousetrap” briefing mentions “the Greek officer” — always present</td></tr>
+</tbody>
+</table>
+</div>
+<p>The echoes are authored as standard briefing text that both campaigns include regardless of play order. A player who plays both campaigns recognizes the connections; a player who plays only one experiences them as normal briefing context. No data flows between campaigns — each stands alone.</p>
+<hr>
+<h2 id="ic-feature-showcase-summary"><a class="header" href="#ic-feature-showcase-summary">IC Feature Showcase Summary</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>IC Feature</th><th>Allied Showcase</th><th>Soviet Showcase</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Hero progression</strong></td><td>Tanya skill tree across 14+ missions</td><td>Volkov progression across 14+ missions</td></tr>
+<tr><td><strong>Embedded task force</strong></td><td>Evidence: Enhanced (M10B alt), Moscow Enhanced</td><td>Core of the Matter (Volkov vs Tanya), Supremacy Enhanced</td></tr>
+<tr><td><strong>Air campaign</strong></td><td>Operation Skyfall</td><td>Operation Tempest</td></tr>
+<tr><td><strong>Spy infiltration</strong></td><td>Behind Enemy Lines, Spy Network</td><td>Mole Hunt, Stalin’s Shadow</td></tr>
+<tr><td><strong>Dynamic weather</strong></td><td>Chronosphere defense storm, Moscow blizzard</td><td>Channel storm during England invasion</td></tr>
+<tr><td><strong>Asymmetric co-op</strong></td><td>Joint Operations (M11, Phase 6b add-on), Moscow Enhanced (Phase 6b add-on)</td><td>Chronosphere Enhanced (Phase 6b add-on), Supremacy Enhanced (Phase 6b add-on)</td></tr>
+<tr><td><strong>Branching decisions</strong></td><td>4+ decision points</td><td>3+ decision points</td></tr>
+<tr><td><strong>Spectrum outcomes</strong></td><td>Bridge destruction, intel gathering</td><td>Convoy escort, spy elimination</td></tr>
+<tr><td><strong>Side mission rewards</strong></td><td>Compound bonuses affecting M14</td><td>Compound bonuses affecting M14</td></tr>
+<tr><td><strong>Campaign menu scenes</strong></td><td>4 acts with evolving backgrounds</td><td>4 acts with evolving backgrounds</td></tr>
+<tr><td><strong>Roster carryover</strong></td><td>Squad persistence, hero survival matters</td><td>Volkov + captured units persist</td></tr>
+<tr><td><strong>Failure as consequence</strong></td><td>Tanya capture/rescue branch</td><td>Convoy loss affects Act 2 forces</td></tr>
+<tr><td><strong>Time machine (D078, experimental add-on)</strong></td><td>“Einstein’s Confession” — narrative reveal in the baseline plan; only becomes a gameplay unlock if D078 graduates from Draft. If enabled: cautious, knowledge-only carryover</td><td>“Temporal Experiment” — narrative reveal in the baseline plan; only becomes a gameplay unlock if D078 graduates from Draft. If enabled: same Layer 2 knowledge-only rules, but harsher Soviet-flavored intel extraction</td></tr>
+<tr><td><strong>Capture escalation</strong></td><td>Tanya captured → rescue can happen now, later, or never; the longer she is held, the more Chronosphere / spy-network intel leaks</td><td>Volkov captured → each delay gives the Allies more cyborg-tech insight; late or failed rescue escalates Act 3 penalties</td></tr>
+</tbody>
+</table>
+</div>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../modding/campaigns.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../modding/workshop.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../modding/campaigns.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../modding/workshop.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-c2a407aa.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

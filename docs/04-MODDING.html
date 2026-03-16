@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-50eef387.js";
+            window.path_to_searchindex_js = "searchindex-9b234216.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-f491df3e.js"></script>
+        <script src="toc-a18c07f4.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -213,8 +213,9 @@ Power      ▼
 </thead>
 <tbody>
 <tr><td><strong>Tier 1: YAML Rules</strong></td><td>Data-driven modding: YAML syntax, inheritance, OpenRA compatibility (D003/D023/D025/D026), hot-reload, actor definitions, weapons, prerequisites</td><td><a href="modding/yaml-rules.html">yaml-rules</a></td></tr>
-<tr><td><strong>Tier 2: Lua Scripting</strong></td><td>Mission scripting, event hooks, triggers, OpenRA Lua API superset (D024), sandboxing, deterministic execution</td><td><a href="modding/lua-scripting.html">lua-scripting</a></td></tr>
-<tr><td><strong>Tier 3: WASM Modules</strong></td><td>Total conversion power: component registration, lifecycle hooks, spatial queries, WASM API, deterministic constraints, cross-language support (D005)</td><td><a href="modding/wasm-modules.html">wasm-modules</a></td></tr>
+<tr><td><strong>Tier 2: Lua Scripting</strong></td><td>Mission scripting, event hooks, triggers, OpenRA Lua API superset (D024), sandboxing, deterministic execution, <strong>callback-driven engine extensions</strong> (custom locomotors, AI targeting rules, damage modifiers — Lua defines rules, native code runs algorithms)</td><td><a href="modding/lua-scripting.html">lua-scripting</a></td></tr>
+<tr><td><strong>Tier 3: WASM Modules</strong></td><td>Algorithm replacement: custom pathfinding, AI strategies, render backends, format loaders. Capability-based permissions, install-time review, sim-tick exclusion rule (D005)</td><td><a href="modding/wasm-modules.html">wasm-modules</a></td></tr>
+<tr><td><strong>WASM Mod Creation Guide</strong></td><td>Step-by-step walkthrough: scaffold, implement, build, test, publish. Covers modder side and engine side (adapter pattern, ABI bridge, fuel metering)</td><td><a href="modding/wasm-mod-guide.html">wasm-mod-guide</a></td></tr>
 <tr><td><strong>Tera Templating</strong></td><td>Template-driven YAML generation for faction variants, balance matrices, veterancy tables (D014). Load-time only, optional</td><td><a href="modding/tera-templating.html">tera-templating</a></td></tr>
 <tr><td><strong>Resource Packs</strong></td><td>Selective asset replacement: sprites, audio, music, video, UI themes. Priority-layered loading, format conversion</td><td><a href="modding/resource-packs.html">resource-packs</a></td></tr>
 <tr><td><strong>Campaign System</strong></td><td>Branching mission graphs, persistent state, unit roster carryover, hero progression, Lua campaign API (D021)</td><td><a href="modding/campaigns.html">campaigns</a></td></tr>

@@ -1,0 +1,1436 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>D078 — Time-Machine Mechanics - Iron Curtain — Design Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Design docs for a Rust-native Red Alert RTS engine">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon-29075ff1.svg">
+        <link rel="shortcut icon" href="../../favicon-96291481.png">
+        <link rel="stylesheet" href="../../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../../css/general-2459343d.css">
+        <link rel="stylesheet" href="../../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../css/sidebar-logo-511465a2.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../../searchindex-9b234216.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../../toc-a18c07f4.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Iron Curtain — Design Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs/edit/main/src/decisions/09d/D078-time-machine.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h2 id="d078-time-machine-mechanics--replay-takeover-temporal-campaigns-and-multiplayer-time-modes"><a class="header" href="#d078-time-machine-mechanics--replay-takeover-temporal-campaigns-and-multiplayer-time-modes">D078: Time-Machine Mechanics — Replay Takeover, Temporal Campaigns, and Multiplayer Time Modes</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th></th><th></th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Status</strong></td><td>Draft</td></tr>
+<tr><td><strong>Phase</strong></td><td>Phase 3 (replay takeover), Phase 4 (campaign time machine), Phase 5 (multiplayer time modes), Phase 7 (advanced co-op/adversarial timelines)</td></tr>
+<tr><td><strong>Depends on</strong></td><td>D010 (snapshottable state), D012 (order validation), D021 (branching campaigns), D024 (Lua scripting), D033 (QoL presets), D043 (AI presets), D055 (ranked matchmaking), D077 (replay highlights)</td></tr>
+<tr><td><strong>Driver</strong></td><td>IC’s deterministic simulation, snapshottable state, and keyframe-based replay system provide architectural primitives that no other RTS has leveraged for time-travel gameplay. StarCraft 2 shipped “Take Command” (replay takeover) to critical praise. Achron proved time-travel RTS is viable but failed on execution fundamentals. C&amp;C Red Alert’s lore is built on time travel (Einstein, Chronosphere). IC can be the first RTS to deliver time-travel as both a tool and a game mechanic.</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="philosophy--scope-note"><a class="header" href="#philosophy--scope-note">Philosophy &amp; Scope Note</a></h3>
+<blockquote>
+<p><strong>This decision is Draft — experimental, not committed.</strong> It requires community validation before moving to Accepted.</p>
+<p><strong>What is proven:</strong> Layer 1 (replay takeover) is SC2-proven with clear coaching/practice/tournament-recovery value. The architectural primitives (snapshot restore, keyframe seeking) already exist for replay viewing and reconnection. Thematic fit with C&amp;C Red Alert’s time-travel lore (Einstein, Chronosphere) is natural.</p>
+<p><strong>What is experimental:</strong> Layers 2–4 (campaign time machine, multiplayer time modes, temporal co-op) are driven by architectural opportunity — “IC’s architecture provides primitives no other RTS has leveraged” — rather than documented community pain points. The 12 community pain points in <code>01-VISION.md</code> do not include “replay takeover” or “campaign rewind.” The closest (“campaigns are incomplete”) is addressed by D021.</p>
+<p><strong>Philosophy tensions (acknowledged):</strong></p>
+<ul>
+<li><strong>Scope discipline (Principle 6):</strong> D078 spans 4 phases and 6 crates. The layered design mitigates this (each layer ships independently), but the cross-cutting surface is real.</li>
+<li><strong>Core loop relevance (Principle 15):</strong> Time-machine mechanics are <em>on top of</em> Extract-Build-Amass-Crush, not <em>part of</em> it. They must not distract from the core loop.</li>
+<li><strong>Community-driven design (Principle 10):</strong> Layers 2–4 should be validated with community feedback before becoming permanent. If the community doesn’t find them fun or useful, they should be cut rather than becoming “entrenched complexity.”</li>
+</ul>
+<p><strong>Recommendation:</strong> Ship Layer 1 with the replay system (Phase 3). Validate Layers 2–4 with playtesters before committing design and implementation effort. Do not update affected docs (roadmap, replays.md, campaigns.md, multiplayer.md, game-loop.md, save-replay-formats.md) until this decision moves from Draft to Accepted.</p>
+</blockquote>
+<h3 id="decision-capsule-llmrag-summary"><a class="header" href="#decision-capsule-llmrag-summary">Decision Capsule (LLM/RAG Summary)</a></h3>
+<ul>
+<li><strong>Status:</strong> Draft</li>
+<li><strong>Phase:</strong> Phase 3 (replay takeover) → Phase 4 (campaign time machine) → Phase 5 (multiplayer time modes) → Phase 7 (advanced temporal campaigns)</li>
+<li><strong>Canonical for:</strong> Replay-to-gameplay branching (“Take Command”), speculative branch preview, campaign time-machine weapon, campaign mission archetypes (convergence puzzles, information locks, causal loops, dual-state battlefields, retrocausal modification), multiplayer temporal game modes, temporal manipulation support powers, temporal pincer co-op</li>
+<li><strong>Scope:</strong> <code>ic-game</code> (takeover orchestration via <code>GameRunner::restore_full()</code>, time-machine game mode), <code>ic-sim</code> (snapshot production — <code>snapshot()</code>, <code>delta_snapshot()</code>, <code>state_hash()</code>), <code>ic-script</code> (Lua <code>TimeMachine</code> API), <code>ic-ui</code> (takeover UX, timeline visualization), <code>ic-net</code> (multiplayer takeover lobby + time mode relay support — Phase 5+)</li>
+<li><strong>Decision:</strong> IC implements time-machine mechanics in four layers: (1) replay takeover lets any player branch from any point in a replay into live gameplay; (2) a diegetic campaign time-machine weapon lets players rewind to earlier missions with controlled state carryover; (3) multiplayer time-machine game modes (capture/race, timeline peek); (4) advanced co-op/adversarial temporal campaigns. Each layer builds on the previous and can ship independently.</li>
+<li><strong>Why:</strong>
+<ul>
+<li>The snapshot + deterministic-replay architecture already solves the hard engineering problem (restore state at tick T, continue with new input)</li>
+<li>StarCraft 2’s “Take Command” proved the concept for replay takeover; IC can ship a better version with richer state (campaign, Lua scripts, fog)</li>
+<li>C&amp;C Red Alert’s entire lore is founded on time travel (Einstein, Chronosphere) — a time-machine mechanic is thematically native</li>
+<li>Achron’s failure was not the mechanic itself but the RTS fundamentals around it — IC has the foundation to succeed where Achron fell short</li>
+<li>No RTS has explored time travel as a campaign narrative weapon with persistent state carryover</li>
+</ul>
+</li>
+<li><strong>Non-goals:</strong> Free-form multiplayer time travel during live matches (Achron model — too complex, too niche). Replacing the core RTS gameplay loop with time puzzles. Mandatory time-machine usage in any campaign.</li>
+<li><strong>Out of current scope:</strong> LLM-generated alternate timeline missions (Phase 7+, depends on D016 maturity). Cross-match timeline persistence (career-spanning time travel).</li>
+<li><strong>Invariants preserved:</strong> Deterministic sim (<code>ic-sim</code> remains pure — time machine operates through snapshot restore + new order streams, not by mutating sim internals). Replay integrity (original <code>.icrep</code> files are immutable; branched replays reference their parent). Campaign state serializable (time-machine state is part of <code>CampaignState</code>).</li>
+<li><strong>Defaults / UX behavior:</strong> Replay takeover available from the replay viewer via “Take Command” button (native <code>.icrep</code> replays only — blocked for imported/foreign replays per D056 divergence risk). Campaign time machine is opt-in per campaign definition (YAML). Multiplayer time modes are custom game modes, not ranked by default.</li>
+<li><strong>Security / Trust impact:</strong> Replay takeover from ranked replays does not affect the original match’s rating. Time-machine multiplayer modes excluded from ranked queue unless explicitly whitelisted by D055 seasonal config.</li>
+<li><strong>Performance impact:</strong> Snapshot restore + re-simulation to target tick is bounded by existing keyframe seeking performance (&lt;100ms worst case per D010). No new per-tick cost in standard gameplay.</li>
+<li><strong>Public interfaces / types / commands:</strong> <code>ReplayTakeover</code>, <code>TakeoverSource</code>, <code>PlayerAssignment</code> (Layer 1); <code>TimeMachineState</code>, <code>TimeMachineCarryover</code>, <code>CampaignProgressSnapshot</code>, <code>CampaignProgressCheckpoint</code>, <code>CheckpointId</code> (Layer 2); <code>GhostUnit</code> component (Layer 4); <code>TimeMachine</code> (Lua global); <code>/takeover</code>, <code>/timemachine</code> (console commands)</li>
+<li><strong>Affected docs:</strong> <code>player-flow/replays.md</code> (takeover UX + InReplay → Loading → InGame transition), <code>modding/campaigns.md</code> (time-machine YAML schema + Lua API + <code>CampaignState</code> additions), <code>player-flow/multiplayer.md</code> (time-machine game modes), <code>formats/save-replay-formats.md</code> (branched replay metadata fields), <code>architecture/game-loop.md</code> (new state transition path for takeover)</li>
+<li><strong>Keywords:</strong> time machine, replay takeover, take command, resume from replay, speculative branch preview, what-if ghost overlay, temporal campaign, timeline branch, chronosphere, time travel RTS, Achron, rewind, what-if, alternate timeline, time race, convergence puzzle, attractor field, information lock, causal loop, bootstrap paradox, dual-state battlefield, retrocausal, temporal pincer, ghost army, temporal support power, age structure, chrono stasis, GGPO rollback, Novikov self-consistency, many-worlds, Steins;Gate, Tenet, Singularity TMD, Zero Escape, Titanfall Effect and Cause</li>
+</ul>
+<hr>
+<h3 id="problem"><a class="header" href="#problem">Problem</a></h3>
+<p>IC’s deterministic simulation and keyframe-based replay system already contain the architectural primitives for time-travel gameplay:</p>
+<ul>
+<li><strong>Snapshot restore:</strong> <code>GameRunner::restore_full()</code> (the canonical end-to-end restore contract in <code>ic-game</code> per <code>02-ARCHITECTURE.md</code>) can reconstruct any prior state from a <code>SimSnapshot</code></li>
+<li><strong>Arbitrary seeking:</strong> Keyframe index enables jumping to any tick in &lt;100ms</li>
+<li><strong>Campaign state serialization:</strong> <code>CampaignState</code> (roster, veterancy, flags, equipment) is part of <code>SimSnapshot</code></li>
+<li><strong>Lua/WASM script state:</strong> <code>ScriptState</code> is snapshottable and restorable</li>
+</ul>
+<p>These primitives are currently used only for replay viewing, reconnection, and save/load. They are not exposed as gameplay mechanics. This is a missed opportunity — especially given that:</p>
+<ol>
+<li>C&amp;C Red Alert’s entire narrative premise is time travel (Einstein erasing Hitler, Chronosphere technology)</li>
+<li>The RTS genre has never delivered a polished time-travel gameplay experience (Achron proved the concept but failed on RTS fundamentals)</li>
+<li>StarCraft 2 shipped replay takeover (“Take Command”) to enthusiastic reception, validating the replay-to-gameplay transition</li>
+<li>Time-loop and time-travel mechanics are among the most praised innovations in modern game design (Outer Wilds, Braid, Prince of Persia: Sands of Time, Deathloop)</li>
+</ol>
+<h3 id="prior-art"><a class="header" href="#prior-art">Prior Art</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Game / Feature</th><th>Mechanic</th><th>Result</th><th>Lesson for IC</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>StarCraft 2: Heart of the Swarm</strong> — “Take Command”</td><td>Jump into any replay point, take over any player’s control, continue playing</td><td>Enthusiastically received; used for coaching, practice, tournament recovery, “what if” exploration</td><td>Proven concept. Ship as baseline. IC’s richer state (campaign, Lua, fog) makes it more powerful</td></tr>
+<tr><td><strong>StarCraft 2: HotS</strong> — “Resume from Replay”</td><td>Recover dropped/crashed games by restoring replay state at a chosen point</td><td>Essential for tournament integrity; used by referees to recover from disconnects</td><td>IC’s reconnection protocol already supports this via relay snapshot transfer. Expose it explicitly</td></tr>
+<tr><td><strong>Achron</strong> (2011)</td><td>Free-form multiplayer time travel. “Timewaves” propagate past changes to present. Energy cost for timeline modifications. Won Best Original Game Mechanic (GameSpot 2011)</td><td>Brilliant core idea, terrible RTS execution — primitive pathfinding, bad UI, steep learning curve. Metacritic 56</td><td>The mechanic works, but the game underneath must be excellent first. IC has the RTS foundation Achron lacked. Don’t let time travel overshadow core gameplay quality</td></tr>
+<tr><td><strong>Braid</strong> (2008)</td><td>Six worlds, each with a unique time mechanic (global rewind, time-immune objects, time tied to movement). GOTY-level indie</td><td>Made time manipulation <em>the puzzle</em>. Each mechanic deeply explored. Players felt clever, not confused</td><td>Each time-machine use should feel like solving a puzzle. Design missions where foreknowledge creates new strategic possibilities</td></tr>
+<tr><td><strong>Prince of Persia: Sands of Time</strong> (2003)</td><td>Limited rewind charges. Reverse death, freeze enemies, slow time</td><td>Forgiving but not free — limited charges create tension. Defined “time rewind as resource”</td><td>Limited uses create meaningful decisions. “Should I rewind now or save it?” is the fun</td></tr>
+<tr><td><strong>Outer Wilds</strong> (2019)</td><td>22-minute time loop. Knowledge is the only persistent upgrade. GOTY at Eurogamer, Polygon</td><td>“Knowledge is the upgrade.” Players improve, not their avatar</td><td>“Knowledge carries back” is the most elegant carryover rule. Explored terrain (shroud) + enemy positions known, but army resets</td></tr>
+<tr><td><strong>Chrono Trigger</strong> (1995)</td><td>Travel between eras. Past actions change the future. 13+ endings</td><td>Cause-and-effect across time is deeply satisfying. “Plant a seed in 600 AD, find a forest in 1000 AD”</td><td>Cross-mission cause-and-effect is IC’s campaign branching. Time machine amplifies it by letting the player choose to go back and set different flags</td></tr>
+<tr><td><strong>Deathloop</strong> / <strong>Returnal</strong> (2021)</td><td>Time loops with knowledge persistence. Select upgrades carry between loops</td><td>“Time is on your side.” The loop empowers, not punishes</td><td>Frame the time machine as empowerment. The player should feel like a genius for using foreknowledge</td></tr>
+<tr><td><strong>C&amp;C Red Alert</strong> (1996)</td><td>Einstein used a time machine in 1946 (Trinity, NM) to remove Hitler, creating the RA timeline. The Chronosphere is a separate teleportation device developed later</td><td>Einstein’s original time machine research is the narrative foundation for D078. The campaign asks: “what if someone rebuilt the device he used in Trinity?”</td><td>The time machine is Einstein’s 1946 research, rebuilt as a limited prototype</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="cross-domain-inspirations"><a class="header" href="#cross-domain-inspirations">Cross-Domain Inspirations</a></h3>
+<p>Beyond games, time-travel mechanics draw from netcode engineering, theoretical physics, and science fiction. These inform both the technical implementation and the design of fun, novel game mechanics.</p>
+<h4 id="netcode-techniques-as-game-mechanics"><a class="header" href="#netcode-techniques-as-game-mechanics">Netcode Techniques as Game Mechanics</a></h4>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Source</th><th>Technique</th><th>IC Application</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>GGPO / Rollback Netcode</strong></td><td>Snapshot full state every frame; on misprediction, roll back to divergence point and re-simulate with corrected inputs</td><td>IC’s takeover is architecturally identical but triggered by the player, not mispredictions. The same snapshot+re-simulate primitive enables <strong>speculative branch previews</strong> — “what if?” ghost overlays showing two possible outcomes before the player commits</td></tr>
+<tr><td><strong>Delta Rollback</strong></td><td>Instead of full snapshots, track only changed fields. Reduces rollback cost dramatically</td><td>IC already has <code>#[derive(TrackChanges)]</code> with per-field change masks. Makes speculative branching cheap enough for real-time “what if?” previews — the delta between two speculative branches is small</td></tr>
+<tr><td><strong>Speculative Execution</strong> (lockstep prediction)</td><td>Run the sim ahead with predicted inputs; correct when real inputs arrive</td><td>A “timeline peek” ability: activate the time machine, the game speculatively simulates N seconds forward using current AI orders, shows a ghost overlay of “what will happen if nothing changes.” Uses the same infrastructure as replay fast-forward</td></tr>
+</tbody>
+</table>
+</div>
+<h4 id="physics-theories-as-game-rules"><a class="header" href="#physics-theories-as-game-rules">Physics Theories as Game Rules</a></h4>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Theory</th><th>Core Idea</th><th>Game Rule</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Novikov Self-Consistency Principle</strong></td><td>If time travel exists, paradoxes are impossible. Any action taken in the past was <em>always</em> part of history</td><td><strong>Locked outcomes.</strong> When the player rewinds, certain mission outcomes are immutable — they happened in the original timeline and can’t be changed. The puzzle: figure out <em>which</em> outcomes are locked and <em>which</em> are mutable. “The bridge was always going to be destroyed. But <em>who</em> destroyed it is up to you”</td></tr>
+<tr><td><strong>Many-Worlds Interpretation</strong></td><td>Every quantum event branches into all possible outcomes. All timelines are equally real</td><td><strong>Parallel timeline reality.</strong> Time-machine use doesn’t “rewrite” the old timeline — it creates a new one alongside it. In co-op, one player continues in the old timeline while another plays the new branch. Both are “real” and can affect each other through shared campaign state</td></tr>
+<tr><td><strong>Closed Timelike Curves</strong></td><td>An object’s worldline loops back on itself. Effect can precede cause</td><td><strong>Causal loop missions.</strong> The player receives mysterious reinforcements at mission start, then must send those exact reinforcements back in time at mission end. If they fail to close the loop, the mission retroactively becomes harder</td></tr>
+<tr><td><strong>Retrocausality</strong></td><td>Future events influence past events</td><td><strong>Reverse cause-and-effect.</strong> Actions in a <em>later</em> campaign mission retroactively modify an <em>earlier</em> mission’s conditions. The player replays the earlier mission and finds it changed — different enemy positions, altered terrain — because of what they did in the future</td></tr>
+<tr><td><strong>Attractor Fields</strong> (Steins;Gate)</td><td>Worldlines within an attractor field converge on the same key outcomes. Escaping requires shifting to a different attractor field entirely</td><td><strong>Convergence puzzles.</strong> Campaign missions have “convergence points” — outcomes that happen regardless of rewinds. To break convergence, the player must accumulate enough divergence across multiple rewinds + different choices to shift to a new attractor field and unlock a hidden campaign branch</td></tr>
+</tbody>
+</table>
+</div>
+<h4 id="science-fiction-narrative-models"><a class="header" href="#science-fiction-narrative-models">Science Fiction Narrative Models</a></h4>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Source</th><th>Concept</th><th>IC Mechanic</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Tenet</strong> (Nolan, 2020) — Temporal Pincer Movement</td><td>Two teams attack the same objective from opposite temporal directions. Forward team reports; backward team uses that knowledge</td><td><strong>Temporal pincer co-op.</strong> Player A plays a battle normally. Player B replays the <em>same battle</em> but with Player A’s replay as ghost support fire — the failed timeline’s actions become helpful cover. See Layer 4 Concept A</td></tr>
+<tr><td><strong>Dark</strong> (Netflix) — Bootstrap Paradox</td><td>Objects exist in causal loops with no origin. The time machine’s blueprints are given to the person who builds the time machine</td><td><strong>Self-causing technology.</strong> A campaign mission where the player captures enemy temporal technology that turns out to be derived from research <em>they</em> sent back in time. The player’s own time-travel journey contributed to the enemy’s capabilities — fitting for C&amp;C’s Einstein narrative</td></tr>
+<tr><td><strong>Everything Everywhere All at Once</strong> — Verse-Jumping</td><td>Characters tap into alternate versions of themselves, gaining skills/knowledge from other timelines</td><td><strong>Timeline borrowing.</strong> Instead of replaying a mission, briefly access an alternate timeline version and bring back one specific advantage (unit composition, position, intel). Requires “anchor” conditions true in both timelines — a strategic puzzle to set up</td></tr>
+<tr><td><strong>Steins;Gate</strong> — Worldline Convergence</td><td>Certain events are fated across all worldlines in an attractor field. Small details change, but major beats are locked</td><td><strong>Fated events + hidden branches.</strong> Most mission outcomes are cosmetically different but narratively convergent. Only specific multi-rewind strategies break convergence and reveal secret campaign branches — massive replayability</td></tr>
+<tr><td><strong>Zero Escape: Virtue’s Last Reward</strong> — FLOW Chart</td><td>Protagonist jumps between timeline branches using a flowchart. Information from one branch unlocks progress in another. Passwords carry across timelines</td><td><strong>Information locks.</strong> Certain missions are impassable without intel from a different timeline branch. The player must rewind, play a different path, learn the enemy’s codes/weaknesses, then jump back. Transforms the time machine from safety net into required puzzle tool</td></tr>
+</tbody>
+</table>
+</div>
+<h4 id="additional-game-mechanics"><a class="header" href="#additional-game-mechanics">Additional Game Mechanics</a></h4>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Game</th><th>Mechanic</th><th>IC Application</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Titanfall 2 — “Effect and Cause”</strong> (2016)</td><td>Player shifts between past/present versions of the same map with a button press. Two vertically stacked, perfectly aligned maps. Universally praised as one of the best FPS levels ever designed</td><td><strong>Dual-state battlefield.</strong> A mission type where the battlefield exists in two temporal states. Buildings that are ruins in the present are intact in the past. The player shifts units between states — build in the past (abundant resources, alert enemy), attack in the present (weakened enemy, devastated terrain). Achievable within single-sim using a temporal-state flag, not multi-sim</td></tr>
+<tr><td><strong>Singularity — TMD</strong> (2010, Raven Software)</td><td>A device that ages or restores individual objects/enemies. Broken bridges restored. Enemies aged to dust. Rusted safes crumble open</td><td><strong>Temporal manipulation support power.</strong> Age an enemy bridge to collapse it (cut reinforcement routes). Restore a destroyed refinery for your own use. Age an enemy tank column (reduce veterancy/health). Extends the Chronosphere from teleportation to per-object time manipulation</td></tr>
+<tr><td><strong>Quantum Chess</strong> (Akl)</td><td>Chess pieces exist in superposition of two types until moved, then collapse to one. The opponent doesn’t know which until engagement</td><td><strong>Quantum units (experimental).</strong> Units built at the Chronosphere exist in superposition of two unit types. They collapse to whichever type is advantageous upon combat contact. The opponent can’t scout which type they’ll face — information warfare meets quantum mechanics</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="decision"><a class="header" href="#decision">Decision</a></h3>
+<p>Time-machine mechanics are implemented in four independent layers, each building on the previous:</p>
+<hr>
+<h4 id="layer-1-replay-takeover-take-command"><a class="header" href="#layer-1-replay-takeover-take-command">Layer 1: Replay Takeover (“Take Command”)</a></h4>
+<p><strong>Phase 3 — ships with the replay system.</strong></p>
+<p>While watching a native <code>.icrep</code> replay, the player can stop at any point, select a faction, and transition into live gameplay from that moment. The original replay remains immutable; a new branched replay is recorded.</p>
+<p><strong>Takeover is restricted to native <code>.icrep</code> replays only.</strong> Imported/foreign replays (OpenRA <code>.orarep</code>, Remastered — per D056) are excluded because their playback may visibly diverge from IC’s simulation, making the restored state unreliable for live gameplay. If a foreign replay has not yet diverged at the selected tick, takeover is still blocked — divergence is unpredictable and the state cannot be trusted.</p>
+<h5 id="app-state-transition"><a class="header" href="#app-state-transition">App State Transition</a></h5>
+<p>The current game lifecycle state machine (<code>game-loop.md</code>) defines no <code>InReplay → InGame</code> path. Takeover adds a new transition:</p>
+<pre><code>InReplay → Loading → InGame
+</code></pre>
+<p>When the player confirms takeover:</p>
+<ol>
+<li>The app transitions from <code>InReplay</code> to <code>Loading</code> (same <code>Loading</code> state used by <code>InMenus → Loading</code>)</li>
+<li>During <code>Loading</code>: snapshot is restored, players/AI assigned, <code>LocalNetwork</code> adapter initialized (Phase 3 single-player; <code>EmbeddedRelayNetwork</code> or <code>RelayLockstepNetwork</code> in Phase 5 multiplayer takeover), new <code>.icrep</code> recording starts</li>
+<li><code>Loading → InGame</code>: game begins in paused state, identical to a normal match start</li>
+</ol>
+<p>This reuses the existing <code>Loading</code> state — no new states are added to the state machine. <code>game-loop.md</code> must be updated to document this additional entry edge into <code>Loading</code>.</p>
+<h5 id="ux-flow"><a class="header" href="#ux-flow">UX Flow</a></h5>
+<ol>
+<li>Player opens replay in the replay viewer (existing UX)</li>
+<li>Player scrubs to desired tick T using existing timeline/transport controls</li>
+<li>Player clicks <strong>“Take Command”</strong> button (visible in replay viewer toolbar)</li>
+<li><strong>Takeover dialog</strong> appears:
+<ul>
+<li>Faction selector — choose which player to control (with faction icon, color, current army preview)</li>
+<li>AI assignment — select AI preset (D043) for each non-human faction</li>
+<li>Difficulty — optional AI difficulty override</li>
+<li>“Start from here” button</li>
+</ul>
+</li>
+<li>System performs snapshot restore (via <code>GameRunner::restore_full()</code>):
+<ul>
+<li>Find nearest keyframe ≤ T in the keyframe index</li>
+<li>Restore the keyframe snapshot (full snapshot, or full + intervening deltas)</li>
+<li>Re-simulate forward from the restored keyframe to exact tick T via <code>apply_tick()</code></li>
+<li>Assign human control to selected faction, AI control to others</li>
+</ul>
+</li>
+<li>App transitions <code>InReplay → Loading → InGame</code> (game starts in paused state, giving the player a moment to orient)</li>
+<li>Player unpauses and plays from tick T onward</li>
+<li>A new <code>.icrep</code> file is recorded with branch provenance in its metadata</li>
+</ol>
+<h5 id="branched-replay-provenance"><a class="header" href="#branched-replay-provenance">Branched Replay Provenance</a></h5>
+<p>Branch provenance is stored in the <strong>JSON metadata section</strong> of the new <code>.icrep</code> file (the canonical extensibility surface per <code>save-replay-formats.md</code>). The fixed 108-byte binary header is not modified.</p>
+<pre><code class="language-json">{
+  "replay_id": "b7e2f1a9-...",
+  "branch_from": {
+    "parent_replay_id": "a3f7c2d1-...",
+    "parent_replay_file_sha256": "e4d9c8b7...",
+    "branch_tick": 14320,
+    "branch_state_hash": "a1b2c3d4...",
+    "original_player_slot": 1,
+    "ai_assignments": [
+      { "slot": 0, "preset": "adaptive", "difficulty": "hard" }
+    ]
+  }
+}
+</code></pre>
+<p>Field semantics:</p>
+<ul>
+<li><code>parent_replay_id</code> — the <code>replay_id</code> from the source replay’s metadata (UUID, cross-referenceable)</li>
+<li><code>parent_replay_file_sha256</code> — hex-encoded SHA-256 digest of the parent <code>.icrep</code> file for integrity verification. This is a <strong>file content hash</strong>, not a <code>StateHash</code> (which is reserved for simulation state per <code>type-safety.md</code> § Hash Type Distinction)</li>
+<li><code>branch_state_hash</code> — hex-encoded <code>StateHash</code> (full SHA-256) of the simulation state at <code>branch_tick</code>, computed via <code>full_state_hash()</code> during the takeover restore. <strong>Not directly verifiable from stored replay data</strong> — per-tick replay frames carry only <code>SyncHash</code> (u64 truncation per <code>save-replay-formats.md</code>), and full <code>StateHash</code> appears only in relay signatures at signing cadence (<code>TickSignature.state_hash</code>). Verification requires re-simulating the parent replay to <code>branch_tick</code> and recomputing <code>full_state_hash()</code>. The hash is stored for offline auditing and desync debugging, not fast lookup</li>
+<li><code>original_player_slot</code> — which player slot the human took over</li>
+<li><code>ai_assignments</code> — AI presets assigned to non-human factions at takeover</li>
+</ul>
+<p>The replay browser shows branch provenance: “Branched from [parent replay name] at [timestamp]”. The <code>branch_from</code> field is absent (not <code>null</code>) in non-branched replays.</p>
+<h5 id="multiplayer-takeover-phase-5--requires-lobbyrelay-infrastructure"><a class="header" href="#multiplayer-takeover-phase-5--requires-lobbyrelay-infrastructure">Multiplayer Takeover (Phase 5 — requires lobby/relay infrastructure)</a></h5>
+<blockquote>
+<p><strong>Phase dependency:</strong> Multiplayer takeover requires the lobby system, relay infrastructure, and game browser delivered in Phase 5 (<code>08-ROADMAP.md</code> § Phase 5). Single-player takeover (with AI opponents) ships in Phase 3; multiplayer takeover is deferred to Phase 5.</p>
+</blockquote>
+<p>Multiple players can join the takeover session:</p>
+<ol>
+<li>Host initiates takeover from replay viewer</li>
+<li>Takeover dialog becomes a lobby — host shares a join code (D052 pattern)</li>
+<li>Each joining player selects a faction</li>
+<li>Remaining factions assigned to AI</li>
+<li>All players synchronize on the restored snapshot</li>
+<li>Game proceeds as a normal multiplayer match from the branch point</li>
+</ol>
+<h5 id="console-commands-d058"><a class="header" href="#console-commands-d058">Console Commands (D058)</a></h5>
+<pre><code>/takeover                           -- open takeover dialog at current replay tick
+/takeover &lt;tick&gt; &lt;faction&gt;          -- immediate takeover (scripting/testing)
+/takeover list-branches &lt;replay&gt;    -- show all branches from a replay
+</code></pre>
+<h5 id="constraints"><a class="header" href="#constraints">Constraints</a></h5>
+<ul>
+<li><strong>Native replays only:</strong> Takeover is available only for native <code>.icrep</code> replays. Imported/foreign replays (D056) are blocked entirely — their simulation may diverge, making restored state unreliable for live gameplay</li>
+<li><strong>Ranked replays:</strong> Takeover from ranked replays is allowed but the branched game is always unranked</li>
+<li><strong>Signed replays:</strong> If the source replay is relay-signed (Ed25519), the signature chain verifies integrity up to the branch tick. The branched replay is unsigned in Phase 3 (single-player uses <code>LocalNetwork</code>, which has no relay to sign). In Phase 5+ multiplayer takeover, the branched replay starts a new signature chain from the relay hosting the session</li>
+<li><strong>Campaign replays:</strong> If the replay is from a campaign mission, campaign state (<code>CampaignState</code>) is restored — the branched game can be played as a standalone mission but does not affect campaign progress</li>
+<li><strong>Mod compatibility:</strong> Takeover requires matching engine version and mod fingerprint (same as replay playback)</li>
+</ul>
+<h5 id="speculative-branch-preview-what-if-ghost-overlay"><a class="header" href="#speculative-branch-preview-what-if-ghost-overlay">Speculative Branch Preview (“What If?” Ghost Overlay)</a></h5>
+<p>Inspired by GGPO rollback netcode’s speculative execution. While viewing a replay, the player can invoke a <strong>speculative branch</strong> that fast-forwards the simulation N seconds with current AI orders, showing the outcome as a ghost overlay <em>without committing</em>.</p>
+<p><strong>Restricted to replay viewer and single-player vs-AI only.</strong> The speculative preview relies on deterministic AI prediction to simulate forward — this is meaningful only when all non-human factions are AI-controlled. Against human opponents, future orders are unknowable, making the preview meaningless. Additionally, <code>DeveloperMode</code>-gated forward simulation is explicitly unavailable in ranked (<code>D058</code> § Ranked Mode Restrictions), and exposing speculative previews in competitive play would conflict with ranked tooling constraints.</p>
+<pre><code>1. Player pauses replay (or pauses single-player vs-AI game) at tick T
+2. Selects "What If?" mode
+3. Engine snapshots state at T
+4. Engine speculatively simulates forward N ticks (default 600 = 30s)
+   using current queued orders + AI continuation (AI computes its next
+   orders normally; human player's queued orders are held constant)
+5. Result rendered as translucent ghost overlay (ghost units, projected
+   positions, resource projections)
+6. Player reviews the preview, then either:
+   a. Commits (take command from tick T with those orders — full takeover flow)
+   b. Cancels (discard speculative state, return to tick T)
+</code></pre>
+<p>Uses the same snapshot + re-simulate infrastructure as takeover. The delta between two speculative branches is small enough (via <code>TrackChanges</code> delta tracking) that the preview is cheap to compute. No new per-tick cost — the speculative sim runs in a scratch buffer that is discarded on cancel.</p>
+<p><strong>Phase 3 scope:</strong> Available in replay viewer and single-player vs-AI only. <strong>Not available in multiplayer or ranked play.</strong></p>
+<hr>
+<h4 id="layer-2-campaign-time-machine-narrative-weapon"><a class="header" href="#layer-2-campaign-time-machine-narrative-weapon">Layer 2: Campaign Time Machine (Narrative Weapon)</a></h4>
+<p><strong>Phase 4 — ships with the campaign system.</strong></p>
+<p>The time machine is a <strong>diegetic device within the campaign narrative</strong>. Under designer-controlled conditions, it allows the player to rewind to an earlier mission while retaining controlled state — creating a “what if I had done things differently?” mechanic with narrative consequences.</p>
+<h5 id="design-philosophy"><a class="header" href="#design-philosophy">Design Philosophy</a></h5>
+<p>Lessons from the best time-travel games:</p>
+<ol>
+<li><strong>Limited, not infinite</strong> (Prince of Persia) — scarcity creates meaningful decisions</li>
+<li><strong>Knowledge is the best carryover</strong> (Outer Wilds) — explored terrain (shroud removal) and intel carry back; raw military power does not</li>
+<li><strong>Butterfly effects</strong> (Chrono Trigger) — replaying with foreknowledge changes the world’s response</li>
+<li><strong>Empowerment, not punishment</strong> (Deathloop) — the player should feel clever for using the machine, not punished for needing it</li>
+<li><strong>Narrative integration</strong> (C&amp;C Red Alert) — the time machine is part of the story, not a meta-game escape hatch</li>
+</ol>
+<h5 id="campaign-yaml-schema-extension-authored-config"><a class="header" href="#campaign-yaml-schema-extension-authored-config">Campaign YAML Schema Extension (Authored Config)</a></h5>
+<p>Following D021’s pattern: YAML defines authored config (structure, rules, thresholds); <code>CampaignState</code> holds runtime progress. Campaign rewinds target <strong>mission-start checkpoints only</strong>.</p>
+<p><strong>Restore mechanism:</strong> Campaign rewinds use <strong>rule-based reconstruction</strong>, not SimSnapshot restore. Rewinding to a mission means:</p>
+<ol>
+<li>Load the target mission’s map and initial conditions from the campaign YAML (same as starting a fresh mission)</li>
+<li><strong>Detach</strong> the current <code>TimeMachineState</code> from <code>CampaignState</code> and hold it aside (meta-progress is never rewound)</li>
+<li><strong>Overwrite</strong> <code>CampaignState</code>’s gameplay fields from the target <code>CampaignProgressCheckpoint.progress</code> (roster, flags, stats, equipment — the stripped snapshot that excludes <code>TimeMachineState</code>)</li>
+<li><strong>Reattach</strong> the held-aside <code>TimeMachineState</code> with: <code>uses_consumed</code> incremented, <code>current_branch</code> incremented (monotonic, never reused), new <code>RewindRecord</code> appended (with <code>resulting_branch = current_branch</code>), and new <code>BranchNode</code> added to <code>branch_tree</code> (with <code>parent_branch = previous branch index</code>)</li>
+<li>Apply the time-machine carryover rules on top (veterancy, exploration, intel flags per <code>carryover_rules</code>)</li>
+<li>Apply butterfly effects (AI modifiers, spawn changes, flag overrides)</li>
+<li>Start the mission normally via the existing campaign mission-start flow</li>
+</ol>
+<p>This preserves the “limited, not infinite” invariant: <code>uses_consumed</code>, <code>rewind_history</code>, <code>branch_tree</code>, and <code>checkpoints</code> are never restored to earlier values — they accumulate monotonically across all jumps. Only gameplay progress (what the player <em>had</em> at that mission start) is rewound.</p>
+<p>No mission-start <code>SimSnapshot</code> retention is needed — the map + rules + <code>CampaignProgressSnapshot</code> fully determine the initial state.</p>
+<pre><code class="language-yaml">campaign:
+  id: allied_campaign
+  start_mission: allied_01
+
+  # Authored config — immutable during play.
+  # Runtime progress (uses consumed, branch history) lives in CampaignState.
+  time_machine:
+    enabled: true
+    uses_total: 3                          # max uses across the campaign (runtime tracks consumed count)
+    unlock_mission: allied_05              # mission where the machine becomes available
+    narrative_name: "Einstein's Temporal Prototype" # rebuilt from his 1946 Trinity research
+
+    # What state carries back through time.
+    # Field names align with D041 vocabulary: "exploration" = shroud removal
+    # (is_explored), NOT live fog-of-war visibility (is_visible).
+    carryover_rules:
+      veterancy: true          # unit experience carries back
+      unit_roster: false       # army does NOT carry back (knowledge &gt; power)
+      exploration: true        # shroud/explored cells carry back — the player remembers the terrain
+                               # (D041 § FogProvider: is_explored(), not is_visible())
+      intel_flag_keys:          # authored allowlist: which flag keys from D021's
+        - radar_codes           # generic flags: HashMap&lt;String, Value&gt; are considered
+        - base_layout_north     # "intel" and carry back through time. All other flags
+        - enemy_patrol_routes   # are treated as story flags and reset on rewind.
+      story_flags: false       # non-intel flags reset (the story hasn't happened yet)
+      resources: halved        # partial resource carryover (none | halved | full)
+      equipment: selective     # only equipment tagged 'temporal_stable' (none | selective | all)
+      hero_progression: true   # hero XP/skills persist (the hero remembers)
+
+    # Which missions can be rewound to (mission-start checkpoints only)
+    rewind_targets:
+      - mission_id: allied_03
+        label: "Before the Bridge Assault"
+        butterfly_effects:
+          - set_flag: { timeline_aware: true }
+          - ai_modifier: paranoid           # enemy AI adapts (they sense something changed)
+          - spawn_modifier: reinforced      # enemy gets reinforcements (timeline resistance)
+      - mission_id: allied_05
+        label: "Before the Chronosphere Theft"
+        butterfly_effects:
+          - set_flag: { timeline_aware: true }
+          - trigger_event: temporal_anomaly  # new scripted event in the mission
+
+    # Missions that cannot be reached by time travel
+    time_locked: [allied_01, allied_02]    # too far back — narrative justification
+
+    # Consequences of using the machine (indexed by use count from CampaignState)
+    usage_effects:
+      first_use:
+        narrative: "The Chronosphere hums to life. Reality shimmers."
+        gameplay: none
+      second_use:
+        narrative: "Cracks appear in the machine's casing. Chrono Vortices flicker."
+        gameplay: chrono_vortex_hazard       # random hazard zones on the map
+      third_use:
+        narrative: "The machine is failing. This may be the last jump."
+        gameplay: [chrono_vortex_hazard, temporal_instability]  # units randomly phase
+</code></pre>
+<h5 id="campaignstate-additions-runtime-progress"><a class="header" href="#campaignstate-additions-runtime-progress">CampaignState Additions (Runtime Progress)</a></h5>
+<p>The time-machine runtime state is split into two distinct structures to avoid a recursive data model and to ensure meta-progress (rewind charges, branch history) survives jumps:</p>
+<ol>
+<li><strong><code>TimeMachineState</code></strong> — meta-progress that is <strong>never rewound</strong>. Lives on <code>CampaignState</code> but is explicitly excluded from checkpoint snapshots and preserved across rewinds. Contains: uses consumed, rewind history, branch tree, and checkpoint storage.</li>
+<li><strong><code>CampaignProgressSnapshot</code></strong> — a stripped version of <code>CampaignState</code> that captures <em>only</em> campaign gameplay progress (roster, flags, stats, equipment, hero profiles). Does <strong>not</strong> contain <code>TimeMachineState</code>. This is what checkpoints store and what gets restored on rewind.</li>
+</ol>
+<p>This separation ensures:</p>
+<ul>
+<li>No recursive data model (<code>CampaignProgressSnapshot</code> cannot contain <code>TimeMachineState</code>, which cannot contain <code>CampaignProgressSnapshot</code> — the cycle is broken)</li>
+<li>The “limited, not infinite” rule is enforced — <code>uses_consumed</code> is never restored to an earlier value</li>
+<li>Branch history accumulates monotonically across all rewinds</li>
+</ul>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Time-machine meta-progress — part of CampaignState but NEVER rewound.
+/// Preserved across all rewinds. Excluded from CampaignProgressSnapshot.
+/// Authored config (uses_total, carryover_rules, rewind_targets) lives in campaign YAML.
+#[derive(Serialize, Deserialize, Clone)]
+pub struct TimeMachineState {
+    /// How many rewind charges have been consumed (uses_total - uses_consumed = remaining).
+    /// NEVER restored from a checkpoint — monotonically increasing.
+    pub uses_consumed: u32,
+
+    /// History of all rewinds performed, in order.
+    /// NEVER restored — accumulates across all jumps.
+    pub rewind_history: Vec&lt;RewindRecord&gt;,
+
+    /// The current timeline branch index (0 = original, incremented on each rewind).
+    pub current_branch: u32,
+
+    /// Full branch tree for timeline visualization.
+    /// Each entry records a branch point and the checkpoint it restored.
+    pub branch_tree: Vec&lt;BranchNode&gt;,
+
+    /// Saved campaign-progress snapshots at each mission start, keyed by CheckpointId.
+    /// Stores CampaignProgressSnapshot (stripped type), NOT full CampaignState.
+    /// Retained for all missions in YAML rewind_targets.
+    pub checkpoints: HashMap&lt;CheckpointId, CampaignProgressCheckpoint&gt;,
+
+    /// Cross-branch campaign metrics — monotonically accumulated, never rewound.
+    /// These replace CampaignProgressSummary fields that would otherwise regress
+    /// when CampaignProgressSnapshot is restored from a checkpoint (which resets
+    /// completed_missions and path_taken to their earlier values).
+    /// D021's unique_missions_completed, discovered_missions, and best_path_depth
+    /// (campaigns.md § CampaignProgressSummary) must be derived from these
+    /// cross-branch accumulators, not from the restorable CampaignProgressSnapshot.
+    pub cross_branch_stats: CrossBranchStats,
+}
+
+/// Cumulative campaign metrics across ALL branches and rewinds.
+/// Part of TimeMachineState — never restored from checkpoints.
+/// D021's CampaignProgressSummary should derive its values from these
+/// when time_machine.enabled is true, rather than from CampaignProgressSnapshot
+/// fields (which reset on rewind).
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CrossBranchStats {
+    /// All unique mission IDs completed across any branch (union set).
+    pub unique_missions_completed: HashSet&lt;MissionId&gt;,
+    /// All mission IDs discovered/encountered across any branch (union set).
+    pub discovered_missions: HashSet&lt;MissionId&gt;,
+    /// Farthest path depth reached across any branch.
+    pub best_path_depth: u32,
+    /// All endings unlocked across any branch.
+    pub endings_unlocked: HashSet&lt;String&gt;,
+}
+
+/// Stripped campaign progress — everything EXCEPT TimeMachineState.
+/// This is what checkpoints store and what gets restored on rewind.
+/// Breaking the recursive cycle: CampaignState → TimeMachineState →
+/// CampaignProgressCheckpoint → CampaignProgressSnapshot (no TimeMachineState).
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CampaignProgressSnapshot {
+    pub campaign_id: CampaignId,
+    pub current_mission: MissionId,
+    pub completed_missions: Vec&lt;CompletedMission&gt;,
+    pub unit_roster: Vec&lt;RosterUnit&gt;,
+    pub equipment_pool: Vec&lt;EquipmentId&gt;,
+    pub hero_profiles: HashMap&lt;String, HeroProfileState&gt;,
+    pub resources: i64,
+    pub flags: HashMap&lt;String, Value&gt;,    // story + intel flags
+    pub stats: CampaignStats,
+    pub path_taken: Vec&lt;MissionId&gt;,
+    pub world_map: Option&lt;WorldMapState&gt;,
+    // NOTE: No Option&lt;TimeMachineState&gt; here — that's the whole point.
+}
+
+/// Unique identifier for a mission-start checkpoint.
+/// Generated at each mission start. Disambiguates the same mission_id
+/// visited on different branches or multiple times.
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, Hash)]
+pub struct CheckpointId(pub String);  // UUID or "branch_{n}_{mission_id}_{occurrence}"
+
+/// A saved campaign-progress snapshot at mission start.
+/// Contains CampaignProgressSnapshot (stripped), NOT full CampaignState.
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CampaignProgressCheckpoint {
+    pub checkpoint_id: CheckpointId,
+    pub mission_id: MissionId,
+    pub branch_index: u32,
+    pub occurrence: u32,                          // how many times this mission has been started
+    pub progress: CampaignProgressSnapshot,       // stripped — no TimeMachineState
+}
+
+/// A single rewind event recorded in meta-progress.
+#[derive(Serialize, Deserialize, Clone)]
+pub struct RewindRecord {
+    /// Which mission the player rewound FROM (the "present" at time of rewind).
+    pub source_mission: MissionId,
+    /// Which checkpoint was restored.
+    pub target_checkpoint: CheckpointId,
+    /// Snapshot of carryover that was applied (for debrief/visualization).
+    pub carryover_summary: CarryoverSummary,
+    /// Which butterfly effects were triggered.
+    pub butterfly_effects_applied: Vec&lt;String&gt;,
+    /// The branch index this rewind created.
+    pub resulting_branch: u32,
+}
+
+/// A node in the campaign timeline tree (for visualization).
+///
+/// Branch ID allocation rule: branch 0 is the original playthrough.
+/// Each rewind increments TimeMachineState.current_branch and creates
+/// a new BranchNode with branch_index = current_branch. Branch IDs
+/// are monotonically increasing and never reused. The rewind flow
+/// (detach/reattach pattern) sets current_branch = previous + 1
+/// atomically with uses_consumed++.
+#[derive(Serialize, Deserialize, Clone)]
+pub struct BranchNode {
+    pub branch_index: u32,
+    pub parent_branch: Option&lt;u32&gt;,       // None for branch 0 (original)
+    pub branch_point_mission: MissionId,  // where the branch diverged
+    /// Missions completed on this branch, with per-visit context.
+    /// Uses MissionVisit instead of bare MissionId to disambiguate
+    /// the same mission replayed with different outcomes.
+    pub missions_in_branch: Vec&lt;MissionVisit&gt;,
+}
+
+/// A single mission visit within a branch — tracks enough context
+/// to distinguish repeated plays of the same mission with different outcomes.
+#[derive(Serialize, Deserialize, Clone)]
+pub struct MissionVisit {
+    pub mission_id: MissionId,
+    pub checkpoint_id: CheckpointId,       // the checkpoint created at this mission's start
+    pub outcome: Option&lt;String&gt;,           // named outcome (D021 MissionOutcome) if completed; None if in-progress
+    pub occurrence: u32,                   // 0-indexed: how many times this mission has been started on this branch
+}
+
+/// Summary of what state was carried back (for UI display, not the actual state).
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CarryoverSummary {
+    pub veterancy_units_carried: u32,
+    pub roster_units_carried: u32,
+    pub exploration_cells_carried: u32,  // shroud cells (D041 is_explored), not fog
+    pub intel_flag_keys_carried: Vec&lt;String&gt;,
+    pub resource_amount: i64,
+    pub equipment_items_carried: u32,
+    pub hero_profiles_carried: Vec&lt;String&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p><strong>Ownership model:</strong> <code>CampaignState</code> has an <code>Option&lt;TimeMachineState&gt;</code> field. On rewind:</p>
+<ol>
+<li>The current <code>TimeMachineState</code> is <strong>detached</strong> from <code>CampaignState</code> and held aside</li>
+<li><code>CampaignState</code>’s gameplay fields (roster, flags, stats, etc.) are <strong>overwritten</strong> from <code>CampaignProgressCheckpoint.progress</code></li>
+<li>The held-aside <code>TimeMachineState</code> is <strong>reattached</strong> with <code>uses_consumed</code> incremented</li>
+<li>Result: gameplay progress is rewound, but meta-progress (charges used, branch history, all checkpoints) is preserved</li>
+</ol>
+<h5 id="lua-api-extension--timemachine-global"><a class="header" href="#lua-api-extension--timemachine-global">Lua API Extension — <code>TimeMachine</code> Global</a></h5>
+<pre><code class="language-lua">-- Query time machine state
+local tm = TimeMachine.get_status()
+-- Returns: { enabled = true, uses_remaining = 2, available_targets = {...}, ... }
+
+-- Check if time machine is available
+if TimeMachine.is_available() then
+  -- Show time machine activation UI
+  TimeMachine.show_activation_ui()
+end
+
+-- Programmatic activation (for scripted sequences)
+-- Accepts checkpoint_id (unambiguous) OR target_mission (convenience).
+-- If target_mission is used and multiple checkpoints exist for that mission,
+-- the most recent checkpoint on the current branch is selected.
+-- Use checkpoint_id when disambiguation is needed.
+TimeMachine.activate({
+  checkpoint_id = "branch_0_allied_03_0",  -- exact checkpoint (preferred)
+  -- OR: target_mission = "allied_03",     -- convenience shorthand (selects latest)
+  cinematic = "chrono_jump_cutscene",      -- play cinematic before rewind
+  on_complete = function(result)
+    -- result.success: boolean
+    -- result.checkpoint_id: string
+    -- result.target_mission: string
+    -- result.carryover_summary: table (what was carried back)
+  end
+})
+
+-- Set custom carryover for this specific jump (roster selectors, not live UnitIds)
+TimeMachine.set_carryover_override({
+  carry_roster_entries = { "tanya", "spy_01" },  -- matches RosterUnit.unit_type or .name
+  bonus_intel = { "radar_codes", "base_layout_north" }
+})
+
+-- React to time machine usage in mission scripts
+Events.on("time_machine_arrival", function(context)
+  -- context.source_mission: where the player came from
+  -- context.timeline_index: how many times this mission has been visited
+  -- context.carryover: what state arrived
+  if context.timeline_index &gt; 1 then
+    -- Player has been here before — adapt!
+    AI.set_paranoia_level(context.timeline_index)
+    Trigger.spawn_reinforcements("enemy_temporal_response")
+  end
+end)
+
+-- Track timeline state
+local timeline = TimeMachine.get_timeline()
+-- Returns: { branches = [...], current_branch = 2, total_jumps = 1 }
+</code></pre>
+<h5 id="timeline-visualization"><a class="header" href="#timeline-visualization">Timeline Visualization</a></h5>
+<p>A <strong>campaign timeline view</strong> shows the player’s journey through missions, with branches created by time-machine usage:</p>
+<pre><code>  allied_01 ─── allied_02 ─── allied_03 ─── allied_04 ─── allied_05 (DEFEAT)
+                                  │
+                                  └──── allied_03' ─── allied_04' ─── allied_05' (VICTORY)
+                                        [Timeline 2]    [knowledge    [different
+                                         rewind here]    carried]      outcome]
+</code></pre>
+<p>This view is accessible from the campaign menu and the intermission screen. Completed branches are greyed but visible — the player can see the “roads not taken.”</p>
+<h5 id="console-commands-d058-1"><a class="header" href="#console-commands-d058-1">Console Commands (D058)</a></h5>
+<pre><code>/timemachine status                          -- show uses remaining, available targets, current branch
+/timemachine activate &lt;checkpoint_id&gt;        -- activate by exact checkpoint ID (unambiguous)
+/timemachine activate --mission &lt;mission_id&gt; -- activate by mission ID (selects latest checkpoint; errors if ambiguous)
+/timemachine timeline                        -- show branch tree (text-based timeline visualization)
+/timemachine checkpoints                     -- list all stored checkpoints with IDs, missions, and branches
+</code></pre>
+<p>These commands are available only during campaign play when <code>time_machine.enabled: true</code>. <code>/timemachine activate</code> triggers the same flow as <code>TimeMachine.activate()</code> in Lua, including cinematic and carryover application. When using <code>--mission</code>, if multiple checkpoints exist for that mission ID (from different branches or repeated visits), the command errors with a disambiguation prompt listing available checkpoint IDs.</p>
+<h5 id="narrative-integration-ideas-red-alert-context"><a class="header" href="#narrative-integration-ideas-red-alert-context">Narrative Integration Ideas (Red Alert Context)</a></h5>
+<ul>
+<li><strong>Allied campaign:</strong> Einstein reveals his original 1946 time travel research — the science behind the device he used to remove Hitler in Trinity, NM. He rebuilt a limited prototype from his original notes that can transmit tactical intel back in time, but each transmission destabilizes the device</li>
+<li><strong>Soviet campaign:</strong> Soviet scientists reverse-engineer captured Chronosphere technology. The player uses it to undo catastrophic defeats — but the timeline fights back (butterfly effects)</li>
+<li><strong>Final act:</strong> Both sides have temporal capability, creating a “temporal arms race” where the campaign graph becomes a tree of competing timelines. The player must decide which timeline to “collapse” into reality</li>
+</ul>
+<h5 id="campaign-mission-archetypes-cross-domain-inspired"><a class="header" href="#campaign-mission-archetypes-cross-domain-inspired">Campaign Mission Archetypes (Cross-Domain Inspired)</a></h5>
+<p>The time machine enables mission design patterns impossible in a linear campaign. Each archetype draws from the cross-domain inspirations in the Prior Art section.</p>
+<p><strong>Archetype 1: Convergence Puzzle</strong> <em>(Steins;Gate attractor fields + Novikov self-consistency)</em></p>
+<p>Certain mission outcomes are <em>convergent</em> — they happen regardless of what the player does. The bridge will be destroyed. The commander will be captured. The convoy will be lost. These “locked” outcomes resist direct intervention.</p>
+<p>The puzzle: the player must rewind to <em>earlier</em> missions and accumulate enough divergence (different flag states, different surviving units, different intel) to shift the campaign to a different “attractor field” where the locked outcome is no longer convergent. This requires multiple rewinds and strategic experimentation across the campaign graph.</p>
+<pre><code class="language-yaml"># Convergence definition in campaign YAML
+missions:
+  allied_06:
+    convergence:
+      - event: bridge_destroyed
+        locked_until_divergence: 3    # requires 3+ flag differences from original timeline
+        unlock_flags: [explosives_intercepted, engineer_survived, radar_sabotaged]
+        unlocked_outcome: bridge_intact  # new outcome edge, only available after convergence breaks
+</code></pre>
+<pre><code class="language-lua">-- Mission script checks convergence
+Events.on("bridge_assault_begins", function()
+  if Campaign.convergence_locked("bridge_destroyed") then
+    -- No matter what the player does, the bridge will be destroyed
+    -- But HOW it's destroyed can vary (enemy demolishes vs. friendly fire vs. airstrike)
+    Trigger.schedule_destruction("bridge", { delay = 120, method = "enemy_demo_charge" })
+  else
+    -- Convergence broken! The bridge CAN be saved
+    -- Player must actively defend it (new gameplay, not just a cutscene)
+  end
+end)
+</code></pre>
+<p><strong>Archetype 2: Information Lock</strong> <em>(Zero Escape: Virtue’s Last Reward FLOW chart)</em></p>
+<p>A mission that is <em>literally impassable</em> without intel obtained from a different timeline branch. The player reaches a locked door, an encrypted comm channel, a minefield with no safe path — and the solution exists only in a mission they haven’t played yet (or played on a different branch).</p>
+<p>The time machine becomes a <em>required tool</em>, not a safety net. The player must:</p>
+<ol>
+<li>Recognize they’re stuck (the game hints, never blocks silently)</li>
+<li>Rewind to a branch point</li>
+<li>Play a different branch to discover the password / patrol routes / safe path</li>
+<li>Rewind again, returning to the locked mission with the carried-back intel</li>
+</ol>
+<pre><code class="language-yaml"># Information lock in campaign YAML
+missions:
+  allied_07:
+    information_locks:
+      - lock_id: minefield_safe_path
+        description: "Dense minefield blocks the northern approach"
+        required_intel_flag: minefield_map_obtained
+        hint_text: "A captured Soviet engineer might know the safe path..."
+        obtainable_in: [allied_04b]  # only available on the alternate branch of mission 04
+</code></pre>
+<p><strong>Archetype 3: Causal Loop</strong> <em>(Dark bootstrap paradox + closed timelike curves)</em></p>
+<p>A mission where the player must <em>create the conditions for their own past success</em>. The mission starts with unexplained help — reinforcements arrive from nowhere, enemy defenses are mysteriously weakened, a supply cache appears at a critical moment.</p>
+<p>At the end of the mission, the player discovers they have the means to send that help back in time. They must choose <em>exactly</em> the right units/resources to send, matching what they received at the start. If the loop doesn’t close (wrong units sent, or player keeps the resources), the mission replays <em>without</em> the mysterious help — harder, but still winnable on an alternate path.</p>
+<pre><code class="language-lua">-- Causal loop mission script
+Events.on("mission_start", function()
+  local loop = Campaign.get_flag("temporal_loop_07")
+  if loop and loop.closed then
+    -- Loop is closed from a future playthrough — reinforcements arrive
+    local units = loop.units_sent
+    for _, unit_type in ipairs(units) do
+      Trigger.spawn_reinforcement(unit_type, "temporal_arrival_zone", {
+        effect = "chrono_shimmer",
+        label = "Temporal Reinforcement"
+      })
+    end
+    UI.show_timeline_effect("Reinforcements have arrived from... the future?")
+  else
+    -- First playthrough or loop not closed — no help
+    UI.show_hint("You're on your own. For now.")
+  end
+end)
+
+Events.on("mission_end_victory", function()
+  -- Player has captured the Chronosphere. Offer the loop-closing choice:
+  TimeMachine.offer_causal_loop({
+    prompt = "Send reinforcements to your past self?",
+    unit_selector = true,   -- player picks which units to send back
+    target_mission = "allied_07",  -- this mission
+    on_send = function(units_sent)
+      Campaign.set_flag("temporal_loop_07", {
+        closed = true,
+        units_sent = units_sent
+      })
+    end,
+    on_decline = function()
+      -- Player keeps the units. Loop stays open.
+      -- Next playthrough of this mission will have no temporal help.
+    end
+  })
+end)
+</code></pre>
+<p><strong>Archetype 4: Dual-State Battlefield</strong> <em>(Titanfall 2 “Effect and Cause”)</em></p>
+<p>A single mission where the battlefield exists in two temporal states: <strong>past</strong> (intact, resource-rich, enemy-alert) and <strong>present</strong> (ruined, resource-scarce, enemy-weakened). The player can shift their forces between states using a captured Chronosphere at their base.</p>
+<p>Implementable within the single-sim architecture: the map contains both states as terrain layers toggled by a game flag. Units in the “wrong” temporal state are invisible/intangible to enemies in the other state. The Chronosphere shift moves selected units between layers.</p>
+<pre><code class="language-yaml"># Dual-state mission definition
+mission:
+  id: allied_09_dual_state
+  temporal_states:
+    past:
+      terrain_layer: terrain_past       # intact buildings, bridges, forests
+      resources: abundant               # ore fields are rich
+      enemy_posture: full_alert         # full garrison, active patrols
+      fog: full                         # no prior exploration
+    present:
+      terrain_layer: terrain_present    # ruins, craters, dead forests
+      resources: scarce                 # depleted ore fields
+      enemy_posture: skeleton_crew      # reduced garrison, damaged defenses
+      fog: explored                     # terrain already scouted from past visits
+
+  chrono_shift:
+    cooldown_ticks: 600                 # 30 seconds between shifts
+    max_units_per_shift: 10             # can't move entire army at once
+    shift_effect: chrono_shimmer        # visual effect on shifting units
+</code></pre>
+<p><strong>Archetype 5: Retrocausal Modification</strong> <em>(Retrocausality + Chrono Trigger)</em></p>
+<p>A later mission’s outcome <em>retroactively changes</em> the conditions of an earlier mission. The player completes mission 08, where they destroy a Soviet weapons lab. On their next playthrough of mission 05 (via time machine), the enemy no longer has the advanced weapons that were produced in that lab — because in the future, the lab was destroyed before it could produce them.</p>
+<p>This is the reverse of Chrono Trigger’s “plant seed → find forest” pattern: “destroy the factory → the weapons were never built.” Campaign flags set in later missions modify the <code>conditions</code> and <code>spawn_modifier</code> fields of earlier missions’ YAML definitions.</p>
+<pre><code class="language-lua">-- Mission 08 script: destroying the weapons lab
+Events.on("weapons_lab_destroyed", function()
+  Campaign.set_flag("weapons_lab_destroyed_in_future", true)
+end)
+
+-- Mission 05 setup script: reads retrocausal flag
+Events.on("mission_start", function()
+  if Campaign.get_flag("weapons_lab_destroyed_in_future") then
+    -- The lab was destroyed in a future mission — enemy tech is downgraded
+    AI.override_unit_type("heavy_tank", "medium_tank")  -- no heavy tanks available
+    AI.disable_superweapon("tesla_coil_mk2")
+    UI.show_timeline_effect("Soviet advanced weapons program never materialized — the lab was destroyed before it could produce them.")
+  end
+end)
+</code></pre>
+<hr>
+<h4 id="layer-3-multiplayer-time-machine-game-modes"><a class="header" href="#layer-3-multiplayer-time-machine-game-modes">Layer 3: Multiplayer Time-Machine Game Modes</a></h4>
+<p><strong>Phase 5 — ships with multiplayer mode expansion.</strong></p>
+<p>New custom game modes that use the time machine as a contested battlefield objective or tactical ability.</p>
+<h5 id="mode-a-chrono-capture-king-of-the-hill-variant"><a class="header" href="#mode-a-chrono-capture-king-of-the-hill-variant">Mode A: Chrono Capture (King of the Hill Variant)</a></h5>
+<p>A <strong>Chronosphere device</strong> sits at a contested point on the map. Factions race to capture and activate it for powerful effects.</p>
+<pre><code class="language-yaml"># Game mode definition
+game_mode:
+  id: chrono_capture
+  name: "Chrono Capture"
+  description: "Capture and activate the Chronosphere for devastating temporal effects."
+
+  chrono_device:
+    capture_radius: 5          # cells
+    charge_time_ticks: 1200    # 60 seconds at 20 tps to activate
+    charge_requires: uncontested  # must hold without enemy units in radius
+    respawn_time_ticks: 3600   # 3 minutes after activation before it can be used again
+
+  activation_effects:          # the capturing player chooses one
+    - id: tactical_rewind
+      name: "Tactical Rewind"
+      description: "Undo the last 60 seconds of your unit losses. Destroyed units respawn at death locations."
+      effect: restore_destroyed_units
+      window_ticks: 1200       # 60-second lookback
+
+    - id: timeline_peek
+      name: "Timeline Peek"
+      description: "Reveal the enemy's production queue and army composition for 30 seconds."
+      effect: reveal_production
+      duration_ticks: 600
+
+    - id: chrono_shift
+      name: "Chrono Shift"
+      description: "Teleport your entire visible army to any revealed map location."
+      effect: army_teleport
+
+    - id: economic_rewind
+      name: "Economic Rewind"
+      description: "Reset the opponent's economy to its state 2 minutes ago."
+      effect: rewind_opponent_economy
+      window_ticks: 2400
+
+  contested_effects:
+    chrono_vortex:
+      trigger: "charge interrupted at &gt;50%"
+      effect: "hazard zone spawns at device location (20-cell radius, 30-second duration)"
+      damage: "damages all units in zone regardless of faction"
+
+  escalation:
+    enabled: true
+    description: "Each successive activation by the same faction is stronger but takes longer to charge."
+    charge_multiplier_per_use: 1.5   # 60s → 90s → 135s
+    effect_multiplier_per_use: 1.3   # rewind window grows, reveal duration grows, etc.
+</code></pre>
+<blockquote>
+<p><strong>Design dependency — partial temporal effects:</strong> <code>restore_destroyed_units</code> and <code>rewind_opponent_economy</code> are <strong>not</strong> whole-state snapshot restores — they are selective, per-player temporal rewrites within a live match. The existing restore machinery (<code>GameRunner::restore_full()</code>, <code>SimSnapshot</code>/<code>DeltaSnapshot</code>) operates on the entire simulation state and is designed for save-load and replay seeking, not partial rollback of individual players.</p>
+<p>These effects require a <strong>per-player history buffer</strong> — a rolling window of recent unit destruction events and economy snapshots (resource levels, harvester counts, building completions) retained for the lookback window (default 60–120 seconds). The buffer must define:</p>
+<ul>
+<li><strong>Conflict resolution:</strong> What happens when a restored unit’s death position is now occupied? (Spawn at nearest valid position)</li>
+<li><strong>Cascading effects:</strong> If a restored unit was carrying resources, are those resources also restored? (Yes — the unit snapshot includes carried state)</li>
+<li><strong>Opponent interaction:</strong> <code>rewind_opponent_economy</code> must handle buildings built with the “rewound” resources (buildings remain; only liquid resource balance is reset)</li>
+</ul>
+<p>This buffer is a new system (~300 lines in <code>ic-game</code>) not covered by existing snapshot infrastructure. It is scoped to Chrono Capture mode only and does not affect the core sim’s determinism (the buffer is observation-only; the rewind effects are applied as standard game-logic orders).</p>
+<p><strong>Reconnect semantics:</strong> The per-player history buffer is <strong>not part of <code>SimSnapshot</code></strong> and is not restored by <code>GameRunner::restore_full()</code> (which restores sim core, campaign state, and script state only — <code>02-ARCHITECTURE.md</code> § ic-game Integration). On reconnect, the buffer starts empty. Temporal rewind abilities (<code>restore_destroyed_units</code>, <code>rewind_opponent_economy</code>) are <strong>unavailable until the buffer re-accumulates</strong> enough history (60–120 seconds of live play after reconnect). This is the simplest correct behavior — no snapshot extension needed, and the gameplay impact is minor (a reconnecting player temporarily loses access to one optional ability).</p>
+</blockquote>
+<h5 id="mode-b-time-race"><a class="header" href="#mode-b-time-race">Mode B: Time Race</a></h5>
+<p>Two Chronosphere devices, one near each faction’s base. Players must <strong>defend their own</strong> while trying to <strong>capture and destroy the opponent’s</strong>.</p>
+<pre><code class="language-yaml">game_mode:
+  id: time_race
+  name: "Time Race"
+  description: "Each faction has a Chronosphere. Activate yours while preventing the enemy from activating theirs."
+
+  victory_condition: "First to 3 activations OR destroy opponent's Chronosphere"
+
+  devices:
+    - location: near_player_1_base
+      owner: player_1
+      health: 5000             # can be attacked and destroyed
+      repair_rate: 10          # self-repairs slowly
+    - location: near_player_2_base
+      owner: player_2
+      health: 5000
+      repair_rate: 10
+
+  activation_effect: "all enemy units in a 30-cell radius around YOUR device are chronoshifted to a random map location (scattered, disoriented)"
+</code></pre>
+<h5 id="mode-c-timeline-duel-background-headless-sim-pattern--m11p007"><a class="header" href="#mode-c-timeline-duel-background-headless-sim-pattern--m11p007">Mode C: Timeline Duel (Background Headless Sim Pattern — M11/P007)</a></h5>
+<blockquote>
+<p><strong>Architecturally feasible, pending M11 client driver decision.</strong> The background headless sim pattern (running a second <code>Simulation</code> instance alongside the primary <code>GameLoop</code>) is technically sound — <code>ic-sim</code> is a library designed for headless multi-instance embedding, and bot harnesses already create multiple instances per process. D038’s rejection targets “concurrent nested maps in the same mission timeline” (sub-scenario portals), not independent background sims.</p>
+<p>However, <code>game-loop.md</code> explicitly gates non-standard client loop variants to <strong>M11 (pending decision P007)</strong>: <em>“Deferred non-lockstep architectures require a different client-side loop variant… This is an M11 design concern.”</em> The background headless sim pattern is a new client architecture variant — it must be formalized as part of P007, not declared unilaterally in D078.</p>
+<p><strong>Status:</strong> Feasible. Not blocked by architectural impossibility. Requires P007 decision (M11/Phase 7) to formalize the background sim client driver pattern. D078 defines the game design; P007 will define the client architecture that enables it.</p>
+</blockquote>
+<p><strong>Proposed architecture (subject to P007 approval):</strong></p>
+<p><strong>Architecture:</strong></p>
+<pre><code>┌─────────────────────────────────────────────────────┐
+│ Client Process                                       │
+│                                                      │
+│  ┌──────────────────────────────────────────┐        │
+│  │ GameLoop&lt;RelayLockstepNetwork&gt;           │        │
+│  │   sim: Simulation  ← player's timeline   │        │
+│  │   renderer: Renderer  ← renders primary  │        │
+│  │   network: N  ← relay orders for this TL │        │
+│  └──────────────────────────────────────────┘        │
+│                                                      │
+│  ┌──────────────────────────────────────────┐        │
+│  │ Background thread (no GameLoop)           │        │
+│  │   shadow_sim: Simulation  ← opponent TL  │        │
+│  │   No renderer (headless)                  │        │
+│  │   Fed orders from relay (opponent's TL)   │        │
+│  │   Produces state snapshots for overlay    │        │
+│  └──────────────────────────────────────────┘        │
+│                                                      │
+│  Primary renderer reads shadow_sim snapshots         │
+│  via cross-thread channel for ghost overlay           │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│ Relay Server                                         │
+│   RelayCore (Timeline A) ← routes Player A's orders  │
+│   RelayCore (Timeline B) ← routes Player B's orders  │
+│   Timewave coordinator ← triggers merge events       │
+└─────────────────────────────────────────────────────┘
+</code></pre>
+<p><strong>How it works:</strong></p>
+<ol>
+<li>Both players start from the same initial state (same map, same seed)</li>
+<li>The relay runs <strong>two <code>RelayCore</code> instances</strong> — one per timeline. Each client’s primary <code>GameLoop</code> connects to their own timeline’s relay. Each client’s background <code>Simulation</code> is fed the opponent’s timeline orders from the second relay</li>
+<li>Each client sees their own timeline rendered normally. The opponent’s timeline state is overlaid as a translucent ghost layer (using <code>CosmeticRng</code>-isolated rendering — structurally cannot contaminate the primary sim’s determinism)</li>
+<li><strong>Timewaves:</strong> At merge intervals, the relay broadcasts a <code>TimewaveSignal</code> order to both timeline relays (the relay is a stateless order router — it never runs the sim and cannot evaluate game state per D074). <strong>Merge is computed client-side, deterministically:</strong> each client has identical state for both timelines (same lockstep inputs → same state), so both clients independently evaluate the merge rule (e.g., compare army value in the merge zone between their two local sims) and arrive at the same deterministic result. The merge is applied as a <code>TimewaveMergeOrder</code> injected into both sims simultaneously. No relay state evaluation needed — the relay only provides the timing signal</li>
+</ol>
+<p><strong>Performance budget:</strong> One headless <code>Simulation</code> adds ~2-4ms per tick on modern hardware (based on the same performance profile used for bot harnesses and AI training in <code>10-PERFORMANCE.md</code>). At 20 tps, this is &lt;10% of the frame budget. Memory: ~20-40MB for a typical match state. Acceptable for a Phase 7 experimental mode.</p>
+<p><strong>Determinism:</strong> Both sims on each client must produce identical state to the corresponding sims on the other client. This is guaranteed by the same lockstep invariant that governs normal multiplayer — same initial state + same ordered inputs = identical outputs. The relay’s sub-tick ordering ensures both clients process orders in the same sequence for each timeline.</p>
+<pre><code class="language-yaml">game_mode:
+  id: timeline_duel
+  name: "Timeline Duel"
+  description: "Both players exist in parallel timelines. Timewaves periodically merge reality."
+
+  timewave:
+    interval_ticks: 2400       # every 2 minutes
+    merge_rule: "strongest"    # the player with more army value in the merge zone gets to 'overwrite' that area
+    merge_zone: "random 20x20 area announced 30 seconds before timewave"
+
+  victory: "Standard (destroy opponent's base) — but the base exists in both timelines. Must win in YOUR timeline."
+
+  background_sim:
+    headless: true             # no renderer on the shadow sim
+    overlay_mode: translucent  # ghost overlay of opponent's timeline
+    snapshot_cadence: 10       # ticks between overlay refreshes (200ms at 20 tps)
+</code></pre>
+<h5 id="mode-d-temporal-manipulation-support-power-singularity-tmd-inspired"><a class="header" href="#mode-d-temporal-manipulation-support-power-singularity-tmd-inspired">Mode D: Temporal Manipulation Support Power (Singularity TMD-Inspired)</a></h5>
+<p>Available in any multiplayer game mode as an optional support power unlocked by controlling a Chronosphere structure. Inspired by Singularity’s Time Manipulation Device — per-object time manipulation as a tactical tool.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Ability</th><th>Effect</th><th>Cooldown</th><th>Target</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Age Structure</strong></td><td>Target enemy building rapidly ages — health reduced by 50%, production speed halved, armor degraded. Visually crumbles/rusts</td><td>90s</td><td>Single enemy building</td></tr>
+<tr><td><strong>Restore Structure</strong></td><td>Target friendly ruin is restored to working condition (must be a recently destroyed building, within 60s of destruction)</td><td>120s</td><td>Single friendly ruin</td></tr>
+<tr><td><strong>Temporal Decay Field</strong></td><td>Area-of-effect zone (15-cell radius, 20s duration) where all enemy units lose 1 veterancy level and take 15% health damage over time</td><td>180s</td><td>Ground target</td></tr>
+<tr><td><strong>Chrono Stasis</strong></td><td>Single enemy unit frozen in time for 10 seconds — invulnerable but unable to act, blocking pathing</td><td>45s</td><td>Single enemy unit</td></tr>
+</tbody>
+</table>
+</div>
+<p>These are implemented as standard support powers (existing <code>SupportPower</code> component from <code>gameplay-systems.md</code>) with temporal visual effects (chrono shimmer, aging particles, time-freeze crystal). They require controlling a Chronosphere structure on the map — losing it disables the abilities.</p>
+<h5 id="ranked-eligibility"><a class="header" href="#ranked-eligibility">Ranked Eligibility</a></h5>
+<ul>
+<li><strong>Chrono Capture:</strong> Eligible for ranked after community playtesting (seasonal D055 config)</li>
+<li><strong>Time Race:</strong> Eligible for ranked (symmetric, skill-expressive)</li>
+<li><strong>Temporal Support Powers:</strong> Eligible for ranked when enabled via map/mode config (symmetric access)</li>
+<li><strong>Timeline Duel:</strong> Unranked only (experimental, uses background headless sim pattern — needs extensive playtesting)</li>
+</ul>
+<hr>
+<h4 id="layer-4-multiplayer-temporal-campaigns-advanced"><a class="header" href="#layer-4-multiplayer-temporal-campaigns-advanced">Layer 4: Multiplayer Temporal Campaigns (Advanced)</a></h4>
+<p><strong>Phase 7 — ships after campaign + multiplayer time modes are proven.</strong></p>
+<h5 id="concept-a-temporal-pincer-co-op-campaign"><a class="header" href="#concept-a-temporal-pincer-co-op-campaign">Concept A: Temporal Pincer Co-op Campaign</a></h5>
+<p>Inspired by Tenet’s temporal pincer movement — “one team moves forward, one moves backward, both attack the same objective from opposite temporal directions.”</p>
+<p>2-player co-op where players operate across timelines. Each player runs a single simulation (one mission each) — no concurrent multi-sim required. Effects propagate at <strong>mission boundaries only</strong>, consistent with D021’s mission-outcome → next-mission flow and the single-sim-per-client constraint in <code>game-loop.md</code>.</p>
+<p><strong>Basic flow (mission-boundary effects):</strong></p>
+<ul>
+<li><strong>Commander</strong> plays in the “present timeline” — a standard campaign mission</li>
+<li><strong>Temporal Operative</strong> is sent back to a “past mission” via the time machine</li>
+<li>The Operative completes their past mission first; the outcome sets campaign flags. The Commander’s next mission (or a mission restart with updated initial conditions) reflects those flags</li>
+<li>Both players see a shared <strong>timeline visualization</strong> showing cause-and-effect chains</li>
+</ul>
+<p><strong>Temporal Pincer variant (replay-as-ghost-army):</strong></p>
+<p>The pincer takes the co-op concept further using IC’s replay infrastructure:</p>
+<ol>
+<li><strong>Forward pass:</strong> Player A plays a mission and loses (or wins with heavy losses). The <code>.icrep</code> replay is recorded</li>
+<li><strong>Backward pass:</strong> Player B receives Player A’s replay. Player B plays the <em>same mission</em>, but Player A’s recorded actions play out simultaneously as <strong>ghost units</strong> — translucent allied forces executing Player A’s original orders</li>
+<li><strong>Pincer effect:</strong> Player A’s “failed” timeline becomes Player B’s support fire. The replay ghost army draws enemy attention, creates diversions, and softens defenses — exactly as it happened in the original timeline</li>
+<li><strong>Closure:</strong> Player B’s victory (aided by the ghost army) retroactively “justifies” Player A’s sacrifice. The campaign narrative frames it as: “Your future self sent help back through time”</li>
+</ol>
+<pre><code class="language-lua">-- Temporal Pincer mission setup
+Events.on("mission_start", function()
+  local pincer = Campaign.get_flag("temporal_pincer_data")
+  if pincer then
+    -- Load the forward-pass replay as a ghost army
+    local ghost_replay = Replay.load_by_id(pincer.replay_id)
+    Replay.play_as_ghost_army(ghost_replay, {
+      faction = pincer.original_faction,
+      render_mode = "translucent",          -- ghost shimmer effect
+      label = "Temporal Echo",
+      controllable = false,                 -- plays autonomously from replay
+      takes_damage = true,                  -- can be destroyed (not invincible)
+      deals_damage = true,                  -- but deals real damage
+      damage_multiplier = 0.7,             -- slightly weaker than real units
+    })
+    UI.show_timeline_effect("Temporal echoes of a parallel timeline have arrived to support you.")
+  end
+end)
+
+-- After Player A's forward pass, the campaign stores the replay reference.
+-- Uses replay_id (UUID from .icrep metadata), NOT a filesystem path —
+-- raw paths break across portable mode, moved data dirs, cloud-restored
+-- saves, and other machines (platform-portability.md § Path Rules).
+-- The replay catalog (SQLite, D034) resolves replay_id to the current path.
+Events.on("mission_end", function(ctx)
+  if ctx.is_forward_pass then
+    Campaign.set_flag("temporal_pincer_data", {
+      replay_id = ctx.replay_id,             -- UUID, not filesystem path
+      original_faction = ctx.player_faction,
+    })
+  end
+end)
+</code></pre>
+<p><strong>Architectural note:</strong> This does <em>not</em> reuse <code>ReplayPlayback</code> as a <code>NetworkModel</code> — <code>GameLoop</code> owns exactly one <code>NetworkModel</code> instance (<code>network: N</code> per <code>game-loop.md</code>), and the live match already uses <code>LocalNetwork</code> or a relay model. Instead, the ghost army is implemented as a <strong>replay-fed ghost entity spawner</strong>: a Lua/engine-level system that reads orders from the stored <code>.icrep</code> file and injects them as AI-like commands for specially tagged ghost entities within the single active sim. Ghost entities are standard ECS entities with a <code>GhostUnit</code> component (translucent rendering, reduced damage multiplier, non-controllable by the player). The replay reader runs as a background system alongside the primary <code>NetworkModel</code>, not as a replacement for it. No multi-sim needed.</p>
+<blockquote>
+<p><strong>Known limitation — replay order drift:</strong> Once Player B’s actions diverge the battlefield from Player A’s recording, the replay-sourced orders operate against a different state than they were recorded in. This is the same class of divergence D056 describes for foreign replay import. Ghost units may attempt to move to occupied positions, attack destroyed targets, or path through changed terrain.</p>
+<p><strong>Mitigation strategy — graceful degradation, not literal replay:</strong></p>
+<ul>
+<li>Ghost orders that fail validation (invalid target, blocked path, unaffordable) are <strong>silently dropped</strong> — the ghost unit idles rather than executing an impossible action</li>
+<li>Ghost units fall back to <strong>waypoint-following</strong> derived from the replay’s <code>UnitPositionSample</code> events (analysis stream, sampled every ~10 ticks) rather than literal order injection. They move toward the positions they occupied in the original replay, engaging enemies they encounter along the way using standard AI combat logic</li>
+<li>Ghost units are explicitly <strong>expendable and imperfect</strong> — the narrative framing (“temporal echoes”) sets the expectation that they are unreliable reflections, not precise duplicates</li>
+<li>As drift accumulates, ghost effectiveness naturally degrades — this is a feature, not a bug. The earlier in the mission the ghost army is most helpful (when divergence is lowest), creating a natural tempo curve</li>
+</ul>
+<p>This is an acceptable trade-off for a Phase 7 co-op campaign feature. The ghost army provides thematic atmosphere and approximate tactical support, not frame-perfect replay reproduction.</p>
+<p><strong>Save/resume semantics:</strong> The ghost replay reader (cursor position, spawned ghost entity state) is <strong>not part of <code>SimSnapshot</code></strong> — <code>.icsave</code> files contain sim core + campaign + script state only (<code>02-ARCHITECTURE.md</code> § ic-game Integration, <code>D016</code> § multiplayer save). On save/resume, the ghost replay reader restarts from tick 0 of the source replay and fast-forwards to the current mission tick. Ghost entities that were already destroyed in the prior session are re-destroyed during fast-forward. This is imperfect (ghost behavior may differ on replay due to drift) but acceptable for the same “temporal echoes are unreliable” framing. Alternatively, the ghost cursor tick can be stored in script state (which IS saved) via <code>ScriptState</code> serialization — a single <code>u64</code> field.</p>
+<p><strong>Source replay requirement:</strong> Temporal-pincer source replays <strong>must have the <code>HAS_EVENTS</code> flag set</strong> (analysis event stream present). The waypoint fallback depends on <code>UnitPositionSample</code> events, which are part of the optional analysis stream (<code>save-replay-formats.md</code> § flags). If the source replay lacks <code>HAS_EVENTS</code>, the ghost army falls back to <strong>order-only mode</strong> (literal order injection without waypoint fallback) — which degrades faster under drift but still provides early-mission support. The campaign Lua should validate the replay before storing it:</p>
+<pre><code class="language-lua">if not Replay.has_events(ctx.replay_id) then
+  UI.show_warning("Source replay has no analysis events. Ghost army support will be limited.")
+end
+</code></pre>
+</blockquote>
+<p><strong>Standard co-op flow (without pincer):</strong></p>
+<pre><code class="language-lua">-- Co-op temporal campaign Lua example
+-- Operative's past mission completes BEFORE Commander's next mission loads.
+-- Flags set by the Operative's outcome alter the Commander's mission setup.
+Events.on("operative_completed_past_mission", function(ctx)
+  if ctx.outcome == "sabotaged_radar" then
+    -- Flag is set in CampaignState; Commander's next mission reads it during setup
+    Campaign.set_flag("radar_sabotaged_in_past", true)
+  end
+end)
+
+-- Commander's mission setup script reads the flag
+Events.on("mission_start", function()
+  if Campaign.get_flag("radar_sabotaged_in_past") then
+    Trigger.disable_structure("enemy_radar_tower")
+    UI.show_timeline_effect("Temporal Operative sabotaged the radar in 1943. Enemy radar is offline!")
+  end
+end)
+</code></pre>
+<h5 id="concept-b-adversarial-timeline-campaign"><a class="header" href="#concept-b-adversarial-timeline-campaign">Concept B: Adversarial Timeline Campaign</a></h5>
+<p>Two players (or teams) each have a time machine with limited uses in a PvP campaign:</p>
+<ul>
+<li>When one side uses their time machine, the campaign “rewinds” for both — but the time-traveling side keeps knowledge/state per carryover rules</li>
+<li>Creates a meta-game of timing: use your rewind now on a minor loss, or save it for a catastrophic one?</li>
+<li>Could leverage LLM campaign generation (D016) to dynamically generate the “altered timeline” missions</li>
+</ul>
+<h5 id="concept-c-temporal-commander-background-headless-sim-pattern--m11p007"><a class="header" href="#concept-c-temporal-commander-background-headless-sim-pattern--m11p007">Concept C: Temporal Commander (Background Headless Sim Pattern — M11/P007)</a></h5>
+<blockquote>
+<p><strong>Same dependency as Timeline Duel.</strong> Architecturally feasible via background headless sims, pending M11 (P007) client driver decision. The TC’s client runs N background <code>Simulation</code> instances (one per Field Commander’s branch), producing state snapshots for the TC’s overlay UI.</p>
+</blockquote>
+<p>Extends D070 asymmetric co-op with a new role:</p>
+<p><strong>Architecture:</strong></p>
+<pre><code>┌──────────────────────────────────────────────────────┐
+│ Temporal Commander Client                             │
+│                                                       │
+│  ┌─────────────────────────────────────────┐          │
+│  │ GameLoop (lightweight command view)      │          │
+│  │   sim: Simulation ← TC's own UI state   │          │
+│  │   renderer: Renderer ← aggregate view   │          │
+│  └─────────────────────────────────────────┘          │
+│                                                       │
+│  ┌─────────────────────────────────────────┐          │
+│  │ Background threads (N branches)          │          │
+│  │   branch_sim[0]: Simulation (headless)   │          │
+│  │   branch_sim[1]: Simulation (headless)   │          │
+│  │   branch_sim[2]: Simulation (headless)   │          │
+│  │   Fed orders from relay per branch       │          │
+│  │   Produce state snapshots for TC overlay  │          │
+│  └─────────────────────────────────────────┘          │
+│                                                       │
+│  TC renderer composites all branch snapshots          │
+│  into split-screen / tab view / aggregate minimap     │
+└──────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────┐
+│ Field Commander Clients (2-3 players)                 │
+│   Each runs standard GameLoop with one Simulation     │
+│   Connected to their own branch's RelayCore           │
+└──────────────────────────────────────────────────────┘
+</code></pre>
+<ul>
+<li><strong>Temporal Commander</strong> observes multiple timeline branches simultaneously (split-screen or tab view) via background headless sims, and allocates shared resources across them (resource transfers submitted as orders to the appropriate branch’s relay)</li>
+<li><strong>Field Commanders</strong> (2-3 players) each play in their own timeline branch using standard <code>GameLoop</code> — they see only their own branch</li>
+<li>The Temporal Commander decides which timeline to “collapse” (make canonical) based on which branch is winning — submitted as a <code>CollapseTimelineOrder</code> to all branch relays</li>
+<li>Collapsed timeline’s state becomes the starting point for the next campaign mission</li>
+</ul>
+<p><strong>Performance:</strong> N headless sims at ~2-4ms/tick each. For 3 branches at 20 tps: ~6-12ms per tick on a background thread, well within budget on a multi-core system. Memory: ~60-120MB total for 3 branch states.</p>
+<hr>
+<h3 id="implementation-architecture"><a class="header" href="#implementation-architecture">Implementation Architecture</a></h3>
+<h4 id="snapshot-branch-operation"><a class="header" href="#snapshot-branch-operation">Snapshot Branch Operation</a></h4>
+<p>The core primitive shared across all layers:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Branch from a replay or saved state into live gameplay.
+pub struct ReplayTakeover {
+    /// Source of the state to branch from
+    pub source: TakeoverSource,
+    /// Tick at which to branch
+    pub branch_tick: SimTick,
+    /// Player assignments (human or AI)
+    pub player_assignments: Vec&lt;PlayerAssignment&gt;,
+    /// Campaign state overrides (for time-machine carryover rules)
+    pub state_overrides: Option&lt;TimeMachineCarryover&gt;,
+}
+
+pub enum TakeoverSource {
+    /// Branch from a replay file. Uses replay_id (UUID) resolved via the
+    /// replay catalog (SQLite, D034), not a raw filesystem path — raw paths
+    /// break across portable mode, cloud saves, and moved data dirs
+    /// (platform-portability.md § Path Rules).
+    Replay {
+        replay_id: ReplayId,
+    },
+    /// Branch from a campaign mission-start checkpoint (time machine).
+    /// Rewinds use rule-based reconstruction: load target mission map from YAML,
+    /// restore CampaignState from the checkpoint, apply carryover rules.
+    /// CheckpointId disambiguates the same mission visited on different branches.
+    CampaignCheckpoint {
+        campaign_id: CampaignId,
+        checkpoint_id: CheckpointId,
+    },
+}
+
+pub enum PlayerAssignment {
+    Human { slot: PlayerSlot, player_id: PlayerId },
+    Ai { slot: PlayerSlot, preset: AiPresetId, difficulty: AiDifficulty },
+    Spectator { player_id: PlayerId },
+}
+
+/// Carryover rules for campaign time machine.
+/// Models the full authored YAML `carryover_rules` section.
+pub struct TimeMachineCarryover {
+    pub veterancy: bool,
+    pub unit_roster: bool,                          // carry surviving units (usually false — knowledge &gt; power)
+    pub exploration: bool,                          // carry explored/shroud state (D041 is_explored, NOT is_visible)
+    pub intel_flag_keys: Vec&lt;String&gt;,               // authored allowlist: which keys from D021's
+                                                    // flags: HashMap&lt;String, Value&gt; carry back.
+                                                    // All other flags are story flags and reset.
+    pub story_flags: bool,                          // if true, ALL flags carry back (overrides allowlist)
+    pub resource_multiplier: FixedPoint,            // e.g., 0.5 for halved, 0 for none, 1 for full
+    pub equipment_mode: EquipmentCarryoverMode,     // none | selective (tagged 'temporal_stable') | all
+    pub hero_progression: bool,
+    /// Named character or roster-entry selectors for specific units that persist.
+    /// Uses RosterUnit identifiers (UnitTypeId + optional name), NOT live UnitId —
+    /// UnitId is an in-match entity handle, not stable across mission boundaries.
+    /// Matches RosterUnit entries from CampaignState.unit_roster (D021, campaigns.md).
+    pub carry_roster_entries: Vec&lt;RosterSelector&gt;,
+    pub butterfly_effects: Vec&lt;ButterflyEffect&gt;,
+}
+
+/// How to select roster entries for carryover.
+pub enum RosterSelector {
+    /// By unit type (e.g., "tanya", "spy") — carries all matching roster entries
+    ByType(UnitTypeId),
+    /// By custom name assigned to a roster unit
+    ByName(String),
+    /// By hero character ID (for hero progression system)
+    ByHeroId(String),
+}
+
+pub enum EquipmentCarryoverMode {
+    None,
+    Selective,  // only equipment tagged 'temporal_stable' in YAML
+    All,
+}
+
+pub struct ButterflyEffect {
+    pub flag: String,
+    pub value: Value,
+    pub ai_modifier: Option&lt;AiModifier&gt;,
+    pub spawn_modifier: Option&lt;SpawnModifier&gt;,
+}
+<span class="boring">}</span></code></pre>
+<h4 id="takeover-execution-flow"><a class="header" href="#takeover-execution-flow">Takeover Execution Flow</a></h4>
+<p><strong>Layer 1 path (replay takeover):</strong></p>
+<pre><code>1. Resolve source replay file
+2. Load keyframe index, find nearest keyframe ≤ branch_tick
+3. Restore keyframe snapshot via GameRunner::restore_full()
+   (full snapshot, or full + intervening deltas — same path as replay seeking)
+4. Re-simulate forward from restored keyframe to exact branch_tick via apply_tick()
+5. Assign player control (human/AI per PlayerAssignment)
+6. Transition InReplay → Loading → InGame (game starts paused)
+7. Begin recording new branched .icrep
+8. Player unpauses → normal gameplay from branch_tick
+</code></pre>
+<p>Steps 1-4 reuse existing replay seeking infrastructure (<code>GameRunner::restore_full()</code> is the canonical restore contract per <code>02-ARCHITECTURE.md</code>). Steps 5-8 reuse existing match start infrastructure.</p>
+<p><strong>Layer 2 path (campaign time machine — rule-based reconstruction):</strong></p>
+<pre><code>1. Resolve target checkpoint via CheckpointId from TimeMachineState.checkpoints
+2. Detach current TimeMachineState from CampaignState (meta-progress preserved)
+3. Load target mission's map and initial conditions from campaign YAML
+4. Overwrite CampaignState gameplay fields from CampaignProgressCheckpoint.progress
+   (stripped snapshot — roster, flags, stats, equipment; no TimeMachineState)
+5. Reattach TimeMachineState with uses_consumed++ and new RewindRecord appended
+6. Apply time-machine carryover rules (veterancy, exploration, intel flags per YAML)
+7. Apply butterfly effects (AI modifiers, spawn changes, flag overrides)
+8. Start mission via normal campaign mission-start flow (Loading → InGame)
+9. Begin recording new .icrep
+10. Player plays the mission with foreknowledge + carryover advantage
+</code></pre>
+<p>Steps 2-5 implement the detach/reattach pattern: gameplay progress is rewound from the stripped checkpoint, but meta-progress (charges used, branch history, all checkpoints) is preserved and never restored to earlier values. The mission state is reconstructed from map + <code>CampaignProgressSnapshot</code> + carryover rules, identical to how campaigns normally start missions.</p>
+<h3 id="implementation-estimate"><a class="header" href="#implementation-estimate">Implementation Estimate</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Component</th><th>Crate(s)</th><th>Est. Lines</th><th>Layer</th><th>Phase</th></tr>
+</thead>
+<tbody>
+<tr><td>Replay takeover orchestration</td><td><code>ic-game</code></td><td>~400</td><td>Layer 1</td><td>Phase 3</td></tr>
+<tr><td>Takeover UI (dialog, faction picker)</td><td><code>ic-ui</code></td><td>~300</td><td>Layer 1</td><td>Phase 3</td></tr>
+<tr><td>Branched replay metadata (provenance)</td><td><code>ic-game</code></td><td>~100</td><td>Layer 1</td><td>Phase 3</td></tr>
+<tr><td>Multiplayer takeover lobby</td><td><code>ic-net</code>, <code>ic-ui</code></td><td>~250</td><td>Layer 1</td><td>Phase 5</td></tr>
+<tr><td>Console commands (<code>/takeover</code>)</td><td><code>ic-game</code></td><td>~80</td><td>Layer 1</td><td>Phase 3</td></tr>
+<tr><td>Speculative branch preview (ghost)</td><td><code>ic-game</code>, <code>ic-render</code></td><td>~400</td><td>Layer 1</td><td>Phase 3</td></tr>
+<tr><td>Campaign time-machine state machine</td><td><code>ic-script</code></td><td>~500</td><td>Layer 2</td><td>Phase 4</td></tr>
+<tr><td><code>TimeMachine</code> Lua global</td><td><code>ic-script</code></td><td>~350</td><td>Layer 2</td><td>Phase 4</td></tr>
+<tr><td>Carryover rules engine</td><td><code>ic-game</code></td><td>~300</td><td>Layer 2</td><td>Phase 4</td></tr>
+<tr><td>Butterfly effects system</td><td><code>ic-script</code></td><td>~200</td><td>Layer 2</td><td>Phase 4</td></tr>
+<tr><td>Timeline visualization UI</td><td><code>ic-ui</code></td><td>~400</td><td>Layer 2</td><td>Phase 4</td></tr>
+<tr><td>Time-machine activation cinematic</td><td><code>ic-render</code>, <code>ic-ui</code></td><td>~200</td><td>Layer 2</td><td>Phase 4</td></tr>
+<tr><td>Campaign YAML schema extension</td><td><code>ic-script</code></td><td>~150</td><td>Layer 2</td><td>Phase 4</td></tr>
+<tr><td>Mission archetypes (convergence, info locks, causal loops, dual-state, retrocausal)</td><td><code>ic-script</code>, <code>ic-game</code></td><td>~800</td><td>Layer 2</td><td>Phase 4</td></tr>
+<tr><td>Chrono Capture game mode</td><td><code>ic-game</code></td><td>~450</td><td>Layer 3</td><td>Phase 5</td></tr>
+<tr><td>Time Race game mode</td><td><code>ic-game</code></td><td>~350</td><td>Layer 3</td><td>Phase 5</td></tr>
+<tr><td>Timeline Duel (background headless sim)</td><td><code>ic-game</code>, <code>ic-sim</code></td><td>~600</td><td>Layer 3</td><td>M11 (P007)</td></tr>
+<tr><td>Chrono Vortex hazard system</td><td><code>ic-sim</code></td><td>~200</td><td>Layer 3</td><td>Phase 5</td></tr>
+<tr><td>Game mode YAML definitions</td><td>data</td><td>~150</td><td>Layer 3</td><td>Phase 5</td></tr>
+<tr><td>Temporal support powers (age/restore/stasis/decay)</td><td><code>ic-game</code>, <code>ic-sim</code></td><td>~350</td><td>Layer 3</td><td>Phase 5</td></tr>
+<tr><td>Temporal pincer ghost army replay</td><td><code>ic-game</code>, <code>ic-render</code></td><td>~400</td><td>Layer 4</td><td>Phase 7</td></tr>
+<tr><td>Co-op temporal campaign support</td><td><code>ic-script</code>, <code>ic-net</code></td><td>~500</td><td>Layer 4</td><td>Phase 7</td></tr>
+<tr><td>Temporal Commander (background headless sim)</td><td><code>ic-game</code>, <code>ic-ui</code></td><td>~600</td><td>Layer 4</td><td>M11 (P007)</td></tr>
+<tr><td><strong>Total</strong></td><td></td><td><strong>~9,030</strong></td><td></td><td></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="alternatives-considered"><a class="header" href="#alternatives-considered">Alternatives Considered</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Alternative</th><th>Verdict</th><th>Reason</th></tr>
+</thead>
+<tbody>
+<tr><td>Free-form multiplayer time travel (Achron model)</td><td>Rejected</td><td>Too complex for mainstream players. Achron proved this is a niche within a niche. IC’s background headless sim pattern could technically support parallel timelines, but Achron’s “any player can rewrite any moment in the past at any time” model creates exponential state complexity and is deeply confusing for non-expert players. The layered approach (takeover → campaign → modes → structured dual-timeline) provides time-travel gameplay without the cognitive overload</td></tr>
+<tr><td>Time travel as cosmetic only (Chronosphere teleport, no actual timeline branching)</td><td>Rejected</td><td>Misses the opportunity. IC already has Chronosphere as a superweapon (gameplay-systems.md). The time-machine mechanic is about narrative and strategic depth beyond unit teleportation</td></tr>
+<tr><td>Unlimited time-machine uses in campaigns</td><td>Rejected</td><td>Removes tension. Limited uses (Prince of Persia pattern) create meaningful “should I use it now?” decisions. Unlimited rewind trivializes the campaign</td></tr>
+<tr><td>Full state carryover through time machine (army + resources + everything)</td><td>Rejected</td><td>Makes the game too easy on rewind. Outer Wilds’s lesson: knowledge is the best carryover. Partial carryover (veterancy, exploration/shroud, intel) creates the right balance of advantage without trivializing the replayed mission</td></tr>
+<tr><td>Time machine only in singleplayer</td><td>Rejected</td><td>Multiplayer time modes (Chrono Capture, Time Race) are unique differentiators. No other RTS has them. The multiplayer modes can exist independently of the campaign time machine</td></tr>
+<tr><td>Implementing all layers simultaneously</td><td>Rejected</td><td>Risk is too high. Layer 1 (replay takeover) is proven by SC2 and architecturally trivial. Each subsequent layer adds complexity. Ship layers independently, iterate based on feedback</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="cross-references"><a class="header" href="#cross-references">Cross-References</a></h3>
+<ul>
+<li><strong>Replay system:</strong> <a href="../../formats/save-replay-formats.html"><code>formats/save-replay-formats.md</code></a> (<code>.icrep</code> format), <a href="../../formats/replay-keyframes-analysis.html"><code>formats/replay-keyframes-analysis.md</code></a> (keyframe seeking), <a href="../../player-flow/replays.html"><code>player-flow/replays.md</code></a> (viewer UX)</li>
+<li><strong>Snapshottable state:</strong> <a href="../09a/D010-snapshottable-state.html">D010</a> (<code>SimSnapshot</code>, <code>SimCoreSnapshot</code>); restore contract: <code>GameRunner::restore_full()</code> in <code>ic-game</code> (<code>02-ARCHITECTURE.md</code> § ic-game Integration)</li>
+<li><strong>Campaign system:</strong> <a href="D021-branching-campaigns.html">D021</a> (campaign graph, <code>CampaignState</code>, Lua <code>Campaign</code> global), <a href="../../modding/campaigns.html"><code>modding/campaigns.md</code></a> (full campaign specification)</li>
+<li><strong>AI presets:</strong> <a href="D043-ai-presets.html">D043</a> (AI assignment for non-human factions in takeover)</li>
+<li><strong>Replay highlights:</strong> <a href="D077-replay-highlights.html">D077</a> (highlight moments as natural takeover entry points — “Take Command from this highlight”)</li>
+<li><strong>Asymmetric co-op:</strong> <a href="D070-asymmetric-coop.html">D070</a> (Temporal Commander role extends Commander/SpecOps framework)</li>
+<li><strong>LLM missions:</strong> <a href="../09f/D016-llm-missions.html">D016</a> (LLM-generated alternate timeline missions in Phase 7)</li>
+<li><strong>Multiplayer:</strong> <a href="../../player-flow/multiplayer.html"><code>player-flow/multiplayer.md</code></a> (game mode registration, lobby configuration)</li>
+<li><strong>Gameplay systems:</strong> <a href="../../architecture/gameplay-systems.html"><code>architecture/gameplay-systems.md</code></a> (Chronosphere superweapon, support powers)</li>
+<li><strong>Console commands:</strong> <a href="../09g/D058-command-console.html">D058</a> (<code>/takeover</code>, <code>/timemachine</code> commands)</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../decisions/09d/D077-replay-highlights.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../../decisions/09e-community.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../decisions/09d/D077-replay-highlights.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../../decisions/09e-community.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../../mark-09e88c2c.min.js"></script>
+        <script src="../../searcher-c2a407aa.js"></script>
+
+        <script src="../../clipboard-1626706a.min.js"></script>
+        <script src="../../highlight-abc7f01d.js"></script>
+        <script src="../../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

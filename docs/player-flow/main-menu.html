@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-50eef387.js";
+            window.path_to_searchindex_js = "../searchindex-9b234216.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-f491df3e.js"></script>
+        <script src="../toc-a18c07f4.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -217,7 +217,7 @@
 <tr><th>Button</th><th>Action</th><th>Notes</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>Continue Campaign</strong></td><td>Resumes last campaign from the last completed mission’s next node</td><td>Only visible if an in-progress campaign save exists. One click to resume.</td></tr>
+<tr><td><strong>Continue Campaign</strong></td><td>Resumes the campaign at its current authored progression point</td><td>If there is only one immediate next mission, one click launches it. If multiple missions are currently available or an urgent pending branch exists, it reopens the campaign map / intermission selection instead of choosing a node for the player.</td></tr>
 <tr><td><strong>Campaign</strong></td><td>Opens Campaign Selection screen</td><td>Choose faction (Allied/Soviet), start new campaign, or select saved campaign slot.</td></tr>
 <tr><td><strong>Skirmish</strong></td><td>Opens Skirmish Setup screen</td><td>Configure a local game vs AI: map, players, settings.</td></tr>
 <tr><td><strong>Multiplayer</strong></td><td>Opens Multiplayer Hub</td><td>Five ways to find a game: Browser, Join Code, Ranked, Direct IP, QR Code.</td></tr>
@@ -238,8 +238,40 @@
 <li><strong>Mod indicator</strong> — If a non-default mod profile is active, a small indicator badge shows which profile (e.g., “Combined Arms v2.1”)</li>
 <li><strong>News ticker</strong> (optional, Modern theme) — Community announcements from the configured tracking server(s)</li>
 <li><strong>Tutorial hint</strong> — For new players: a non-intrusive callout near Campaign or Skirmish saying “New? Try the tutorial → Commander School” (D065, dismissible, appears once)</li>
-<li><strong>Background selection</strong> — Configurable via Settings → Video. Options: static theme image, shellmap AI battle (default for Remastered/Modern themes), personal highlights cycling from the player’s highlight library (D077), or community/tournament highlight packs from Workshop (D077). Falls back to shellmap AI if the player has fewer than 3 valid highlights. Highlight playback re-simulates from nearest keyframe at reduced priority behind menu UI</li>
+<li><strong>Background selection</strong> — Configurable via Settings → Video. Options: static theme image, shellmap AI battle (default for Remastered/Modern themes), personal highlights cycling from the player’s highlight library (D077), community/tournament highlight packs from Workshop (D077), or <strong>campaign-progress scene</strong> (the background reflects the player’s current campaign stage — see below). Falls back to shellmap AI if the selected option is unavailable. Highlight/campaign playback re-simulates from nearest keyframe at reduced priority behind menu UI</li>
 </ul>
+<h4 id="campaign-progress-menu-background"><a class="header" href="#campaign-progress-menu-background">Campaign-Progress Menu Background</a></h4>
+<p>When the player has an active campaign, the main menu background can reflect where they are in the story — changing as they progress through missions. This is an <a href="https://tvtropes.org/pmwiki/pmwiki.php/Main/EvolvingTitleScreen">Evolving Title Screen</a> pattern used by Half-Life 2, Halo: Reach, Spec Ops: The Line, Portal 2, The Last of Us Part II, Warcraft III, Lies of P, and others.</p>
+<p><strong>How it works:</strong> Campaign authors define a <code>menu_scenes</code> table in their campaign YAML (see <code>modding/campaigns.md</code> § Campaign Menu Scenes). Each entry maps a campaign progress point (mission ID, flag state, or completion percentage) to a menu scene. The scene can be:</p>
+<ul>
+<li><strong>A shellmap scenario</strong> — a live, lightweight in-game scene (a few AI units fighting, a base under construction, an air patrol) rendered behind the menu. Uses the existing shellmap infrastructure with campaign-specific map/units/scripts</li>
+<li><strong>A video loop</strong> — a pre-rendered or recorded <code>.webm</code> video playing in a loop (aircraft flying in formation at night, a war room briefing, a battlefield aftermath). Audio plays at reduced volume behind menu music</li>
+<li><strong>A static image</strong> — campaign-specific artwork or screenshot for the current act/chapter</li>
+</ul>
+<p><strong>Scene selection priority:</strong></p>
+<ol>
+<li>If the player has manually configured a different background style (static image, shellmap AI, highlights), that takes precedence — campaign scenes are opt-in, not forced</li>
+<li>If “Campaign Scene” is selected (or is the campaign’s default), the engine matches the player’s current <code>CampaignState</code> against the <code>menu_scenes</code> table and picks the matching scene</li>
+<li>If no campaign is active or no scene matches, falls back to the theme’s default (shellmap AI or static image)</li>
+</ol>
+<p><strong>Prior art:</strong></p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Game</th><th>How It Works</th><th>What IC Can Learn</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Half-Life 2</strong></td><td>Menu shows an area from the most recent chapter. Each chapter has a different background scene</td><td>Direct model — IC maps campaign progress to scenes</td></tr>
+<tr><td><strong>Halo: Reach</strong></td><td>Menu artwork changes based on which campaign mission was last played. Uses concept art pieces</td><td>Supports both live scenes AND static art per mission</td></tr>
+<tr><td><strong>Spec Ops: The Line</strong></td><td>Menu tableau evolves across the story — soldier sleeping → recon → combat → fire → destruction. Day turns to night. The menu IS a scene happening alongside the story</td><td>The menu scene can tell its own micro-story that parallels the campaign</td></tr>
+<tr><td><strong>Warcraft III</strong></td><td>Each campaign (Human, Undead, Orc, Night Elf) has its own menu background and music</td><td>Per-campaign theming, not just per-mission</td></tr>
+<tr><td><strong>Portal 2</strong></td><td>Menu shows a location from the current chapter — acts as a bookmark</td><td>Reinforces where the player left off</td></tr>
+<tr><td><strong>The Last of Us Part II</strong></td><td>Menu evolves from calm boat scene → locked-down darkness → bright sunrise after completion</td><td>Emotional arc in the menu itself</td></tr>
+<tr><td><strong>Lies of P</strong></td><td>Title screen shifts through different locations as the player reaches new chapters</td><td>Location-based scene changes</td></tr>
+<tr><td><strong>Call of Duty</strong> (classic)</td><td>Menu weapons change per campaign faction (Thompson for US, Lee-Enfield for UK, Mosin-Nagant for USSR)</td><td>Even small thematic details (faction-specific props) add immersion</td></tr>
+</tbody>
+</table>
+</div>
 
                     </main>
 
