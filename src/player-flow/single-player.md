@@ -62,7 +62,7 @@ Main Menu → Campaign
 Campaign Selection → [New Game] or [Continue]
 ```
 
-The campaign graph is a visual world map (or node-and-edge graph for community campaigns) showing mission progression. Completed missions are solid, available missions pulse, locked missions are dimmed.
+The campaign graph is a visual world map (or node-and-edge graph for community campaigns) showing mission progression. Completed missions are solid, available missions pulse, locked missions are dimmed. If multiple branches are currently available, or an urgent pending mission such as a rescue remains open for a bounded window, the map/intermission view shows all available nodes and highlights the urgent one rather than auto-selecting for the player.
 
 ```
 ┌──────────────────────────────────────────────────────────┐

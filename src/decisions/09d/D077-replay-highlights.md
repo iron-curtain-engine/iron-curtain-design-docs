@@ -121,8 +121,9 @@ A new menu background option alongside static image and shellmap AI battle:
 | `shellmap_ai`          | Live AI battle (existing)                           | Remastered/Modern themes |
 | `personal_highlights`  | Player's top moments cycling (D077)                 | None (opt-in)            |
 | `community_highlights` | Workshop highlight packs from tournaments/streamers | None (opt-in)            |
+| `campaign_scene`       | Scene reflecting player's current campaign progress (shellmap scenario, video loop, or static image — defined per campaign in `modding/campaigns.md` § Campaign Menu Scenes) | None (opt-in; campaign default if authored) |
 
-**Fallback:** If player has fewer than 3 valid highlights, falls back to shellmap AI.
+**Fallback chain:** `campaign_scene` → `personal_highlights` → `shellmap_ai` → `static_image`. Each option falls back to the next if unavailable (no active campaign, fewer than 3 highlights, etc.).
 
 **Performance:** Replay re-simulation from nearest keyframe (worst case ~100ms). Runs at reduced priority behind menu UI.
 

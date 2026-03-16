@@ -53,6 +53,7 @@
     - [Advanced Templating](modding/tera-templating-advanced.md)
   - [Resource Packs](modding/resource-packs.md)
   - [Campaign System](modding/campaigns.md)
+    - [Enhanced Edition Campaign Plan](modding/enhanced-campaign-plan.md)
   - [Workshop](modding/workshop.md)
     - [Workshop Features](modding/workshop-features.md)
     - [Workshop Moderation](modding/workshop-moderation.md)
