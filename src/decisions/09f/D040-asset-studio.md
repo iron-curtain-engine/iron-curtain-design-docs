@@ -108,6 +108,15 @@ Browse, search, and preview every asset the engine can load. This is the XCC Mix
 
 **Minimal reverse engineering required.** RA1/TD and Generals/ZH are fully open-sourced by EA (GPL). RA2/TS formats are not open-sourced but have been community-documented for 20+ years — .vxl, .hva, .csf are thoroughly understood by the XCC, Ares, and Phobos projects. The `FormatRegistry` trait (D018) already anticipates per-module format loaders.
 
+**The table above is media-focused, not exhaustive.** Complete support also includes non-media resource families that the engine and SDK must browse, inspect, and import directly:
+
+- RA1 / TD: `.cps`, `.eng`, mission `.bin`, `.mpr`
+- RA2 / TS: `.bag` / `.idx`, `.csf`, `.map`, plus voxel `.vxl` / `.hva`
+- Generals / ZH: `.wnd`, `.str`, original `.map`, and the `.apt` + `.const` + `.dat` + `.ru` GUI bundle family
+- Remastered: `.xml`, `.dat` / `.loc`, `.mtd`
+
+Asset Studio is the canonical viewer/import surface for those families even when a specific row in the media table above does not show them.
+
 #### Layer 2 — Asset Editor
 
 Scoped asset editing operations. Not pixel painting — structured operations on game asset types.

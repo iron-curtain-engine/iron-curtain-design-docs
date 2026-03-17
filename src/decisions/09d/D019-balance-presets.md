@@ -79,6 +79,8 @@ AoE2's approach to 40+ civilizations is instructive: every civilization has the 
 
 This pattern is achievable purely in YAML (Tier 1 modding) through inheritance: the subfaction definition inherits the faction base and overrides `prerequisites` to gate or remove units, then defines new units.
 
+> **Concrete candidate implementation proposal:** The subfaction system in `research/subfaction-country-system-study.md` applies this exact pattern. Allied nations (England, France, Germany, Greece) and Soviet institutions (Red Army, NKVD, GRU, Science Bureau) each get one thematic passive + one tech tree modification via YAML inheritance. The Classic preset maps to RA1's original 5-country 10% passives; IC Default uses the expanded 4×4 system. See also `research/subfaction-country-system-study.md` § "Campaign Integration" for War Table theater bonuses.
+
 #### Principle 6: Patch Sparingly, Observe Patiently
 
 SC:BW received minimal balance patches after 1999 — and it's the most balanced RTS ever made. The meta evolved through player innovation, not developer intervention. AoE2: Definitive Edition patches more frequently but exercises restraint — small numerical changes (±5%), never removing or redesigning units. In contrast, games that patch aggressively based on short-term win rate data (the "nerf/buff treadmill") chase balance without ever achieving it, and players never develop deep mastery because the ground keeps shifting.

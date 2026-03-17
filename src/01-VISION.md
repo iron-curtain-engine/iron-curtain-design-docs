@@ -48,7 +48,7 @@ Even at low unit counts, something "feels off" — micro-stutters from garbage c
 
 **3. Campaigns are systematically incomplete.**
 OpenRA's multiplayer-first culture has left single-player campaigns unfinished across multiple supported games: Dune 2000 has only 1 of 3 campaigns playable, TD campaigns are also incomplete, and there's no automatic mission progression — players exit to menu between missions.
-→ *IC answer:* Campaign completeness is a first-class exit criterion for every shipped game module. Branching campaign graphs with persistent unit rosters, veterancy, and equipment carry-over (D021) go beyond completion to innovation. Continuous flow: briefing → mission → debrief → next mission, no menu breaks.
+→ *IC answer:* Campaign completeness is a first-class exit criterion for every shipped game module. The Enhanced Edition goes beyond completion: a strategic layer (War Table) between milestone missions, side operations that earn tech and deny enemy capabilities, a dynamic arms race where expansion-pack units are campaign rewards, and a final mission shaped by every choice the player made. Persistent unit rosters, veterancy, and equipment carry-over (D021). Continuous flow: briefing → mission → debrief → next mission, no menu breaks. The classic linear path is always available for purists.
 
 **4. No competitive infrastructure.**
 No ranked matchmaking, no automated anti-cheat, no signed replays. The competitive scene relies entirely on community-run CnCNet ladders and trust-based result reporting.
@@ -104,7 +104,7 @@ OpenRA's map editor handles terrain and actor placement but not mission logic �
 | Platforms          | Windows, Xbox                                    | Windows, macOS, Linux                                                  | All + Browser + Mobile                                                               |
 | Max units (smooth) | Unknown (not benchmarked)                        | Community reports of lag in large battles (not independently verified) | 2000+ target                                                                         |
 | Modding            | Steam Workshop maps, limited API                 | MiniYAML + C# (recompile for deep mods)                                | YAML + Lua + WASM (no recompile ever)                                                |
-| AI content         | Fixed campaigns                                  | Fixed campaigns + community missions                                   | Branching campaigns with persistent state (D021)                                     |
+| AI content         | Fixed campaigns                                  | Fixed campaigns + community missions                                   | Enhanced Edition: strategic layer, War Table, dynamic arms race, classic path always available (D021) |
 | Multiplayer        | Proprietary networking (not open-sourced)        | TCP lockstep, 135+ desync issues tracked                               | Relay server, desync diagnosis, signed replays                                       |
 | Competitive        | No ranked, no anti-cheat                         | Community ladders via CnCNet                                           | Ranked matchmaking, Glicko-2, relay-certified results                                |
 | Graphics pipeline  | HD sprites, proprietary renderer                 | Custom renderer with post-processing (since March 2025)                | Classic isometric via Bevy + wgpu (HD assets, post-FX, shaders available to modders) |
@@ -117,9 +117,17 @@ OpenRA's map editor handles terrain and actor placement but not mission logic �
 
 ### New Capabilities Not Found Elsewhere
 
-**Branching Campaigns with Persistent State (D021)**
+**Enhanced Edition Campaigns — Strategic Layer + Dynamic Arms Race (D021)**
 
-Campaigns are directed graphs of missions, not linear sequences. Each mission can have multiple outcomes ("won with bridge intact" vs "won but bridge destroyed") that lead to different next missions. Failure doesn't end the campaign — defeat is another branch. Surviving units, veterancy, and equipment carry over between missions. Continuous flow: briefing → mission → debrief → next mission, no exit-to-menu between levels. Inspired by Operation Flashpoint.
+The original Red Alert campaigns ship complete and playable in their classic linear form — 14 missions per side (Allied and Soviet), in order, faithful to the original. The **Enhanced Edition** transforms them into something the originals never were — but something Westwood were already moving toward. Tiberian Sun introduced a world map where the player chose which territory to attack next. Red Alert 2 let you pick which country to invade. These were deliberate experiments in strategic agency, constrained by scope and timeline rather than intent. Games like XCOM, Total War, and Into the Breach have since proven this model works. The Enhanced Edition completes what Westwood started.
+
+The 14 original missions become narrative milestones in a phase-based strategic campaign. Between milestones, the **War Table** presents available operations — authored expansion-pack missions, IC originals, and procedurally generated SpecOps — alongside enemy initiatives that advance the Soviet war machine. The player picks which operations to run, but operational budgets limit how many per phase. Unchosen operations resolve with consequences. The war moves without you.
+
+Every expansion-pack unit and enemy capability is tied to the operational layer through a **dynamic arms race**. Capture a Chrono Tank through Italy operations. Deny the enemy's super-soldier program through intelligence raids. Commander-vs-commando path choices determine tech quality: commando yields full prototypes; commander yields damaged captures or denial without acquisition. Three-state outcomes (acquired / partial / denied) mean every playthrough builds a unique arsenal — and faces a unique enemy.
+
+The final mission reflects every choice: different units, different enemy composition, different approach routes, different briefing text. Two playthroughs produce genuinely different endgames — not just harder or easier, but *different in kind*.
+
+The classic campaign ships separately as a faithful reproduction — same 14 missions per side, same difficulty, no strategic layer. For players who want the original 1996 experience untouched. Within the Enhanced Edition, players who skip optional operations face a harder road (no bonus assets, full enemy strength) but the campaign remains completable. Campaigns use directed graphs with multiple outcomes per mission, failure-forward branching, persistent unit rosters with veterancy and equipment carry-over, and continuous flow (no exit-to-menu). Inspired by XCOM, Total War, Jagged Alliance, and Operation Flashpoint.
 
 **Optional LLM-Generated Missions (BYOLLM — power-user feature)**
 
@@ -171,14 +179,14 @@ OpenRA is a mature, actively maintained project with 18 years of community inves
 | Competitive   | Community ladders via CnCNet             | Integrated ranked matchmaking, tournament mode                                 |
 | Portability   | Desktop (Windows, macOS, Linux)          | Desktop + WASM (browser) + mobile                                              |
 | Maturity      | 18 years, battle-tested, large community | Clean-sheet modern design, unproven                                            |
-| Campaigns     | Some incomplete (TD, Dune 2000)          | Branching campaigns with persistent state (D021)                               |
+| Campaigns     | Some incomplete (TD, Dune 2000)          | Enhanced Edition: strategic layer + arms race + classic path (D021)             |
 | Mission flow  | Manual mission selection between levels  | Continuous flow: briefing → mission → debrief → next                           |
 | Asset quality | Cannot fix original palette/sprite flaws | Bevy post-FX: palette correction, color grading, optional upscaling            |
 
 ### What Makes People Actually Switch
 
 1. **Better performance** — visible: bigger maps, more units, no stutters
-2. **Campaigns that flow** — branching paths, persistent units, no menu between missions, failure continues the story
+2. **Campaigns you never want to leave** — the Enhanced Edition turns the original 14 missions per side into a strategic campaign with a War Table, side operations, enemy initiatives, and an arms race that makes every playthrough unique. Classic path always available. Going back to the originals feels empty
 3. **Better modding** — WASM scripting, SDK with scenario editor & asset studio, hot reload
 4. **Competitive infrastructure** — ranked matchmaking, anti-cheat, tournaments, signed replays — OpenRA has none of this
 5. **Player analytics** — post-game stats, career page, campaign dashboard with roster graphs — your match history is queryable data, not a forgotten replay folder
@@ -311,7 +319,7 @@ These are the projects we actively study. Each serves a different purpose — do
 **What NOT to copy:**
 - **Unit balance.** OpenRA deliberately rebalances units away from the original game toward competitive multiplayer fairness. This makes iconic units feel underwhelming (see Gameplay Philosophy below). We default to classic RA balance. This pattern repeats across every game they support — Dune 2000 units are also rebalanced away from originals.
 - **Simulation internals bug-for-bug.** We're not bit-identical — we're better-algorithms-identical.
-- **Campaign neglect.** OpenRA's multiplayer-first culture has left single-player campaigns systematically incomplete across all supported games. Dune 2000 has only 1 of 3 campaigns playable; TD campaigns are also incomplete; there's no automatic mission progression (players exit to menu between missions). **Campaign completeness is a first-class goal for us** — every shipped game module must have all original campaigns fully playable with continuous flow (D021). Beyond completeness, our campaign graph system enables what OpenRA can't: branching outcomes (different mission endings lead to different next missions), persistent unit rosters (surviving units carry forward with veterancy), and failure that continues the story instead of forcing a restart — inspired by Operation Flashpoint.
+- **Campaign neglect.** OpenRA's multiplayer-first culture has left single-player campaigns systematically incomplete across all supported games. Dune 2000 has only 1 of 3 campaigns playable; TD campaigns are also incomplete; there's no automatic mission progression (players exit to menu between missions). **Campaign completeness is a first-class goal for us** — every shipped game module must have all original campaigns fully playable with continuous flow (D021). Beyond completeness, IC's Enhanced Edition wraps the original missions in a strategic layer: a War Table between milestones, side operations that earn tech and deny enemy capabilities, enemy initiatives that advance without the player, and a dynamic arms race where every expansion-pack unit is a campaign reward with commando/commander trade-offs. The final mission reflects every choice. The classic linear path is always available. Inspired by XCOM, Total War, Jagged Alliance, and Operation Flashpoint.
 
 ### EA Red Alert Source — https://github.com/electronicarts/CnC_Red_Alert
 

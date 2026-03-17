@@ -4,13 +4,53 @@
 
 OpenRA's campaigns are disconnected: each mission is standalone, you exit to menu between them, there's no flow. Our campaigns are **continuous, branching, and stateful** — a directed graph of missions with persistent state, multiple outcomes per mission, and no mandatory game-over screen.
 
+That mission graph is the canonical D021 backbone. Some campaigns stop there. Others, especially first-party Enhanced Edition campaigns, organize that same graph into a **phase-based strategic layer** (`War Table`) with operations, enemy initiatives, Requisition, Command Authority, and an arms race / tech ledger between milestone missions.
+
 ### Core Principles
 
 1. **Campaign is a graph, not a list.** Missions connect via named outcomes, forming branches, convergence points, and optional paths — not a linear sequence.
 2. **Missions have multiple outcomes, not just win/lose.** "Won with bridge intact" and "Won but bridge destroyed" are different outcomes that lead to different next missions.
-3. **Failure doesn't end the campaign.** A "defeat" outcome is just another edge in the graph. The designer chooses: branch to a fallback mission, retry with fewer resources, or skip ahead with consequences. "No game over" campaigns are possible.
+3. **Failure doesn't end the campaign by default.** A "defeat" outcome is just another edge in the graph. The designer chooses: branch to a fallback mission, retry with fewer resources, or skip ahead with consequences. Truly campaign-failing missions are allowed only as explicit authored exceptions and must be labeled as **critical missions** before mission launch.
 4. **State persists across missions.** Surviving units, veterancy, captured equipment, story flags, resources — all carry forward based on designer-configured carryover rules.
 5. **Continuous flow.** Briefing → mission → debrief → next mission. No exit to menu between levels (unless the player explicitly quits).
+
+### Graph Backbone and Strategic-Layer Extension
+
+D021 has two valid presentation tiers:
+
+1. **Graph-only campaigns** — the player moves directly from mission to mission through a branching outcome graph
+2. **Phase-based strategic campaigns** — the same graph is wrapped in a War Table that exposes optional operations, enemy initiatives, Command Authority, and Requisition between milestone missions
+
+The key rule is that the **graph remains authoritative** in both cases. Strategic-layer campaigns do not replace the graph with an unrelated meta-system. They:
+
+- group missions into authored **phases**
+- expose some graph nodes as optional **operations**
+- advance authored **enemy initiatives** between operations
+- track a first-class **tech / arms-race ledger** that later missions consume
+
+Classic campaigns can stay graph-only. Enhanced Edition campaigns can use the strategic layer. Both use the same `CampaignState`, mission outcomes, save/load model, and Lua `Campaign` API.
+
+```yaml
+campaign:
+  id: allied_campaign_enhanced
+  start_mission: allied_01
+
+  campaign_phases:
+    phase_3:
+      main_mission: allied_06
+      granted_requisition: 2000
+      granted_intel: 50
+      operations:
+        authored:
+          - ic_behind_enemy_lines
+          - cs_crackdown
+        generated_profiles:
+          - allied_intel_raid_t1
+      enemy_initiatives:
+        - radar_network_expansion
+        - chemical_weapons_deployment
+      asset_ledger: allied_arms_race
+```
 
 ### Campaign Definition (YAML)
 
@@ -56,6 +96,7 @@ campaign:
       map: missions/allied-01
       briefing: briefings/allied-01.yaml
       video: videos/allied-01-briefing.vqa
+      critical_failure: false     # default: defeat branches, does not end the campaign
       carryover:
         from_previous: none    # first mission — nothing carries
       outcomes:
@@ -149,18 +190,87 @@ campaign:
 
 This is a **directed acyclic graph** (with optional cycles for retry loops). The engine validates campaign graphs at load time: no orphan nodes, all outcome targets exist, start mission is defined.
 
-### Campaign Graph Extensions (Optional Side Missions)
+### Mission Criticality and Failure Disclosure
+
+The canonical expectation for IC campaigns is:
+
+- **Main missions usually fail forward.** Defeat branches to a fallback node, harder variant, or reduced-state continuation.
+- **SpecOps usually fail with consequences.** You may lose intel, lose a hero, open a rescue branch, or strengthen the enemy — but the campaign should usually continue.
+- **Critical missions are rare exceptions.** These are the missions where defeat truly ends the campaign, a theater, or a mini-campaign run.
+
+If a mission is critical, that must be authored and surfaced explicitly:
+
+```yaml
+missions:
+  allied_14_final_assault:
+    critical_failure: true
+    critical_failure_text: "If Moscow holds, the Allied campaign ends in defeat."
+    revealed_operations:
+      - allied_cleanup_01
+    unlocked_operations:
+      - allied_epilogue_aftermath
+    briefing_risk:
+      success_reward: "Campaign victory"
+      failure_consequence: "Campaign ends"
+```
+
+**UI rule:** A critical mission must show a visible `CRITICAL` badge on the campaign map and in the mission briefing. "Lose and retry" or "campaign ends on failure" must never be ambiguous.
+
+**Default rule:** If `critical_failure` is absent, it is treated as `false`. Campaign authors must opt in to hard failure.
+
+### Save/Load and Choice Commitment
+
+By default, D021 campaign choices are normal save/load state. IC does **not** try to prevent reload-based reconsideration in standard campaign play.
+
+Recommended first-party policy:
+
+- **Normal mode:** free saving/reloading before or after decisions
+- **Ironman / commit modes:** autosave immediately after a timed-choice selection or other branch-committing decision, and treat that branch as locked
+
+The "world moves without you" rule is about authored consequences and opportunity cost, not an anti-save-scum guarantee by itself.
+
+### Campaign Validation and Coverage
+
+Branching campaigns create a large state space. D021 content therefore needs more than a graph-shape check.
+
+`ic campaign validate` should cover three layers:
+
+1. **Graph validation** — no orphan nodes, no missing outcome targets, no impossible joins
+2. **State-coverage validation** — traverse authored outcomes, timed-choice branches, pending-rescue states, and fallback edges to confirm every consumer mission still has a legal playable state
+3. **Presentation validation** — snapshot world-screen cards and briefings so `On Success`, `On Failure`, `If Skipped`, `Time Window`, and `CRITICAL` text do not silently disappear under specific flag combinations
+
+Large campaigns should validate endgame consumers by **asset bundle** rather than brute-forcing every raw flag permutation. For example:
+
+- air-support bundle
+- partisan / theater bundle
+- prototype-tech bundle
+- unrest / sabotage bundle
+- rescue / compromise bundle
+
+The goal is to prove that every legal combination reaching a mission like `M14` still:
+
+- spawns correctly
+- exposes a coherent briefing
+- preserves the authored reward / penalty promises
+
+Generated SpecOps add one more layer:
+
+- sample every legal generated profile and run the same route / objective / duration validation used at runtime
+
+This is design-level policy, not a hard requirement on one exact CLI shape, but first-party campaigns should not ship without automated traversal and snapshot coverage.
+
+### Campaign Graph Extensions (Optional Operations)
 
 Campaign graphs are extensible — external mods can inject new mission nodes into an existing campaign's graph without modifying the original campaign files. This enables:
 
-1. **First-party expansion content** — IC ships optional "Enhanced Campaign" missions that branch off the original RA1/TD campaign graph, using IC's new mechanics (hero progression, branching, dynamic weather, asymmetric co-op) while the classic missions remain untouched
-2. **Community side missions** — Workshop authors publish side-mission packs that attach to specific points in official or community campaigns
+1. **First-party expansion content** — IC ships optional "Enhanced Campaign" operations that branch off the original RA1/TD campaign graph, using IC's new mechanics (hero progression, branching, dynamic weather, asymmetric co-op) while the classic missions remain untouched
+2. **Community optional operations** — Workshop authors publish SpecOps packs or theater-branch packs that attach to specific points in official or community campaigns
 3. **Campaign DLC pattern** — new story arcs that branch off after specific missions and rejoin (or don't) later in the original graph
 
 **How it works:** Campaign extensions use the same YAML graph format as primary campaigns but declare an `extends` field pointing to the parent campaign. The engine merges the extension graph into the parent at load time.
 
 ```yaml
-# Extension campaign — adds optional side missions to the Allied campaign
+# Extension campaign — adds optional operations to the Allied campaign
 campaign:
   id: allied_campaign_enhanced
   extends: allied_campaign               # parent campaign this extends
@@ -173,7 +283,7 @@ campaign:
 
   # New missions that attach to the parent graph
   missions:
-    # Side mission: branches off after allied_03 as an OPTIONAL path
+    # Optional SpecOps branch: branches off after allied_03
     allied_03_tanya_ops:
       extends_from:
         parent_mission: allied_03        # attach point in the parent campaign
@@ -192,12 +302,12 @@ campaign:
               tanya_ops_complete: true
               tanya_reputation: hero
         defeat:
-          next: allied_04                # still continues — side mission failure isn't campaign-ending
+          next: allied_04                # still continues — optional operation failure isn't campaign-ending
           state_effects:
             set_flag:
               tanya_ops_failed: true
 
-    # Side mission: available only if the player chose a specific path
+    # Optional SpecOps follow-up: available only if the player chose a specific path
     allied_06_spy_network:
       extends_from:
         parent_mission: allied_06
@@ -234,7 +344,7 @@ campaign:
 
 | Mode | Behavior | UX |
 |------|----------|-----|
-| `optional_branch` | Adds a new choice alongside existing outcome edges. Player can take the side mission or continue the original path. If the side mission is skipped, the original graph is unchanged | Mission select shows: "Continue to Mission 4" / "Side Mission: Tanya Ops (IC Enhanced)" |
+| `optional_branch` | Adds a new choice alongside existing outcome edges. Player can take the optional operation or continue the original path. If the branch is skipped, the original graph is unchanged unless authored flags say otherwise | Mission select shows: "Continue to Mission 4" / "SpecOps: Tanya Ops (IC Enhanced)" |
 | `alternative` | Offers an alternative version of an existing mission. Player chooses between original and enhanced. Both lead to the same next-mission targets | Mission select shows: "Mission 5 (Classic)" / "Mission 5 (Enhanced Version)" |
 | `insert_before` | Adds a new mission that must be completed before the original mission. The extension mission's victory outcome leads to the original mission | The new mission appears in the graph between the parent and its original next mission |
 | `post_campaign` | Attaches after the campaign's ending node(s). Extends the story beyond the original ending | Available after campaign completion. Shows as "Epilogue: ..." |
@@ -260,8 +370,8 @@ When this happens, the campaign map/intermission UI may show multiple available 
   ```
   Allied Campaign
     ✅ Classic missions (always on)
-    🔲 IC Enhanced Edition — optional side missions using new mechanics
-    🔲 Community: "Tanya Chronicles" by MapMaster — 5 additional commando missions
+    🔲 IC Enhanced Edition — optional operations using new mechanics
+    🔲 Community: "Tanya Chronicles" by MapMaster — 5 additional commando operations
   ```
 - Disabling an extension removes its missions from the graph. The original campaign is always playable without any extensions
 - Campaign progress (D021 `CampaignState`) tracks which extension missions were completed, so enabling/disabling extensions mid-campaign is safe — completed extension missions remain in history, and the player continues from wherever they are in the original graph
@@ -290,7 +400,7 @@ IC ships the classic RA1 Allied and Soviet campaigns faithfully reproduced (Phas
 
 **1. Counterstrike & Aftermath missions integrated into the campaign graph**
 
-The original expansion packs (Counterstrike: 16 missions, Aftermath: 18 missions) shipped as standalone, play-in-any-order mission sets with no campaign integration. The Enhanced Edition places them into the main campaign graph at chronologically appropriate points, as optional side missions:
+The original expansion packs (Counterstrike: 16 missions, Aftermath: 18 missions) shipped as standalone, play-in-any-order mission sets with no campaign integration. The Enhanced Edition places them into the main campaign graph at chronologically appropriate points, as optional operations:
 
 ```
 Classic Allied Campaign (linear):
@@ -301,11 +411,191 @@ Enhanced Edition (branching, with expansion missions woven in):
                     │              │
                     └─ CS-A03      └─ AM-A02
                     (Counterstrike  (Aftermath
-                     side mission,   side mission,
+                     optional op,    optional op,
                      optional)       optional)
 ```
 
-Some expansion missions become alternative versions of main missions (offering the enhanced IC version alongside the classic). Some become side-mission branches that the player can take or skip. A few become mandatory in the Enhanced Edition flow where they fill narrative gaps.
+Some expansion missions become alternative versions of main missions (offering the enhanced IC version alongside the classic). Some become SpecOps branches or Theater Branches that the player can take or skip. A few become mandatory in the Enhanced Edition flow where they fill narrative gaps.
+
+**Enhanced Edition optional-content taxonomy:**
+
+- **Main Operation** — the campaign backbone. Full base building, full economy, full faction expression, decisive war outcomes.
+- **SpecOps / Commando Operation** — hero-led precision mission. Used for intel theft, sabotage, tech gain or denial, faction favor, rescue, and other high-stakes interventions. Failure or skipping can worsen the campaign state.
+- **Commander-Supported SpecOps** — still a SpecOps mission, but the commander can field a **limited** support footprint: a small forward base, restricted tech, support powers, artillery, or extraction cover. It is not a full macro mission.
+- **Theater Branch** — optional secondary-front chain such as Siberia, Poland, Italy, Spain, or France. These justify themselves by opening a whole regional front, allied faction, or tech package. They should grant concrete assets; skipping them usually means no extra advantage, not baseline punishment.
+
+Generic "side mission" is not a sufficient authored category by itself. Every optional node should be written either as a SpecOps / Commando operation or as a Theater Branch with a named downstream asset.
+
+**First-party policy for SpecOps content:** Hand-authored official missions should be used once, where they fit the story best. After that, additional SpecOps content should default to **generated unique operations** rather than reusing the same authored map as a second or third branch. The authored mission is the showcase beat; the follow-up operations are generated from campaign-aware templates.
+
+#### Generated SpecOps Missions (XCOM 2-style, Deterministic)
+
+Campaigns should support **generated SpecOps missions** built from authored map kits, objective modules, and deterministic seeds. This is the preferred way to supply optional commando content beyond the one best-fit use of an official handcrafted mission.
+
+For prior-art analysis and an end-to-end proof-of-concept schema, see:
+
+- `research/generated-specops-missions-study.md`
+- [Generated SpecOps Prototype](generated-specops-prototype.md)
+
+**Design intent:**
+
+- **Hand-authored missions** are for landmark story beats, famous set pieces, final assaults, and one-time narrative reveals
+- **Generated SpecOps missions** are for repeatable or branch-variable operations: prison breaks, tech theft, radar sabotage, scientist extraction, convoy ambush, safe-house defense, counter-intelligence sweep
+- The player should feel that each available SpecOps opportunity is a fresh operation in the same war theater, not the exact same map being recycled
+
+**Authoring model:**
+
+1. **Site kits** — authored parcel libraries for mission locations such as prison compounds, radar stations, ports, rail yards, research labs, villas, command bunkers, village safe houses
+2. **Objective modules** — rescue cell block, comms terminal, reactor room, prototype crate vault, scientist office, AA control room, extraction helipad
+3. **Ingress / egress modules** — sewer entry, cliff rope point, truck gate, beach landing, rooftop insertion, tunnel exit
+4. **Security modules** — patrol graphs, alarm towers, dog pens, spotlight yards, reserve barracks, timed QRF spawn rooms
+5. **Complication modules** — power outage, wounded VIP, weather front, ticking data purge, prisoner transfer countdown, fuel fire, moving convoy
+
+The generator assembles a map from these authored pieces under strict validation rather than freeform noise-based terrain synthesis.
+
+**Modder authoring contract:** Generated SpecOps is a normal modding surface, not a first-party-only feature. Modders register authored building blocks through merged YAML registries:
+
+```yaml
+generated_site_kits:
+  soviet_coastal_radar_compound:
+    theater: greece
+    legal_families:
+      - intel_raid
+      - tech_denial
+
+generated_objective_modules:
+  steal_radar_codes:
+    family: intel_raid
+    required_sockets:
+      - command_bunker
+
+generated_complication_modules:
+  data_purge_timer:
+    families:
+      - intel_raid
+      - counter_intel
+```
+
+The builtin generator owns the base assembly pipeline. Mods extend it in three layers:
+
+- **YAML** — register site kits, objectives, ingress/egress modules, security profiles, and complication modules
+- **Lua** — filter or reweight candidate pools from campaign flags and run deterministic post-generation acceptance hooks
+- **WASM (optional, Tier 3)** — replace candidate scoring or validation for total conversions through a pure deterministic generation interface; no network/filesystem capabilities and no sim-tick coupling
+
+First-party content should be achievable with YAML + Lua. WASM is the escape hatch, not the default path.
+
+Example hook surface:
+
+```yaml
+generated_specops_profiles:
+  allied_intel_raid_t1:
+    family: intel_raid
+    lua_hooks:
+      candidate_filter: "SpecOpsGen.filter_candidates"
+      post_validate: "SpecOpsGen.post_validate"
+```
+
+```lua
+function SpecOpsGen.filter_candidates(ctx, pools)
+  if Campaign.get_flag("siberian_window_closed") then
+    pools.site_kits["snow_signal_outpost"] = nil
+  end
+  return pools
+end
+
+function SpecOpsGen.post_validate(ctx, instance)
+  return instance.validation_report.estimated_duration_minutes <= 15
+end
+```
+
+The editor / CLI validator should execute the same hooks used by runtime generation so mod authors can test the exact authored pools they ship.
+
+**Concrete generation pipeline:**
+
+```yaml
+generated_specops:
+  operation_id: allied_specops_07
+  mission_family: tech_theft
+  theater: greece
+  tileset: mediterranean_industrial
+  site_kit: soviet_research_compound
+  objective_module: prototype_vault
+  ingress_module: sewer_entry
+  egress_module: cliff_exfil
+  complication_module: data_purge_timer
+  security_tier: 3
+  seed: 1844674407370955161
+```
+
+Generation order:
+
+1. Pick **mission family** from campaign state (`intel_raid`, `tech_theft`, `tech_denial`, `rescue`, `faction_favor`, `counter_intel`)
+2. Pick a **site kit** that matches the theater and story state
+3. Place required **objective modules**
+4. Place at least two valid **ingress paths** and one valid **exfil path**
+5. Lay down **security modules** and patrol graphs
+6. Add one authored **complication module**
+7. Run validation:
+   - hero can physically reach the main objective
+   - stealth route exists if the mission advertises stealth
+   - loud route exists if the mission advertises a commander-supported assault
+   - evac path remains reachable after alarms trigger
+   - objective spacing and detection coverage meet authored bounds
+8. Persist the resulting seed + chosen modules into `CampaignState` so save/load, replay, and takeover all refer to the same generated mission
+
+**Runtime generation failure policy:** Generated missions must never dead-end the campaign. If the candidate pool is exhausted:
+
+- **Development / editor validation:** hard error, because the authored pool is insufficient
+- **Runtime for shipped content:** use the authored fallback policy attached to the operation
+
+Recommended fallback modes:
+
+- `authored_backup` — switch to a known handcrafted backup mission
+- `resolve_as_skipped` — consume the operation as missed and apply its skip effects
+
+Low-stakes optional missions may use `resolve_as_skipped`. High-stakes spotlight ops should prefer `authored_backup`.
+
+**Determinism rule:** The generated mission must be reproducible from campaign state. Same campaign seed + same operation state = same generated map. The chosen generation seed and module picks are persisted when the operation appears, not rerolled every time the player opens the briefing.
+
+**Recommended mission grammar for generated SpecOps:**
+
+| Mission Family | Primary Objective | Optional Objective | Common Failure State |
+|---|---|---|---|
+| `intel_raid` | photograph / hack / steal plans | stay undetected | enemy gains alertness, later mission loses intel route |
+| `tech_theft` | recover prototype / scientist / crate | extract secondary cache | prototype destroyed or incomplete on failure |
+| `tech_denial` | sabotage reactor / radar / lab / ammo dump | plant false intel | enemy asset survives if ignored or failed |
+| `rescue` | free hero / VIP / prisoners | recover records / gear | captive transferred, interrogation escalates |
+| `faction_favor` | save allied contact / resistance cell | secure local cache | no faction support package gained |
+| `counter_intel` | find mole / seize documents / silence informants | identify second network node | enemy keeps scouting advantage |
+
+**Map-design rules for generated SpecOps:**
+
+1. **Readable objective triangle.** The player should be able to understand ingress → target → exfil at a glance once scouting begins.
+2. **Two playstyles minimum.** Every generated SpecOps map should support a stealth-first route and a loud contingency route, even if one is clearly riskier.
+3. **One dominant complication, not five.** A timer, storm, prisoner transfer, or fuel fire is enough. Generated missions should not become procedural soup.
+4. **Short and sharp.** Generated SpecOps should usually land in a **10-15 minute target band**. `20 minutes` is the hard cap, not the default expectation.
+5. **Theater-consistent visuals.** Greece does not generate the same compounds as Poland; Spain does not look like Siberia. Site kits are theater-bound.
+6. **Rewards must stay campaign-specific.** The map is generated, but the reward and downstream consumer come from the campaign node that spawned it.
+
+**Commander-supported generated SpecOps:** When the operation advertises commander support, generation must reserve a bounded support zone with:
+
+- one limited landing zone or forward camp
+- an explicit **support-only package**, not an open-ended build tree
+- no full economy escalation
+- clear relationship to the commando route (artillery cover, extraction, diversion, repair)
+
+That keeps the generated SpecOps mission from collapsing into a normal main-operation base map.
+
+**Canonical support-only package:** Unless a profile overrides it more tightly, commander-supported SpecOps should be bounded to:
+
+- **Structures:** field HQ, power node, repair bay, medic tent, sensor post, artillery uplink, helipad / extraction pad
+- **Support powers:** recon sweep, smoke, off-map artillery, extraction beacon, emergency repair
+- **Units:** engineers, medics, transports, light APCs, and at most a few light escort vehicles
+- **Explicitly disallowed:** refinery / ore economy, heavy factory, tech center, superweapons, unlimited turret creep, heavy armor production
+
+The commander is providing support, not playing a second full macro match.
+
+**First-party Enhanced Edition usage rule:** Use the classic official mission once where it is the strongest narrative fit. If the campaign later needs "another prison break", "another spy raid", or "another sabotage op", it should spawn a generated SpecOps node in the same mission family rather than reusing the same canonical mission again.
 
 **2. IC-original missions showcasing platform capabilities**
 
@@ -390,18 +680,18 @@ When Counterstrike/Aftermath missions are played within the Enhanced Edition, th
                         │        │                                    │
   Act 1: Coastal War    │  A01 ──┤── CS-A01 (optional Counterstrike)  │
   (Classic + Expansion) │  A02 ──┤── CS-A02 (optional)                │
-                        │  A03 ──┼── IC: Dead End / operative branch   │
+                        │  A03 ──┼── IC: Dead End / SpecOps branch     │
                         │        │                                    │
   Decision Point ───────│────────┼── Choose: A04 (classic) OR         │
-                        │        │   IC: Behind Enemy Lines (spy)      │
+                        │        │   IC: Behind Enemy Lines (SpecOps)  │
                         │        │                                    │
   Act 2: Interior Push  │  A05 ──┤── AM-A01 (optional Aftermath)      │
   (Classic + Enhanced)  │  A06 ──┤── IC: Protect the Chronosphere (weather) │
-                        │  A07 ──┤── IC: Operation Skyfall (air)      │
+                        │  A07 ──┤── IC: Operation Skyfall (theater air) │
                         │        │── CS-A03 (optional)                │
                         │        │                                    │
   Decision Point ───────│────────┼── Choose: A08 (classic) OR         │
-                        │        │   IC: Evidence variant / siege      │
+                        │        │   IC: Evidence hybrid / siege       │
                         │        │                                    │
   Act 3: Final Push     │  A09 ──┤── AM-A02 (optional)                │
   (Classic + Add-ons)   │  A10 ──┤── IC: Joint Ops (co-op, D070, Phase 6b add-on) │
@@ -429,26 +719,180 @@ Campaign Settings — Allied Campaign
 
 Each sub-feature is independently toggleable. A player can enable Counterstrike integration but disable IC original missions. The campaign graph adjusts — disabled branches are hidden, and the graph reconnects through the classic path.
 
-#### Side Mission Rewards — Making Optional Content Meaningful
+#### Campaign World Screen as Strategic Layer
 
-Side missions must feed back into the main campaign in tangible, visible ways. A side mission that doesn't affect anything feels disconnected — the player notices when the world doesn't react to what they did. The goal: completing a side mission should make the player *feel* the result in the next main mission.
+For first-party narrative campaigns, the campaign map / intermission screen should do more than list the next mission. It should act as the **strategic layer** of the campaign: the place where the player understands what fronts are active, what operations are available, what is urgent, and what assets the war has already produced.
+
+This is a first-class D021 mode, not just UI dressing. The mission graph still owns legal progression, but the War Table owns the campaign-facing presentation of:
+
+- current phase
+- requisition and intel
+- command authority
+- active operations
+- enemy initiatives
+- tech / arms-race ledger
+
+The model is closer to the **XCOM globe** than to a flat mission picker:
+
+- **Main operations** anchor the campaign backbone
+- **SpecOps operations** appear as urgent, high-leverage interventions
+- **Theater branches** appear as secondary fronts with long-arc value
+- **Enemy projects** and **captured-hero crises** remain visible between missions until resolved or expired
+- **Campaign assets** (intel, prototypes, resistance favor, air packages, denied enemy tech) remain visible so the player can reason about future choices
+
+This strategic layer can be presented in multiple authoring styles:
+
+1. **Node-and-edge graph** — the default for community campaigns and compact narrative campaigns
+2. **Authored world screen / front map** — the preferred presentation for first-party Enhanced Edition campaigns, where fronts such as Greece, Siberia, Poland, Italy, Spain, or England are shown as active theaters
+3. **Full territory simulation** — D016-style world-domination campaigns that persist explicit region ownership and garrisons
+
+Regardless of presentation style, an available operation should surface the same information:
+
+- **Role tag**: `MAIN`, `SPECOPS`, `THEATER`, or another authored role
+- **Criticality**: recoverable, critical, rescue, or timed
+- **Urgency**: normal, expiring, critical, rescue, enemy project nearing completion
+- **Reward preview**: the concrete asset gained on success
+- **Operation reveal / unlock preview**: any mission cards that appear or become selectable because of this operation
+- **If ignored / if failed**: the concrete state change if the player does not act
+- **Downstream consumer**: which next mission, act, or final assault will use that asset
+
+**Example operation cards:**
+
+```yaml
+campaign_world_screen:
+  fronts:
+    - id: greece
+      status: "Sarin sites active"
+      urgency: critical
+    - id: siberia
+      status: "Window open for second front"
+      urgency: expiring
+
+  operations:
+    - mission: ic_behind_enemy_lines
+      role: specops
+      criticality: recoverable
+      reward_preview: "M6 access codes; better Iron Curtain intel"
+      reveal_preview: "Reveals Spy Network if the raid succeeds cleanly"
+      effect_detail: "Reveal the east service entrance in M6 and delay the first alarm by 90 seconds"
+      failure_consequence: "Tanya captured or M6 infiltration runs blind"
+      if_ignored: "M6 runs blind; the spy-network follow-up closes"
+      if_ignored_detail: "Tanya stays safe, but the Soviet site hardens before Act 2"
+      time_window: "Choose now or the raid window closes"
+      reveals_operations:
+        - ic_spy_network
+      consumed_by:
+        - allied_06
+        - ic_spy_network
+    - mission: cs_sarin_gas_1
+      role: specops
+      criticality: timed
+      reward_preview: "Chemical attacks denied in M8"
+      effect_detail: "No gas shelling or chemical infantry waves during the Chronosphere defense"
+      failure_consequence: "Facility not neutralized in time; M8 uses chemical attacks"
+      if_ignored: "Sarin active in Chronosphere defense"
+      if_ignored_detail: "M8 gains two gas-shell barrages and one contaminated approach lane"
+      time_window: "Available until the Act 1 timed-choice window closes"
+      consumed_by:
+        - allied_08
+    - mission: am_poland_1
+      role: theater
+      criticality: recoverable
+      reward_preview: "Super Tanks + partisan chain"
+      reveal_preview: "Reveals Poland follow-up operations if the first liberation succeeds"
+      effect_detail: "Unlock 2 Super Tanks for Act 3 and the Poland resistance follow-up chain"
+      failure_consequence: "No Poland chain rewards, but campaign continues normally"
+      if_ignored: "Poland branch closes"
+      if_ignored_detail: "No Super Tanks, no partisan reinforcements, no Poland follow-up nodes"
+      reveals_operations:
+        - am_poland_2
+        - am_poland_3
+      consumed_by:
+        - allied_12
+        - allied_14
+```
+
+The player should be able to answer, from the world screen alone: **What is happening? What can I do? What do I gain? What do I lose by waiting?**
+
+`reward_preview` and `if_ignored` are the short card headlines. First-party authored campaigns should also provide an exact-effect sentence (`effect_detail` / `if_ignored_detail`) so the player sees the real mechanical consequence, not just a slogan.
+
+For **SpecOps**, the operation card / mission briefing should show four fields together whenever possible:
+
+1. **Success reward** — what concrete asset you gain
+2. **Failure consequence** — what happens if you attempt it and fail
+3. **Skip / ignore consequence** — what happens if you do not take it at all
+4. **Time window / urgency** — whether it must be taken now, can be delayed, or can remain open indefinitely
+5. **Operation reveal / unlock** — whether success exposes a new SpecOps card, Theater Branch, or commander operation on the strategic map
+
+#### Optional Operations — Concrete Assets, Not Abstract Bonuses
+
+Optional content must feed back into the main campaign in tangible, visible ways. If an optional operation does not produce a concrete downstream asset, denial, or rescue state, it feels disconnected and should be cut.
+
+In practice, first-party Enhanced Edition content should default to:
+
+- **SpecOps / Commando Operations** for intel, tech capture, tech denial, faction favor, rescue, counter-intelligence, and commander-supported infiltration
+- **Theater Branches** only when the branch represents a whole secondary front or campaign-scale support package
+
+Every optional operation should answer five concrete questions:
+
+1. **What class is it?** `specops`, `commander_supported_specops`, or `theater_branch`
+2. **What asset or state does it produce?** Intel, tech unlock, enemy tech denial, faction favor, route access, roster unit, support package, rescue state
+3. **What exact effect does that asset have?** Not "better position" but "reveal 25% of map", "unlock 2 Super Tanks", "delay reinforcements by 180s", "open Poland chain"
+4. **Which later missions consume that asset?** Name the next mission(s), act, or branch
+5. **What happens if skipped or failed?** SpecOps can create negative state; Theater Branches normally only withhold upside
+6. **Is it time-critical or critical to campaign survival?** The player must know whether they can postpone it safely, and whether failure is recoverable
+7. **Does it reveal or unlock a follow-up operation?** If yes, the world screen should tell the player what new commander or SpecOps card appears
+
+**Concrete operation-output categories:**
+
+- **Intel Ops** — reveal routes, access codes, shroud, patrol schedules, composition, branch availability
+- **Operation-Reveal Ops** — expose hidden sites, convoys, labs, safe houses, assault windows, or regional follow-up branches that become new selectable mission cards
+- **Tech Ops** — unlock prototypes, support powers, expansion-pack units, or equipment pools
+- **Denial Ops** — prevent enemy deployment, delay superweapons, disable defenses, close enemy branches
+- **Faction Favor Ops** — gain resistance cells, defectors, scientists, naval contacts, partisans, or local guides
+- **Rescue / Recovery Ops** — retrieve captured heroes, reduce compromise level, recover stolen prototypes, save wounded rosters
 
 **Reward design principles:**
 
-1. **Specific, not generic.** "Enemy has no air support next mission" is meaningful. "+500 credits" is forgettable.
-2. **Visible consequence.** The next main mission briefing references the side mission: *"Thanks to your sabotage, Soviet air defenses are offline."* The world notices.
-3. **Real cost for skipping.** Missing a side mission means a harder next mission, a missed unit, or a closed branch — not just slightly less XP.
-4. **Cumulative bonuses.** Multiple side missions in the same act compound: spy network + radar destroyed = full intel on the enemy base layout.
-5. **Exclusive content.** Some branches/missions/units only exist if specific side missions were completed — rewards thorough players with content casual players never see.
+1. **Specific, not generic.** "Enemy has no air support next mission" is meaningful. "Better position" is too vague.
+2. **Visible consequence.** The next main mission briefing should reference the operation: *"Thanks to your sabotage, Soviet air defenses are offline."*
+3. **SpecOps can create negative state; Theater Branches usually should not.** A failed rescue or sabotage can hurt. Skipping Poland or Italy should usually just deny the extra asset.
+4. **Cumulative assets.** Spy network + radar sabotage = full battlefield intel. Resistance favor + harbor secured = naval insertion route plus reinforcements.
+5. **Exclusive content.** Some branches, units, and final approaches should exist only if specific operations were completed.
+6. **Quantify anything that changes difficulty.** Prefer "first reinforcement wave delayed 180 seconds," "2 Super Tanks added to M14," or "40% of the map revealed at mission start" over "better intel" or "harder defense."
+7. **Differentiate attempt-failure from non-selection.** A failed SpecOps raid and a skipped timed-choice branch are not always the same state; the authored card and briefing should say which consequence belongs to which.
+8. **Let SpecOps reveal commander work.** An intel raid, sabotage, or defector extraction can reveal a new commander operation card such as an interception, assault window, convoy ambush, or theater branch.
+
+#### Commander Alternatives Must Quantify Their Trade-Offs
+
+When a commando-heavy mission offers a commander-compatible path, the choice must describe the **exact downstream difference** between the precise approach and the loud one. "Less intel" or "cruder result" is not enough.
+
+```yaml
+mission_variants:
+  allied_06_iron_curtain:
+    operative:
+      reward_preview: "Steal access codes and shipping manifests"
+      effect_detail: "M7 reveals 25% of the harbor and delays the first submarine wave by 120 seconds"
+    commander:
+      reward_preview: "Destroy the Tech Center by assault"
+      effect_detail: "M7 loses the harbor reveal and delayed sub wave, but one shore battery starts already destroyed"
+```
+
+Good commander-alternative descriptions answer four things:
+
+1. **What story result is preserved?** Rescue, assassination, capture, sabotage, or destruction still happens.
+2. **What exact asset is weaker or missing?** Fewer access codes, no safe tunnel, one missed scientist, no patrol route, shorter setup time.
+3. **What exact military upside does the commander path get instead, if any?** A destroyed battery, rescued hero, intact bridgehead, or pre-cleared escort lane.
+4. **Which later mission consumes that trade-off?** Name the consumer mission and the exact effect there.
 
 **Reward categories:**
 
 ```yaml
-# Side mission outcome → main campaign effect
+# Optional operation outcome → main campaign effect
 # All implemented via existing D021 state_effects + flags + Lua
 
-# ── Direct tactical advantage ──────────────────────────────────────
-side_mission_rewards:
+# ── SpecOps / direct tactical advantage ────────────────────────────
+optional_operation_rewards:
   destroy_radar_station:
     flags:
       soviet_radar_destroyed: true
@@ -467,22 +911,28 @@ side_mission_rewards:
     main_mission_effect: "Next mission: enemy Tesla Coils and SAM sites are offline for 3 minutes"
     briefing_line: "The power grid is still down. Their base defenses are dark — move fast."
 
-# ── Roster additions (persistent units) ────────────────────────────
+# ── Theater branch / roster additions ──────────────────────────────
   rescue_engineer:
-    roster_add: [ engineer ]
+    roster_add:
+      - engineer
     main_mission_effect: "Engineer joins your roster permanently — can repair and capture"
     briefing_line: "The engineer you rescued has volunteered to join your task force."
 
   capture_prototype_tank:
-    roster_add: [ mammoth_tank_prototype, mammoth_tank_prototype ]
+    roster_add:
+      - mammoth_tank_prototype
+      - mammoth_tank_prototype
     main_mission_effect: "2 prototype Mammoth Tanks available for the final assault"
     briefing_line: "Soviet R&D won't be needing these anymore."
 
   liberate_resistance_fighters:
-    roster_add: [ resistance_squad, resistance_squad, resistance_squad ]
+    roster_add:
+      - resistance_squad
+      - resistance_squad
+      - resistance_squad
     main_mission_effect: "3 Resistance squads join as reinforcements in Act 3"
 
-# ── Intelligence & fog advantage ───────────────────────────────────
+# ── Intel, favor, and denial assets ────────────────────────────────
   establish_spy_network:
     flags:
       spy_network_active: true
@@ -494,7 +944,25 @@ side_mission_rewards:
       comms_intercepted: true
     main_mission_effect: "Enemy AI coordination disrupted — units respond slower to threats"
 
-# ── Compound bonuses (multiple side missions stack) ────────────────
+  gain_partisan_favor:
+    flags:
+      polish_resistance_favor: true
+    main_mission_effect: "Polish partisans sabotage one reinforcement rail line and send 3 infantry squads in M14"
+    briefing_line: "The resistance has committed to the final push. Their rail sabotage buys us time."
+
+  deny_super_tank_program:
+    flags:
+      soviet_super_tank_denied: true
+    main_mission_effect: "Enemy cannot field Super Tanks in the final act"
+    briefing_line: "The prototype line is in ruins. Moscow will not be deploying Super Tanks."
+
+  unlock_aftermath_prototype:
+    flags:
+      chrono_tank_salvaged: true
+    main_mission_effect: "Chrono Tank prototype added to equipment pool for Act 3"
+    briefing_line: "Our engineers restored one functional Chrono Tank from the Italian salvage yard."
+
+# ── Compound bonuses (multiple successful operations stack) ────────
   # If both spy network AND radar destroyed:
   compound_full_intel:
     requires:
@@ -504,22 +972,24 @@ side_mission_rewards:
     briefing_line: "Between our spies and the radar blackout, we see everything. They see nothing."
 
 # ── Exclusive content unlocks ──────────────────────────────────────
-  all_act1_sides_complete:
+  all_act1_specops_complete:
     requires:
-      act1_side_missions_complete: 3  # completed 3+ side missions in Act 1
+      act1_specops_complete: 3  # completed 3+ SpecOps operations in Act 1
     unlocks_mission: allied_06b_secret_path       # a mission that only exists for thorough players
     briefing_line: "Command is impressed. They're authorizing a classified operation."
 
   tanya_max_level:
-    requires_hero: { tanya: { level_gte: 4 } }
+    requires_hero:
+      tanya:
+        level_gte: 4
     unlocks_mission: tanya_solo_finale            # Tanya-only final mission variant
     briefing_line: "Tanya, you've proven you can handle this alone."
 ```
 
-**Lua implementation (reads flags set by side missions):**
+**Lua implementation (reads flags set by optional operations):**
 
 ```lua
--- Main mission setup: check what side missions the player completed
+-- Main mission setup: check what optional operations the player completed
 Events.on("mission_start", function()
   -- Direct tactical advantage
   if Campaign.get_flag("soviet_radar_destroyed") then
@@ -548,8 +1018,8 @@ Events.on("mission_start", function()
     UI.show_notification("Full battlefield intel active. All enemy positions known.")
   end
 
-  -- Roster additions from side missions appear as reinforcements
-  local rescued = Campaign.get_roster_by_flag("rescued_in_side_mission")
+  -- Roster additions from optional operations appear as reinforcements
+  local rescued = Campaign.get_roster_by_flag("rescued_in_optional_operation")
   if #rescued > 0 then
     Trigger.spawn_reinforcements_from_roster(rescued, "allied_reinforcement_zone")
     UI.show_notification(#rescued .. " units from your previous operations have joined the fight.")
@@ -557,7 +1027,7 @@ Events.on("mission_start", function()
 end)
 ```
 
-**How the briefing acknowledges side mission results:**
+**How the briefing acknowledges optional operation results:**
 
 ```yaml
 # Main mission briefing with conditional lines
@@ -574,11 +1044,13 @@ mission:
         text: "Our spy network has provided detailed positions of their defenses. You'll have partial intel."
       - flag_absent: soviet_radar_destroyed
         text: "Be warned — Soviet air support is fully operational. Expect MiG patrols."
-      - compound: { spy_network_active: true, soviet_radar_destroyed: true }
+      - compound:
+          spy_network_active: true
+          soviet_radar_destroyed: true
         text: "Between our spies and the radar blackout, we have full battlefield awareness. Press the advantage."
 ```
 
-The briefing dynamically assembles based on which side missions the player completed. A player who did everything hears good news. A player who skipped everything hears warnings. The same mission, different context — the world reacts to what you did (or didn't do).
+The briefing dynamically assembles based on which optional operations the player completed. A player who did everything hears good news. A player who skipped everything hears warnings. The same mission, different context — the world reacts to what you did (or didn't do).
 
 #### Failure as Consequence, Not Game Over (Spectrum Outcomes)
 
@@ -735,7 +1207,8 @@ pub struct RosterUnit {
 #[derive(Serialize, Deserialize, Clone)]
 pub struct CampaignState {
     pub campaign_id: CampaignId,
-    pub current_mission: MissionId,
+    pub active_mission: Option<MissionId>, // mission currently being briefed / played / debriefed; None while resting on the War Table
+    pub current_focus: CampaignFocusState,
     pub completed_missions: Vec<CompletedMission>,
     pub unit_roster: Vec<RosterUnit>,
     pub equipment_pool: Vec<EquipmentId>,
@@ -744,11 +1217,132 @@ pub struct CampaignState {
     pub flags: HashMap<String, Value>, // story flags set by Lua
     pub stats: CampaignStats,         // cumulative performance
     pub path_taken: Vec<MissionId>,   // breadcrumb trail for replay/debrief
-    pub world_map: Option<WorldMapState>, // territory state for World Domination campaigns (D016)
+    pub strategic_layer: Option<StrategicLayerState>, // first-class War Table state for campaigns that use phases / operations / initiatives
+    pub world_map: Option<WorldMapState>, // explicit strategic front / territory presentation state when a campaign persists one
 }
 
-/// Territory control state for World Domination campaigns.
-/// None for narrative campaigns; populated for strategic map campaigns.
+#[derive(Serialize, Deserialize, Clone)]
+pub enum CampaignFocusState {
+    StrategicLayer,
+    Intermission,
+    Briefing,
+    Mission,
+    Debrief,
+}
+
+/// Accepted D021 extension for phase-based campaigns.
+/// Graph-only campaigns leave this `None`.
+#[derive(Serialize, Deserialize, Clone)]
+pub struct StrategicLayerState {
+    pub current_phase: Option<CampaignPhaseState>,
+    pub completed_phases: Vec<String>,
+    pub war_momentum: i32,                    // signed campaign pressure / advantage meter
+    pub doomsday_clock: Option<u16>,          // minutes to midnight (optional urgency mechanic)
+    pub command_authority: u8,                // 0-100 gauge gating operation slots
+    pub requisition: u32,                     // War funds for operations/base upgrades
+    pub intel: u32,                           // Information currency for reveals/bonuses
+    pub operations: Vec<CampaignOperationState>,
+    pub active_enemy_initiatives: Vec<EnemyInitiativeState>,
+    pub asset_ledger: CampaignAssetLedgerState,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CampaignPhaseState {
+    pub phase_id: String,
+    pub main_mission_urgent: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CampaignOperationState {
+    pub mission_id: MissionId,
+    pub source: OperationSource,
+    pub status: OperationStatus,
+    pub expires_after_phase: Option<String>,
+    pub generated_instance: Option<GeneratedOperationState>,
+    pub generation_fallback: Option<GenerationFallbackMode>,
+}
+
+pub enum OperationSource { Authored, Generated }
+
+pub enum OperationStatus {
+    Revealed,
+    Available,
+    Completed,
+    Failed,
+    Skipped,
+    Expired,
+}
+
+/// Persisted payload for generated operations so save/load, replay, and
+/// takeover all point at the exact same authored assembly result.
+#[derive(Serialize, Deserialize, Clone)]
+pub struct GeneratedOperationState {
+    pub profile_id: String,
+    pub seed: u64,
+    pub site_kit: String,
+    pub security_tier: u8,
+    pub resolved_modules: Vec<ResolvedModulePick>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct ResolvedModulePick {
+    pub slot: String,      // objective / ingress / egress / complication / extra authored socket
+    pub module_id: String,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub enum GenerationFallbackMode {
+    AuthoredBackup { mission_id: MissionId },
+    ResolveAsSkipped,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct EnemyInitiativeState {
+    pub initiative_id: String,
+    pub status: EnemyInitiativeStatus,
+    pub ticks_remaining: u32,
+    pub counter_operation: Option<MissionId>,
+}
+
+pub enum EnemyInitiativeStatus {
+    Revealed,
+    Countered,
+    Activated,
+    Expired,
+}
+
+#[derive(Serialize, Deserialize, Clone, Default)]
+pub struct CampaignAssetLedgerState {
+    pub entries: Vec<CampaignAssetLedgerEntry>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub struct CampaignAssetLedgerEntry {
+    pub asset_id: String,
+    pub owner: AssetOwner,
+    pub state: AssetState,
+    pub quantity: u32,
+    pub quality: Option<String>,      // e.g. full / damaged / unstable / reduced_range
+    pub unlocked_in_phase: Option<String>,
+    pub consumed_by: Vec<MissionId>,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub enum AssetOwner {
+    Player,
+    Enemy,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+pub enum AssetState {
+    Acquired,
+    Partial,
+    Denied,
+}
+
+/// Explicit strategic front / territory state for campaigns that persist one.
+/// This is presentation / territory state, not a replacement for
+/// `StrategicLayerState`.
 #[derive(Serialize, Deserialize, Clone)]
 pub struct WorldMapState {
     pub map_id: String,               // which world map asset is active
@@ -835,6 +1429,8 @@ pub struct HeroProfileState {
     pub injury_state: Option<String>, // optional campaign-defined injury/debuff tag
 }
 ```
+
+`CampaignState.flags` remains the general authoring escape hatch for narrative and mission-specific state. Campaigns that adopt the War Table should not hide canonical focus, phase, generated-operation, initiative, or asset-ledger data inside arbitrary flag keys. Those live in structured campaign state so save/load, UI, validation, and replay metadata can reason about them directly.
 
 ### Campaign Progress Metadata & GUI Semantics (Branching-Safe, Spoiler-Safe)
 
@@ -965,10 +1561,18 @@ campaign:
     enabled: true
     xp_curve:
       levels:
-        - { level: 1, total_xp: 0,    skill_points: 0 }
-        - { level: 2, total_xp: 120,  skill_points: 1 }
-        - { level: 3, total_xp: 300,  skill_points: 1 }
-        - { level: 4, total_xp: 600,  skill_points: 1 }
+        - level: 1
+          total_xp: 0
+          skill_points: 0
+        - level: 2
+          total_xp: 120
+          skill_points: 1
+        - level: 3
+          total_xp: 300
+          skill_points: 1
+        - level: 4
+          total_xp: 600
+          skill_points: 1
     heroes:
       - character_id: tanya
         start_level: 1
@@ -1022,7 +1626,8 @@ campaign:
             branch: commando
             tier: 2
             cost: 1
-            requires: [dual_pistols_drill]
+            requires:
+              - dual_pistols_drill
             display_name: "Raid Momentum"
             description: "Gain temporary move speed after destroying a structure"
             unlock_effects:
@@ -1042,7 +1647,8 @@ campaign:
             branch: stealth
             tier: 2
             cost: 1
-            requires: [silent_step]
+            requires:
+              - silent_step
             display_name: "Infiltrator Clearance"
             description: "Unlocks additional infiltration dialogue/mission branches"
             unlock_effects:
@@ -1065,7 +1671,9 @@ campaign:
             branch: demolitions
             tier: 3
             cost: 2
-            requires: [satchel_charge_mk2, raid_momentum]
+            requires:
+              - satchel_charge_mk2
+              - raid_momentum
             display_name: "Chain Detonation"
             description: "Destroyed explosive objectives can trigger nearby explosives"
             unlock_effects:
@@ -1075,7 +1683,8 @@ campaign:
       - character_id: tanya
         skill_tree: tanya_commando
         start_level: 1
-        start_skills: [dual_pistols_drill]
+        start_skills:
+          - dual_pistols_drill
         death_policy: wounded
         loadout_slots:
           ability: 3
@@ -1090,12 +1699,16 @@ campaign:
           completion_choices:
             - id: field_upgrade
               label: "Field Upgrade"
-              grant_skill_choice_from: [silent_step, satchel_charge_mk2]
+              grant_skill_choice_from:
+                - silent_step
+                - satchel_charge_mk2
             - id: requisition_cache
               label: "Requisition Cache"
               grant_items:
-                - { id: remote_detonator_pack, qty: 1 }
-                - { id: intel_keycard, qty: 1 }
+                - id: remote_detonator_pack
+                  qty: 1
+                - id: intel_keycard
+                  qty: 1
 ```
 
 **Why this fits the design:** The engine core stays game-agnostic (hero progression is campaign/game-module content, not an engine-core assumption), and the feature composes cleanly with D021 branches, D038 intermissions, and D065 tutorial/onboarding flows.
@@ -1289,9 +1902,12 @@ mission:
   player:
     role: air_commander
     assets:
-      - { type: attack_helicopter, count: 4 }
-      - { type: spy_plane, count: 1 }
-      - { type: transport_chinook, count: 2 }
+      - type: attack_helicopter
+        count: 4
+      - type: spy_plane
+        count: 1
+      - type: transport_chinook
+        count: 2
     can_build: false
     resupply_point: allied_airfield    # units return here to rearm/repair
 
@@ -1358,11 +1974,18 @@ mission:
 
   player:
     hero: spy
-    squad: [ spy, saboteur, sniper ]
+    squad:
+      - spy
+      - saboteur
+      - sniper
     can_build: false
     detection_system:
       enabled: true
-      alert_levels: [ undetected, suspicious, alerted, hunted ]
+      alert_levels:
+        - undetected
+        - suspicious
+        - alerted
+        - hunted
       # Player actions affect alert level:
       # - killing guards quietly: no change
       # - explosions: +1 level
@@ -1437,7 +2060,8 @@ campaign:
     - match:
         missions_completed_gte: 3
         missions_completed_lt: 7
-        flag: { current_theater: "air_campaign" }  # optional flag condition
+        flag:
+          current_theater: "air_campaign"  # optional flag condition
       scene:
         type: video_loop
         video: "media/menu/act2_night_flight.webm"   # cockpit view, aircraft in formation
@@ -1456,7 +2080,8 @@ campaign:
     # Act 3 variant: if the bridge was destroyed
     - match:
         missions_completed_gte: 7
-        flag: { bridge_status: destroyed }
+        flag:
+          bridge_status: destroyed
       scene:
         type: shellmap
         map: "maps/menu_scenes/act3_ruins.yaml"       # different scene — bombed-out bridge
@@ -1464,7 +2089,8 @@ campaign:
 
     # Final act: victory aftermath
     - match:
-        flag: { campaign_complete: true }
+        flag:
+          campaign_complete: true
       scene:
         type: static_image
         image: "media/menu/victory_sunrise.png"
@@ -1490,14 +2116,19 @@ campaign:
 
 | Condition | Type | Description |
 |-----------|------|-------------|
+| `campaign_focus` | string | `CampaignState.current_focus` matches `strategic_layer`, `intermission`, `briefing`, `mission`, or `debrief` |
 | `missions_completed_lt` | integer | Current `CampaignState.completed_missions.len()` < value |
 | `missions_completed_gte` | integer | Current `CampaignState.completed_missions.len()` >= value |
-| `current_mission` | string | `CampaignState.current_mission` matches this mission ID |
+| `active_mission` | string | `CampaignState.active_mission` matches this mission ID |
+| `current_phase` | string | `CampaignState.strategic_layer.current_phase.phase_id` matches this phase ID |
+| `operation_status` | map | A named operation matches a status such as `available`, `completed`, `failed`, `skipped`, or `expired` |
+| `initiative_status` | map | A named enemy initiative matches `revealed`, `countered`, `activated`, or `expired` |
+| `asset_state` | map | Asset-ledger entry matches a requested state / quality / quantity tuple (for example `chrono_tank: { state: partial, quality: damaged, quantity_gte: 1 }`) |
 | `flag` | map | All specified flags match their values in `CampaignState.flags` |
 | `hero_level_gte` | map | Hero character's level >= value (e.g., `{ tanya: 3 }`) |
 | `{}` (empty) | — | Matches everything — use as fallback |
 
-Conditions are evaluated **in order**; the first matching entry wins. This allows flag-based branching: the bridge-destroyed variant (with its `flag: { bridge_status: destroyed }` condition) is listed before the generic Act 3 entry, so it takes priority when the flag is set.
+Conditions are evaluated **in order**; the first matching entry wins. This allows both classic flag-based branching and structured strategic-layer branching: a bridge-destroyed variant can still key off `flag: { bridge_status: destroyed }`, while a late-war scene can key off `current_phase`, `initiative_status`, or a specific `asset_state`.
 
 **Workshop support:** Community campaigns published via Workshop include their `menu_scenes` table and all referenced assets (videos, images, shellmap maps/scripts). The Workshop packaging system (D049) bundles scene assets as part of the campaign package. The SDK Campaign Editor (D038) provides a "Menu Scenes" panel for authoring and previewing scenes per campaign stage.
 
@@ -1534,6 +2165,28 @@ if Campaign.get_stat("total_units_lost") > 50 then
     trigger_reinforcements()
 end
 
+-- Read structured strategic-layer state
+local phase = Campaign.get_phase()
+local spy_network = Campaign.get_operation_state("ic_spy_network")
+local lazarus = Campaign.get_initiative_state("project_lazarus")
+local chrono_tank = Campaign.get_asset_state("chrono_tank")
+
+if phase and phase.phase_id == "phase_6" then
+    UI.show_notification("Final-act operations are now live.")
+end
+
+if spy_network and spy_network.status == "available" then
+    UI.show_notification("Spy Network has been revealed on the War Table.")
+end
+
+if lazarus and lazarus.status == "revealed" then
+    UI.show_notification("Project Lazarus is advancing. Counter it soon.")
+end
+
+if chrono_tank and chrono_tank.state == "partial" then
+    UI.show_notification("Chrono Tank restored in damaged condition. Temporal shift unavailable.")
+end
+
 -- === Writing campaign state ===
 
 -- Signal mission completion with a named outcome
@@ -1548,6 +2201,27 @@ end
 -- Set custom flags for future missions to read
 Campaign.set_flag("captured_radar", true)
 Campaign.set_flag("enemy_morale", "broken")
+
+-- Reveal or unlock follow-up operations on the War Table
+Campaign.reveal_operation("ic_spy_network")
+Campaign.unlock_operation("chrono_convoy_intercept")
+
+-- Update structured strategic-layer state without burying it in generic flags
+Campaign.mark_initiative_countered("chemical_weapons_deployment")
+Campaign.set_operation_status("ic_behind_enemy_lines", "completed")
+Campaign.set_asset_state("chrono_tank", {
+    owner = "player",
+    state = "partial",
+    quantity = 1,
+    quality = "damaged",
+    consumed_by = { "allied_12", "allied_14" },
+})
+Campaign.set_asset_state("super_tanks", {
+    owner = "enemy",
+    state = "denied",
+    quantity = 0,
+    consumed_by = { "allied_14" },
+})
 
 -- Update roster: mark which units survived
 -- (automatic if carryover mode is "surviving" — manual if "selected")
@@ -1568,6 +2242,8 @@ function OnPlayerBaseDestroyed()
     Campaign.complete("defeat")  -- campaign graph decides what happens next
 end
 ```
+
+**Structured-state rule:** `Campaign.set_flag()` remains correct for bespoke narrative markers (`bridge_status`, `commander_recovered`, `scientist_betrayed`). Use the strategic helpers for canonical War Table state (`phase`, `operation status`, `initiative status`, `asset ledger`) so authors do not have to reverse-engineer first-party systems from arbitrary flag names.
 
 #### Hero progression helpers (optional built-in toolkit)
 
@@ -1606,7 +2282,11 @@ adaptive:
   # If player lost the previous mission, give them extra resources
   on_previous_defeat:
     bonus_resources: 2000
-    bonus_units: [medium_tank, medium_tank, rifle_infantry, rifle_infantry]
+    bonus_units:
+      - medium_tank
+      - medium_tank
+      - rifle_infantry
+      - rifle_infantry
   # If player blitzed the previous mission, make this one harder
   on_previous_fast_victory:    # completed in < 50% of par time
     extra_enemy_waves: 1
@@ -1663,7 +2343,7 @@ campaign:
   persistent_state:
     unit_roster: false           # no carryover for tutorial missions
     custom_flags:
-      mechanics_learned: []      # tracks which mod mechanics the player has used
+      mechanics_learned: []      # explicit empty list is intentional here
 
   missions:
     se_01:
@@ -1673,11 +2353,17 @@ campaign:
         pass:
           next: se_02
           state_effects:
-            append_flag: { mechanics_learned: [flamethrower, fire_spread] }
+            append_flag:
+              mechanics_learned:
+                - flamethrower
+                - fire_spread
         skip:
           next: se_02
           state_effects:
-            append_flag: { mechanics_learned: [flamethrower, fire_spread] }
+            append_flag:
+              mechanics_learned:
+                - flamethrower
+                - fire_spread
 
     se_02:
       map: missions/scorched-tutorial/02-controlled-burn
@@ -1686,12 +2372,17 @@ campaign:
         pass:
           next: se_03
           state_effects:
-            append_flag: { mechanics_learned: [firebreak, extinguish] }
+            append_flag:
+              mechanics_learned:
+                - firebreak
+                - extinguish
         struggle:
           next: se_02  # retry the same mission with more resources
           adaptive:
             on_previous_defeat:
-              bonus_units: [fire_truck, fire_truck]
+              bonus_units:
+                - fire_truck
+                - fire_truck
         skip:
           next: se_03
 
@@ -1702,7 +2393,9 @@ campaign:
         pass:
           next: se_04
           state_effects:
-            append_flag: { mechanics_learned: [incendiary_airstrike] }
+            append_flag:
+              mechanics_learned:
+                - incendiary_airstrike
         skip:
           next: se_04
 
@@ -1804,7 +2497,8 @@ hints:
       mastery_threshold: 2
       cooldown_seconds: 120
       max_shows: 5
-    experience_profiles: [all]
+    experience_profiles:
+      - all
     priority: high
     position: near_building
     eva_line = se_fire_warning

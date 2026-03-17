@@ -8,7 +8,7 @@
 
 | Mode                           | What You Get                                                                                                                                                                                                                                                  |
 | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Campaign (Allied + Soviet)** | All original Red Alert missions fully playable with branching outcomes, unit roster persistence, veterancy carry-over, and optional hero progression (D021)                                                                                                   |
+| **Campaign (Allied + Soviet)** | All original Red Alert missions fully playable in classic and Enhanced modes: branching outcomes, unit roster persistence, veterancy carry-over, optional hero progression, and an optional War Table with operations, enemy initiatives, timed choices, and a dynamic arms race (D021) |
 | **Skirmish vs AI**             | Up to 8 players/AI on any map; named AI Commanders with portraits, agendas, and taunts (D043); AI difficulty (Easy–Brutal); mix different commander personalities in the same match                                                                           |
 | **Ranked Multiplayer**         | Glicko-2 rating with seasonal tiers (Conscript → Supreme Commander), per-queue ratings (1v1, 2v2, FFA), map veto system, placement matches, escalating cooldowns (D055)                                                                                       |
 | **Casual Multiplayer**         | Game browser, Among Us-style room codes (IRON-XXXX), QR join for LAN/streaming, Discord/Steam deep links, auto-download missing mods on join (D030)                                                                                                           |
@@ -46,6 +46,14 @@ IC doesn't force one way to play. Every axis is independently composable:
 - Remastered Collection
 - IC Default (patched once per ranked season based on telemetry)
 - Custom (player-editable YAML)
+
+**Subfaction Selection (proposed — under research):**
+- **Allies pick a nation** — England, France, Germany, Greece — each with a thematic passive and one tech tree modification reflecting their alternate-timeline military tradition
+- **Soviets pick an institution** — Red Army, NKVD, GRU, Soviet Science Bureau — competing power structures within the totalitarian state, each with a distinct playstyle identity
+- Narrative asymmetry (countries vs. institutions) with mechanical symmetry (both sides get 1 passive + 1 tech tree mod) — reasonable balance overhead
+- Classic preset uses original RA1 country bonuses (5 countries, 10% passives); IC Default uses the expanded 4×4 system; Custom/modded subfactions via YAML inheritance
+- Community can add new countries or institutions via Tier 1 YAML modding (no code required)
+- See `research/subfaction-country-system-study.md` for full design rationale and industry research. Requires D019 integration and community feedback before formal adoption
 
 **Experience Profiles (D033):**
 - Vanilla RA, OpenRA, Remastered, or Iron Curtain — each bundles balance + theme + QoL + AI + pathfinding + render mode
@@ -184,14 +192,19 @@ XCC Mixer replacement with visual editing — no command-line tools needed:
 
 ### Campaign System (D021)
 
-- **Branching graph structure** — missions linked by named outcomes, not linear lists
+- **Branching graph backbone** — missions linked by named outcomes, not linear lists
+- **Optional strategic layer / War Table** — phase-based campaign wrapper that presents operations, enemy initiatives, and urgency between milestone missions
+- **Operations as a distinct campaign tier** — main missions, SpecOps, theater branches, generated operations, and follow-up reveals all use the same campaign graph foundation
+- **Timed strategic choices** — `decision` nodes plus `unchosen_effects` let the world move without you
+- **Arms race / tech ledger** — campaign-visible acquisition / denial state that changes later missions and endgame composition
+- **Operational budgets and phase pressure** — players cannot run every operation before the main mission becomes urgent
 - **Multiple outcomes per mission** — win/loss/partial each branch differently
 - **No mandatory game-over** — designer controls what happens on defeat (retry, fallback, consequences)
 - **Unit roster persistence** — surviving units carry forward with veterancy, kills, equipment
-- **Campaign variables** — Lua-accessible flags, counters, and state that persist across missions
+- **Campaign variables** — Lua-accessible flags, counters, and state that persist across missions; strategic-layer campaigns also get first-class phase / initiative / ledger state
 - **Hero progression** (optional) — XP, levels, skill trees, loadouts per named character
-- **Intermission screens** — Hero Sheets, Skill Choice, Armory/Loadout between missions
-- **Campaign Graph Editor** in SDK — visual node-and-edge editing, drag missions, label outcomes, validate branches
+- **Intermission / War Table screens** — Hero Sheets, Skill Choice, Armory/Loadout, operation cards, and strategic readouts between missions
+- **Campaign Graph Editor** in SDK — visual node-and-edge editing, drag missions, label outcomes, author phase metadata, validate branches
 
 ### Export to Other Engines (D066)
 
@@ -316,7 +329,7 @@ IC is not hardcoded for Red Alert. The `GameModule` trait defines everything gam
 | Capability                       | OpenRA                        | Remastered          | **Iron Curtain**                                         |
 | -------------------------------- | ----------------------------- | ------------------- | -------------------------------------------------------- |
 | Open source                      | Yes                           | No                  | Yes                                                      |
-| Branching campaigns              | No                            | No                  | **Yes (D021)**                                           |
+| Branching campaigns              | No                            | No                  | **Yes — fail-forward graph + optional War Table (D021)** |
 | Balance presets (switchable)     | No (one balance)              | No                  | **Yes — Classic/OpenRA/Remastered/IC/Custom (D019)**     |
 | Relay server (no host advantage) | No (P2P)                      | No (P2P)            | **Yes (D007)**                                           |
 | Ranked matchmaking               | Community                     | No                  | **Built-in Glicko-2 (D055)**                             |

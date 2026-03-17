@@ -54,6 +54,7 @@
   - [Resource Packs](modding/resource-packs.md)
   - [Campaign System](modding/campaigns.md)
     - [Enhanced Edition Campaign Plan](modding/enhanced-campaign-plan.md)
+    - [Generated SpecOps Prototype](modding/generated-specops-prototype.md)
   - [Workshop](modding/workshop.md)
     - [Workshop Features](modding/workshop-features.md)
     - [Workshop Moderation](modding/workshop-moderation.md)

@@ -204,12 +204,17 @@ Units moving, shooting, dying — headless sim + rendered. Record replay file. P
 - WASM mod runtime (basic)
 - Basic skirmish AI: harvest, build, attack patterns
 - Campaign mission loading (OpenRA mission format)
-- **Branching campaign graph engine (D021):** campaigns as directed graphs of missions with named outcomes, multiple paths, and convergence points
-- **Persistent campaign state:** unit roster carryover, veterancy across missions, equipment persistence, story flags — serializable for save games
+- **Branching campaign graph engine + strategic layer (D021):** campaigns as directed graphs of missions with named outcomes, multiple paths, and convergence points; Enhanced Edition campaigns can wrap that graph in a phase-based War Table with operations, enemy initiatives, Requisition, and Command Authority
+- **Persistent campaign state:** unit roster carryover, veterancy across missions, equipment persistence, story flags, campaign phases, operation availability, enemy initiatives, and arms-race / tech-ledger state — serializable for save games
 - **Lua Campaign API:** `Campaign.complete()`, `Campaign.get_roster()`, `Campaign.get_flag()`, `Campaign.set_flag()`, etc.
 - **Continuous campaign flow:** briefing → mission → debrief → next mission (no exit-to-menu between levels)
-- **Campaign select and mission map UI:** visualize campaign graph, show current position, replay completed missions
+- **Campaign select, mission map, and War Table UI:** visualize campaign graph, show current position, replay completed missions, surface operation cards, enemy initiatives, urgency, and arms-race readouts
+- **Operations as a distinct campaign content tier:** main missions, SpecOps, theater branches, and generated operations share one graph / state model
+- **Enemy Initiatives system:** authored strategic threats that advance between operations and resolve with concrete downstream effects if uncountered
+- **Timed strategic choice nodes:** `decision` windows plus `unchosen_effects` so the world moves without the player
+- **Arms race / tech acquisition-denial tracking:** campaign-visible ledger that determines which prototypes, support powers, and enemy programs reach later missions
 - **Adaptive difficulty via campaign state:** designer-authored conditional bonuses/penalties based on cumulative performance
+- **Subfaction system — campaign theater bonuses (proposed — contingent on subfaction adoption):** Allied campaign operations grant temporary theater bonuses echoing country passives (Greece → partisans, North Sea → UK naval bonus); Soviet missions carry institutional flavor (NKVD suppression → conscripts, GRU intelligence → recon assets). Uses the same YAML bonus definitions as multiplayer subfactions. See `research/subfaction-country-system-study.md`
 - **Campaign dashboard (D034):** Roster composition graphs per mission, veterancy progression for named units, campaign path visualization, performance trends — from SQLite `campaign_missions` + `roster_snapshots`
 - **`ic-ai` reads player history (D034):** Skirmish AI queries SQLite `matches` + `gameplay_events` for difficulty scaling, build order variety, and counter-strategy selection between games
 - **Player style profile building (D042):** `ic-ai` aggregates `gameplay_events` into `PlayerStyleProfile` per player; `StyleDrivenAi` (AiStrategy impl) mimics a specific player's tendencies in skirmish; "Challenge My Weakness" training mode targets the local player's weakest matchups; `player_profiles` + `training_sessions` SQLite tables; progress tracking across training sessions
@@ -225,10 +230,11 @@ Units moving, shooting, dying — headless sim + rendered. Record replay file. P
 - Lua sandbox with engine bindings
 - WASM host API with capability system (see `06-SECURITY.md`)
 - Campaign graph loader + validator: parse YAML campaign definitions, validate graph connectivity (no orphan nodes, all outcome targets exist)
-- `CampaignState` serialization: roster, flags, equipment, path taken — full snapshot support
+- Strategic-layer resolver: phase budgets, operation reveals, enemy-initiative advancement, and tech-ledger updates between missions
+- `CampaignState` serialization: roster, flags, equipment, path taken, phase state, operation state, enemy initiatives, and arms-race ledger — full snapshot support
 - Unit carryover system: 5 modes (`none`, `surviving`, `extracted`, `selected`, `custom`)
 - Veterancy persistence across missions
-- Mission select UI with campaign graph visualization and difficulty indicators
+- Mission select / War Table UI with campaign graph visualization, operation cards, enemy-initiative lane, urgency indicators, and difficulty indicators
 - **`ic` CLI prototype:** `ic mod init`, `ic mod check`, `ic mod run` — early tooling for Lua script development (full SDK in Phase 6a)
 - **`ic profile` CLI (D062):** `ic profile save/list/activate/inspect/diff` — named mod compositions with switchable experience settings; modpack curators can save and compare configurations; profile fingerprint enables replay verification
 - **Minimal Workshop (D030 early delivery):** Central IC Workshop server + `ic mod publish` + `ic mod install` + basic in-game browser + auto-download on lobby join. Simple HTTP REST API, SQLite-backed. No federation, no replication, no promotion channels yet — those are Phase 6a
@@ -238,6 +244,7 @@ Units moving, shooting, dying — headless sim + rendered. Record replay file. P
 - Can play through **all** Allied and Soviet campaign missions start to finish
 - Campaign branches work: different mission outcomes lead to different next missions
 - Unit roster persists across missions (surviving units, veterancy, equipment)
+- Enhanced Edition strategic layer works: phases, operations, enemy initiatives, and arms-race state all persist and affect downstream missions
 - Save/load works mid-campaign with full state preservation
 - Skirmish AI provides a basic challenge
 
@@ -254,6 +261,7 @@ Units moving, shooting, dying — headless sim + rendered. Record replay file. P
 - `CommunityBridge` for shared server browser with OpenRA and CnCNet
 - **Foreign replay import (D056):** `OpenRAReplayDecoder` and `RemasteredReplayDecoder` in `ra-formats`; `ForeignReplayPlayback` NetworkModel; `ic replay import` CLI converter; divergence tracking UI; automated behavioral regression testing against foreign replay corpus
 - **Ranked matchmaking (D055):** Glicko-2 rating system (D041), 10 placement matches, YAML-configurable tier system (Cold War military ranks for RA: Conscript → Supreme Commander, 7+2 tiers × 3 divisions = 23 positions), 3-month seasons with soft reset, dual display (tier badge + rating number), faction-specific optional ratings, small-population matchmaking degradation, map veto system
+- **Subfaction selection in multiplayer lobby (proposed — pending formal adoption via D019):** Allies pick a nation (England, France, Germany, Greece), Soviets pick an institution (Red Army, NKVD, GRU, Science Bureau) — each with one thematic passive + one tech tree mod. Classic preset uses RA1's original 5-country 10% passives. Starts as casual/skirmish only; promoted to ranked after one full season of balance telemetry confirms no subfaction exceeds 55% win rate. Community subfactions via YAML Workshop. See `research/subfaction-country-system-study.md`
 - **Leaderboards:** global, per-faction, per-map — with public profiles and replay links
 - **Observer/spectator mode:** connect to relay with configurable fog (full/player/none) and broadcast delay
 - **Tournament mode:** bracket API, relay-certified `CertifiedMatchResult`, server-side replay archive

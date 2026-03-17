@@ -10,7 +10,7 @@ This is the concrete content plan for IC's first-party "Enhanced Edition" campai
 
 ## Campaign Design Rules
 
-These rules govern how the Enhanced Edition missions are designed. They address problems in the original campaigns — awkward character introductions, unexplained difficulty spikes, disconnected side missions — and establish IC's standard for campaign quality.
+These rules govern how the Enhanced Edition missions are designed. They address problems in the original campaigns — awkward character introductions, unexplained difficulty spikes, disconnected optional operations — and establish IC's standard for campaign quality.
 
 ### Rule 1: No Awkward Character Introductions
 
@@ -25,6 +25,10 @@ The original RA1 cutscenes often introduced characters with a "am I supposed to 
 | **Einstein** | Appears as a rescue target in M1 but the player has no emotional connection to him | IC prologue includes a brief Einstein moment — his voice on a radio transmission during the Fall of Greece, explaining what the Soviets are building. The player knows his voice before rescuing him |
 | **Volkov** (Soviet) | Appears in a CS expansion mission with no setup | Player meets Volkov in the Soviet prologue mission (Awakening) before the CS missions |
 | **Kosygin** (M9) | Soviet defector — the player is told to rescue someone they've never heard of | IC adds intel references to Kosygin in earlier missions (intercepted communications, spy reports). By M9, the player knows who he is and why he matters |
+
+**Character voice and personality profiles:** Each named character has an MBTI-based personality profile that governs their dialogue style, decision-making patterns, and interpersonal dynamics. Einstein (INTP) speaks in conditional precision and retreats into analysis under stress; Tanya (ESTP) is action-first with impatience for briefings; Stavros (ENFJ) rallies through moral conviction; Von Esling (ISTJ) delivers by-the-book procedure; Stalin (ENTJ) commands through strategic dominance; Nadia (INTJ) operates through long-game calculation; Volkov (ISFJ with suppressed warmth) follows duty with buried humanity; Kukov (ESTJ) enforces through blunt hierarchy. These profiles ensure consistent characterization across briefings, War Table dialogue, and LLM-generated content. See `research/character-mbti-bible.md` for full profiles, pair dynamics, and scene applications.
+
+**Alternate-timeline lore reference:** All campaign content must respect IC's alternate timeline where Einstein erases Hitler in 1924. A detailed 22-year vacuum timeline (1924–1946) covering the immediate aftermath, Stalin's consolidation, the complacency period, what doesn't happen (no WWII, no Holocaust, no NATO, no UN, no Manhattan Project), and the breaking point that triggers the Soviet invasion is documented in `research/strategic-campaign-layer-study.md` § "The 22-Year Vacuum Period — Show Bible Timeline." This timeline is the canonical reference for briefing writers, mission designers, and LLM narrative generation.
 
 ### Rule 2: Progressive Difficulty and Mechanics Teaching
 
@@ -42,7 +46,9 @@ The original RA1 campaign has inconsistent difficulty — some early missions ar
 | [M3] "Dead End" | Medium | Bridge destruction, terrain objectives, stealth | Tanya-focused mission — player is now comfortable with hero gameplay |
 | [M4] "Ten to One" | Medium-Hard | Full base defense, counterattack | First genuinely hard mission — but by now the player has 6+ missions of experience |
 
-**Side missions are exempt from this curve.** Optional content (Counterstrike, Aftermath, IC side missions) can be any difficulty — the player chooses to take them. A warning label in the mission select indicates difficulty: "This is a challenging optional mission."
+**Optional operations are exempt from this curve.** Counterstrike, Aftermath, SpecOps, and Theater Branch content can be any difficulty — the player chooses to take them. A warning label in the mission select indicates difficulty: "This is a challenging optional mission."
+
+**Difficulty stars are UI shorthand, not the design itself.** First-party missions should back those labels with concrete pressure levers: enemy wave count, starting-force deficit, timer length, visible approach lanes, weather timing, or available support powers. When an optional operation changes difficulty later, the plan should name the exact lever it moves, not just say "harder" or "easier."
 
 **New IC mechanics are introduced through gameplay, not text:**
 - **Hero progression:** Introduced in prologue (Tanya: First Blood). The player earns skill points and sees the skill tree for the first time in a low-stakes mission
@@ -66,12 +72,12 @@ missions:
     type: decision                            # standard D021 decision node
     prompt: "Command has identified three urgent situations. We can only respond to one."
     choices:
-      - label: "Rescue Operation — Tanya"
-        description: "Tanya's team has gone silent. Send a rescue force now."
+      - label: "Iron Curtain Raid — Tanya"
+        description: "Authorize Tanya's raid on a Soviet facility before the window closes."
         next: ic_behind_enemy_lines
         unchosen_effects:                     # applied if NOT chosen
           set_flag:
-            tanya_captured: true             # Tanya captured off-screen
+            iron_curtain_window_missed: true # site hardens; no raid, no rescue branch
       - label: "Chemical Threat — Greece"
         description: "Soviet Sarin gas facilities detected. Neutralize before they go active."
         next: cs_sarin_gas_1
@@ -86,16 +92,21 @@ missions:
             siberian_window_closed: true    # arc permanently closed
 ```
 
-The `unchosen_effects` field is the one extension to D021's existing decision node: when the player picks one option, all other options' `unchosen_effects` are applied automatically. This is a small addition to the campaign YAML schema (a few lines in the decision node handler), not a new primitive. The flags are read by subsequent mission Lua scripts via `Campaign.get_flag()` as documented in § Side Mission Rewards.
+The `unchosen_effects` field is the one extension to D021's existing decision node: when the player picks one option, all other options' `unchosen_effects` are applied automatically. This is a small addition to the campaign YAML schema (a few lines in the decision node handler), not a new primitive. The flags are read by subsequent mission Lua scripts via `Campaign.get_flag()` as documented in `modding/campaigns.md` § Optional Operations — Concrete Assets, Not Abstract Bonuses.
 
 **Design rules for timed choices:**
 
-1. **Never more than 3 options.** The player can process three choices; more creates decision paralysis
+1. **Never more than 3 live options.** The player can process three choices; more creates decision paralysis
 2. **All options are good; the loss is opportunity cost.** No "trap" choice. Each has clear value. The tension is what you DON'T get
-3. **Consequences are visible and referenced.** If Tanya gets captured because you chose Siberia, the M5 briefing says so. If Sarin goes active because you chose Tanya, M8 is harder and the briefing explains why
+3. **Consequences are visible and referenced.** If Behind Enemy Lines fails and Tanya is captured, the M5 briefing says so. If Sarin goes active because you chose Tanya, M8 is harder and the briefing explains why
 4. **Main campaign is never blocked.** The timed choice affects difficulty and available content, never whether the player can continue
 5. **Placed between acts, not mid-mission.** Timed choices appear in the campaign map/intermission screen, not during gameplay. The player has time to think
 6. **2-3 per campaign maximum.** Too many and the mechanic loses weight. Each timed choice should feel momentous
+7. **2 live options are acceptable if one slot was already resolved earlier.** The world screen should show that slot as `ALREADY SECURED` or `WINDOW CLOSED`, not invent filler content just to keep the count at three
+
+**Briefing rule for timed SpecOps:** Before mission launch, the player should see four separate disclosures on the operation card or mission briefing: `On Success`, `On Failure`, `If Skipped`, and `Time Window`. The player is weighing operations, not guessing hidden consequences.
+
+**Save/load policy:** Normal first-party campaigns allow free saving and reloading around timed choices; the "world moves without you" rule is a campaign-fiction / consequence model, not an anti-save-scum guarantee. `Ironman` or other commit modes should autosave immediately after a timed-choice selection and treat that branch as locked.
 
 **Timed choice placement in Allied Enhanced Edition:**
 
@@ -105,149 +116,145 @@ The `unchosen_effects` field is the one extension to D021's existing decision no
 | M9 → M10 | Poland liberation / Aftermath Italy / IC air campaign | "Where do we push next?" |
 | M12 → M14 | Final prep choice — one last operation before Moscow | "One more shot before the endgame" |
 
-### Rule 4: Optional Content Has Real Stakes
+### Rule 3A: The Campaign Map Must Be a Strategic Layer
 
-If the player doesn't get involved in Tanya's mission, she gets captured. If the player doesn't neutralize the Sarin facilities, chemical weapons appear in later missions. This is the core Enhanced Edition promise: **side content matters because skipping it has consequences.**
+The original Red Alert world screen has more potential than a simple mission picker. IC should treat it as one of the campaign's most important systems: the place where the player reads the war, not just where they click "next."
 
-But the inverse must also be true: **completing side content must visibly improve the main campaign.** This is covered in § Side Mission Rewards — the briefing references what the player did or didn't do, the next mission is harder or easier, unique units and abilities appear or don't.
+For the Enhanced Edition, the campaign map / intermission screen should function like the strategic layer in XCOM:
 
-The worst design sin: optional content that exists in a vacuum. If a side mission has no effect on the main campaign — if completing it and skipping it produce identical experiences — it shouldn't be in the Enhanced Edition.
+- it shows which fronts are active
+- it shows which operations are currently available
+- it shows which ones are urgent or expiring
+- it shows what assets the player already owns
+- it shows what enemy project is advancing if ignored
 
-### Rule 5: Two Lanes — Commander (Mandatory) and Operative (Optional)
+If a timed choice, rescue branch, theater front, or prototype race matters, the player should see that **on the world screen before launching the next mission**.
 
-The Enhanced Edition campaign has two parallel gameplay lanes:
+**What the world screen should surface in the Enhanced Edition:**
 
-| Lane | Player Role | Gameplay | Mandatory? | Example |
-|------|-----------|----------|------------|---------|
-| **Commander Lane** | Strategic commander | Base building, army management, combined-arms warfare | **Always mandatory** — these ARE the campaign | M1, M2, M4, M7, M8, M12, M14 |
-| **Operative Lane** | Tanya / Volkov | Commando missions, hero abilities, stealth, infiltration, task force ops | **Optional (recommended)** — side missions that reward the main campaign | Behind Enemy Lines, Evidence: Enhanced, Spy Network, Operation Skyfall |
+1. **Strategic Resources** — Requisition (War Funds), Intel, and Command Authority (gates operation slots)
+2. **The Doomsday Clock** — A single visual indicator of Soviet momentum, crossing threshold rings (Green/Yellow/Orange/Red) that alter briefing tones, income, and M14 difficulty
+3. **Front status** — The map visually updates front lines based on choices. Greece under chemical threat, Siberian window open, Poland resistance active
+4. **Operation cards** — each available node shows a role tag (`MAIN`, `SPECOPS`, `THEATER`, `RESOURCE`, `DEFECTOR`), a one-line reward preview, and a one-line consequence
+5. **Urgency markers** — rescue pending, enemy initiative advancing if ignored, expiring theater window
+6. **Investment & Infrastructure** — The player's chosen Command Doctrine, active Research Lab projects (funded with Requisition), and Forward Operating Base (FOB) upgrades
+7. **Asset ledger** — captured prototypes, partisan favor, spy network, air package, denied enemy tech, rescued hero status
+8. **Downstream consumers** — the card should tell the player which later mission or act uses the asset
+
+*Note: For the full specification of these strategic mechanics, see `research/campaign-strategic-depth-study.md`.*
+
+**Concrete card examples for the Allied campaign:**
+
+| Operation | Role | Reward Preview | If Ignored | Consumed By |
+|---|---|---|---|---|
+| `Behind Enemy Lines` | `SPECOPS` | `M6 access codes; Iron Curtain intel; reveals Spy Network` | `Raid window closes; M6 runs blind` | `M6`, `Spy Network` |
+| `Crackdown` | `SPECOPS` | `No Sarin attacks in M8` | `Chemical attacks in Chronosphere defense` | `M8` |
+| `Fresh Tracks` | `THEATER` | `Unlock Siberian front` | `Siberian window closes` | `Act 3`, `M14` |
+| `Monster Tank Madness` | `THEATER` | `2 Super Tanks; Poland chain opens` | `No Super Tanks; Poland closed` | `M12`, `M14` |
+
+This is what makes the campaign map worthy of attention. The player is not choosing between abstract branches. They are deciding which war problem to solve next.
+
+### Rule 4: Optional Content Must Produce Concrete Campaign Assets
+
+Optional content is not a generic "side mission" bucket. In the Enhanced Edition, every optional node must either:
+
+- **solve a high-stakes problem through SpecOps / Commando play**, or
+- **open a real Theater Branch** with a concrete downstream asset chain
+
+That means optional content must answer, in plain language:
+
+1. **What do we gain?** Intel, tech, denial, faction favor, rescue, route access, prototype roster, air/naval support
+2. **What exact effect does that gain have?** Reveal patrol routes, unlock Super Tanks, deny chemical attacks, add resistance reinforcements, delay enemy waves, open Poland/Italy/Siberia
+3. **Who consumes it later?** Name the next mission, act, or endgame branch
+4. **What new operation does it reveal or unlock?** A successful SpecOps raid can surface a new commander assault, convoy intercept, or theater branch on the world screen
+
+The worst design sin is optional content that exists in a vacuum. If a mission has no visible downstream effect, it should not be in the Enhanced Edition.
+
+**SpecOps stakes rule:** Optional SpecOps may absolutely matter if skipped or failed. Tanya can be captured. Sarin can go live. A prototype can be lost to the enemy. This is where the campaign baseline can change.
+
+**SpecOps reveal rule:** SpecOps should often change **what missions exist next**, not just how hard existing missions are. Intel theft, rescued defectors, planted charges, and stolen schedules can reveal fresh commander operations on the strategic map.
+
+**Theater Branch rule:** Non-hero optional content only earns its place when it represents a whole secondary front or support package with clear assets. Siberia, Poland, Italy, Spain, France, and air campaigns justify themselves because they open regional allies, units, routes, and bombardment packages. A one-off "regular side mission" with no concrete asset does not.
+
+### Rule 5: Three Mission Roles — Main Operations, SpecOps, and Theater Branches
+
+The Enhanced Edition uses three mission roles:
+
+| Role | Player Role | Gameplay | Mandatory? | What It Gives |
+|---|---|---|---|---|
+| **Main Operation** | Strategic commander | Full base building, economy, combined-arms warfare, decisive assaults | **Always mandatory** — these ARE the campaign | The full faction fantasy and decisive war outcomes |
+| **SpecOps / Commando Operation** | Tanya / Volkov / spy teams / elite detachments | Stealth, infiltration, sabotage, rescue, tech theft, tech denial, faction favor | Optional, but high-leverage | Intel, tech, denial, rescue, faction support, commander alternatives with reduced rewards |
+| **Theater Branch** | Regional commander / special front | Secondary-front campaigns, air campaigns, long-arc expansion chains | Optional and rare | Region-wide assets: resistance, prototypes, air/naval support, flank routes, endgame contributors |
+| **Resource Operation** | Quartermaster / intel chief | Supply raids, intelligence sweeps, economic asset recovery | Optional | Requisition and Intel to fund the strategic layer (competes with tactical SpecOps for slots) |
+| **Defector Operation** | Espionage extractor | High-risk extraction of Soviet personnel | Optional and rare | Unique assets: Soviet units in the Allied roster, immediate research jumps, or free intel sweeps |
+
+**Commander-supported SpecOps is a subtype, not a fourth role.** Some SpecOps missions can let the commander maintain a **limited-capability forward base**: power, barracks, repairs, artillery, extraction support, or one support airfield. The hero-led objective remains the decisive part of the mission. This keeps the main campaign as the only place where the faction's full macro potential comes online.
 
 **Why this separation matters:**
 
-1. **Respects player preference.** Some players love commando missions. Others find them frustrating and just want to build bases and crush armies. Neither preference is wrong. The Commander lane always works alone.
+1. **Main Operations keep the full war fantasy in one place.** Full economy, full production tree, full battlefield crescendo belong in the backbone campaign missions.
+2. **SpecOps becomes the precision tool.** This is where the campaign gains or denies intel, prototypes, scientists, resistance support, and rescue outcomes.
+3. **Commander players are not trapped in commando gameplay.** Every hero-led mandatory-feeling mission needs a commander path or commander-supported variant.
+4. **Theater Branches justify themselves with scale.** If a non-hero optional arc does not open a whole front or a named asset chain, it should be folded back into the main campaign or cut.
 
-2. **Creates a meaningful investment loop.** Tanya missions are optional, but doing them makes the main missions easier. Skip them, and you face full-strength enemies with no intel, no sabotage bonuses, no captured equipment. The choice is real.
+**Canonical rule: every optional or interior-heavy commando mission has a commander-compatible path.** That may be:
 
-3. **Hero progression becomes opt-in depth.** Tanya's skill tree, veterancy, and equipment only matter if you play her missions. A Commander-only player never sees the skill tree UI. An operative-focused player builds Tanya into a legend across 8+ side missions.
+- a full commander alternative with reduced rewards
+- a commander-supported SpecOps variant with a limited support base
+- or, in D070 co-op add-ons, a commander/specops split where both players act simultaneously
 
-4. **Co-op maps naturally to lanes.** In D070 co-op mode, Player 1 takes the Commander lane and Player 2 takes the Operative lane simultaneously — the Commander runs the base while SpecOps runs the commando mission. The lane separation is already the co-op architecture.
-
-**The exception:** Allied M1 ("In the Thick of It") is the one mission where Tanya is integral to the objective — Einstein's rescue requires her. This is the only mandatory operative-lane mission in either campaign. Every other commando/spy mission (M3, M5, M6, M9, M10B, M13) has a Commander-lane alternative. A player who dislikes commando gameplay can complete the entire campaign through base building and army warfare after M1.
-
-**Canonical rule: every operative mission has a Commander alternative.** The alternatives are documented in the lane diagram below and in the full campaign graph. Commander alternatives achieve the same narrative result with reduced rewards (less intel, more casualties, cruder outcome) — making the operative route attractive without making it mandatory.
+The backbone can still contain a small number of **main operations with hero-led sub-objectives** (for example Allied M1 and M3). Those remain main operations, not separate optional SpecOps nodes.
 
 **How it looks in practice:**
 
 ```
-Commander Lane (mandatory):        Operative Lane (optional):
-─────────────────────────          ─────────────────────────
-                                   [CS] Personal War (Stavros)
-                                   [CS] Evacuation (Stavros)
-                                   [IC] Tanya: First Blood
-[M1] Rescue Einstein ──────────── (Tanya used IN this mission — exception*)
-[M2] Supply Convoy
-                                   [IC] Supply Line Security
-                                   [M3] Destroy Bridges (Tanya commando)
-                                   ↓ bridges destroyed → M4 easier
-[M4] Hold the Pass ────────────── if bridges intact → full enemy force
-                                   [IC] Behind Enemy Lines (Tanya spy)
-                                   ↓ results affect M5/M6
-                                   [M5] Rescue Tanya (conditional, spy+commando)
-                                   [M6] Iron Curtain Infiltration (spy)†
-                                   ↓ intel affects M7/M8
-                                   [CS] Sarin Gas 1-3
-[M7] Sunken Treasure ──────────── affected by intel + Sarin results
-                                   [IC] Operation Skyfall (air)
-[M8] Protect Chronosphere ─────── affected by Skyfall + Sarin results
-                                   [M9] Extract Kosygin (spy+escort)†
-                                   ↓ Kosygin intel affects M10-M14
-                                   [AM] Poland missions
-[M10A] Suspicion ──────────────── affected by Kosygin intel + Poland
-                                   [M10B] Evidence (interior commando)†
-[M11] Naval Supremacy
-                                   [IC] Joint Operations (co-op)
-[M12] Takedown ─────────────────── affected by all side missions
-                                   [M13] Focused Blast (interior commando)†
-[M14] Moscow ───────────────────── EVERYTHING accumulates
+Main Operations (mandatory backbone):
+  M1, M2, M4, M7, M8, M10A, M11, M12, M14
 
-*  M1 is the one exception where Tanya is mandatory — she's integral
-   to Einstein's rescue. In co-op (D070), Commander handles the base
-   assault while SpecOps handles Tanya's infiltration path.
+SpecOps / Commando Operations:
+  Tanya: First Blood
+  M3 Destroy Bridges
+  Behind Enemy Lines
+  M5 Rescue Tanya
+  M6 Iron Curtain Infiltration
+  Spy Network
+  M9 Extract Kosygin
+  M10B Evidence / Evidence: Enhanced
+  M13 Focused Blast / Focused Blast: Enhanced
 
-†  ORIGINAL COMMANDO MISSIONS MOVED TO OPERATIVE LANE:
-   These four missions (M6, M9, M10B, M13) are spy/commando gameplay
-   in the original with no base building. In Enhanced Edition, each
-   gets a Commander-lane alternative for players who prefer army
-   gameplay:
-
-   M6 (spy infiltration) → Commander alternative: full assault on
-      the Tech Center. You get the intel but the facility is destroyed
-      (less intel quality than the spy route — a trade-off, not a freebie)
-
-   M9 (spy+escort) → Commander alternative: armored extraction.
-      Send a tank column to the compound, blast through, grab Kosygin.
-      Louder, more casualties, but no spy required. Kosygin provides
-      less intel (he was roughed up in the fighting)
-
-   M10B (interior commando) → already has IC "Evidence: Enhanced"
-      as an embedded task force alternative
-
-   M13 (interior commando) → Commander alternative: full base assault
-      on the facility exterior. Destroy the Iron Curtain facility with
-      artillery and air strikes instead of planting charges inside.
-      Same narrative result, different gameplay
-
-   In each case: the Commander alternative achieves the same story
-   outcome but with REDUCED rewards (less intel, more casualties,
-   cruder result). The operative route is the "clean" option with
-   better rewards. This makes the operative lane attractive without
-   making it mandatory.
+Theater Branches:
+  Sarin Gas chain
+  Siberian chain
+  Italy chain
+  Poland chain
+  Operation Skyfall / Air Superiority / Operation Tempest
+  Spain / France chains
 ```
 
-The arrows show influence: operative results flow INTO commander missions as difficulty modifiers, briefing context, and bonus resources. Commander missions never require operative missions to be completable — they just benefit from them.
+**Commander-compatible commando examples:**
 
-**Soviet campaign equivalent:** Volkov replaces Tanya in the operative lane. The Soviet campaign has fewer commando missions than the Allied one, but the same principle applies:
+- **M6 (spy infiltration)** → commander alternative: full Tech Center assault. Story result preserved, but intel quality is worse because the site is wrecked.
+- **M9 (spy+escort)** → commander alternative: armored extraction. Kosygin is recovered, but he yields less intel after a louder rescue.
+- **M10B / M13** → commander-supported SpecOps variants. Tanya handles the decisive interior objective while the commander runs a limited forward support camp instead of a full economy.
+- **Soviet M3 / M9** → commander alternatives: cordon-and-sweep and arrest operation. Same political or military result, cruder execution, worse downstream flags.
 
-```
-Soviet Commander Lane (mandatory):   Soviet Operative Lane (optional):
-──────────────────────────────────   ─────────────────────────────────
-                                     [IC] Volkov: Awakening
-                                     [AM] Testing Grounds
-[M1] Lesson in Blood
-[M2] Guard Duty
-                                     [M3] Covert Cleanup (spy chase)†
-                                     [IC] Mole Hunt (counter-intel)
-[M4] Behind the Lines ─────────────  affected by Mole Hunt results
-[M5] Distant Thunder
-[M6] Bridge over Grotzny ──────────  roster + resources from M5 carry over
-                                     [CS] Volkov & Chitzkoi (hero)
-                                     [CS] Legacy of Tesla
-[M7] Core of the Matter ──────────── Volkov vs Tanya if available
-[M8] Elba Island
-                                     [CS] Paradox Equation
-                                     [CS] Mousetrap (hunt Stavros)
-                                     [M9] Liability Elimination†
-                                     [IC] Stalin's Shadow (spy)
-[M10] Overseer (or Strike alt.)
-[M11] Sunk Costs ──────────────────  affected by Legacy of Tesla
-[M12] Capture Tech Centers
-                                     [IC] Operation Tempest (air)
-[M13] Capture Chronosphere ────────  Volkov commando approach if avail.
-[M14] Soviet Supremacy ────────────  EVERYTHING accumulates
+The arrows still flow one way: optional results feed into later main operations as difficulty modifiers, routes, units, tech, and briefing context. The main operations remain completable without them; they are simply better informed and better equipped if the player invests in optional content.
 
-†  SOVIET COMMANDO MISSIONS MOVED TO OPERATIVE LANE:
+**Failure-forward default for the Enhanced Edition:** Missions should continue the campaign unless explicitly authored otherwise. If a mission can truly end the run, it must be marked `CRITICAL` on the world screen and again in the briefing. That should be rare and mainly reserved for final assaults or self-contained mini-campaign finales.
 
-   M3 (spy chase) → Commander alternative: cordon and sweep.
-      Deploy infantry squads to lock down the district and
-      flush the spy out with overwhelming force. Less elegant
-      than a precise chase — spy may escape with partial intel
-      (worse for you in future missions)
+#### Commander Alternative Matrix (Exact Trade-Offs)
 
-   M9 (assassination) → Commander alternative: arrest operation.
-      Send an armored column to detain the target publicly.
-      Same political result but cruder — creates more internal
-      unrest (a flag that affects Act 3 stability)
-```
+These are the minimum explicit downstream deltas for the first-pass Enhanced Edition plan. They turn "less intel" and "cruder result" into concrete, player-visible differences.
+
+| Mission | Precise / operative result | Commander-compatible result | Exact downstream delta |
+|---|---|---|---|
+| **Allied M5 — Tanya's Tale** | Clean prison break. Tanya returns immediately and prison records are recovered | Armored prison assault. Tanya is rescued but wounded | If M5 is taken before **M6**, Tanya is unavailable for **M6**, and **M6** loses the safe-house route and gains **2 extra patrol teams** around the service entrance |
+| **Allied M6 — Iron Curtain Infiltration** | Spy steals access codes and shipping manifests | Tech Center destroyed by frontal assault | Operative path: **M7** reveals **25% of the harbor**, pre-marks the east docking lane, and delays the first submarine wave by **120 seconds**. Commander path: no reveal or delay, but **1 shore battery starts destroyed** from the assault |
+| **Allied M9 — Extract Kosygin** | Kosygin escapes coherent and gives full debrief | Kosygin is roughed up during an armored extraction | Operative path: **M10B** starts with the west service tunnel open and **2 patrol routes pre-marked**. Commander path: tunnel unavailable and **M10B** gains **1 extra alarm ring** |
+| **Allied M10B — Evidence / Evidence: Siege** | Full facility blueprints recovered | Partial blueprints recovered from ruins | Operative path: **M12** starts with the west conduit sabotage route open and **1 Iron Curtain emitter offline for 180 seconds**. Siege path: no conduit route; all emitters start active |
+| **Allied M13 — Focused Blast / Iron Curtain: Siege** | Precision demolition destroys the temporal cores | Artillery collapse leaves partial tech intact | Precision / hybrid path: **M14** has **no emergency Iron Curtain pulse**. Siege path: **M14** gets **1 emergency pulse at minute 12** |
+| **Soviet M3 — Covert Cleanup** | Spy network silenced quietly | District locked down by cordon-and-sweep | Precise path: **M4** gains a **180-second timer buffer** and **2 AA nests start unmanned**. Commander path: no timer buffer; **2 extra AA nests** remain active |
+| **Soviet M9 — Liability Elimination** | Target removed quietly | Public arrest triggers internal unrest | Precise path: no internal-disruption event in **M12**. Commander path: **M12** gets **1 rear-sabotage event at minute 10**, and **M14** gets **1 rear-depot uprising marker** unless `Stalin's Shadow` was completed |
 
 ### Rule 6: Hero Capture Creates Escalating Rescue Pressure
 
@@ -329,13 +336,13 @@ if capture and capture.pending_rescue then
 end
 ```
 
-**Briefing integration:** The dynamic briefing system (§ Side Mission Rewards) assembles conditional lines based on the current compromise level. Immediate rescue, delayed rescue, and abandoned rescue each get distinct lines in the next briefing.
+**Briefing integration:** The dynamic briefing system (§ Optional Operations — Concrete Assets, Not Abstract Bonuses) assembles conditional lines based on the current compromise level. Immediate rescue, delayed rescue, and abandoned rescue each get distinct lines in the next briefing.
 
 **Cross-campaign echo:** The Soviet M7 briefing always includes a line about an Allied commando operating in the facility — regardless of Allied campaign state. *"Our interrogators have extracted valuable information from the captured Allied commando. Use it well."* This is always-present authored flavor text, not conditional on cross-campaign data (see § Cross-Campaign Continuity).
 
 ### Rule 7: Teach Every Mechanic at the Right Moment
 
-Campaign mechanics (capture consequences, side mission rewards, timed choices, spectrum outcomes, hero progression, two-lane structure) are powerful but only if the player understands them. The Enhanced Edition uses **progressive disclosure** — each mechanic is explained exactly when the player first encounters it, never before, never after. No front-loaded tutorials, no walls of text, no unexplained mechanics.
+Campaign mechanics (capture consequences, optional-operation assets, timed choices, spectrum outcomes, hero progression, and commander-compatible commando paths) are powerful but only if the player understands them. The Enhanced Edition uses **progressive disclosure** — each mechanic is explained exactly when the player first encounters it, never before, never after. No front-loaded tutorials, no walls of text, no unexplained mechanics.
 
 This follows D065 (Tutorial & New Player Experience) § progressive disclosure and hint systems.
 
@@ -346,11 +353,11 @@ This follows D065 (Tutorial & New Player Experience) § progressive disclosure a
 | **Hero progression** | End of prologue (Tanya: First Blood) — first skill point earned | Skill tree opens with a brief tooltip: *"Tanya has earned a skill point. Choose an ability to unlock. Skills persist across all missions."* | Player sees the skill tree for 10 seconds with one clear choice. No overwhelm |
 | **Roster carryover** | M1 → M2 transition — surviving prologue units appear | Briefing note: *"Troops from your previous operation have been reassigned to this front."* A tooltip highlights the carried-over units on the map | Player sees familiar faces from the prologue. The connection is obvious |
 | **Spectrum outcomes** | M3 (Destroy Bridges) — first mission with partial success | Debrief screen shows which bridges were destroyed and explicitly states the consequence: *"2 of 4 bridges destroyed. Enemy reinforcements will be partially reduced next mission."* | Not hidden — the debrief tells the player exactly what their performance means |
-| **Side mission rewards** | First optional mission completed — reward shown in next briefing | Briefing line highlighted: *"Thanks to your supply line operation, Chrono reinforcements are available."* Tooltip: *"Side mission rewards affect main missions. Completed operations provide tactical advantages."* | The cause-and-effect is spelled out the first time. After that, the player understands the pattern |
+| **Optional-operation assets** | First optional mission completed — reward shown in next briefing | Briefing line highlighted: *"Thanks to your sabotage, Soviet air defenses are offline."* Tooltip: *"Optional operations grant concrete assets such as intel, tech, faction support, or denial effects."* | The cause-and-effect is spelled out the first time. After that, the player understands the pattern |
 | **Timed choices** | First timed choice (between M4 and M5) | A dedicated intermission screen explains: *"Multiple operations require your attention. You can only commit forces to one before the window closes. The others will resolve without you — with consequences."* Each option shows its reward AND the consequence of not choosing it | The stakes are visible before the player commits. No hidden information |
-| **Two-lane structure** | First time an operative mission appears alongside a main mission | Campaign map shows both lanes visually. Tooltip on the operative mission: *"Optional special operation. Completing this will affect the next main mission. Skipping it is valid — the campaign continues either way."* | The word "optional" is explicit. The reward preview is explicit. No guessing |
+| **Mission roles** | First time a SpecOps operation appears alongside a main operation | Campaign map shows role tags visually. Tooltip on the commando node: *"Optional SpecOps operation. This mission can gain intel, deny tech, or rescue a hero. Skipping it is valid — but the campaign state may change."* | The word "optional" is explicit. The downstream effect is explicit. No guessing |
 | **Capture consequences** | First time a hero is captured (Behind Enemy Lines fails) | Immediate notification: *"Tanya has been captured. The longer she is held, the more intel the enemy may extract. Rescue her when possible."* A priority marker / urgency indicator appears on the campaign map or intermission mission list next to M5 | The escalation mechanic is explained at the moment it becomes relevant — not in a tutorial before it happens |
-| **Dynamic weather** | First mission with weather (M8 storm or side mission) | Brief in-mission tooltip when weather changes: *"A storm is approaching. Visibility will decrease and vehicle movement will slow."* Gameplay effect is immediate and visible | Learn by experiencing. The tooltip explains what's happening; the gameplay proves it |
+| **Dynamic weather** | First mission with weather (M8 storm or an optional branch) | Brief in-mission tooltip when weather changes: *"A storm is approaching. Visibility will decrease and vehicle movement will slow."* Gameplay effect is immediate and visible | Learn by experiencing. The tooltip explains what's happening; the gameplay proves it |
 | **Commander alternatives** | First time a commando mission appears with a Commander alternative | Mission select shows both options side by side with labels: *"Operative approach: infiltrate with Tanya. Stealthier, better rewards."* / *"Commander approach: assault with your army. Direct, but fewer intelligence gains."* | Both options visible, both labeled with trade-offs. The player chooses their style |
 
 **Explanation principles:**
@@ -358,11 +365,92 @@ This follows D065 (Tutorial & New Player Experience) § progressive disclosure a
 1. **Explain at the moment of encounter, not before.** Don't explain timed choices in the prologue. Explain them when the first timed choice appears
 2. **Show, don't tell.** The first spectrum outcome isn't explained in a tutorial — the debrief screen SHOWS the player what their partial success means for the next mission
 3. **Make consequences visible before they happen.** Timed choices show both the reward of choosing AND the consequence of not choosing. No hidden penalties
-4. **Explain once, then trust the player.** The first side mission reward gets a highlighted briefing line and tooltip. The second one just gets the briefing line. By the third, the player understands the pattern
+4. **Explain once, then trust the player.** The first optional-operation asset gets a highlighted briefing line and tooltip. The second one just gets the briefing line. By the third, the player understands the pattern
 5. **Never interrupt gameplay to explain.** All explanations happen in briefings, debriefs, intermission screens, or small in-game tooltips — never a pause-the-game tutorial popup during combat
 6. **Use the briefing officer's voice.** Von Esling (Allied) and Nadia (Soviet) explain mechanics in character. *"Commander, we can only commit to one operation"* is both a narrative moment and a mechanics explanation. The UI reinforces with tooltips, but the character delivers the message
 
 **D065 integration:** These explanations use the existing `feature_discovery` hint category from D065 § Feature Smart Tips. Each mechanic has a hint entry in `hints/campaign-mechanics.yaml` that triggers on first encounter and is dismissible. Players who've already learned the mechanic (from a previous playthrough or the tutorial) never see the hint again.
+
+### SpecOps Mission Families
+
+Optional commando content in the Enhanced Edition should fall into recognizable mission families with explicit downstream assets. These are the recurring patterns used by both the Allied and Soviet trees:
+
+| Family | Mission Pattern | Typical Output | Exact Downstream Effect Examples |
+|---|---|---|---|
+| **Intel Raid** | Infiltrate a facility, steal plans, decode a network, photograph defenses | Intel asset | Access codes for M6, partial shroud reveal in M12, patrol-route preview, branch unlock |
+| **Tech Theft** | Capture a prototype, scientist, or research node | Tech asset | Unlock Chrono Tank prototype, add Super Tanks to roster, enable a support power, open an Aftermath chain |
+| **Tech Denial** | Sabotage a lab, ammo dump, radar net, power grid, or superweapon site | Denial asset | No MiGs next mission, no Sarin in M8, no Super Tanks in Act 3, delayed superweapon |
+| **Faction Favor** | Rescue resistance leaders, secure defectors, protect local allies, broker safe houses | Favor asset | Partisan reinforcements in M14, naval contacts for M11, hidden tunnel route, scientist support |
+| **Hero Rescue / Recovery** | Extract captured operatives, recover wounded teams, retrieve stolen equipment | Rescue state | Tanya or Volkov restored, compromise reduced, prototype partially recovered, roster losses softened |
+| **Commander-Supported Infiltration** | Hero team handles decisive interior objective while commander runs a small support camp | Hybrid SpecOps asset | Limited artillery cover, extraction reinforcements, repair and resupply, restricted air support |
+
+These families are what justify optional commando content. If a proposed mission does not cleanly fit one of them and cannot state its exact downstream effect, it should be reworked or cut.
+
+### First-Party SpecOps Content Rule: Official Once, Generated Thereafter
+
+The Enhanced Edition should not try to hand-author every optional commando branch forever, nor should it reuse the same official map repeatedly.
+
+**Rule:**
+
+- Use an official handcrafted mission **once**, where it is the best story fit
+- Use IC-authored handcrafted missions for the handful of flagship new set pieces
+- Use **generated SpecOps missions** for the rest of the optional commando network
+
+That means:
+
+- `Behind Enemy Lines`, `Spy Network`, `M5`, `M6`, `M9`, `Focused Blast`, `Stalin's Shadow`, and a few other anchor beats stay hand-authored
+- follow-up raids, emergency rescues, prototype intercepts, mole hunts, resistance pickups, and alternative commando opportunities should usually be **generated unique operations** from the mission-family grammar in `campaigns.md`
+
+This is the XCOM 2 lesson applied correctly: the strategic layer offers many operations, but only a few should be singular authored landmarks. The rest are theater-appropriate generated missions whose rewards and consequences are authored by campaign state.
+
+**Generated-first candidates in the Enhanced plan:**
+
+- extra Allied spy-network raids after the first network-establishment mission
+- alternate Sarin-site strikes beyond the canonical CS mission placement
+- resistance-contact pickups in Poland / Italy / Siberia
+- Soviet mole hunts, scientist extraction, and rear-area counter-intel sweeps
+- secondary prison-break or prototype-recovery opportunities created by branch state
+
+The campaign graph still shows the operation card and exact reward/risk. What changes is that the map behind that card is generated from the current theater, mission family, and campaign seed instead of always pointing to one fixed handcrafted scenario.
+
+### Core World Reactivity Matrix
+
+The campaign earns its "the world reacts" claim only if the player can trace a completed operation to a concrete later mission state. These are the headline cause-and-effect chains the Enhanced Edition should surface on the world screen and in briefings.
+
+#### Allied Reactivity
+
+| Operation | Success State | If Skipped / Failed | Consumed By |
+|---|---|---|---|
+| **Behind Enemy Lines** | `iron_curtain_intel_full` — M6 east service entrance open, first alarm delayed **90 seconds** | If skipped: `iron_curtain_window_missed` — M6 runs blind and `Spy Network` never opens. If failed + captured: `tanya_captured` — M5 rescue branch opens and M6 runs blind | **M5**, **M6**, **Spy Network** |
+| **Crackdown / Sarin 1** | `sarin_denied` — M8 has **no gas shelling** and no contaminated lane | `sarin_active` — M8 gains **2 gas barrages** and **1 contaminated approach lane** | **M8** |
+| **Spy Network** | `spy_network_active` — M6 starts with **40% shroud reveal**; M10B starts with **2 patrol routes marked** | No pre-reveal or route markers | **M6**, **M10B** |
+| **Operation Skyfall** | `skyfall_complete` — M8 begins with **2 AA sites destroyed** and **1 fewer Soviet air wave** | M8 keeps full AA coverage and standard air pressure | **M8** |
+| **Air Superiority** | `air_package_ready` — M12 gets **1 bombing run** and M14 gets **2 bombing runs** | No strategic air support in the endgame | **M12**, **M14** |
+| **Italy Chain** | `chrono_salvage` — **1 Chrono Tank prototype** joins M12; M14 has **no southern counterattack** | No prototype; southern counterattack remains | **M12**, **M14** |
+| **Poland Chain** | `poland_liberated` — M12 unlocks the **west-flank entry**; M14 gains **3 partisan squads** and **2 Super Tanks** | No west flank, no partisan reinforcements, no Super Tanks | **M12**, **M14** |
+| **Focused Blast / Iron Curtain: Siege choice** | Precision path removes Iron Curtain entirely from M14 | Siege path leaves **1 emergency Iron Curtain pulse at minute 12** | **M14** |
+
+**Validation note for compounding endgame states:** The first-party Enhanced Edition should validate endgame consumers such as `M12`, `M13`, and `M14` by **asset bundle** rather than raw flag explosion. The validation pass should sample every legal combination of:
+
+- air-support assets
+- partisan / theater assets
+- prototype-tech assets
+- unrest / sabotage states
+- rescue / compromise states
+
+and confirm that the mission remains spawnable, its briefing remains coherent, and every promised reward/penalty still materializes.
+
+#### Soviet Reactivity
+
+| Operation | Success State | If Skipped / Failed | Consumed By |
+|---|---|---|---|
+| **Mole Hunt** | `counter_intel_secured` — M4 loses **2 Allied pre-placed pillboxes** and **1 scout trigger** | Allies retain their early-warning net; M4 starts with full pre-defenses | **M4** |
+| **Road to Berlin** | `berlin_staging_secured` — M4 gains a **forward deployment zone**, **90 extra seconds** on the radar timer, and **2 veteran heavy tanks** if all 3 trucks arrive | Baseline M4 only; no forward deployment bonus | **M4** |
+| **Legacy of Tesla** | `prototype_mig_ready` — M11 gains **1 prototype MiG sortie** and M14 gains **1 emergency air strike** | No prototype air support | **M11**, **M14** |
+| **Spain Chain** | `spain_secured` — M11 loses the southern Allied cruiser group; M14 has **no rear-area uprising** if `Grunyev Revolution` also succeeded | Southern naval threat remains; unrest risk persists | **M11**, **M14** |
+| **Stalin's Shadow** | `gradenko_neutralized` — cancels the M12 sabotage event and removes one late-war political disruption line | Political unrest stays live; M12/M14 use the harsher unrest versions | **M12**, **M14** |
+| **Paradox Equation** | `chrono_understanding` — M13 marks **2 conduit rooms** and reduces temporal-instability hazards in the prototype lab | No conduit markers; lab runs at baseline hazard level | **M13** |
+| **Nuclear Escalation** | `air_fuel_bombs_denied` — M14 loses the Allied air-fuel bomb strike entirely | M14 includes **1 air-fuel bomb strike window** | **M14** |
 
 ---
 
@@ -394,7 +482,7 @@ Von Esling cuts him off: *"Professor, that's enough. Commander, your next assign
 
 **Acts 1-2 — Intel Fragments (Collectible Narrative)**
 
-During operative-lane missions (Behind Enemy Lines, Spy Network, Sarin Gas facilities, Italy operations), the player can find **Einstein's Research Fragments** — optional collectibles hidden in mission maps. These are short text entries that gradually reveal the Trinity story. Finding them is never required — they're rewards for thorough exploration.
+During SpecOps missions (Behind Enemy Lines, Spy Network, Sarin Gas facilities, Italy operations), the player can find **Einstein's Research Fragments** — optional collectibles hidden in mission maps. These are short text entries that gradually reveal the Trinity story. Finding them is never required — they're rewards for thorough exploration.
 
 | Fragment | Found In | Content |
 |---|---|---|
@@ -405,6 +493,14 @@ During operative-lane missions (Behind Enemy Lines, Spy Network, Sarin Gas facil
 | **Fragment 5: Trinity Test Report** | Poland operations (AM mission) — Soviet archive | Original 1946 test report: *"Test designation: TRINITY-TEMPORAL. Subject successfully displaced from 1946 to 1924. Target individual removed from timeline. Side effects: unknown. Researcher's note: 'It worked. God help us all. — A. Einstein'"* |
 
 **Fragment discovery UX:** When the player finds a fragment, a brief notification appears: *"Intel discovered: Einstein's Research Fragment 3/5"*. The fragments are readable in the campaign journal/intermission screen. They're short (2-3 sentences each) — enough to build the picture without interrupting gameplay.
+
+**Fragments are not dead collectibles.** They also feed the strategic layer in concrete steps:
+
+| Threshold | Strategic Payoff |
+|---|---|
+| **1 fragment found** | The world screen gains a new enemy-project card: `Temporal Research`. `Einstein's Confession` stops reading like optional flavor and starts reading like an authored strategic reveal |
+| **3 fragments found** | `Einstein's Confession` card shows its exact reward/risk text on the world screen, and the mission starts with **1 archive room pre-marked** instead of forcing a blind search |
+| **5 fragments found** | Act 3 gains `temporal_weak_point_known`: if D078 is enabled, the first carryback begins with **1 known weak point** already authored into the replayed mission; if D078 is disabled, **Focused Blast: Enhanced** / **Temporal Experiment** still start with **1 sabotage target pre-marked** |
 
 **Act 2 (after M8) — The Confession**
 
@@ -434,20 +530,43 @@ In the Allied epilogue mission ("Aftermath"), Einstein appears one final time. H
 - **Never used it:** *"You won this war without my device. You have no idea how much that means to me. Perhaps humanity doesn't need to meddle with time to find its way."*
 - **Never unlocked it (skipped the Confession mission):** *"Commander, there is something I never told you about my past. Perhaps someday. But today... today we celebrate. The war is over."*
 
-### Soviet Campaign Mirror
+### Soviet Campaign Mirror — The Red Ledger
 
-The Soviet campaign has a parallel thread — seen from the other side:
+The Soviet campaign should not only watch Einstein from afar. It needs its own narrative spine. The Soviet mirror thread is therefore political rather than guilt-driven: a dossier on **Stalin's paranoia, Gradenko's rivalry, Nadia's hidden agenda, and Kane's influence at the edge of the regime**.
 
-- **M7 briefing:** Soviet intelligence references Einstein's "pre-war research" as a capture priority
-- **Paradox Equation (CS):** Temporal anomalies foreshadow that Einstein's deeper research exists
-- **Temporal Experiment (after M13):** Soviet scientists recover Einstein's notes and build their own prototype. Nadia's briefing: *"The Americans buried this knowledge. We will use it."*
-- **Soviet epilogue:** If the experimental time-machine add-on was used, the ending references temporal instability — a hint that the Soviets' reckless experimentation will have consequences beyond this war (foreshadowing RA2/RA3 timeline)
+**Acts 1-2 — Political Intelligence Fragments**
+
+During Soviet SpecOps missions (`Mole Hunt`, `Let's Make a Steal`, `Liability Elimination`, `Stalin's Shadow`, selected Spain/France ops), the player can recover **Political Intelligence Fragments**: memos, interrogation notes, coded directives, and fragments of correspondence.
+
+| Fragment | Found In | Content |
+|---|---|---|
+| **Fragment 1: Gradenko Memorandum** | Mole Hunt | Internal complaint that the Volkov program is draining resources from Gradenko's conventional front |
+| **Fragment 2: Nadia's Intercept** | Let's Make a Steal | A private channel showing Nadia bypassing Stalin's normal chain of command |
+| **Fragment 3: Security Directive 47** | Liability Elimination | Stalin orders parallel surveillance of his own senior officers, including Nadia |
+| **Fragment 4: Temple Correspondence** | Stalin's Shadow | A coded exchange implying an outside ideological actor is cultivating Soviet unrest from the shadows |
+| **Fragment 5: Succession Briefing** | Grunyev Revolution / Red Dawn lead-in | Proof that the invasion of England is also a test of who controls the Soviet future after Stalin |
+
+**Strategic payoff:**
+
+| Threshold | Strategic Payoff |
+|---|---|
+| **1 fragment found** | World screen gains `Political Instability` as a project card, making the unrest thread legible before `M9` |
+| **3 fragments found** | `Stalin's Shadow` shows exact reward/risk text on the world screen and starts with **1 archive room pre-marked** |
+| **5 fragments found** | Act 3 gains `kremlin_fracture_known`: one internal-disruption event in **M12** or **M14** is pre-telegraphed on the briefing card rather than sprung as a surprise |
+
+**Act 2 — The Realization**
+
+By `Liability Elimination` and `Stalin's Shadow`, the player should understand that the war is turning inward. The question is no longer just "Can the Soviets win?" but "Who is going to own the victory?" That gives the Soviet campaign a throughline comparable in weight to Einstein's burden on the Allied side.
+
+**Act 3 — Red Dawn payoff**
+
+If the player followed the Red Ledger thread, `Red Dawn` lands as the resolution of a long-brewing political thriller rather than a sudden twist. Kane's shadow, Nadia's intent, Gradenko's threat, and Stalin's fragility all arrive with authored buildup.
 
 ### Implementation
 
 The thread uses existing and one new UI surface:
-- **Fragments:** Campaign flags (`einstein_fragment_1: true` through `einstein_fragment_5: true`) set when the player enters a trigger zone in the mission map — standard Lua trigger, no new system
-- **Conditional briefing lines:** Same `conditional_lines` system documented in § Side Mission Rewards — no new system
+- **Fragments:** Campaign flags (`red_ledger_fragment_1: true` through `red_ledger_fragment_5: true`) set when the player enters a trigger zone in the mission map — standard Lua trigger, no new system
+- **Conditional briefing lines:** Same `conditional_lines` system documented in `modding/campaigns.md` § Optional Operations — Concrete Assets, Not Abstract Bonuses — no new system
 - **Fragment reader (new UI):** A new "Intel" tab in the campaign intermission screen displays collected fragments as short readable entries. The current intermission screen (`single-player.md`) exposes roster/heroes/stats — the Intel tab is an addition, not an existing viewer. Small scope: a list of 2-3 sentence text entries, readable between missions. Requires a new tab in the intermission UI but no new campaign state infrastructure beyond the flags already defined
 
 ---
@@ -501,7 +620,7 @@ The Counterstrike/Aftermath missions were designed as standalone challenges with
 | **Deus Ex Machina** (AM Soviet) | Standalone: rescue Volkov | Volkov was captured by the Allies after a failed operation. This becomes a narrative continuation of the Volkov arc — if Volkov is captured, this is the rescue mission. If he was never captured, this mission doesn't appear |
 
 **Q: What's Kane doing in the Soviet ending?**
-The original reveals Kane (from Tiberian Dawn) advising Nadia after she poisons Stalin. IC leaves this mystery intact — it's too important to the larger C&C universe to alter. But IC adds subtle foreshadowing: in the Soviet "Stalin's Shadow" side mission, the player encounters references to a mysterious advisor who has been influencing Soviet politics from behind the scenes. Players who recognize Kane from Tiberian Dawn get the connection; others experience it as a Cold War thriller twist.
+The original reveals Kane (from Tiberian Dawn) advising Nadia after she poisons Stalin. IC leaves this mystery intact — it's too important to the larger C&C universe to alter. But IC adds subtle foreshadowing: in the Soviet "Stalin's Shadow" SpecOps mission, the player encounters references to a mysterious advisor who has been influencing Soviet politics from behind the scenes. Players who recognize Kane from Tiberian Dawn get the connection; others experience it as a Cold War thriller twist.
 
 #### Questions We Leave Open (enriches the mystery)
 
@@ -543,7 +662,7 @@ The war erupts across Europe. Greece falls (Stavros's personal tragedy). The All
 Both sides escalate: the Allies develop the Chronosphere; the Soviets build the Iron Curtain, develop chemical weapons (Sarin), and create Volkov. The Mediterranean becomes a second theater. Intelligence operations (spies, infiltration) become as important as firepower.
 
 **Act 3 — Total War (M10-M14 + Siberian + Poland + final operations)**
-Everything converges. The Siberian front collapses. Poland is liberated. The Allied fleet clears the river. Every side mission's reward (or absence) shapes the final assault. The war ends in Moscow (Allied) or London (Soviet).
+Everything converges. The Siberian front collapses. Poland is liberated. The Allied fleet clears the river. Every optional-operation asset (or absence) shapes the final assault. The war ends in Moscow (Allied) or London (Soviet).
 
 **Epilogue — Consequences**
 The war is over, but what comes next? Allied: cleanup operations with moral decisions. Soviet: the internal power struggle (Stalin/Nadia/Kane). Both: the Ant crisis emerges from the war's radiation legacy.
@@ -556,15 +675,17 @@ The war is over, but what comes next? Allied: cleanup operations with moral deci
 
 | Gap | Between | Problem | IC Fix |
 |-----|---------|---------|--------|
-| **Tanya captured off-screen** | M4 → M5 | M4 ends with a defensive victory. M5 briefing says Tanya was "captured during an intelligence operation." The capture is never shown — the player goes from defending a pass to suddenly rescuing Tanya from prison | IC adds the mission where Tanya gets captured: a spec-ops intelligence mission where success means no rescue branch opens, while capture opens the M5 rescue branch and starts the escalation clock |
-| **Supply convoy disconnected** | M2 → M3 | M2 clears Soviet forces for a convoy. M3 destroys bridges. No narrative link between them | IC links them: the supply convoy in M2 was carrying demolition equipment for the bridge mission in M3. Side mission to secure additional explosives affects M3's difficulty |
-| **Spy arc appears from nowhere** | M5 → M6 | M5 uses a spy to rescue Tanya. M6 is a spy infiltration mission. The spy capability isn't introduced — it just appears | IC adds a spy recruitment side mission between M4-M5 where the player establishes the spy network |
+| **Tanya capture only happens off-screen** | M4 → M5 | M4 ends with a defensive victory. M5 briefing says Tanya was "captured during an intelligence operation." The capture is never shown — the player goes from defending a pass to suddenly rescuing Tanya from prison | IC adds the mission where Tanya can actually be captured: the choice is whether to authorize the raid; capture is a consequence of failure, not simply of choosing another fire to fight |
+| **Supply convoy disconnected** | M2 → M3 | M2 clears Soviet forces for a convoy. M3 destroys bridges. No narrative link between them | IC links them: the supply convoy in M2 was carrying demolition equipment for the bridge mission in M3. A connected optional operation can secure extra explosives and reduce M3 difficulty |
+| **Spy arc appears from nowhere** | M5 → M6 | M5 uses a spy to rescue Tanya. M6 is a spy infiltration mission. The spy capability isn't introduced — it just appears | IC adds a spy-recruitment SpecOps mission between M4-M5 where the player establishes the network |
 | **Naval missions disconnected** | M7 | Submarine pen destruction feels disconnected from the Iron Curtain investigation arc | IC links it: intel from M6 reveals the Iron Curtain components are being shipped by submarine. Destroying the sub pens cuts the supply line |
 | **Abrupt format change** | M10A → M10B | Jump from outdoor base-building to interior commando mission with no transition | IC adds a transition briefing and an optional prep mission (reconnoiter the facility exterior before the interior raid) |
 | **Naval gap** | M11 | Naval supremacy mission appears without setup for why naval control matters now | IC links it: Kosygin's intel (M9) reveals the final Soviet defenses require a naval approach — the river must be cleared for the ground assault |
 | **Final push too linear** | M12 → M13 → M14 | Three missions in a row with no branching, no decisions, just "destroy everything" | IC adds decision points and alternative approaches for the endgame |
 
 ### Full Campaign Graph
+
+**Legend:** `[MAIN]` = mandatory backbone mission, `[SPECOPS]` = hero-led intel / tech / rescue operation, `[HYBRID]` = commander-supported SpecOps, `[THEATER]` = secondary-front or regional asset chain, `[NARRATIVE]` = lore or reveal mission
 
 ```
 PROLOGUE — STAVROS'S WAR (IC Original + Counterstrike)
@@ -585,7 +706,7 @@ PROLOGUE — STAVROS'S WAR (IC Original + Counterstrike)
 │     Teaches: time pressure, multi-objective, civilian escort.
 │     Reward: Greek resistance contacts (spy network foundation)
 │
-├─ [IC] "Tanya: First Blood" ★ EASY-MEDIUM
+├─ [SPECOPS] [IC] "Tanya: First Blood" ★ EASY-MEDIUM
 │  │  Tanya rescues Allied POWs from a Soviet outpost.
 │  │  Teaches: hero abilities, skill points, C4 charges.
 │  │  First skill tree selection at mission end.
@@ -598,75 +719,87 @@ PROLOGUE — STAVROS'S WAR (IC Original + Counterstrike)
 │
 ACT 1: LIBERATION OF EUROPE ─────────────────────────────────────────
 │
-├─ [M1] "In the Thick of It" ★ MEDIUM — Rescue Einstein.
+├─ [MAIN] [M1] "In the Thick of It" ★ MEDIUM — Rescue Einstein.
 │  │  Teaches: combined arms (Tanya + support units), base assault.
 │  │  Einstein becomes a character the player heard in the prologue.
 │  │
-│  └─ [IC] "Supply Line Security" ★ MEDIUM — OPTIONAL
-│     Escort Chrono tech convoy. Teaches: escort + defend.
-│     Reward: Chrono reinforcement available in M4
+│  └─ [SPECOPS] [IC] "Supply Line Security" ★ MEDIUM — OPTIONAL
+│     Tanya escorts a Chrono-tech convoy through Soviet ambush country.
+│     Asset: Chrono reinforcement package.
+│     Exact effect: one extra Chrono support platoon spawns in M4.
 │
-├─ [M2] "Five to One" ★ MEDIUM — Clear road for supply convoy.
+├─ [MAIN] [M2] "Five to One" ★ MEDIUM — Clear road for supply convoy.
 │  │  IC link: convoy carries demolition equipment for M3.
 │  │  Teaches: time-limited clearing, area control.
 │  │  Spectrum: convoy intact → full explosives for M3.
 │  │  Convoy damaged → M3 is harder (fewer charges).
 │  │
-│  └─ [CS] "Fresh Tracks" (Siberian 1) ★ MEDIUM — OPTIONAL
-│     Opens Siberian flanking arc (long-term investment).
-│     Reward: Siberian arc unlocked for Act 3
+│  └─ [THEATER] [CS] "Fresh Tracks" (Siberian 1) ★ MEDIUM — OPTIONAL
+│     Opens the Siberian flanking front.
+│     Asset: Siberian theater unlocked for Act 3.
+│     Exact effect: enables Siberian chain and its final reinforcement-denial payoff.
 │
-├─ [M3] "Dead End" ★ MEDIUM — Destroy bridges. Tanya must survive.
+├─ [MAIN / SPECOPS-FOCUSED] [M3] "Dead End" ★ MEDIUM — Destroy bridges. Tanya must survive.
 │  │  Teaches: stealth, terrain objectives, hero preservation.
+│  │  Main-operation framing: the commander secures bridgeheads and extraction
+│  │  while Tanya handles the demolition objective.
 │  │  Spectrum: all destroyed → M4 easy / some → M4 harder /
 │  │  none → M4 very hard. First real spectrum outcome.
 │
-├─ [M4] "Ten to One" ★ MEDIUM-HARD — Defend the pass.
+├─ [MAIN] [M4] "Ten to One" ★ MEDIUM-HARD — Defend the pass.
 │  │  First genuinely hard mission — but player has 6+ missions'
 │  │  experience by now. Difficulty scales with M3 bridge results.
 │  │  If Greek resistance contacted: partial shroud reveal.
 │  │
 │  ═══ TIMED CHOICE 1 ═══════════════════════════════════════════
-│  │  "Three fires burning — which one do you fight?"
-│  │  The world moves without you. Pick ONE. The other two
+│  │  "Multiple fires burning — which one do you fight?"
+│  │  The world moves without you. Pick ONE. The others
 │  │  resolve with consequences.
 │  │
-│  │  OPTION A: [IC] "Behind Enemy Lines" ★ HARD
+│  │  OPTION A: [SPECOPS] [IC] "Behind Enemy Lines" ★ HARD
 │  │  │  Tanya infiltrates Soviet facility for Iron Curtain intel.
 │  │  │  Type: spy_infiltration. Teaches: detection/alert system.
+│  │  │  Asset: Iron Curtain intel package.
+│  │  │  Exact effects: access quality for M6, rescue-state branching, future briefing intel.
 │  │  │  Spectrum outcomes:
 │  │  │  ├─ Success + escape → No rescue branch opens. Full intel for M6.
 │  │  │  ├─ Success + captured → M5 rescue branch opens. Partial intel for M6.
 │  │  │  ├─ Failed + escaped → No intel. M6 blind. Tanya available.
 │  │  │  └─ Failed + captured → M5 rescue branch opens + M6 blind. Worst case.
 │  │  │
-│  │  IF NOT CHOSEN → Tanya is captured off-screen (world moved).
-│  │  │  M5 (Rescue Tanya) enters a pending rescue queue.
-│  │  │  The player can take it now, after M6, or ignore it entirely.
-│  │  │  Each intervening mission escalates the intel leak (Rule 6).
-│  │  │  After the rescue window closes, Tanya is lost and the
-│  │  │  severe compromise state becomes permanent.
-│  │  │  No intel for M6. Briefing: "Tanya went behind enemy lines
-│  │  │  without support. She's been captured."
+│  │  IF NOT CHOSEN → The Soviets harden and partially relocate the site.
+│  │  │  No intel for M6. `Spy Network` does not appear in Act 1.
+│  │  │  Tanya stays safe, but the raid window is gone.
+│  │  │  Briefing: "The target site tightened security before we could act."
 │  │
-│  │  OPTION B: [CS] "Crackdown" (Sarin Gas 1) ★ HARD
+│  │  OPTION B: [SPECOPS] [CS] "Crackdown" (Sarin Gas 1) ★ HARD
 │  │  │  Neutralize Sarin gas facilities in Greece.
+│  │  │  Asset: chemical-weapons denial.
 │  │  │  IF CHOSEN → No chemical attacks in M8.
 │  │  │  IF NOT CHOSEN → Sarin goes active. M8 includes gas attacks.
 │  │  │  Briefing: "Chemical weapons reports from the eastern front.
 │  │  │  We didn't act in time."
 │  │
-│  │  OPTION C: [CS] "Fresh Tracks" (Siberian 1) ★ MEDIUM
+│  │  OPTION C: [THEATER] [CS] "Fresh Tracks" (Siberian 1) ★ MEDIUM
 │  │     Open second front in Siberia.
 │  │     IF CHOSEN → Siberian arc available in Act 3.
 │  │     IF NOT CHOSEN → Siberian window closes permanently.
 │  │     Briefing: "The Siberian opportunity has passed."
-│  │     (Only appears if not already completed as optional earlier)
+│  │     If already completed earlier, this slot shows
+│  │     `[RESOLVED] Siberian front already open` and the timed
+│  │     choice proceeds with the remaining live options.
 │  │
-│  [IC] "Spy Network" ★ MEDIUM — OPTIONAL (if Tanya escaped)
-│     Recruit a spy network. Reward: spy for M6, intel.
+│  │  OPTION D: [RESOURCE] [IC] "Gold Reserve" ★ MEDIUM
+│  │     Liberate a Swiss bank vault holding Allied war funds.
+│  │     IF CHOSEN → +4,000 Requisition to fund research/deployments.
+│  │     IF NOT CHOSEN → The war chest remains tight during Act 2.
+│  │
+│  [SPECOPS] [IC] "Spy Network" ★ MEDIUM — OPTIONAL (if Tanya escaped)
+│     Recruit a spy network and secure safe houses.
+│     Asset: spy-network favor.
+│     Exact effect: M6 gains access codes and later missions start with partial shroud reveal.
 │
-├─ [M5] "Tanya's Tale" ★ MEDIUM — Rescue Tanya. OPERATIVE LANE.
+├─ [SPECOPS] [M5] "Tanya's Tale" ★ MEDIUM — Rescue Tanya.
 │  │  AVAILABLE (not mandatory) if Tanya was captured.
 │  │  May be taken immediately or delayed for a limited number of missions.
 │  │  Each delay increases compromise level and later-mission penalties.
@@ -679,48 +812,54 @@ ACT 1: LIBERATION OF EUROPE ─────────────────�
 │
 ACT 2: THE IRON CURTAIN ─────────────────────────────────────────────
 │
-├─ [M6] "Iron Curtain Infiltration" ★ MEDIUM-HARD — OPERATIVE LANE.
+├─ [SPECOPS] [M6] "Iron Curtain Infiltration" ★ MEDIUM-HARD.
 │  │  Spy infiltrates Soviet Tech Center for Iron Curtain intel.
-│  │  Difficulty varies: full intel → spy has access codes.
-│  │  No intel → blind infiltration, tighter timers.
+│  │  Full intel → east service entrance open and first alarm delayed 90 seconds.
+│  │  No intel → blind infiltration, no service entrance, 2 extra patrol teams.
 │  │  Commander alternative: full assault on the Tech Center. You
 │  │  destroy it and recover partial intel from the wreckage — less
 │  │  intelligence than the spy route, but no commando gameplay.
 │  │  Character intro: KOSYGIN mentioned in intercepted comms.
 │  │
-│  ├─ [CS] "Down Under" (Sarin Gas 2) ★ HARD — OPTIONAL
+│  ├─ [SPECOPS] [CS] "Down Under" (Sarin Gas 2) ★ HARD — OPTIONAL
 │  │  │  Continue Sarin campaign. Only if Sarin 1 was chosen/completed.
-│  │  │  Reward: Greek theater secured → bonus naval units for M7
+│  │  │  Asset: Greek-theater security.
+│  │  │  Exact effect: bonus naval detachment in M7.
 │  │  │
-│  │  └─ [CS] "Controlled Burn" (Sarin Gas 3) ★ HARD — OPTIONAL
+│  │  └─ [SPECOPS] [CS] "Controlled Burn" (Sarin Gas 3) ★ HARD — OPTIONAL
 │  │     Capture Sarin facilities. Requires Sarin 2.
-│  │     Reward: chemical expertise → special weapon in Act 3
+│  │     Asset: captured chemical expertise.
+│  │     Exact effect: special denial / defense package in Act 3.
 │  │
-│  ├─ [AM] "Harbor Reclamation" (Italy 1) ★ MEDIUM — OPTIONAL
-│  │  Secure Italian harbor. Reward: Mediterranean staging base
+│  ├─ [THEATER] [AM] "Harbor Reclamation" (Italy 1) ★ MEDIUM — OPTIONAL
+│  │  Secure Italian harbor.
+│  │  Asset: Mediterranean staging base.
+│  │  Exact effect: opens Italy chain and southern support route.
 │  │
-│  └─ [AM] "In the Nick of Time" + "Caught in the Act" +
+│  └─ [THEATER] [AM] "In the Nick of Time" + "Caught in the Act" +
 │     "Production Disruption" (Italy 2-4) ★ MEDIUM-HARD — OPTIONAL
-│     Italian theater chain. Compound reward: Chrono Tank prototypes
-│     + southern flank secured for final assault
+│     Italian theater chain.
+│     Asset chain: Chrono Tank salvage + southern flank security.
+│     Exact effects: one Chrono Tank prototype in Act 3 and no southern counterattack.
 │
-├─ [M7] "Sunken Treasure" ★ MEDIUM-HARD — Destroy sub pens.
+├─ [MAIN] [M7] "Sunken Treasure" ★ MEDIUM-HARD — Destroy sub pens.
 │  │  IC link: M6 intel → Iron Curtain parts shipped by sub.
 │  │  If Sarin missions done: bonus naval units.
 │  │  If Italy done: Mediterranean staging base support.
 │  │  Teaches: naval combat.
 │  │
-│  └─ [IC] "Operation Skyfall" ★ HARD — OPTIONAL air campaign
+│  └─ [THEATER] [IC] "Operation Skyfall" ★ HARD — OPTIONAL air campaign
 │     Coordinate air strikes on AA around Chronosphere perimeter.
 │     Type: air_campaign. Teaches: sortie management, no base.
-│     Reward: M8 starts with AA destroyed (fewer air attacks).
+│     Asset: air-superiority package.
+│     Exact effect: M8 starts with AA destroyed and fewer Soviet air attacks.
 │
-├─ [M8] "Protect the Chronosphere" ★ HARD — Defend 45 minutes.
+├─ [MAIN] [M8] "Protect the Chronosphere" ★ HARD — Defend 45 minutes.
 │  │  If Sarin NOT neutralized → chemical attacks during assault.
 │  │  If Skyfall completed → Soviet AA pre-destroyed.
 │  │  Dynamic weather: storm at minute 30 (D022 showcase).
 │  │
-│  └─ [IC] "Einstein's Confession" ★ MEDIUM — OPTIONAL
+│  └─ [NARRATIVE] [IC] "Einstein's Confession" ★ MEDIUM — OPTIONAL
 │     After the Chronosphere defense, Einstein reveals something
 │     he's kept hidden: his original time machine research from
 │     1946 — the device he used to remove Hitler. His notes still
@@ -746,6 +885,13 @@ ACT 2: THE IRON CURTAIN ──────────────────�
 │     - Knowledge (exploration, intel flags) carries back
 │     - Army does NOT carry back (knowledge > power)
 │     - Butterfly effects: enemy AI adapts ("something has changed")
+│     - Concrete Allied examples:
+│       - Replaying **M12** keeps the west conduit location known, so
+│         the sabotage route is available immediately instead of after scouting
+│       - Replaying **M13** keeps concealed SAM pockets and charge nodes marked,
+│         making the precision route faster without adding free units
+│       - Replaying **M14** keeps the timing of the first Iron Curtain pulse
+│         and the north service breach already known to the player
 │
 │     If D078 stays Draft / cut, the mission remains a pure narrative
 │     reveal with no gameplay unlock. The classic campaign path works
@@ -753,67 +899,71 @@ ACT 2: THE IRON CURTAIN ──────────────────�
 │
 │     Menu scene changes: Einstein's lab with prototype device
 │
-├─ [M9] "Extract Kosygin" ★ MEDIUM-HARD — OPERATIVE LANE.
+├─ [SPECOPS] [M9] "Extract Kosygin" ★ MEDIUM-HARD.
 │  │  Spy infiltrates Soviet compound, frees defector, escorts out.
 │  │  Character payoff: heard Kosygin in M6 comms. Now rescue him.
 │  │  Commander alternative: armored extraction. Tank column blasts
 │  │  into the compound, grabs Kosygin. Louder, more casualties,
-│  │  Kosygin provides less intel (roughed up in the fighting).
-│  │  His intel quality drives the endgame.
+│  │  and M10B loses the west service-tunnel intel.
+│  │  Asset: Kosygin intelligence package.
+│  │  Exact effect: M10B gains the west service tunnel and 2 pre-marked patrol routes if Kosygin's debrief is intact.
 │  │
 │  ═══ TIMED CHOICE 2 ═══════════════════════════════════════════
 │  │  "Where do we push next? Pick one front."
 │  │
-│  │  OPTION A: [AM] "Monster Tank Madness" (Poland 1) ★ HARD
+│  │  OPTION A: [THEATER] [AM] "Monster Tank Madness" (Poland 1) ★ HARD
 │  │  │  Rescue Dr. Demitri + Super Tanks.
 │  │  │  IF CHOSEN → 2 Super Tanks for M14. Unlocks Poland 2-5.
 │  │  │  IF NOT CHOSEN → No Super Tanks. Poland arc closed.
 │  │
-│  │  OPTION B: [IC] "Air Superiority" ★ HARD
+│  │  OPTION B: [THEATER] [IC] "Air Superiority" ★ HARD
 │  │  │  Establish air dominance over the eastern front.
 │  │  │  Type: air_campaign.
 │  │  │  IF CHOSEN → Air support available in M12 and M14.
 │  │  │  IF NOT CHOSEN → No strategic air support in endgame.
 │  │
-│  │  OPTION C: [CS] "Trapped" (Siberian 2) ★ HARD
+│  │  OPTION C: [THEATER] [CS] "Trapped" (Siberian 2) ★ HARD
 │  │     Continue Siberian arc (only if Fresh Tracks was done).
 │  │     IF CHOSEN → Siberian front weakens. Unlocks Wasteland.
 │  │     IF NOT CHOSEN → Siberian gains lost. No Act 3 benefit.
 │
-│  [AM] Poland 2-5 ★ HARD — OPTIONAL (if Poland 1 was chosen)
+│  [THEATER] [AM] Poland 2-5 ★ HARD — OPTIONAL (if Poland 1 was chosen)
 │  │  "Negotiations" / "Time Flies" / "Absolute M.A.D.ness" / "PAWN"
-│  │  Compound reward: Poland liberated → flanking + resistance
+│  │  Asset chain: Poland liberated + partisan favor.
+│  │  Exact effects: flanking entry in M12 and resistance reinforcements in M14.
 │
-│  [CS] "Wasteland" (Siberian 3) ★ HARD — OPTIONAL (if Siberian 2 done)
-│     Final Siberian operation. Reward: Siberian front collapses →
-│     Soviet M14 reinforcements halved.
+│  [THEATER] [CS] "Wasteland" (Siberian 3) ★ HARD — OPTIONAL (if Siberian 2 done)
+│     Final Siberian operation.
+│     Asset: Siberian front collapse.
+│     Exact effect: Soviet M14 reinforcements halved.
 │
 ACT 3: ENDGAME ──────────────────────────────────────────────────────
 │  Menu scene: ground assault — tanks, artillery, dark skies
 │
-├─ [M10A] "Suspicion" ★ HARD — Destroy Soviet nuclear silos.
-│  │  COMMANDER LANE — base building, army assault. Always available.
+├─ [MAIN] [M10A] "Suspicion" ★ HARD — Destroy Soviet nuclear silos.
+│  │  Main-operation backbone. Full base building, army assault. Always available.
 │  │
 │  │  After M10A, choose approach for the underground facility:
-│  │  ├─ [OPERATIVE] [M10B] "Evidence" ★ HARD — Interior commando.
+│  │  ├─ [SPECOPS] [M10B] "Evidence" ★ HARD — Interior commando.
 │  │  │  Tanya infiltrates underground facility. Better intel yield.
 │  │  │
-│  │  ├─ [OPERATIVE] [IC] "Evidence: Enhanced" ★ HARD
-│  │  │  Embedded task force: Tanya + squad inside a live battle.
+│  │  ├─ [HYBRID] [IC] "Evidence: Enhanced" ★ HARD
+│  │  │  Commander-supported SpecOps: Tanya + squad inside a live battle
+│  │  │  while the commander runs a limited forward fire-support camp.
 │  │  │
 │  │  └─ [COMMANDER] [IC] "Evidence: Siege" ★ HARD
 │  │     Bomb the facility from above. Artillery + air strikes
 │  │     collapse the underground complex. Cruder but no commando
 │  │     gameplay. Reduced intel yield (facility partially destroyed).
 │
-├─ [M11] "Naval Supremacy" ★ HARD — Clear river for final push.
+├─ [MAIN] [M11] "Naval Supremacy" ★ HARD — Clear river for final push.
 │  │  IC link: Kosygin's intel → this is the only approach.
 │  │
 │  └─ [IC] "Joint Operations" ★ HARD — OPTIONAL (Phase 6b add-on, D070)
 │     Co-op variant: Commander (naval base) + SpecOps (shore batteries).
 │     Not part of the Phase 4 baseline — requires D070 co-op infrastructure.
 │
-├─ [M12] "Takedown" ★ VERY HARD — Destroy Iron Curtain bases.
+├─ [MAIN] [M12] "Takedown" ★ VERY HARD — Destroy Iron Curtain bases.
 │  │  If Poland done → flanking approach (attack from two sides).
 │  │  If Italy done → no southern naval threat.
 │  │  If air superiority → bombing runs available.
@@ -821,12 +971,13 @@ ACT 3: ENDGAME ─────────────────────�
 │  ═══ TIMED CHOICE 3 ═══════════════════════════════════════════
 │  │  "One last operation before Moscow. Make it count."
 │  │
-│  │  OPTION A: [OPERATIVE] [M13] "Focused Blast" ★ VERY HARD
+│  │  OPTION A: [SPECOPS] [M13] "Focused Blast" ★ VERY HARD
 │  │  │  Interior commando. Plant charges in underground facility.
 │  │  │  IF CHOSEN → Iron Curtain facility destroyed from inside.
 │  │
-│  │  OPTION B: [OPERATIVE] [IC] "Focused Blast: Enhanced" ★ VERY HARD
-│  │  │  Tanya's full skill tree affects the mission.
+│  │  OPTION B: [HYBRID] [IC] "Focused Blast: Enhanced" ★ VERY HARD
+│  │  │  Commander-supported SpecOps. Tanya's full skill tree affects the mission.
+│  │  │  Limited support base provides artillery, repairs, and extraction cover.
 │  │  │  Silent Step → easier stealth. Chain Detonation → fewer
 │  │  │  charges needed. Hero progression payoff.
 │  │  │  (Only available if Tanya is alive and level 3+)
@@ -838,7 +989,7 @@ ACT 3: ENDGAME ─────────────────────�
 │  │     some Iron Curtain tech survives (enemy retains partial
 │  │     Iron Curtain capability in M14).
 │
-├─ [M14] "No Remorse" ★ VERY HARD — Final assault on Moscow.
+├─ [MAIN] [M14] "No Remorse" ★ VERY HARD — Final assault on Moscow.
 │  │  EVERYTHING ACCUMULATES HERE:
 │  │  ├─ Siberian arc done → reduced reinforcements
 │  │  ├─ Poland liberated → Polish resistance arrives
@@ -870,7 +1021,7 @@ EPILOGUE ───────────────────────�
 | Content Type | Count | Toggleable |
 |---|---|---|
 | Classic main missions | 14 | Always on |
-| IC-original missions | ~8 (prologue, Behind Enemy Lines, Spy Network, Skyfall, Joint Ops, enhanced alternatives, epilogue) | Per-mission |
+| IC-original missions | ≈10-12 depending on enhanced-alternative toggles and D070/D078 add-ons | Per-mission |
 | Counterstrike missions | 8 (Sarin Gas 1-3, Fall of Greece 1-2, Siberian 1-3) | Per-chain |
 | Aftermath missions | 9 (Italy 1-4, Poland 1-5) | Per-chain |
 | Ant campaign | 4 | Post-completion unlock |
@@ -895,6 +1046,8 @@ EPILOGUE ───────────────────────�
 
 ### Full Campaign Graph
 
+**Legend:** `[MAIN]` = mandatory backbone mission, `[SPECOPS]` = hero-led intel / tech / rescue operation, `[HYBRID]` = commander-supported SpecOps, `[THEATER]` = secondary-front or regional asset chain, `[NARRATIVE]` = lore or reveal mission
+
 ```
 PROLOGUE — THE PARTY'S WILL (IC Original + Aftermath)
 │  Character intro: STALIN (voice in propaganda broadcast)
@@ -902,7 +1055,7 @@ PROLOGUE — THE PARTY'S WILL (IC Original + Aftermath)
 │  Character intro: VOLKOV (Soviet hero, playable in prologue)
 │  Character intro: GRADENKO (mentioned as political rival — foreshadowing)
 │
-├─ [IC] "Volkov: Awakening" ★ VERY EASY
+├─ [SPECOPS] [IC] "Volkov: Awakening" ★ VERY EASY
 │  │  Volkov + Chitzkoi activated for a field test. Destroy a small
 │  │  Allied outpost. Teaches: hero unit control, special abilities.
 │  │  Nadia briefs: "Comrade, the Party has invested greatly in you.
@@ -911,70 +1064,86 @@ PROLOGUE — THE PARTY'S WILL (IC Original + Aftermath)
 │  │  program's cost. Prove him wrong."
 │  │  Menu scene: Soviet war room, red lighting, propaganda posters
 │  │
-│  └─ [AM] "Testing Grounds" (France 1) ★ EASY — OPTIONAL
+│  └─ [THEATER] [AM] "Testing Grounds" (France 1) ★ EASY — OPTIONAL
 │     Test new Soviet weapons. Introduces Shock Troopers.
 │     Teaches: new unit types, combined arms.
-│     Reward: Shock Troopers available from Act 1
+│     Asset: Shock Trooper deployment rights.
+│     Exact effect: Shock Troopers available from Act 1.
 │
 ACT 1: THE IRON FIST ───────────────────────────────────────────────
 │
-├─ [M1] "Lesson in Blood" ★ EASY — Village assault. Tutorial.
+├─ [MAIN] [M1] "Lesson in Blood" ★ EASY — Village assault. Tutorial.
 │  │  Classic, enhanced with Nadia briefing context.
 │  │  Teaches: basic base assault, unit production.
 │
-├─ [M2] "Guard Duty" ★ EASY-MEDIUM — Infantry bridge assault.
+├─ [MAIN] [M2] "Guard Duty" ★ EASY-MEDIUM — Infantry bridge assault.
 │  │  IC: spy spotted during battle (foreshadows M3).
 │  │  If player kills spy → M3 is easier.
 │  │  Teaches: multi-unit coordination, bridge tactics.
 │  │
-│  └─ [AM] "Shock Therapy" (Spain 1) ★ MEDIUM — OPTIONAL
-│     Punish a border town. Reward: Shock Trooper veterancy boost
+│  └─ [THEATER] [AM] "Shock Therapy" (Spain 1) ★ MEDIUM — OPTIONAL
+│     Punish a border town.
+│     Asset: Shock Trooper veterancy package.
+│     Exact effect: veteran Shock Trooper squads in later Spain / Act 3 missions.
 │
-├─ [M3] "Covert Cleanup" ★ MEDIUM — OPERATIVE LANE. Chase a spy.
+├─ [SPECOPS] [M3] "Covert Cleanup" ★ MEDIUM. Chase a spy.
 │  │  If spy killed in M2 → timer extended to 20 min.
 │  │  Commander alternative: cordon and sweep. Deploy infantry
 │  │  squads to lock down the district. Less elegant — spy may
 │  │  escape with partial intel (worse for future missions).
 │  │  Teaches: time pressure, pursuit, area sweep.
 │  │
-│  └─ [IC] "Mole Hunt" ★ MEDIUM — OPTIONAL
+│  └─ [SPECOPS] [IC] "Mole Hunt" ★ MEDIUM — OPTIONAL
 │     Hunt Allied agents inside Soviet command. Reversed spy mission.
-│     Reward: future missions — Allies don't know your composition.
+│     Asset: counter-intelligence package.
+│     Exact effect: future Allied briefings lose composition intel and pre-defenses are reduced.
 │     Character development: Nadia assigns this personally —
 │     she's watching everyone. Foreshadows her true nature.
 │
-├─ [IC] "Road to Berlin" ★ EASY-MEDIUM — OPTIONAL logistics mission.
+├─ [THEATER] [IC] "Road to Berlin" ★ MEDIUM — OPTIONAL operational march.
 │  │  Bridges the geographic leap from the spy-chase theater to Berlin.
-│  │  Advance Soviet forces through contested territory, secure a
-│  │  staging area, and establish supply lines for the Berlin assault.
-│  │  No base building — move existing forces across a multi-zone map.
-│  │  Reward: M4 starts with a forward position (shorter approach,
-│  │  more time to complete the radar objective).
-│  │  If skipped: M4 starts from further back (harder time limit).
+│  │  This is not passive traversal. The mission loop is:
+│  │  1) seize the fuel depot before Allied engineers torch it,
+│  │  2) choose the north rail bridge or south autobahn crossing,
+│  │  3) escort 3 supply trucks into the Berlin staging park.
+│  │  Ambush pressure comes from hidden AT guns, one timed air raid,
+│  │  and the route choice between the shorter artillery corridor and
+│  │  the longer but safer southern bypass.
+│  │  Reward is upside only:
+│  │  - 3 trucks preserved → M4 gains a forward deployment zone,
+│  │    90 extra seconds on the radar timer, and 2 veteran heavy tanks
+│  │  - 1-2 trucks preserved → forward deployment zone only
+│  │  - skipped / failed → baseline M4, no extra staging assets
 │
-├─ [M4] "Behind the Lines" ★ MEDIUM — Destroy Allied radar in Berlin.
+├─ [MAIN] [M4] "Behind the Lines" ★ MEDIUM — Destroy Allied radar in Berlin.
 │  │  If Mole Hunt done → Allies don't expect you (no pre-defenses).
-│  │  If Road to Berlin done → forward position, more time.
+│  │  If Road to Berlin done → forward deployment zone, +90 seconds,
+│  │  and +2 veteran heavy tanks if the whole column arrived.
 │  │  Teaches: deep strike behind enemy lines.
 │  │
-│  ├─ [AM] "Let's Make a Steal" (France 2) ★ MEDIUM — OPTIONAL
-│  │  Steal Allied tech. Reward: vehicle tech upgrade.
+│  ├─ [SPECOPS] [AM] "Let's Make a Steal" (France 2) ★ MEDIUM — OPTIONAL
+│  │  Steal Allied tech.
+│  │  Asset: captured vehicle technology.
+│  │  Exact effect: one Soviet vehicle upgrade package for Act 2.
 │  │
-│  └─ [AM] "Test Drive" (France 3) ★ MEDIUM — OPTIONAL
-│     Test stolen vehicles. Reward: captured units in roster.
+│  └─ [SPECOPS] [AM] "Test Drive" (France 3) ★ MEDIUM — OPTIONAL
+│     Test stolen vehicles.
+│     Asset: captured-unit roster package.
+│     Exact effect: stolen Allied vehicles join the roster.
 │
-├─ [M5] "Distant Thunder" ★ MEDIUM — Build and defend a base.
+├─ [MAIN] [M5] "Distant Thunder" ★ MEDIUM — Build and defend a base.
 │  │  IC link: surviving units and unspent resources carry over to M6
 │  │  via D021 roster carryover (not literal base layout — structures
 │  │  are map-specific). Over-investing in static defenses here means
 │  │  fewer mobile units for M6's convoy escort.
 │  │  Teaches: base building, resource management, investment trade-offs.
 │  │
-│  └─ [AM] "Don't Drink the Water" (France 4) ★ MEDIUM-HARD — OPTIONAL
+│  └─ [SPECOPS] [AM] "Don't Drink the Water" (France 4) ★ MEDIUM-HARD — OPTIONAL
 │     Poison water supply, capture Chronosphere.
-│     Reward: Chronosphere intel for M8.
+│     Asset: Chronosphere weak-point intel.
+│     Exact effect: faster Elba assault and sabotage route in M8.
 │
-├─ [M6] "Bridge over the River Grotzny" ★ MEDIUM-HARD — Convoy escort.
+├─ [MAIN] [M6] "Bridge over the River Grotzny" ★ MEDIUM-HARD — Convoy escort.
 │  │  IC: surviving units and unspent resources from M5 carry over
 │  │  via D021 roster carryover. M6 starts with a pre-built base
 │  │  (map-authored) but your M5 troops are available as reinforcements.
@@ -983,26 +1152,33 @@ ACT 1: THE IRON FIST ───────────────────�
 │  │  Teaches: escort + defend with limited resources.
 │  │
 │  ═══ TIMED CHOICE 1 ═══════════════════════════════════════════
-│  │  "The front is wide. Where do we strike?"
+│  │  "The front is wide. Where do we strike? Pick ONE."
 │  │
-│  │  OPTION A: [CS] "Soldier Volkov & Chitzkoi" ★ HARD
+│  │  OPTION A: [SPECOPS] [CS] "Soldier Volkov & Chitzkoi" ★ HARD
 │  │  │  Volkov commando mission behind Allied lines.
+│  │  │  Asset: Volkov veterancy package.
 │  │  │  IF CHOSEN → Volkov gains veteran status for Act 2+.
 │  │  │  IF NOT CHOSEN → Volkov stays in reserve (no veterancy).
 │  │
-│  │  OPTION B: [CS] "Legacy of Tesla" ★ HARD
+│  │  OPTION B: [SPECOPS] [CS] "Legacy of Tesla" ★ HARD
 │  │  │  Capture Allied nuclear MiG prototype.
+│  │  │  Asset: prototype MiG tech.
 │  │  │  IF CHOSEN → Prototype MiG available in M11 naval battle.
 │  │  │  IF NOT CHOSEN → No air prototype. M11 is naval-only.
 │  │
-│  │  OPTION C: [AM] "Situation Critical" (Spain) ★ MEDIUM-HARD
+│  │  OPTION C: [THEATER] [AM] "Situation Critical" (Spain) ★ MEDIUM-HARD
 │  │     Secure Mediterranean sea lanes.
 │  │     IF CHOSEN → Naval advantage in M11. Unlocks Spain arc.
 │  │     IF NOT CHOSEN → Allied naval threat from south persists.
+│  │
+│  │  OPTION D: [RESOURCE] [IC] "Grain Requisition" ★ MEDIUM
+│  │     Redirect agricultural surplus in Ukraine to military production.
+│  │     IF CHOSEN → +3,500 Requisition to fund research/deployments.
+│  │     IF NOT CHOSEN → Military budget remains restricted during Act 2.
 │
 ACT 2: SUPERWEAPONS ────────────────────────────────────────────────
 │
-├─ [M7] "Core of the Matter" ★ HARD — Nuclear facility vs Tanya.
+├─ [MAIN] [M7] "Core of the Matter" ★ HARD — Nuclear facility vs Tanya.
 │  │  Tanya's presence is always explained in the Soviet briefing
 │  │  (IC adds context regardless of whether Allied campaign was played —
 │  │  cross-campaign references are flavor text in briefing lines only,
@@ -1011,38 +1187,43 @@ ACT 2: SUPERWEAPONS ────────────────────
 │  │  If Volkov not available → standard mission, Tanya is a boss unit.
 │  │  Teaches: facility defense + counter-commando operations.
 │  │
-│  └─ [AM] "Brothers in Arms" (Spain 2) ★ HARD — OPTIONAL
+│  └─ [THEATER] [AM] "Brothers in Arms" (Spain 2) ★ HARD — OPTIONAL
 │     Soviet traitors. Only if Spain arc opened in timed choice.
-│     Reward: loyal tank crews → heavy armor veterancy bonus.
+│     Asset: loyal tank-crew favor.
+│     Exact effect: heavy armor veterancy bonus in Act 3.
 │
-├─ [M8] "Elba Island" ★ HARD — Destroy Allied Chronosphere.
+├─ [MAIN] [M8] "Elba Island" ★ HARD — Destroy Allied Chronosphere.
 │  │  If "Don't Drink the Water" done → know weak points.
 │  │  If Volkov veteran → solo insertion option (sabotage before assault).
 │  │  Teaches: combined naval + ground assault.
 │  │
-│  ├─ [CS] "Paradox Equation" ★ HARD — OPTIONAL
+│  ├─ [SPECOPS] [CS] "Paradox Equation" ★ HARD — OPTIONAL
 │  │  Chronosphere anomalies — tanks behave as other units.
-│  │  Reward: Chrono tech understanding → advantage in M13.
+│  │  Asset: Chrono-tech understanding.
+│  │  Exact effect: faster capture path and safer temporal experiment in M13.
 │  │
-│  └─ [CS] "Mousetrap" ★ HARD — OPTIONAL
+│  └─ [SPECOPS] [CS] "Mousetrap" ★ HARD — OPTIONAL
 │     Hunt Stavros at a Chronosphere research center.
-│     Reward: Stavros eliminated → intel on Allied command structure.
+│     Asset: Allied-command intel.
+│     Exact effect: improved command-structure knowledge in later briefings and AI reads.
 │
-├─ [M9] "Liability Elimination" ★ MEDIUM-HARD — OPERATIVE LANE.
+├─ [SPECOPS] [M9] "Liability Elimination" ★ MEDIUM-HARD.
 │  │  Assassination mission. The "liability" helped Kosygin escape.
 │  │  Character shift: the war turns inward. Stalin's paranoia.
 │  │  Nadia's briefing is colder — she's consolidating power.
 │  │  Commander alternative: arrest operation. Send an armored
 │  │  column to detain the target publicly. Same political result
-│  │  but cruder — creates more internal unrest (affects Act 3).
+│  │  but cruder — causes a rear-sabotage event in M12 unless
+│  │  Stalin's Shadow neutralizes the unrest.
 │  │
-│  └─ [IC] "Stalin's Shadow" ★ HARD — OPTIONAL
+│  └─ [SPECOPS] [IC] "Stalin's Shadow" ★ HARD — OPTIONAL
 │     Nadia's secret mission: evidence against Gradenko.
 │     Foreshadows the Stalin/Nadia/Kane ending.
-│     Reward: Gradenko neutralized → simpler politics in Act 3.
+│     Asset: internal-purity leverage.
+│     Exact effect: Gradenko neutralized and fewer political disruptions in Act 3.
 │     Character reveal: Nadia is not who she seems.
 │
-├─ [M10] "Overseer" ★ MEDIUM-HARD — Escort supply trucks.
+├─ [MAIN] [M10] "Overseer" ★ MEDIUM-HARD — Escort supply trucks.
 │  │
 │  ├─ [CLASSIC] M10 as-is ★ MEDIUM-HARD
 │  │
@@ -1053,45 +1234,48 @@ ACT 2: SUPERWEAPONS ────────────────────
 ACT 3: CONQUEST ────────────────────────────────────────────────────
 │  Menu scene: naval fleet mobilizing, Channel crossing preparation
 │
-├─ [M11] "Sunk Costs" ★ HARD — Naval defense vs Allied cruisers.
+├─ [MAIN] [M11] "Sunk Costs" ★ HARD — Naval defense vs Allied cruisers.
 │  │  If MiG prototype captured → air support available.
 │  │  If Spain secured → no Allied southern reinforcements.
 │  │
-│  ├─ [AM] "Deus Ex Machina" (Spain 3) ★ HARD — OPTIONAL
+│  ├─ [SPECOPS] [AM] "Deus Ex Machina" (Spain 3) ★ HARD — OPTIONAL
 │  │  Rescue Volkov (if he was captured).
 │  │  Can be taken immediately or after delay, but Allied tech extraction
 │  │  escalates each mission he remains in custody.
 │  │  Reward quality depends on how late the rescue happens.
 │  │
-│  └─ [AM] "Grunyev Revolution" (Spain 4) ★ MEDIUM-HARD — OPTIONAL
-│     Crush a revolution. Reward: rear secured → no uprisings
-│     during England invasion.
+│  └─ [THEATER] [AM] "Grunyev Revolution" (Spain 4) ★ MEDIUM-HARD — OPTIONAL
+│     Crush a revolution.
+│     Asset: rear-area security.
+│     Exact effect: no uprisings during the England invasion.
 │
-├─ [M12] "Capture the Tech Centers" ★ VERY HARD — Capture 3 centers.
-│  │  Compound rewards from all side missions affect difficulty.
+├─ [MAIN] [M12] "Capture the Tech Centers" ★ VERY HARD — Capture 3 centers.
+│  │  Compound rewards from all optional operations affect difficulty.
 │  │
 │  ═══ TIMED CHOICE 2 ═══════════════════════════════════════════
 │  │  "The invasion of England approaches. One final preparation."
 │  │
-│  │  OPTION A: [IC] "Operation Tempest" ★ VERY HARD
+│  │  OPTION A: [THEATER] [IC] "Operation Tempest" ★ VERY HARD
 │  │  │  Air/naval pre-invasion bombardment.
 │  │  │  Type: air_campaign.
 │  │  │  IF CHOSEN → M14 starts with damaged coastal defenses.
 │  │  │  IF NOT CHOSEN → Full Allied coastal defense in M14.
 │  │
-│  │  OPTION B: [CS] "Nuclear Escalation" ★ VERY HARD
+│  │  OPTION B: [SPECOPS] [CS] "Nuclear Escalation" ★ VERY HARD
 │  │     Prevent Allied air-fuel bomb testing.
+│  │     Asset: enemy superweapon denial.
 │  │     IF CHOSEN → No Allied superweapon in M14.
 │  │     IF NOT CHOSEN → Allied air-fuel bombs in M14.
 │
-├─ [M13] "Capture the Chronosphere" ★ VERY HARD
+├─ [MAIN] [M13] "Capture the Chronosphere" ★ VERY HARD
 │  │  If Paradox Equation done → faster capture.
 │  │  If Volkov available → commando approach option.
 │  │
-│  ├─ [IC] "Chronosphere: Enhanced" ★ VERY HARD — ALTERNATIVE
-│  │  Co-op (Phase 6b add-on, D070): Commander sieges, SpecOps infiltrates.
+│  ├─ [HYBRID] [IC] "Chronosphere: Enhanced" ★ VERY HARD — ALTERNATIVE
+│  │  Commander-supported SpecOps / co-op (Phase 6b add-on, D070):
+│  │  commander sieges while SpecOps infiltrates.
 │  │
-│  └─ [IC] "Temporal Experiment" ★ HARD — OPTIONAL
+│  └─ [NARRATIVE] [IC] "Temporal Experiment" ★ HARD — OPTIONAL
 │     Soviet intelligence recovers fragments of Einstein's original
 │     1946 time travel research — notes hidden in a captured Allied
 │     research facility. Soviet scientists build a crude prototype
@@ -1115,6 +1299,14 @@ ACT 3: CONQUEST ─────────────────────�
 │     - Army does NOT carry back — D078 Layer 2 rule, same for both factions
 │     - Chrono Vortex hazards are Layer 3 / Phase 5 content — NOT included
 │       in this Phase 4 campaign mechanic
+│     - Concrete Soviet examples:
+│       - Replaying **M14** keeps the White Cliffs gun pits, mine lanes,
+│         and first coastal-battery timing known from the start
+│       - Replaying **M13** keeps the Chronosphere conduit layout and
+│         west-lab capture path known, shortening the capture route
+│       - Replaying **M14** after `Nuclear Escalation` was skipped still
+│         preserves the known air-fuel bomb window, letting the player
+│         pre-position AA without gaining extra forces
 │     - If Volkov was the test subject: his briefing dialogue hints
 │       at residual temporal effects ("Something is... different.
 │       I remember things I should not know.") — narrative flavor only
@@ -1127,7 +1319,7 @@ ACT 3: CONQUEST ─────────────────────�
 │     If Paradox Equation was completed: the temporal experiment
 │     is more stable (fewer vortices — prior Chrono understanding helps)
 │
-├─ [M14] "Soviet Supremacy" ★ VERY HARD — Invade England.
+├─ [MAIN] [M14] "Soviet Supremacy" ★ VERY HARD — Invade England.
 │  │  EVERYTHING ACCUMULATES:
 │  │  ├─ Spain secured → no southern counterattack
 │  │  ├─ Volkov available → leads armor spearhead
@@ -1158,7 +1350,7 @@ EPILOGUE ───────────────────────�
 | Content Type | Count | Toggleable |
 |---|---|---|
 | Classic main missions | 14 | Always on |
-| IC-original missions | ~7 (prologue, Mole Hunt, Stalin's Shadow, Overseer: Strike, Operation Tempest, enhanced alternatives, epilogue) | Per-mission |
+| IC-original missions | ≈8-9 depending on enhanced-alternative toggles and D078 add-ons | Per-mission |
 | Counterstrike missions | 6 (Volkov & Chitzkoi, Legacy of Tesla, Paradox Equation, Mousetrap, Testing Grounds, Nuclear Escalation) | Per-chain |
 | Aftermath missions | 9 (France 1-4, Spain 1-4, Grunyev Revolution) | Per-chain |
 | **Total missions available** | **~36** | — |
@@ -1193,7 +1385,7 @@ The echoes are authored as standard briefing text that both campaigns include re
 | **Asymmetric co-op** | Joint Operations (M11, Phase 6b add-on), Moscow Enhanced (Phase 6b add-on) | Chronosphere Enhanced (Phase 6b add-on), Supremacy Enhanced (Phase 6b add-on) |
 | **Branching decisions** | 4+ decision points | 3+ decision points |
 | **Spectrum outcomes** | Bridge destruction, intel gathering | Convoy escort, spy elimination |
-| **Side mission rewards** | Compound bonuses affecting M14 | Compound bonuses affecting M14 |
+| **Optional-operation assets** | Compound bonuses affecting M14 | Compound bonuses affecting M14 |
 | **Campaign menu scenes** | 4 acts with evolving backgrounds | 4 acts with evolving backgrounds |
 | **Roster carryover** | Squad persistence, hero survival matters | Volkov + captured units persist |
 | **Failure as consequence** | Tanya capture/rescue branch | Convoy loss affects Act 2 forces |

@@ -1,5 +1,19 @@
 # 05 — File Formats & Original Source Insights
 
+For the broader engine-completeness inventory across Dune II, Tiberian Dawn, Red Alert 1, Red Alert 2 / Yuri's Revenge, the Remastered Collection, and Generals / Zero Hour, see [Complete Resource Format Support Map](../research/complete-resource-format-support-map.md). This page remains the narrower canonical scope for the current `cnc-formats` / `ra-formats` split.
+
+## Canonical Completeness Bar
+
+At the engine level, Iron Curtain's resource-support bar is broader than the current `cnc-formats` crate surface: the engine must be able to directly load the original resource families of Dune II, Tiberian Dawn, Red Alert 1, Red Alert 2 / Yuri's Revenge, the Remastered Collection, and Generals / Zero Hour.
+
+This is a **support requirement**, not a requirement that a single parser crate owns every family. The split is:
+
+1. `cnc-formats` is canonical for the clean-room classic Westwood / Petroglyph 2D family and closely related standalone tooling formats.
+2. `ra-formats` and game-module-specific loaders own game-specific families that depend on EA-derived details or exceed the classic Westwood 2D scope.
+3. Additional sibling parser crates are allowed when a game family is structurally distinct enough that forcing it into `cnc-formats` would reduce clarity. The current obvious candidates are Dune II-specific resource families and SAGE-family formats for Generals / Zero Hour.
+
+So the completeness question is always: "can IC load the original resource directly?" not "did `cnc-formats` personally absorb every format?"
+
 ## Formats to Support (cnc-formats + ra-formats)
 
 ### Binary Formats (from original game / OpenRA)

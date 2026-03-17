@@ -500,6 +500,119 @@ pub enum VeterancyLevel { Rookie, Veteran, Elite, Heroic }
 
 **Campaign carry-over (D021):** `GainsExperience.current_xp` and `level` are part of the roster snapshot saved between campaign missions.
 
+### Campaign Strategic Layer (D021)
+
+Campaign progression is **not** part of `ic-sim`. Tactical missions emit `MissionOutcome` data, and the campaign runtime in `ic-script` / `ic-game` advances the save-authoritative `CampaignState` between missions.
+
+D021 now supports two campaign shapes on the same foundation:
+
+- **Graph-only campaigns** — branching mission graph, persistent roster/state, no extra command layer
+- **Strategic-layer campaigns** — the same graph wrapped in a phase-based `War Table` that exposes optional operations, enemy initiatives, operational budgets, and an arms-race ledger between milestone missions
+
+The important architecture rule is that the **graph remains authoritative**. The War Table is an organizer and presenter over graph nodes; it does not replace mission outcomes with a separate progression system.
+
+```rust
+#[derive(Serialize, Deserialize, Clone)]
+pub struct StrategicLayerState {
+    pub current_phase: Option<CampaignPhaseState>,
+    pub completed_phases: Vec<String>,
+    pub war_momentum: i32,
+    pub operations: Vec<CampaignOperationState>,
+    pub active_enemy_initiatives: Vec<EnemyInitiativeState>,
+    pub asset_ledger: CampaignAssetLedgerState,
+}
+
+pub enum CampaignFocusState {
+    StrategicLayer,
+    Intermission,
+    Briefing,
+    Mission,
+    Debrief,
+}
+
+pub struct CampaignPhaseState {
+    pub phase_id: String,
+    pub operational_budget_total: u32,
+    pub operational_budget_remaining: u32,
+    pub main_mission_urgent: bool,
+}
+
+pub struct CampaignOperationState {
+    pub mission_id: MissionId,
+    pub source: OperationSource,
+    pub status: OperationStatus,
+    pub expires_after_phase: Option<String>,
+    pub generated_instance: Option<GeneratedOperationState>,
+    pub generation_fallback: Option<GenerationFallbackMode>,
+}
+
+pub enum OperationSource { Authored, Generated }
+
+pub enum OperationStatus {
+    Revealed,
+    Available,
+    Completed,
+    Failed,
+    Skipped,
+    Expired,
+}
+
+pub struct GeneratedOperationState {
+    pub profile_id: String,
+    pub seed: u64,
+    pub site_kit: String,
+    pub security_tier: u8,
+    pub resolved_modules: Vec<ResolvedModulePick>,
+}
+
+pub struct ResolvedModulePick {
+    pub slot: String,
+    pub module_id: String,
+}
+
+pub enum GenerationFallbackMode {
+    AuthoredBackup { mission_id: MissionId },
+    ResolveAsSkipped,
+}
+
+pub struct EnemyInitiativeState {
+    pub initiative_id: String,
+    pub status: EnemyInitiativeStatus,
+    pub ticks_remaining: u32,
+    pub counter_operation: Option<MissionId>,
+}
+
+pub enum EnemyInitiativeStatus {
+    Revealed,
+    Countered,
+    Activated,
+    Expired,
+}
+
+pub struct CampaignAssetLedgerState {
+    pub entries: Vec<CampaignAssetLedgerEntry>,
+}
+
+pub struct CampaignAssetLedgerEntry {
+    pub asset_id: String,
+    pub owner: AssetOwner,
+    pub state: AssetState,
+    pub quantity: u32,
+    pub quality: Option<String>,
+    pub consumed_by: Vec<MissionId>,
+}
+
+pub enum AssetOwner { Player, Enemy }
+
+pub enum AssetState {
+    Acquired,
+    Partial,
+    Denied,
+}
+```
+
+`CampaignState.flags` remains the extension surface for authored story state, but first-party strategic-layer data should not be buried in generic flags. Focus state, generated-operation payloads, phase/budget state, initiative state, and asset-ledger state need first-class fields so save/load, UI, replay metadata, and campaign validation can reason about them directly.
+
 ### Guard Command
 
 ```rust
@@ -1146,4 +1259,3 @@ pub struct Plug {
 Primarily RA2 (bio-reactor accepting infantry for extra power). Included for mod compatibility. When a `Plug` entity enters a `Pluggable` building, increment `current_plugs`, grant condition per plug (e.g., "+50 power per infantry in reactor").
 
 ---
-

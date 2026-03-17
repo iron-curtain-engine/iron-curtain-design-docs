@@ -64,6 +64,15 @@ Campaign Selection → [New Game] or [Continue]
 
 The campaign graph is a visual world map (or node-and-edge graph for community campaigns) showing mission progression. Completed missions are solid, available missions pulse, locked missions are dimmed. If multiple branches are currently available, or an urgent pending mission such as a rescue remains open for a bounded window, the map/intermission view shows all available nodes and highlights the urgent one rather than auto-selecting for the player.
 
+For first-party campaigns, this screen is also the **strategic layer** of the campaign, not just a mission picker. It should tell the player:
+
+- which fronts are active
+- which operations are available now
+- which ones are urgent or expiring
+- which ones are recoverable versus truly critical
+- what concrete assets have already been earned
+- what happens if the player ignores an available operation
+
 ```
 ┌──────────────────────────────────────────────────────────┐
 │  ALLIED CAMPAIGN                             [← Back]    │
@@ -93,6 +102,74 @@ The campaign graph is a visual world map (or node-and-edge graph for community c
 ```
 
 **Flow:** Select a node → Mission Briefing screen → click "Begin Mission" → Loading → InGame. After mission: Debrief → next node unlocks on graph.
+
+**Strategic-layer surfaces for authored campaigns:**
+
+- **Role tags** on mission nodes or operation cards: `MAIN`, `SPECOPS`, `THEATER`
+- **Criticality tags**: `RECOVERABLE`, `CRITICAL`, `RESCUE`, `TIMED`
+- **Source tag**: `AUTHORED` or `GENERATED` for campaigns that mix handcrafted set pieces with generated SpecOps
+- **Reward preview**: concrete outputs such as `2 Super Tanks added in M14`, `No Sarin shelling in M8`, `M6 east service entrance unlocked`
+- **Reveal / unlock preview**: concrete follow-up cards such as `Reveals Spy Network`, `Unlocks Chrono Convoy Intercept`, `Opens Poland follow-up chain`
+- **Fail preview**: concrete attempt-failure results such as `Tanya captured`, `M6 infiltration runs blind`, `Campaign ends if Moscow holds`
+- **Ignore preview**: concrete non-selection losses such as `Siberian window closes`, `M5 rescue branch does not open in time`, `Enemy air-fuel bombs remain active in M14`
+- **Front status panel**: Greece, Siberia, Poland, Italy, England, or other authored theaters
+- **Asset ledger**: prototypes, resistance favor, rescued heroes, denied enemy tech, air/naval packages
+- **Urgency markers**: rescue pending, enemy project nearing completion, expiring operation windows
+
+**Failure-forward expectation:**
+
+- Most campaign missions are **recoverable**. Defeat branches to a fallback state or harder continuation instead of hard-failing the run.
+- Missions that can truly end the campaign must be explicitly marked **CRITICAL** on both the graph and the briefing screen.
+- Optional SpecOps should show whether failure is recoverable, whether the mission can be postponed, and what is lost by skipping it.
+
+### Mission Briefing
+
+```
+Campaign Graph → select mission → Mission Briefing
+```
+
+The mission briefing is where the player commits. It should not just restate story context; it should answer whether the mission is critical, what success gives, and what failure costs.
+
+```
+┌──────────────────────────────────────────────────────────┐
+│  BEHIND ENEMY LINES                        [← Back]      │
+│  Tags: [SPECOPS] [TIMED] [RECOVERABLE] [GENERATED]      │
+│                                                          │
+│  Objective Summary                                       │
+│  Tanya infiltrates a Soviet research site and steals     │
+│  Iron Curtain access codes before the evacuation window  │
+│  closes.                                                 │
+│                                                          │
+│  On Success                                              │
+│  • M6 east service entrance unlocked                     │
+│  • First alarm delayed by 90 seconds                     │
+│  • Spy Network operation revealed on the world screen    │
+│                                                          │
+│  On Failure                                              │
+│  • Tanya may be captured                                 │
+│  • M6 loses the service-entrance route                   │
+│                                                          │
+│  If Skipped                                              │
+│  • Soviet site hardens and the raid window closes        │
+│  • M6 loses the service-entrance route                   │
+│                                                          │
+│  Time Window                                             │
+│  • Must be chosen during the current Act 1 decision      │
+│    window                                                │
+│                                                          │
+│                 [Begin Mission] [Compare Other Ops]      │
+└──────────────────────────────────────────────────────────┘
+```
+
+**Briefing disclosure rules:**
+
+- **Critical missions** must show a prominent `CRITICAL` badge plus a plain-language failure line such as `Campaign ends on defeat`.
+- **Recoverable missions** should show the fallback expectation explicitly: `Defeat branches to a harder continuation` or `Rescue branch opens`.
+- **Timed-choice save policy** should be explicit. First-party campaigns allow normal saving/reloading by default; `Ironman` or other commit modes autosave immediately after the choice and warn that the branch is now locked.
+- **SpecOps missions** should show `On Success`, `On Failure`, `If Skipped`, and `Time Window` sections whenever those states differ.
+- **SpecOps intel missions** should also show if success reveals or unlocks a new commander-facing operation on the strategic map.
+- **Generated SpecOps missions** should also show their theater / site context (`Generated from: Polish rail yard`, `Generated from: Soviet prison compound`) so the operation reads as a deliberate war target, not a random skirmish.
+- If multiple operations are available, the player should be able to back out and compare them without losing context or triggering the timer simply by opening a briefing.
 
 **Branching-safe progress display (D021):**
 - `Progress` defaults to **unique missions completed / total missions in graph**.

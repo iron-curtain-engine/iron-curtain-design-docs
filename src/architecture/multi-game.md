@@ -120,7 +120,7 @@ fn main() {
 | **Networking**  | `NetworkModel` trait, `RelayCore` library, relay server binary, lockstep, replays    | `PlayerOrder` variants (game-specific commands)                                   |
 | **Rendering**   | Camera, sprite batching, UI framework; post-FX pipeline available to modders         | Sprite renderer (RA1), voxel renderer (RA2), mesh renderer (3D mod/future)        |
 | **Modding**     | YAML loader, Lua runtime, WASM sandbox, workshop                                     | Rule schemas, API surface exposed to scripts                                      |
-| **Formats**     | Archive loading, format registry                                                     | `.mix`/`.shp` (RA1), `.vxl`/`.hva` (RA2), `.big`/`.w3d` (future), map format      |
+| **Formats**     | Archive loading, format registry                                                     | classic Westwood 2D family (`.mix`, `.shp`, `.tmp`, `.pal`, `.aud`, `.vqa`, `.vqp`, `.wsa`, `.fnt`, `.cps`, `.eng`, mission `.bin` / `.mpr`), RA2 families (`.vxl`, `.hva`, `.bag` / `.idx`, `.csf`, `.map`), and SAGE families (`.big`, `.w3d`, `.wnd`, `.str`, `.apt` bundle family, texture formats) |
 
 ### RA2 Extension Points
 
@@ -164,7 +164,7 @@ C&C Generals and later 3D titles (C&C3, RA3) are **not current targets** — we 
 | Camera             | Implementation     | Yes (`ScreenToWorld` trait)   | A perspective camera impl. Already documented.                      |
 | Input              | No (`InputSource`) | Yes                           | Nothing. Orders are orders.                                         |
 | Networking         | No                 | Yes (`NetworkModel` trait)    | Nothing. Lockstep works regardless of spatial model.                |
-| Format loaders     | Implementation     | Yes (`FormatRegistry`)        | New parsers for `.big`, `.w3d`, etc. Additive.                      |
+| Format loaders     | Implementation     | Yes (`FormatRegistry`)        | New parsers for `.cps`, `.eng`, `.vxl`, `.hva`, `.bag` / `.idx`, `.big`, `.w3d`, `.wnd`, `.str`, `.apt`, and other game-family formats are additive. |
 | Building placement | Data-driven        | N/A — YAML rules + components | Different components (no `RequiresBuildableArea`). YAML change.     |
 
 The key insight: the engine core (`Simulation`, `apply_tick()`, `GameLoop`, `NetworkModel`, `Pathfinder`, `SpatialIndex`, `FogProvider`, `DamageResolver`, `OrderValidator`) is spatial-model-agnostic. Grid-based pathfinding is a *game module implementation*, not an engine assumption — the same way `LocalNetwork` is a network implementation, not the only possible one.
@@ -236,4 +236,3 @@ This is a **Tier 3 (WASM) mod** — it replaces a rendering backend, which is to
 7. **`PlayerOrder` is extensible.** Use an enum with a `Custom(GameSpecificOrder)` variant, or make orders generic over the game module.
 8. **Fog, damage, and validation are behind traits (D041).** `FogProvider`, `DamageResolver`, and `OrderValidator` — each game module supplies its own implementation. The engine core calls trait methods, never game-specific fog/damage/validation logic directly.
 9. **AI strategy is behind a trait (D041).** `AiStrategy` lets each game module (or difficulty preset) supply different decision-making logic. The engine schedules AI ticks; the strategy decides what to do.
-
