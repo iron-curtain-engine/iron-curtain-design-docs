@@ -14,5 +14,9 @@ edit-url-template = "https://github.com/iron-curtain-engine/iron-curtain-design-
 default-theme = "navy"
 additional-css = ["css/sidebar-logo.css"]
 
+[output.html.fold]
+enable = true
+level = 0
+
 # License: Design documents (src/, research/) are CC BY-SA 4.0.
 # Engine code license is pending (P006). See LICENSE-DOCS.
