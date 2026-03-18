@@ -458,8 +458,8 @@
 <tr><th>Component</th><th>Use Case</th><th><code>strict-path</code> Type</th></tr>
 </thead>
 <tbody>
-<tr><td><code>ra-formats</code> (<code>.oramap</code> extraction)</td><td>Sandbox extracted map files to map directory</td><td><code>PathBoundary</code></td></tr>
-<tr><td><code>ra-formats</code> (<code>.meg</code> extraction)</td><td>Sandbox Remastered MEG entries to mod directory (D075)</td><td><code>PathBoundary</code></td></tr>
+<tr><td><code>ic-cnc-content</code> (<code>.oramap</code> extraction)</td><td>Sandbox extracted map files to map directory</td><td><code>PathBoundary</code></td></tr>
+<tr><td><code>ic-cnc-content</code> (<code>.meg</code> extraction)</td><td>Sandbox Remastered MEG entries to mod directory (D075)</td><td><code>PathBoundary</code></td></tr>
 <tr><td>Workshop (<code>.icpkg</code> extraction)</td><td>Prevent Zip Slip during package installation (D030)</td><td><code>PathBoundary</code></td></tr>
 <tr><td><code>p2p-distribute</code> (torrent file writes)</td><td>Sandbox downloaded content to torrent directory (D076)</td><td><code>PathBoundary</code></td></tr>
 <tr><td>Save game loading</td><td>Restrict save file access to save directory</td><td><code>PathBoundary</code></td></tr>
@@ -472,7 +472,7 @@
 </table>
 </div>
 <p>This supersedes naive string-based checks like <code>path.contains("..")</code> (see V33) which miss symlinks, Windows 8.3 short names, NTFS ADS, encoding tricks, and race conditions. <code>strict-path</code>’s compile-time marker types (<code>PathBoundary</code> vs <code>VirtualRoot</code>) provide domain separation — a path validated for one boundary cannot be accidentally used for another.</p>
-<p><strong>Adoption strategy:</strong> <code>strict-path</code> is integrated as a dependency of <code>ra-formats</code> (archive extraction including <code>.oramap</code> and <code>.meg</code>), <code>ic-game</code> (save/load, replay extraction, backup restore), <code>ic-script</code> (WASM file access scope), and <code>p2p-distribute</code> (torrent file path validation — D076 standalone crate). <code>ic-paths</code> provides convenience methods (<code>AppDirs::save_boundary()</code>, <code>AppDirs::mod_boundary()</code>, etc.) that produce <code>PathBoundary</code> instances from resolved platform directories. All public APIs that accept filesystem paths from untrusted sources take <code>StrictPath&lt;PathBoundary&gt;</code> instead of <code>std::path::Path</code>.</p>
+<p><strong>Adoption strategy:</strong> <code>strict-path</code> is integrated as a dependency of <code>ic-cnc-content</code> (archive extraction including <code>.oramap</code> and <code>.meg</code>), <code>ic-game</code> (save/load, replay extraction, backup restore), <code>ic-script</code> (WASM file access scope), and <code>p2p-distribute</code> (torrent file path validation — D076 standalone crate). <code>ic-paths</code> provides convenience methods (<code>AppDirs::save_boundary()</code>, <code>AppDirs::mod_boundary()</code>, etc.) that produce <code>PathBoundary</code> instances from resolved platform directories. All public APIs that accept filesystem paths from untrusted sources take <code>StrictPath&lt;PathBoundary&gt;</code> instead of <code>std::path::Path</code>.</p>
 <h2 id="competitive-integrity-summary"><a class="header" href="#competitive-integrity-summary">Competitive Integrity Summary</a></h2>
 <p>Iron Curtain’s anti-cheat is <strong>architectural, not bolted on.</strong> Every defense emerges from design decisions made for other reasons:</p>
 <div class="table-wrapper">
@@ -520,7 +520,7 @@
 <tr><td>Detection evasion</td><td>Population baselines + continuous recalibration</td><td>Population-baseline comparison (V12/V54)</td></tr>
 <tr><td>Enforcement timing</td><td>Wave ban cadence + intelligence gathering</td><td>Enforcement timing strategy (V12)</td></tr>
 <tr><td>Protocol fingerprint</td><td>Opt-in sources + proxy routing + minimal ident</td><td>CommunityBridge privacy</td></tr>
-<tr><td>Format parser DoS</td><td>Decompression caps + fuzzing + iteration limits</td><td><code>ra-formats</code> defensive parsing (V38)</td></tr>
+<tr><td>Format parser DoS</td><td>Decompression caps + fuzzing + iteration limits</td><td><code>ic-cnc-content</code> defensive parsing (V38)</td></tr>
 <tr><td>Lua sandbox bypass</td><td><code>string.rep</code> cap + coroutine check + fatal limits</td><td>Modding sandbox hardening (V39)</td></tr>
 <tr><td>LLM content inject</td><td>Validation pipeline + cumulative limits + filter</td><td>LLM safety gate (V40)</td></tr>
 <tr><td>Replay resource skip</td><td>Consent prompt + content-type restriction</td><td>Replay security model (V41)</td></tr>

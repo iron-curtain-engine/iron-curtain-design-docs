@@ -213,15 +213,15 @@ The `reason` field is **mandatory for network and filesystem capabilities** — 
 
 **UX rules:**
 
-| Rule | Behavior |
-|------|----------|
-| **Standard capabilities** (`read_own_state`, `read_visible_state`, `issue_orders`, `render`, `pathfinding`, `ai_strategy`, `format_loading`) | Granted automatically. No prompt. Listed as informational summary only |
-| **Elevated capabilities** (network, filesystem) | Shown with toggle switches. Default: off. Player opts in per capability |
-| **Reason text** | Mandatory for elevated capabilities, shown under each toggle |
-| **Network domains** | Each allowed domain listed explicitly |
-| **Filesystem paths** | Scoped paths listed explicitly |
-| **No review needed** | WASM mods without network/filesystem AND with default-or-below limits install silently. Tier 1/2 mods always install silently |
-| **Updates** | Re-prompt if elevated capabilities changed ("New: network access to api.example.com") OR if above-default resource limits changed ("CPU increased from 1M to 2M instructions/tick"). Keyed by `capability_manifest_hash` — unchanged manifests across version bumps skip re-review |
+| Rule                                                                                                                                         | Behavior                                                                                                                                                                                                                                                                           |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Standard capabilities** (`read_own_state`, `read_visible_state`, `issue_orders`, `render`, `pathfinding`, `ai_strategy`, `format_loading`) | Granted automatically. No prompt. Listed as informational summary only                                                                                                                                                                                                             |
+| **Elevated capabilities** (network, filesystem)                                                                                              | Shown with toggle switches. Default: off. Player opts in per capability                                                                                                                                                                                                            |
+| **Reason text**                                                                                                                              | Mandatory for elevated capabilities, shown under each toggle                                                                                                                                                                                                                       |
+| **Network domains**                                                                                                                          | Each allowed domain listed explicitly                                                                                                                                                                                                                                              |
+| **Filesystem paths**                                                                                                                         | Scoped paths listed explicitly                                                                                                                                                                                                                                                     |
+| **No review needed**                                                                                                                         | WASM mods without network/filesystem AND with default-or-below limits install silently. Tier 1/2 mods always install silently                                                                                                                                                      |
+| **Updates**                                                                                                                                  | Re-prompt if elevated capabilities changed ("New: network access to api.example.com") OR if above-default resource limits changed ("CPU increased from 1M to 2M instructions/tick"). Keyed by `capability_manifest_hash` — unchanged manifests across version bumps skip re-review |
 
 #### Managing Capabilities After Install
 
@@ -744,7 +744,7 @@ The engine provides a `FormatLoader` WASM API surface that lets mods register cu
 
 **Security:** Format loading occurs at asset load time, not during simulation ticks. Format loader mods have file read access (through the engine's archive abstraction) but cannot issue orders, access game state, or call render functions. They decode bytes into engine-standard pixel/audio/mesh data — nothing else.
 
-**Phase:** WASM format loader API ships in Phase 6a alongside the broader mod testing framework. Built-in C&C format loaders (`ra-formats`) ship in Phase 0.
+**Phase:** WASM format loader API ships in Phase 6a alongside the broader mod testing framework. Built-in C&C format loaders (`ic-cnc-content`) ship in Phase 0.
 
 ### Mod Testing Framework
 

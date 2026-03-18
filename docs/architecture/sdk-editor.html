@@ -250,7 +250,7 @@
 </thead>
 <tbody>
 <tr><td><strong>Editor chrome</strong></td><td><code>egui</code> default dark theme (or light theme, user-selectable)</td><td>All panels, menus, inspectors, tree views, buttons, text fields</td></tr>
-<tr><td><strong>Viewport content</strong></td><td>Player’s installed RA assets (via <code>ra-formats</code> + content detection)</td><td>Terrain tiles, unit/building sprites, animations — the actual game art</td></tr>
+<tr><td><strong>Viewport content</strong></td><td>Player’s installed RA assets (via <code>ic-cnc-content</code> + content detection)</td><td>Terrain tiles, unit/building sprites, animations — the actual game art</td></tr>
 <tr><td><strong>Editor overlays</strong></td><td>Procedurally generated or minimal bundled PNGs</td><td>Trigger zone highlights (colored rectangles), waypoint markers (circles), region boundaries</td></tr>
 <tr><td><strong>Entity palette</strong></td><td>Sprite thumbnails extracted from game assets at load time</td><td>Small preview icons in the entity browser (Garry’s Mod spawn menu style)</td></tr>
 <tr><td><strong>Mode icons</strong></td><td>Bundled icon set (~20 small PNG icons, original art, CC BY-SA licensed)</td><td>Mode panel icons, toolbar buttons, status indicators</td></tr>
@@ -361,14 +361,14 @@ Layer 9:   Cursor tool overlay (brush circle for terrain, snap indicator)
 </div>
 <p><strong>Total: ~18 weeks for a functional scenario editor MVP.</strong> This covers the “core scenario editor” deliverable from Phase 6a — everything a creator needs to build and publish a playable mission.</p>
 <h4 id="asset-studio-bootstrapping"><a class="header" href="#asset-studio-bootstrapping">Asset Studio Bootstrapping</a></h4>
-<p>The Asset Studio can be developed in parallel once <code>ra-formats</code> is mature (Phase 0):</p>
+<p>The Asset Studio can be developed in parallel once <code>ic-cnc-content</code> is mature (Phase 0):</p>
 <div class="table-wrapper">
 <table>
 <thead>
 <tr><th>Step</th><th>Deliverable</th><th>Dependencies</th><th>Effort</th></tr>
 </thead>
 <tbody>
-<tr><td>1</td><td>Archive browser + file list</td><td><code>ra-formats</code> MIX parser, <code>egui</code> tree view</td><td>1 week</td></tr>
+<tr><td>1</td><td>Archive browser + file list</td><td><code>ic-cnc-content</code> MIX parser, <code>egui</code> tree view</td><td>1 week</td></tr>
 <tr><td>2</td><td>Sprite viewer with palette</td><td>SHP→RGBA conversion, animation scrubber</td><td>1 week</td></tr>
 <tr><td>3</td><td>Palette viewer/editor</td><td>Color grid display, remap tools</td><td>1 week</td></tr>
 <tr><td>4</td><td>Audio player</td><td>AUD→PCM→Bevy audio playback, waveform display</td><td>1 week</td></tr>
@@ -382,7 +382,7 @@ Layer 9:   Cursor tool overlay (brush circle for terrain, snap indicator)
 <h3 id="do-we-have-enough-information"><a class="header" href="#do-we-have-enough-information">Do We Have Enough Information?</a></h3>
 <p><strong>Yes — the design is detailed enough to build from.</strong> The critical path is clear:</p>
 <ol>
-<li><strong>Rendering engine (§ “First Runnable”)</strong> is the prerequisite. Without <code>ra-formats</code> and <code>ic-render</code>, there’s no viewport.</li>
+<li><strong>Rendering engine (§ “First Runnable”)</strong> is the prerequisite. Without <code>ic-cnc-content</code> and <code>ic-render</code>, there’s no viewport.</li>
 <li><strong>GUI framework (<code>egui</code>)</strong> is a known, mature Rust crate. No research needed — it has property inspectors, tree views, text editors, and all the widget types the SDK needs.</li>
 <li><strong>Viewport rendering</strong> reuses <code>ic-render</code> — the same code that renders the game renders the editor viewport. This eliminates the hardest rendering problem.</li>
 <li><strong>Editor overlays</strong> (trigger zones, waypoints, grid lines) are simple 2D shapes on top of the game render. Bevy’s <code>Gizmos</code> API handles this.</li>

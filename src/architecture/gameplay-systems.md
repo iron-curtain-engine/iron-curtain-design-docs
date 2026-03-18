@@ -1215,7 +1215,7 @@ Auto-generated from YAML rule definitions + optional `encyclopedia:` block in YA
 
 ### Palette Effects (Runtime)
 
-Beyond static `.pal` file loading (`ra-formats`), runtime palette manipulation for classic RA visual style:
+Beyond static `.pal` file loading (`ic-cnc-content`), runtime palette manipulation for classic RA visual style:
 
 ```rust
 pub enum PaletteEffect {

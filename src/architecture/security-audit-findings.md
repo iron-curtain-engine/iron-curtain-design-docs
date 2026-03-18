@@ -432,29 +432,29 @@ V44 also states "Replays record the dev mode flag" — but this appears to be a 
 
 ### Audit Coverage Matrix
 
-| Security Domain                           | Documents Reviewed           | Vulnerabilities Covered | Findings          |
-| ----------------------------------------- | ---------------------------- | ----------------------- | ----------------- |
-| Anti-cheat / behavioral analysis          | V12, V34, V36, V54, V55      | 5                       | F1, F7            |
-| Network / transport                       | V14, V15, V17, V24, V32      | 5                       | F2, F13           |
-| Identity / credentials                    | V47, V48, D052               | 3                       | F3, F4            |
-| Modding sandbox (WASM/Lua)                | V5, V39, V43, V50            | 4                       | F5, F10           |
-| Workshop supply chain                     | V18–V23, V49, V51, V52       | 8                       | F8                |
-| Replay / save integrity                   | V41, V42, V45, V6            | 4                       | F6, F9, F18       |
-| Ranked / competitive                      | V26–V31, V33, V44            | 8                       | F7, F11, F12, F17 |
-| Cross-engine                              | V35, V36, 07-CROSS-ENGINE.md | 2                       | F14               |
-| External tools (ICRP)                     | D071                         | 1                       | F2                |
-| Player identity / display                 | V46, V56                     | 2                       | —                 |
-| Format parsing (cnc-formats + ra-formats) | V38                          | 1                       | —                 |
-| LLM content                               | V40                          | 1                       | —                 |
-| Console / communication                   | D058, D059                   | 2                       | F8                |
-| Spectator / observer                      | D071, D055                   | —                       | F7, F16           |
-| Lobby configuration                       | Not covered                  | 0                       | F12               |
+| Security Domain                               | Documents Reviewed           | Vulnerabilities Covered | Findings          |
+| --------------------------------------------- | ---------------------------- | ----------------------- | ----------------- |
+| Anti-cheat / behavioral analysis              | V12, V34, V36, V54, V55      | 5                       | F1, F7            |
+| Network / transport                           | V14, V15, V17, V24, V32      | 5                       | F2, F13           |
+| Identity / credentials                        | V47, V48, D052               | 3                       | F3, F4            |
+| Modding sandbox (WASM/Lua)                    | V5, V39, V43, V50            | 4                       | F5, F10           |
+| Workshop supply chain                         | V18–V23, V49, V51, V52       | 8                       | F8                |
+| Replay / save integrity                       | V41, V42, V45, V6            | 4                       | F6, F9, F18       |
+| Ranked / competitive                          | V26–V31, V33, V44            | 8                       | F7, F11, F12, F17 |
+| Cross-engine                                  | V35, V36, 07-CROSS-ENGINE.md | 2                       | F14               |
+| External tools (ICRP)                         | D071                         | 1                       | F2                |
+| Player identity / display                     | V46, V56                     | 2                       | —                 |
+| Format parsing (cnc-formats + ic-cnc-content) | V38                          | 1                       | —                 |
+| LLM content                                   | V40                          | 1                       | —                 |
+| Console / communication                       | D058, D059                   | 2                       | F8                |
+| Spectator / observer                          | D071, D055                   | —                       | F7, F16           |
+| Lobby configuration                           | Not covered                  | 0                       | F12               |
 
 ### Verification: Known-Good Areas
 
 These areas were audited and found to be well-designed with no gaps:
 
-- **V38 ra-formats parser safety:** Comprehensive — decompression ratio caps, per-format entry limits, iteration counters, mandatory fuzzing, Zip Slip defense via strict-path. Well-referenced across documents.
+- **V38 ic-cnc-content parser safety:** Comprehensive — decompression ratio caps, per-format entry limits, iteration counters, mandatory fuzzing, Zip Slip defense via strict-path. Well-referenced across documents.
 - **V18 Workshop supply chain:** Five independent layers with academic precedent citations (fractureiser, npm, crates.io). Defense-in-depth is thorough.
 - **V2 Order validation:** Deterministic validation inside sim (D012) is architecturally sound — validation IS the anti-cheat, not a bolt-on.
 - **V14 Transport encryption:** Follows GNS/DTLS patterns. Sequence-bound nonces, identity binding, mandatory encryption — no shortcuts.

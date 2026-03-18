@@ -698,7 +698,7 @@ smoothing = true                    # Interpolated camera movement between sim t
 <p><strong>CPU particle fallback:</strong> Bevy supports CPU-side particle emission. Lower particle count but functional. Weather rain/snow works on Tier 0 — just fewer particles.</p>
 </li>
 <li>
-<p><strong>Sprite sheet splitting:</strong> The asset pipeline (Phase 0, <code>ra-formats</code>) splits large sprite sheets into 2048×2048 chunks at build time when targeting downlevel. Zero runtime cost — the splitting is a bake step.</p>
+<p><strong>Sprite sheet splitting:</strong> The asset pipeline (Phase 0, <code>ic-cnc-content</code>) splits large sprite sheets into 2048×2048 chunks at build time when targeting downlevel. Zero runtime cost — the splitting is a bake step.</p>
 </li>
 <li>
 <p><strong>WebGPU-first browser strategy:</strong> WebGPU is supported in Chrome, Edge, and Firefox (2023+). Rather than maintaining a severely limited WebGL2 fallback, target WebGPU for the browser build (Phase 7) and document WebGL2 as best-effort.</p>

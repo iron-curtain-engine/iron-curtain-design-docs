@@ -65,7 +65,7 @@ The SDK does not need its own art assets for the editor chrome — it uses `egui
 | Resource Category    | Source                                                                                        | Used For                                                                                    |
 | -------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
 | **Editor chrome**    | `egui` default dark theme (or light theme, user-selectable)                                   | All panels, menus, inspectors, tree views, buttons, text fields                             |
-| **Viewport content** | Player's installed RA assets (via `ra-formats` + content detection)                           | Terrain tiles, unit/building sprites, animations — the actual game art                      |
+| **Viewport content** | Player's installed RA assets (via `ic-cnc-content` + content detection)                       | Terrain tiles, unit/building sprites, animations — the actual game art                      |
 | **Editor overlays**  | Procedurally generated or minimal bundled PNGs                                                | Trigger zone highlights (colored rectangles), waypoint markers (circles), region boundaries |
 | **Entity palette**   | Sprite thumbnails extracted from game assets at load time                                     | Small preview icons in the entity browser (Garry's Mod spawn menu style)                    |
 | **Mode icons**       | Bundled icon set (~20 small PNG icons, original art, CC BY-SA licensed)                       | Mode panel icons, toolbar buttons, status indicators                                        |
@@ -183,11 +183,11 @@ The editor bootstraps on top of the game's rendering — so the first-runnable (
 
 #### Asset Studio Bootstrapping
 
-The Asset Studio can be developed in parallel once `ra-formats` is mature (Phase 0):
+The Asset Studio can be developed in parallel once `ic-cnc-content` is mature (Phase 0):
 
 | Step | Deliverable                 | Dependencies                                   | Effort  |
 | ---- | --------------------------- | ---------------------------------------------- | ------- |
-| 1    | Archive browser + file list | `ra-formats` MIX parser, `egui` tree view      | 1 week  |
+| 1    | Archive browser + file list | `ic-cnc-content` MIX parser, `egui` tree view  | 1 week  |
 | 2    | Sprite viewer with palette  | SHP→RGBA conversion, animation scrubber        | 1 week  |
 | 3    | Palette viewer/editor       | Color grid display, remap tools                | 1 week  |
 | 4    | Audio player                | AUD→PCM→Bevy audio playback, waveform display  | 1 week  |
@@ -201,7 +201,7 @@ The Asset Studio can be developed in parallel once `ra-formats` is mature (Phase
 
 **Yes — the design is detailed enough to build from.** The critical path is clear:
 
-1. **Rendering engine (§ "First Runnable")** is the prerequisite. Without `ra-formats` and `ic-render`, there's no viewport.
+1. **Rendering engine (§ "First Runnable")** is the prerequisite. Without `ic-cnc-content` and `ic-render`, there's no viewport.
 2. **GUI framework (`egui`)** is a known, mature Rust crate. No research needed — it has property inspectors, tree views, text editors, and all the widget types the SDK needs.
 3. **Viewport rendering** reuses `ic-render` — the same code that renders the game renders the editor viewport. This eliminates the hardest rendering problem.
 4. **Editor overlays** (trigger zones, waypoints, grid lines) are simple 2D shapes on top of the game render. Bevy's `Gizmos` API handles this.

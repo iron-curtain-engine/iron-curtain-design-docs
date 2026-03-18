@@ -201,7 +201,7 @@
 <tr><td>New CLI subcommand or flag</td><td>D076 § CLI subcommand roadmap</td><td><code>--format</code> flag, binary format conversions</td></tr>
 <tr><td>Encoding/write capability</td><td>05-FORMATS.md § Crate Goals, D076 § module table</td><td>SHP encoder, AUD encoder, VQA encoder</td></tr>
 <tr><td>New format support</td><td>05-FORMATS.md § format tables</td><td>AVI interchange format</td></tr>
-<tr><td>Capability moved between crates</td><td>05-FORMATS.md § crate split</td><td>Encoding in cnc-formats vs ra-formats</td></tr>
+<tr><td>Capability moved between crates</td><td>05-FORMATS.md § crate split</td><td>Encoding in cnc-formats vs ic-cnc-content</td></tr>
 <tr><td>New dependency added</td><td>D076 § Crate Design Principles</td><td><code>png</code>, <code>hound</code>, <code>gif</code>, <code>clap</code></td></tr>
 </tbody>
 </table>
@@ -221,14 +221,14 @@
 </table>
 </div>
 <h2 id="encodingwrite-capability-attribution-rules"><a class="header" href="#encodingwrite-capability-attribution-rules">Encoding/Write Capability Attribution Rules</a></h2>
-<p>The design docs historically assumed all encoding belonged in <code>ra-formats</code> (GPL, Phase 6a, EA-derived). Implementation has shown that clean-room encoding is feasible in permissive crates. The attribution rule is:</p>
+<p>The design docs historically assumed all encoding belonged in <code>ic-cnc-content</code> (GPL, Phase 6a, EA-derived). Implementation has shown that clean-room encoding is feasible in permissive crates. The attribution rule is:</p>
 <ul>
 <li><strong><code>cnc-formats</code> (MIT/Apache-2.0):</strong> Clean-room encoders for all standard algorithms (LCW compression, IMA ADPCM encoding, VQ codebook generation, SHP frame assembly). These use publicly documented algorithms with no EA source code references. Sufficient for community tools, round-trip conversion, and Asset Studio basic functionality.</li>
-<li><strong><code>ra-formats</code> (GPL v3):</strong> EA-derived encoder enhancements that reference GPL source code for pixel-perfect original-game-format matching, plus encrypted <code>.mix</code> packing (Blowfish key derivation + SHA-1 body digest). Only needed when exact-match reproduction of original game file bytes is required.</li>
+<li><strong><code>ic-cnc-content</code> (GPL v3):</strong> EA-derived encoder enhancements that reference GPL source code for pixel-perfect original-game-format matching, plus encrypted <code>.mix</code> packing (Blowfish key derivation + SHA-1 body digest). Only needed when exact-match reproduction of original game file bytes is required.</li>
 </ul>
 <p>When updating format table rows, annotate which crate provides read vs. write:</p>
 <ul>
-<li>“Read: cnc-formats, Write: cnc-formats (clean-room) + ra-formats (EA-enhanced)”</li>
+<li>“Read: cnc-formats, Write: cnc-formats (clean-room) + ic-cnc-content (EA-enhanced)”</li>
 </ul>
 <h2 id="drift-detection-workflow"><a class="header" href="#drift-detection-workflow">Drift Detection Workflow</a></h2>
 <p>When working on design docs that reference external crate capabilities:</p>

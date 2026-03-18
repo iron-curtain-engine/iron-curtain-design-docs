@@ -6,11 +6,11 @@ Use this as the implementation handoff checklist for the **first playable Red Al
 
 ### Phase 1 Checklist (`M1`: Render and Recognize RA)
 
-| Step | Work Package (Implementation Bundle)                                                                        | Suggested Verification / Proof Artifact                   | Completion Notes                                                           |
-| ---- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `G1` | Implement core RA asset parsing in `ra-formats` for `.mix`, `.shp`, `.pal` + real-install asset enumeration | Parser corpus tests + sample asset enumeration output     | Include malformed/corrupt fixture expectations and error behavior          |
-| `G2` | Implement Bevy map/sprite render slice (palette-correct draw, camera controls, static scene)                | Known-map visual capture + regression screenshot set      | Palette correctness should be checked against a reference image set        |
-| `G3` | Implement unit sprite sequence playback (idle/move/fire/death)                                              | Short capture (GIF/video) + sequence timing sanity checks | Keep sequence lookup conventions compatible with later variant skins/icons |
+| Step | Work Package (Implementation Bundle)                                                                            | Suggested Verification / Proof Artifact                   | Completion Notes                                                           |
+| ---- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `G1` | Implement core RA asset parsing in `ic-cnc-content` for `.mix`, `.shp`, `.pal` + real-install asset enumeration | Parser corpus tests + sample asset enumeration output     | Include malformed/corrupt fixture expectations and error behavior          |
+| `G2` | Implement Bevy map/sprite render slice (palette-correct draw, camera controls, static scene)                    | Known-map visual capture + regression screenshot set      | Palette correctness should be checked against a reference image set        |
+| `G3` | Implement unit sprite sequence playback (idle/move/fire/death)                                                  | Short capture (GIF/video) + sequence timing sanity checks | Keep sequence lookup conventions compatible with later variant skins/icons |
 
 #### `G1.x` Substeps (Owned-Source Import/Extract Foundations for `M3` Setup Wizard Handoff)
 

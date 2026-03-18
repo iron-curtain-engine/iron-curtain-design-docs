@@ -207,7 +207,7 @@
 <tr><th>Element</th><th>Original RA Source Reference</th><th>IC Implementation</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>Palette-indexed rendering</strong></td><td><code>PAL</code> format: 256 × RGB in 6-bit VGA range (0–63). Convert to 8-bit: <code>value &lt;&lt; 2</code>. See <code>05-FORMATS.md</code> § PAL</td><td><code>ra-formats</code> loads <code>.pal</code>; <code>ic-render</code> applies via palette texture lookup (GPU shader)</td></tr>
+<tr><td><strong>Palette-indexed rendering</strong></td><td><code>PAL</code> format: 256 × RGB in 6-bit VGA range (0–63). Convert to 8-bit: <code>value &lt;&lt; 2</code>. See <code>05-FORMATS.md</code> § PAL</td><td><code>ic-cnc-content</code> loads <code>.pal</code>; <code>ic-render</code> applies via palette texture lookup (GPU shader)</td></tr>
 <tr><td><strong>SHP draw modes</strong></td><td><code>SHAPE.H</code>: <code>SHAPE_NORMAL</code>, <code>SHAPE_SHADOW</code>, <code>SHAPE_GHOST</code>, <code>SHAPE_PREDATOR</code>, <code>SHAPE_FADING</code>. See <code>05-FORMATS.md</code> § SHP</td><td>Each draw mode is a shader variant in <code>ic-render</code>. Shadow = darkened ground sprite. Ghost = semi-transparent. Predator = distortion. Fading = remap table</td></tr>
 <tr><td><strong>Player color remapping</strong></td><td>Palette indices 80–95 (16 entries) are the player color remap range. The original modifies these palette entries per player</td><td>GPU shader: sample palette, if index ∈ [80, 95] substitute from player color ramp. Same approach as OpenRA’s <code>PlayerColorShift</code></td></tr>
 <tr><td><strong>Palette cycling</strong></td><td>Water animation: rotate palette indices periodically. Radar dish: palette-animated. From <code>ANIM.CPP</code> timing loops</td><td><code>ic-render</code> system ticks palette rotation at the original frame rate. Cycling ranges are YAML-configurable per theater</td></tr>
@@ -401,7 +401,7 @@ medium_tank:
 <tr><th>Phase</th><th>Visual</th><th>Audio</th><th>UX</th></tr>
 </thead>
 <tbody>
-<tr><td><strong>Phase 0</strong></td><td>— (format parsing only)</td><td>— (<code>.aud</code> decoder in <code>ra-formats</code>)</td><td>—</td></tr>
+<tr><td><strong>Phase 0</strong></td><td>— (format parsing only)</td><td>— (<code>.aud</code> decoder in <code>ic-cnc-content</code>)</td><td>—</td></tr>
 <tr><td><strong>Phase 1</strong></td><td>Terrain rendering, sprite animation, shroud, palette-aware shading, camera</td><td>—</td><td>Camera controls only</td></tr>
 <tr><td><strong>Phase 2</strong></td><td>Unit movement animation, combat VFX, projectiles, explosions, death animations</td><td>—</td><td>— (headless sim focus)</td></tr>
 <tr><td><strong>Phase 3</strong></td><td>Sidebar, build queue chrome, minimap, health bars, selection boxes, cursor system, building placement ghost</td><td>EVA voice lines, unit responses, weapon sounds, ambient, music (jukebox + dynamic mode)</td><td>Full interaction loop: select, move, attack, build, sell, repair, deploy, control groups</td></tr>

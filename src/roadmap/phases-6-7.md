@@ -25,7 +25,7 @@
 - **Validate & Playtest workflow (D038):** Quick Validate and Publish Validate presets, async/cancelable validation runs, status badges (`Valid/Warnings/Errors/Stale/Running`), and a single Publish Readiness screen aggregating validation/export/license/metadata warnings
 - **Profile Playtest v1 (D038):** Advanced-mode only performance profiling from `Test` dropdown with summary-first output (avg/max tick time, top hotspots, low-end target budget comparison)
 - **Migration Workbench v1 (D038 + D020):** "Upgrade Project" flow in SDK (read-only migration preview/report wrapper over `ic mod migrate`)
-- **Resource Manager panel (D038):** Unified resource browser with three tiers — Default (game module assets indexed from `.mix` archives, always available), Workshop (inline browsing/search/install from D030), Local (drag-and-drop / file import into project `assets/`); drag-to-editor workflow for all resource types; cross-tier search; duplicate detection; inline preview (sprites, audio playback, palette swatches, video thumbnails); format conversion on import via `ra-formats`
+- **Resource Manager panel (D038):** Unified resource browser with three tiers — Default (game module assets indexed from `.mix` archives, always available), Workshop (inline browsing/search/install from D030), Local (drag-and-drop / file import into project `assets/`); drag-to-editor workflow for all resource types; cross-tier search; duplicate detection; inline preview (sprites, audio playback, palette swatches, video thumbnails); format conversion on import via `ic-cnc-content`
 - Controller input mapping for core editing workflows (Steam Deck compatible)
 - Accessibility: colorblind palette, UI scaling, full keyboard navigation
 

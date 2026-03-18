@@ -8,7 +8,7 @@
 - **Deferred features / extensions:** Advanced manifest features (custom `Rules` merge order, `TileSets` remapping) deferred to Phase 6a when full mod compat is the focus
 - **Deferral trigger:** Phase 6a modding milestone
 - **Canonical for:** OpenRA `mod.yaml` parsing, `ic mod import` workflow, mod composition strategy
-- **Scope:** `ra-formats` crate, `ic` CLI
+- **Scope:** `ic-cnc-content` crate, `ic` CLI
 - **Decision:** IC parses OpenRA's `mod.yaml` manifest format directly. Mods can be run in-place or permanently imported. C# assembly references (`Assemblies:`) are flagged as warnings — units using unavailable traits get placeholder rendering.
 - **Why:**
   - Existing OpenRA mods are the largest body of C&C mod content
@@ -28,15 +28,15 @@
 
 OpenRA's `mod.yaml` sections map to IC equivalents:
 
-| OpenRA Section | IC Equivalent | Notes |
-|----------------|---------------|-------|
-| `Rules:` | `rules/` directory | YAML unit/weapon/structure definitions |
-| `Sequences:` | `sequences/` directory | Sprite animation definitions |
-| `Weapons:` | `rules/weapons/` | Weapon + warhead definitions |
-| `Maps:` | `maps/` directory | Map files |
-| `Voices:` | `audio/voices/` | Voice line definitions |
-| `Music:` | `audio/music/` | Music track definitions |
-| `Assemblies:` | **Warning** | C# DLLs flagged; units using unavailable traits get placeholder rendering |
+| OpenRA Section | IC Equivalent          | Notes                                                                     |
+| -------------- | ---------------------- | ------------------------------------------------------------------------- |
+| `Rules:`       | `rules/` directory     | YAML unit/weapon/structure definitions                                    |
+| `Sequences:`   | `sequences/` directory | Sprite animation definitions                                              |
+| `Weapons:`     | `rules/weapons/`       | Weapon + warhead definitions                                              |
+| `Maps:`        | `maps/` directory      | Map files                                                                 |
+| `Voices:`      | `audio/voices/`        | Voice line definitions                                                    |
+| `Music:`       | `audio/music/`         | Music track definitions                                                   |
+| `Assemblies:`  | **Warning**            | C# DLLs flagged; units using unavailable traits get placeholder rendering |
 
 ### Import Workflow
 

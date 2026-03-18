@@ -189,7 +189,7 @@
 <p><strong>The C&amp;C open-source community is a GPL community.</strong> EA released every C&amp;C source code drop under GPL v3 — Red Alert, Tiberian Dawn, Generals/Zero Hour, and the Remastered Collection engine. OpenRA uses GPL v3. Stratagus uses GPL-2.0. Spring Engine uses GPL-2.0. The community this project is built for lives in GPL-land. GPL v3 is the license they know, trust, and expect.</p>
 </li>
 <li>
-<p><strong>Legal compatibility with EA source.</strong> <code>ra-formats</code> directly references EA’s GPL v3 source code for struct definitions, compression algorithms, and lookup tables (see <code>formats/binary-codecs.md</code> § Binary Format Codec Reference). GPL v3 for the engine is the cleanest legal path — no license compatibility analysis required.</p>
+<p><strong>Legal compatibility with EA source.</strong> <code>ic-cnc-content</code> directly references EA’s GPL v3 source code for struct definitions, compression algorithms, and lookup tables (see <code>formats/binary-codecs.md</code> § Binary Format Codec Reference). GPL v3 for the engine is the cleanest legal path — no license compatibility analysis required.</p>
 </li>
 <li>
 <p><strong>The engine stays open — forever.</strong> GPL guarantees that no one can fork the engine, close-source it, and compete with the community’s own project. For a community that has watched proprietary decisions kill or fragment C&amp;C projects over three decades, this guarantee matters. MIT/Apache would allow exactly the kind of proprietary fork the community fears.</p>
@@ -228,14 +228,14 @@ to the engine source code itself.
 </code></pre>
 <p>This exception uses GPL v3 § 7’s “additional permissions” mechanism — the same mechanism GCC uses for its runtime library exception. It is legally sound and well-precedented.</p>
 <h3 id="why-the-modding-exception-survives-combination-with-eas-gpl-code"><a class="header" href="#why-the-modding-exception-survives-combination-with-eas-gpl-code">Why the Modding Exception Survives Combination with EA’s GPL Code</a></h3>
-<p>A natural concern: EA released their C&amp;C source under vanilla GPL v3 (no additional permissions). <code>ra-formats</code> derives from that code. Does EA’s GPL “override” or “infect” IC’s modding exception?</p>
+<p>A natural concern: EA released their C&amp;C source under vanilla GPL v3 (no additional permissions). <code>ic-cnc-content</code> derives from that code. Does EA’s GPL “override” or “infect” IC’s modding exception?</p>
 <p><strong>IC’s position is no.</strong> GPL v3 § 7 describes how additional permissions work in combined works, and IC’s reading is:</p>
 <ol>
 <li>
 <p><strong>Additional permissions apply to the portions you hold copyright over.</strong> The modding exception covers IC’s data interfaces — the YAML loader, Lua sandbox, WASM runtime, asset pipeline. EA never wrote any of these. They are entirely IC’s original code.</p>
 </li>
 <li>
-<p><strong>EA-derived code stays vanilla GPL.</strong> The struct definitions, compression tables, and lookup tables in <code>ra-formats</code> that reference EA’s source remain under vanilla GPL v3. The modding exception doesn’t apply to that code — and in IC’s intended architecture, mods interact through sandboxed interfaces rather than format parsing internals.</p>
+<p><strong>EA-derived code stays vanilla GPL.</strong> The struct definitions, compression tables, and lookup tables in <code>ic-cnc-content</code> that reference EA’s source remain under vanilla GPL v3. The modding exception doesn’t apply to that code — and in IC’s intended architecture, mods interact through sandboxed interfaces rather than format parsing internals.</p>
 </li>
 <li>
 <p><strong>Mods interact through IC’s interfaces, not EA’s code.</strong> A YAML rule file that defines a unit doesn’t touch <code>ShapeBlock_Type</code> or LCW compression. The engine loads the <code>.shp</code> file, decodes it, and hands the mod runtime values (sprites, stats). The mod operates on the output of the engine’s pipeline — analogous to a Linux userspace program reading files via syscalls.</p>
@@ -252,7 +252,7 @@ to the engine source code itself.
 </ul>
 <h3 id="gpl-is-a-policy-choice-not-a-technical-necessity"><a class="header" href="#gpl-is-a-policy-choice-not-a-technical-necessity">GPL Is a Policy Choice, Not a Technical Necessity</a></h3>
 <p>IC does not <em>technically depend</em> on any EA GPL code to function. The GPL dependency is a deliberate community alignment decision.</p>
-<p><strong>What EA’s GPL source provides to <code>ra-formats</code>:</strong></p>
+<p><strong>What EA’s GPL source provides to <code>ic-cnc-content</code>:</strong></p>
 <ul>
 <li>Struct layout definitions (<code>ShapeBlock_Type</code>, <code>AUDHeaderType</code>, etc.)</li>
 <li>LCW compression tables</li>
@@ -262,10 +262,10 @@ to the engine source code itself.
 </ul>
 <p><strong>Every one of these is independently documented</strong> by the community (XCC Utilities, ModEnc wiki, OpenRA source, community format specifications) and has been for 20+ years. IMA ADPCM is an industry standard with a public specification — it is not EA-proprietary.</p>
 <p><code>cnc-formats</code> (D076, MIT/Apache-2.0) proves the point: it implements identical parsers for all C&amp;C formats — binary codecs (<code>.mix</code>, <code>.shp</code>, <code>.pal</code>, <code>.aud</code>, <code>.tmp</code>, <code>.vqa</code>, <code>.wsa</code>, <code>.fnt</code>), <code>.ini</code> rules, and feature-gated MiniYAML — using only community documentation and public specifications, with zero EA-derived code. The engine runs correctly with <code>cnc-formats</code> alone.</p>
-<p><code>ra-formats</code> adds EA-derived details for <strong>authoritative correctness</strong> — when community docs and the original source disagree on edge cases (corrupt files, undocumented flags, rare compression modes), the original source is the ground truth. This is a quality choice, not a functional dependency.</p>
+<p><code>ic-cnc-content</code> adds EA-derived details for <strong>authoritative correctness</strong> — when community docs and the original source disagree on edge cases (corrupt files, undocumented flags, rare compression modes), the original source is the ground truth. This is a quality choice, not a functional dependency.</p>
 <p><strong>Consequence:</strong> If the GPL ever became problematic (hypothetically — a legal landscape change, community preference shift, or strategic pivot), the <em>technical</em> path exists:</p>
 <ol>
-<li>Drop <code>ra-formats</code>’s EA-derived code and rely solely on <code>cnc-formats</code>’s clean-room parsers</li>
+<li>Drop <code>ic-cnc-content</code>’s EA-derived code and rely solely on <code>cnc-formats</code>’s clean-room parsers</li>
 <li>Relicense the engine crates (which contain zero EA code) — subject to consent from all copyright holders under the DCO, which is a practical constraint at scale</li>
 <li>The standalone crates (D076) are already MIT/Apache-2.0 and require no change</li>
 </ol>
@@ -306,7 +306,7 @@ to the engine source code itself.
 </thead>
 <tbody>
 <tr><td>Standalone crates (<code>cnc-formats</code>, <code>fixed-game-math</code>, etc.)</td><td>MIT OR Apache-2.0</td><td>None — clean-room</td><td>N/A (permissive)</td></tr>
-<tr><td><code>ra-formats</code></td><td>GPL v3 (vanilla)</td><td>Yes — struct defs, compression tables</td><td>Not needed (mods don’t link against parsers)</td></tr>
+<tr><td><code>ic-cnc-content</code></td><td>GPL v3 (vanilla)</td><td>Yes — struct defs, compression tables</td><td>Not needed (mods don’t link against parsers)</td></tr>
 <tr><td>Engine crates (<code>ic-sim</code>, <code>ic-net</code>, <code>ic-game</code>, etc.)</td><td>GPL v3 + modding exception</td><td>None — IC original code</td><td>Yes — covers all data interfaces</td></tr>
 <tr><td>Mods (YAML / Lua / WASM)</td><td>Author’s choice</td><td>None</td><td>Protected by exception</td></tr>
 </tbody>

@@ -326,22 +326,22 @@ The [`strict-path`](https://github.com/iron-curtain-engine/strict-path-rs) crate
 
 **Integration points across Iron Curtain:**
 
-| Component                              | Use Case                                               | `strict-path` Type |
-| -------------------------------------- | ------------------------------------------------------ | ------------------ |
-| `ra-formats` (`.oramap` extraction)    | Sandbox extracted map files to map directory           | `PathBoundary`     |
-| `ra-formats` (`.meg` extraction)       | Sandbox Remastered MEG entries to mod directory (D075) | `PathBoundary`     |
-| Workshop (`.icpkg` extraction)         | Prevent Zip Slip during package installation (D030)    | `PathBoundary`     |
-| `p2p-distribute` (torrent file writes) | Sandbox downloaded content to torrent directory (D076) | `PathBoundary`     |
-| Save game loading                      | Restrict save file access to save directory            | `PathBoundary`     |
-| Backup restore (ZIP extraction)        | Sandbox backup extraction to `<data_dir>` (D061)       | `PathBoundary`     |
-| Replay resource extraction             | Sandbox embedded resources to cache (V41)              | `PathBoundary`     |
-| WASM `ic_format_read_bytes`            | Enforce mod's allowed file read scope                  | `PathBoundary`     |
-| Mod file references (`mod.toml`)       | Ensure mod paths don't escape mod root                 | `PathBoundary`     |
-| YAML asset paths (icon, sprite refs)   | Validate asset paths within content directory (V33)    | `PathBoundary`     |
+| Component                               | Use Case                                               | `strict-path` Type |
+| --------------------------------------- | ------------------------------------------------------ | ------------------ |
+| `ic-cnc-content` (`.oramap` extraction) | Sandbox extracted map files to map directory           | `PathBoundary`     |
+| `ic-cnc-content` (`.meg` extraction)    | Sandbox Remastered MEG entries to mod directory (D075) | `PathBoundary`     |
+| Workshop (`.icpkg` extraction)          | Prevent Zip Slip during package installation (D030)    | `PathBoundary`     |
+| `p2p-distribute` (torrent file writes)  | Sandbox downloaded content to torrent directory (D076) | `PathBoundary`     |
+| Save game loading                       | Restrict save file access to save directory            | `PathBoundary`     |
+| Backup restore (ZIP extraction)         | Sandbox backup extraction to `<data_dir>` (D061)       | `PathBoundary`     |
+| Replay resource extraction              | Sandbox embedded resources to cache (V41)              | `PathBoundary`     |
+| WASM `ic_format_read_bytes`             | Enforce mod's allowed file read scope                  | `PathBoundary`     |
+| Mod file references (`mod.toml`)        | Ensure mod paths don't escape mod root                 | `PathBoundary`     |
+| YAML asset paths (icon, sprite refs)    | Validate asset paths within content directory (V33)    | `PathBoundary`     |
 
 This supersedes naive string-based checks like `path.contains("..")` (see V33) which miss symlinks, Windows 8.3 short names, NTFS ADS, encoding tricks, and race conditions. `strict-path`'s compile-time marker types (`PathBoundary` vs `VirtualRoot`) provide domain separation — a path validated for one boundary cannot be accidentally used for another.
 
-**Adoption strategy:** `strict-path` is integrated as a dependency of `ra-formats` (archive extraction including `.oramap` and `.meg`), `ic-game` (save/load, replay extraction, backup restore), `ic-script` (WASM file access scope), and `p2p-distribute` (torrent file path validation — D076 standalone crate). `ic-paths` provides convenience methods (`AppDirs::save_boundary()`, `AppDirs::mod_boundary()`, etc.) that produce `PathBoundary` instances from resolved platform directories. All public APIs that accept filesystem paths from untrusted sources take `StrictPath<PathBoundary>` instead of `std::path::Path`.
+**Adoption strategy:** `strict-path` is integrated as a dependency of `ic-cnc-content` (archive extraction including `.oramap` and `.meg`), `ic-game` (save/load, replay extraction, backup restore), `ic-script` (WASM file access scope), and `p2p-distribute` (torrent file path validation — D076 standalone crate). `ic-paths` provides convenience methods (`AppDirs::save_boundary()`, `AppDirs::mod_boundary()`, etc.) that produce `PathBoundary` instances from resolved platform directories. All public APIs that accept filesystem paths from untrusted sources take `StrictPath<PathBoundary>` instead of `std::path::Path`.
 
 ## Competitive Integrity Summary
 
@@ -388,7 +388,7 @@ Iron Curtain's anti-cheat is **architectural, not bolted on.** Every defense eme
 | Detection evasion                          | Population baselines + continuous recalibration               | Population-baseline comparison (V12/V54) |
 | Enforcement timing                         | Wave ban cadence + intelligence gathering                     | Enforcement timing strategy (V12)        |
 | Protocol fingerprint                       | Opt-in sources + proxy routing + minimal ident                | CommunityBridge privacy                  |
-| Format parser DoS                          | Decompression caps + fuzzing + iteration limits               | `ra-formats` defensive parsing (V38)     |
+| Format parser DoS                          | Decompression caps + fuzzing + iteration limits               | `ic-cnc-content` defensive parsing (V38) |
 | Lua sandbox bypass                         | `string.rep` cap + coroutine check + fatal limits             | Modding sandbox hardening (V39)          |
 | LLM content inject                         | Validation pipeline + cumulative limits + filter              | LLM safety gate (V40)                    |
 | Replay resource skip                       | Consent prompt + content-type restriction                     | Replay security model (V41)              |

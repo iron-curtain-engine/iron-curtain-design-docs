@@ -198,7 +198,7 @@
 <p><strong>Goal:</strong> Read everything OpenRA reads, produce nothing visible yet.</p>
 <h3 id="deliverables"><a class="header" href="#deliverables">Deliverables</a></h3>
 <ul>
-<li><code>ra-formats</code> crate: parse <code>.mix</code> archives, SHP/TMP sprites, <code>.aud</code> audio, <code>.pal</code> palettes, <code>.vqa</code> video</li>
+<li><code>ic-cnc-content</code> crate: parse <code>.mix</code> archives, SHP/TMP sprites, <code>.aud</code> audio, <code>.pal</code> palettes, <code>.vqa</code> video</li>
 <li>Parse OpenRA YAML manifests, map format, rule definitions</li>
 <li><code>cnc-formats</code> CLI tool — Phase 0 subcommands: <code>validate</code> (structural correctness check), <code>inspect</code> (dump archive contents and format metadata, <code>--json</code> for machine-readable output), <code>convert</code> (extensible <code>--format</code>/<code>--to</code> format conversion; <strong>text:</strong> <code>--format miniyaml --to yaml</code> behind <code>miniyaml</code> feature; <strong>binary:</strong> SHP↔PNG, SHP↔GIF, AUD↔WAV, VQA↔AVI, WSA↔PNG/GIF, TMP→PNG, PAL→PNG, FNT→PNG behind <code>convert</code> feature; <strong>text sprites:</strong> <code>--to ist</code> / <code>--format ist</code> behind <code>ist</code> feature flag)</li>
 <li><strong>Runtime MiniYAML loading (D025):</strong> MiniYAML files load directly at runtime — auto-converts in memory, no pre-conversion required</li>
@@ -239,7 +239,7 @@
 <li><code>IC_DATA_DIR</code> environment variable and <code>--data-dir</code> CLI flag override support</li>
 </ul>
 <h3 id="release"><a class="header" href="#release">Release</a></h3>
-<p>Open source <code>cnc-formats</code> (MIT/Apache-2.0) early. Useful standalone for any C&amp;C tool or modding project, builds credibility and community interest. <code>ra-formats</code> (GPL) wraps it with EA-derived details and Bevy asset integration.</p>
+<p>Open source <code>cnc-formats</code> (MIT/Apache-2.0) early. Useful standalone for any C&amp;C tool or modding project, builds credibility and community interest. <code>ic-cnc-content</code> (GPL) wraps it with EA-derived details and Bevy asset integration.</p>
 <h3 id="exit-criteria"><a class="header" href="#exit-criteria">Exit Criteria</a></h3>
 <ul>
 <li>Can parse any OpenRA mod’s YAML rules into typed Rust structs</li>
@@ -449,7 +449,7 @@
 <li>Lobby system, game browser, NAT traversal via relay</li>
 <li>Replay system (already enabled by Phase 2 architecture)</li>
 <li><code>CommunityBridge</code> for shared server browser with OpenRA and CnCNet</li>
-<li><strong>Foreign replay import (D056):</strong> <code>OpenRAReplayDecoder</code> and <code>RemasteredReplayDecoder</code> in <code>ra-formats</code>; <code>ForeignReplayPlayback</code> NetworkModel; <code>ic replay import</code> CLI converter; divergence tracking UI; automated behavioral regression testing against foreign replay corpus</li>
+<li><strong>Foreign replay import (D056):</strong> <code>OpenRAReplayDecoder</code> and <code>RemasteredReplayDecoder</code> in <code>ic-cnc-content</code>; <code>ForeignReplayPlayback</code> NetworkModel; <code>ic replay import</code> CLI converter; divergence tracking UI; automated behavioral regression testing against foreign replay corpus</li>
 <li><strong>Ranked matchmaking (D055):</strong> Glicko-2 rating system (D041), 10 placement matches, YAML-configurable tier system (Cold War military ranks for RA: Conscript → Supreme Commander, 7+2 tiers × 3 divisions = 23 positions), 3-month seasons with soft reset, dual display (tier badge + rating number), faction-specific optional ratings, small-population matchmaking degradation, map veto system</li>
 <li><strong>Subfaction selection in multiplayer lobby (proposed — pending formal adoption via D019):</strong> Allies pick a nation (England, France, Germany, Greece), Soviets pick an institution (Red Army, NKVD, GRU, Science Bureau) — each with one thematic passive + one tech tree mod. Classic preset uses RA1’s original 5-country 10% passives. Starts as casual/skirmish only; promoted to ranked after one full season of balance telemetry confirms no subfaction exceeds 55% win rate. Community subfactions via YAML Workshop. See <code>research/subfaction-country-system-study.md</code></li>
 <li><strong>Leaderboards:</strong> global, per-faction, per-map — with public profiles and replay links</li>

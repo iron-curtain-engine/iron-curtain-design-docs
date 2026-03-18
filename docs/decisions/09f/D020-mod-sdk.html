@@ -195,7 +195,7 @@
 <li><strong>Why:</strong>
 <ul>
 <li>Separate binary keeps the game runtime lean — modders install the SDK, players don’t need it</li>
-<li>Shared library crates (ic-sim, ra-formats, ic-render) mean the SDK renders identically to the game</li>
+<li>Shared library crates (ic-sim, ic-cnc-content, ic-render) mean the SDK renders identically to the game</li>
 <li>Git-first workflow matches modern mod development (version control, branches, collaboration)</li>
 <li>CLI + GUI separation enables CI/CD pipelines for mod projects (headless validation in CI)</li>
 </ul>
@@ -220,7 +220,7 @@
 │  Validation: Quick Validate, Publish Readiness  │
 │  Documentation: embedded Authoring Reference    │
 ├─────────────────────────────────────────────────┤
-│  Shared: ic-sim, ic-render, ra-formats,         │
+│  Shared: ic-sim, ic-render, ic-cnc-content,         │
 │          ic-script, ic-protocol                  │
 └─────────────────────────────────────────────────┘
 
@@ -258,12 +258,12 @@
 </thead>
 <tbody>
 <tr><td><code>cnc-formats convert</code></td><td>Single-file format conversion</td><td><code>--format miniyaml --to yaml</code>, <code>--to png</code>, <code>--to wav</code>, etc. on one file</td><td><code>cnc-formats</code></td><td>MIT/Apache-2.0</td></tr>
-<tr><td><code>ic mod convert</code></td><td>Mod-directory batch asset conversion</td><td><code>--to-modern</code> / <code>--to-classic</code> across all files in a mod</td><td><code>ic-game</code> (uses <code>ra-formats</code> encoders)</td><td>GPL v3</td></tr>
+<tr><td><code>ic mod convert</code></td><td>Mod-directory batch asset conversion</td><td><code>--to-modern</code> / <code>--to-classic</code> across all files in a mod</td><td><code>ic-game</code> (uses <code>ic-cnc-content</code> encoders)</td><td>GPL v3</td></tr>
 </tbody>
 </table>
 </div>
 <p><strong><code>cnc-formats convert</code></strong> is game-agnostic and schema-neutral. It converts individual files between C&amp;C formats and common formats: MiniYAML → YAML (text, behind <code>miniyaml</code> feature), SHP ↔ PNG/GIF, AUD ↔ WAV, VQA ↔ AVI, WSA ↔ PNG/GIF, TMP → PNG, PAL → PNG, FNT → PNG (binary, behind <code>convert</code> feature), MID → WAV/AUD (behind <code>midi</code> feature). It knows nothing about mod directories or game-specific semantics.</p>
-<p><strong><code>ic mod convert</code></strong> is game-aware and operates on entire mod directories. It converts between legacy C&amp;C asset formats (<code>.shp</code>, <code>.aud</code>, <code>.vqa</code>) and modern Bevy-native formats (PNG, OGG, WebM) using <code>ra-formats</code> encoders/decoders. It understands mod structure (<code>mod.toml</code>, directory conventions) and can batch-process all assets in a mod. The Asset Studio (D040) provides the same conversions via GUI.</p>
+<p><strong><code>ic mod convert</code></strong> is game-aware and operates on entire mod directories. It converts between legacy C&amp;C asset formats (<code>.shp</code>, <code>.aud</code>, <code>.vqa</code>) and modern Bevy-native formats (PNG, OGG, WebM) using <code>ic-cnc-content</code> encoders/decoders. It understands mod structure (<code>mod.toml</code>, directory conventions) and can batch-process all assets in a mod. The Asset Studio (D040) provides the same conversions via GUI.</p>
 <p>They differ in scope: <code>cnc-formats convert</code> handles single-file conversions; <code>ic mod convert</code> handles mod-directory batch operations with game-aware defaults (e.g. choosing OGG bitrate based on asset type).</p>
 <h3 id="tool-phase-schedule"><a class="header" href="#tool-phase-schedule">Tool Phase Schedule</a></h3>
 <div class="table-wrapper">

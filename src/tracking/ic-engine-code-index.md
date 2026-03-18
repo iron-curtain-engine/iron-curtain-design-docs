@@ -22,12 +22,12 @@
 
 | If you need to...                         | Start here                       | Then read                                                         | Avoid touching first           |
 | ----------------------------------------- | -------------------------------- | ----------------------------------------------------------------- | ------------------------------ |
-| Parse RA1 assets (.mix, .shp, .pal, .aud) | `crates/ra-formats/`             | format tests, `src/05-FORMATS.md`                                 | sim/net/render paths           |
+| Parse RA1 assets (.mix, .shp, .pal, .aud) | `crates/ic-cnc-content/`         | format tests, `src/05-FORMATS.md`                                 | sim/net/render paths           |
 | Implement deterministic sim behavior      | `crates/ic-sim/`                 | `ic-protocol/`, conformance tests                                 | render/UI/net paths            |
 | Work on netcode / relay timing            | `crates/ic-net/`                 | `ic-protocol/`, `src/03-NETCODE.md`                               | `ic-sim` internals             |
 | Add UI/HUD feature                        | `crates/ic-ui/`                  | `ic-render/`, `src/17-PLAYER-FLOW.md`                             | core sim/net paths             |
 | Add renderer feature (sprites, map, fog)  | `crates/ic-render/`              | `ic-sim/` read-only state, Bevy docs                              | sim mutation, net internals    |
-| Add audio/music/EVA                       | `crates/ic-audio/`               | `ra-formats/` for .aud parsing, Kira docs                         | sim/net/render internals       |
+| Add audio/music/EVA                       | `crates/ic-audio/`               | `ic-cnc-content/` for .aud parsing, Kira docs                     | sim/net/render internals       |
 | Add Lua/WASM mod feature                  | `crates/ic-script/`              | `ic-sim/` trait surface, `src/04-MODDING.md`                      | sim internals beyond trait API |
 | Add AI behavior                           | `crates/ic-ai/`                  | `ic-sim/` read view, `ic-protocol/` orders                        | net/render/UI paths            |
 | Add LLM integration feature               | `crates/ic-llm/`                 | `ic-sim/`, `ic-script/`, `src/decisions/09f/D016-llm-missions.md` | core sim/net hot paths         |
@@ -39,24 +39,24 @@
 
 ## Repository Map (Top-Level)
 
-| Path                  | Role                                        | Notes                                                                                       |
-| --------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `crates/ic-protocol/` | Shared wire types                           | Boundary crate between sim and net                                                          |
-| `crates/ra-formats/`  | RA1 asset pipeline wrapper                  | Wraps `cnc-formats` + EA-derived code; Bevy `AssetSource` integration                       |
-| `crates/ic-paths/`    | Platform path resolution + credential store | Standalone, wraps `app-path` + `strict-path` + `keyring` + `aes-gcm` + `argon2` + `zeroize` |
-| `crates/ic-sim/`      | Deterministic simulation                    | Pure, no I/O, no floats                                                                     |
-| `crates/ic-render/`   | Bevy isometric renderer                     | Reads sim state (read-only)                                                                 |
-| `crates/ic-ui/`       | Game UI chrome (Bevy UI)                    | Reads sim + render state                                                                    |
-| `crates/ic-audio/`    | Sound/music/EVA (Kira)                      | Reads ra-formats for .aud                                                                   |
-| `crates/ic-net/`      | Networking + relay server                   | RelayCore lib + relay binary                                                                |
-| `crates/ic-script/`   | Lua + WASM mod runtimes                     | Sandboxed, capability-gated                                                                 |
-| `crates/ic-ai/`       | Skirmish AI + LLM strategies                | Reads sim state via fog-filtered view; depends on ic-llm                                    |
-| `crates/ic-llm/`      | LLM provider traits + infra                 | No ic-sim import; candle inference runtime (D047)                                           |
-| `crates/ic-editor/`   | SDK editor tools                            | Separate binary from ic-game                                                                |
-| `crates/ic-game/`     | Main game binary                            | Orchestrates all systems                                                                    |
-| `tests/`              | Integration test suites                     | Conformance, replay, determinism                                                            |
-| `assets/`             | Test fixtures and sample maps               | Not shipped — test corpus only                                                              |
-| `docs/`               | Implementation notes                        | Local docs, design-gap requests                                                             |
+| Path                     | Role                                        | Notes                                                                                       |
+| ------------------------ | ------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `crates/ic-protocol/`    | Shared wire types                           | Boundary crate between sim and net                                                          |
+| `crates/ic-cnc-content/` | RA1 asset pipeline wrapper                  | Wraps `cnc-formats` + EA-derived code; Bevy `AssetSource` integration                       |
+| `crates/ic-paths/`       | Platform path resolution + credential store | Standalone, wraps `app-path` + `strict-path` + `keyring` + `aes-gcm` + `argon2` + `zeroize` |
+| `crates/ic-sim/`         | Deterministic simulation                    | Pure, no I/O, no floats                                                                     |
+| `crates/ic-render/`      | Bevy isometric renderer                     | Reads sim state (read-only)                                                                 |
+| `crates/ic-ui/`          | Game UI chrome (Bevy UI)                    | Reads sim + render state                                                                    |
+| `crates/ic-audio/`       | Sound/music/EVA (Kira)                      | Reads ic-cnc-content for .aud                                                               |
+| `crates/ic-net/`         | Networking + relay server                   | RelayCore lib + relay binary                                                                |
+| `crates/ic-script/`      | Lua + WASM mod runtimes                     | Sandboxed, capability-gated                                                                 |
+| `crates/ic-ai/`          | Skirmish AI + LLM strategies                | Reads sim state via fog-filtered view; depends on ic-llm                                    |
+| `crates/ic-llm/`         | LLM provider traits + infra                 | No ic-sim import; candle inference runtime (D047)                                           |
+| `crates/ic-editor/`      | SDK editor tools                            | Separate binary from ic-game                                                                |
+| `crates/ic-game/`        | Main game binary                            | Orchestrates all systems                                                                    |
+| `tests/`                 | Integration test suites                     | Conformance, replay, determinism                                                            |
+| `assets/`                | Test fixtures and sample maps               | Not shipped — test corpus only                                                              |
+| `docs/`                  | Implementation notes                        | Local docs, design-gap requests                                                             |
 
 ## Subsystem Index (Canonical Entries)
 
@@ -75,9 +75,9 @@
 - **Common change risks:** changes propagate to both `ic-sim` and `ic-net` — coordinate carefully
 - **Search hints:** `PlayerOrder`, `TimestampedOrder`, `TickOrders`, `MessageLane`
 
-### `ra-formats`
+### `ic-cnc-content`
 
-- **Path:** `crates/ra-formats/`
+- **Path:** `crates/ic-cnc-content/`
 - **Primary responsibility:** IC asset pipeline integration: wraps `cnc-formats` (binary + text parsers) with EA-derived constants, Bevy `AssetSource`, MiniYAML auto-conversion pipeline
 - **Does not own:** rendering, audio playback, game logic, clean-room format parsing (that's `cnc-formats`)
 - **Public interfaces / trait seams:** asset loader functions, `MixArchive`, `ShpFrame`, `Palette`, `detect_format()`, MiniYAML auto-conversion
@@ -154,7 +154,7 @@
 
 - **Path:** `crates/ic-audio/`
 - **Primary responsibility:** Sound effects, music jukebox, EVA voice notifications via Kira audio backend
-- **Does not own:** .aud file parsing (that's `ra-formats`), sim logic, rendering
+- **Does not own:** .aud file parsing (that's `ic-cnc-content`), sim logic, rendering
 - **Public interfaces / trait seams:** `CombatAudioEvent`, `EvaNotification`, `MusicStateChange`, jukebox state machine
 - **Key files to read first:** `src/lib.rs`, `src/jukebox.rs`, `src/eva.rs`
 - **Hot paths / perf-sensitive files:** concurrent sound effect mixing (combat scenes with many units)

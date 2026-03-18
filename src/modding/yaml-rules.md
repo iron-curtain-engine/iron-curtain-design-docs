@@ -299,7 +299,7 @@ The hydration function is game-module-specific — RA1's module maps `UnitDef.co
 
 **Converter tool:** The `cnc-formats` CLI includes a `convert` subcommand (behind the `miniyaml` feature flag) that translates existing OpenRA MiniYAML mod data to standard YAML on disk: `cnc-formats convert --format miniyaml --to yaml rules.yaml` (explicit `--format` needed because `.yaml` is ambiguous; auto-detection works for unambiguous extensions like `.miniyaml`; `--format` always required for stdin). The `convert` subcommand uses extensible `--format`/`--to` flags — `--to` is always required, `--format` is optional (auto-detected from file extension when unambiguous, required for stdin). Adding new conversions is a `ConvertFormat` enum variant, not a subcommand change. The same CLI also provides `validate` (structural correctness check) and `inspect` (dump archive contents, frame counts, palette info) for all supported C&C formats.
 
-**Runtime loading (D025):** MiniYAML files also load directly at runtime — no pre-conversion required. When `ra-formats` detects tab-indented content with `^` inheritance or `@` suffixes, it calls `cnc-formats`'s clean-room MiniYAML parser and auto-converts in memory. The runtime pipeline then applies alias resolution (D023 — OpenRA trait names → IC component names), which the standalone `cnc-formats convert` CLI does *not* perform (it is schema-neutral). This means existing OpenRA mods can be dropped into IC and played immediately — `ra-formats` handles both structural conversion and semantic mapping in one pass.
+**Runtime loading (D025):** MiniYAML files also load directly at runtime — no pre-conversion required. When `ic-cnc-content` detects tab-indented content with `^` inheritance or `@` suffixes, it calls `cnc-formats`'s clean-room MiniYAML parser and auto-converts in memory. The runtime pipeline then applies alias resolution (D023 — OpenRA trait names → IC component names), which the standalone `cnc-formats convert` CLI does *not* perform (it is schema-neutral). This means existing OpenRA mods can be dropped into IC and played immediately — `ic-cnc-content` handles both structural conversion and semantic mapping in one pass.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -341,7 +341,7 @@ rifle_infantry:
         cost: 100
 ```
 
-The alias registry lives in `ra-formats` and maps all ~130 OpenRA trait names to IC components. When an alias is used, parsing succeeds with a deprecation warning: `"Armament" is accepted but deprecated; prefer "combat"`. Warnings can be suppressed per-mod.
+The alias registry lives in `ic-cnc-content` and maps all ~130 OpenRA trait names to IC components. When an alias is used, parsing succeeds with a deprecation warning: `"Armament" is accepted but deprecated; prefer "combat"`. Warnings can be suppressed per-mod.
 
 ### OpenRA Mod Manifest Loading (D026)
 
@@ -397,9 +397,9 @@ This structure means a mod that defines new units and a mod that rebalances exis
 | Scenario                                                          | Behavior                                                    | Rationale                                |
 | ----------------------------------------------------------------- | ----------------------------------------------------------- | ---------------------------------------- |
 | Two mods set different values for the same field on the same unit | Last-wins (later in load order) + warning in `ic mod check` | Modders need to know about the collision |
-| Mod adds a new field to a unit also modified by another mod       | Merge — both additions survive                            | Non-conflicting additions are safe       |
+| Mod adds a new field to a unit also modified by another mod       | Merge — both additions survive                              | Non-conflicting additions are safe       |
 | Mod deletes a field that another mod modifies                     | Delete wins + warning                                       | Explicit deletion is intentional         |
-| Two mods define the same new unit ID                              | Error — refuses to load                                   | Ambiguous identity is never acceptable   |
+| Two mods define the same new unit ID                              | Error — refuses to load                                     | Ambiguous identity is never acceptable   |
 
 **Tooling:**
 

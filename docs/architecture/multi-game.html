@@ -307,7 +307,7 @@ fn main() {
 <tr><th>Extension</th><th>What It Adds</th><th>Engine Change Required</th></tr>
 </thead>
 <tbody>
-<tr><td>Voxel models (<code>.vxl</code>, <code>.hva</code>)</td><td>New format parsers</td><td>None — additive to <code>ra-formats</code></td></tr>
+<tr><td>Voxel models (<code>.vxl</code>, <code>.hva</code>)</td><td>New format parsers</td><td>None — additive to <code>ic-cnc-content</code></td></tr>
 <tr><td>Terrain elevation</td><td>Z-axis in pathfinding, ramps, cliffs</td><td>None — <code>WorldPos.z</code> and <code>CellPos.z</code> are already there</td></tr>
 <tr><td>Voxel rendering</td><td>GPU voxel-to-sprite at runtime</td><td>New render backend in <code>RenderRegistry</code></td></tr>
 <tr><td>Garrison mechanic</td><td><code>Garrisonable</code>, <code>Garrisoned</code> components + system</td><td>New components + system in pipeline</td></tr>
@@ -414,7 +414,7 @@ rifle_infantry:
 <li><strong>Pathfinding and spatial queries are behind traits.</strong> <code>Pathfinder</code> and <code>SpatialIndex</code> — like <code>NetworkModel</code>. Grid implementations are the default; the engine core never calls grid-specific functions directly.</li>
 <li><strong>System pipeline is data, not code.</strong> The game module returns its system list; the engine executes it. No hardcoded <code>harvester_system()</code> call in engine core.</li>
 <li><strong>Render through <code>Renderable</code> trait.</strong> Sprites and voxels implement the same trait. The renderer doesn’t know what it’s drawing.</li>
-<li><strong>Format loaders are pluggable.</strong> <code>ra-formats</code> provides parsers; the game module tells the asset pipeline which ones to use.</li>
+<li><strong>Format loaders are pluggable.</strong> <code>ic-cnc-content</code> provides parsers; the game module tells the asset pipeline which ones to use.</li>
 <li><strong><code>PlayerOrder</code> is extensible.</strong> Use an enum with a <code>Custom(GameSpecificOrder)</code> variant, or make orders generic over the game module.</li>
 <li><strong>Fog, damage, and validation are behind traits (D041).</strong> <code>FogProvider</code>, <code>DamageResolver</code>, and <code>OrderValidator</code> — each game module supplies its own implementation. The engine core calls trait methods, never game-specific fog/damage/validation logic directly.</li>
 <li><strong>AI strategy is behind a trait (D041).</strong> <code>AiStrategy</code> lets each game module (or difficulty preset) supply different decision-making logic. The engine schedules AI ticks; the strategy decides what to do.</li>

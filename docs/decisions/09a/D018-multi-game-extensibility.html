@@ -327,7 +327,7 @@
 <li>Spatial queries use a <code>SpatialIndex</code> trait — spatial hash is the RA1 impl; BVH/R-tree could slot in without touching combat/targeting</li>
 <li><code>GameModule</code> trait bundles component registration, system pipeline, pathfinder, spatial index, fog provider, damage resolver, order validator, format loaders, render backends, and experience profiles (see D041 for the 5 additional trait abstractions)</li>
 <li><code>PlayerOrder</code> is extensible to game-specific commands</li>
-<li>Engine crates use <code>ic-*</code> naming (not <code>ra-*</code>) to reflect game-agnostic identity (see D039). Exception: <code>ra-formats</code> stays because it reads C&amp;C-family file formats specifically.</li>
+<li>Engine crates use <code>ic-*</code> naming (not <code>ra-*</code>) to reflect game-agnostic identity (see D039). Exception: <code>ic-cnc-content</code> stays because it reads C&amp;C-family file formats specifically.</li>
 </ol>
 <p><strong>What this does NOT mean:</strong></p>
 <ul>

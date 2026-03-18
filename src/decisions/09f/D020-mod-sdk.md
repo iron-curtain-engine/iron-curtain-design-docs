@@ -12,7 +12,7 @@
 - **Decision:** The IC SDK is a separate Bevy application (`ic-editor` crate) from the game (`ic-game`). It shares library crates but has its own binary. The SDK contains three main editors — Scenario Editor (D038), Asset Studio (D040), and Campaign Editor — plus project management (git-aware), validation, and Workshop publishing. The `ic` CLI handles headless operations (validation, import, export, publish) independently of the SDK GUI.
 - **Why:**
   - Separate binary keeps the game runtime lean — modders install the SDK, players don't need it
-  - Shared library crates (ic-sim, ra-formats, ic-render) mean the SDK renders identically to the game
+  - Shared library crates (ic-sim, ic-cnc-content, ic-render) mean the SDK renders identically to the game
   - Git-first workflow matches modern mod development (version control, branches, collaboration)
   - CLI + GUI separation enables CI/CD pipelines for mod projects (headless validation in CI)
 - **Non-goals:** Embedding the SDK inside the game application. The SDK is a development tool, not a runtime feature. Also not a goal: replacing external editors (Blender, Photoshop) — the SDK handles C&C-specific formats and workflows.
@@ -38,7 +38,7 @@
 │  Validation: Quick Validate, Publish Readiness  │
 │  Documentation: embedded Authoring Reference    │
 ├─────────────────────────────────────────────────┤
-│  Shared: ic-sim, ic-render, ra-formats,         │
+│  Shared: ic-sim, ic-render, ic-cnc-content,         │
 │          ic-script, ic-protocol                  │
 └─────────────────────────────────────────────────┘
 
@@ -78,14 +78,14 @@ Preview → Test → Validate → Publish
 
 Two separate tools handle format conversion at different levels:
 
-| Tool                  | Scope                                | Granularity                                                             | Crate                                  | License        |
-| --------------------- | ------------------------------------ | ----------------------------------------------------------------------- | -------------------------------------- | -------------- |
-| `cnc-formats convert` | Single-file format conversion        | `--format miniyaml --to yaml`, `--to png`, `--to wav`, etc. on one file | `cnc-formats`                          | MIT/Apache-2.0 |
-| `ic mod convert`      | Mod-directory batch asset conversion | `--to-modern` / `--to-classic` across all files in a mod                | `ic-game` (uses `ra-formats` encoders) | GPL v3         |
+| Tool                  | Scope                                | Granularity                                                             | Crate                                      | License        |
+| --------------------- | ------------------------------------ | ----------------------------------------------------------------------- | ------------------------------------------ | -------------- |
+| `cnc-formats convert` | Single-file format conversion        | `--format miniyaml --to yaml`, `--to png`, `--to wav`, etc. on one file | `cnc-formats`                              | MIT/Apache-2.0 |
+| `ic mod convert`      | Mod-directory batch asset conversion | `--to-modern` / `--to-classic` across all files in a mod                | `ic-game` (uses `ic-cnc-content` encoders) | GPL v3         |
 
 **`cnc-formats convert`** is game-agnostic and schema-neutral. It converts individual files between C&C formats and common formats: MiniYAML → YAML (text, behind `miniyaml` feature), SHP ↔ PNG/GIF, AUD ↔ WAV, VQA ↔ AVI, WSA ↔ PNG/GIF, TMP → PNG, PAL → PNG, FNT → PNG (binary, behind `convert` feature), MID → WAV/AUD (behind `midi` feature). It knows nothing about mod directories or game-specific semantics.
 
-**`ic mod convert`** is game-aware and operates on entire mod directories. It converts between legacy C&C asset formats (`.shp`, `.aud`, `.vqa`) and modern Bevy-native formats (PNG, OGG, WebM) using `ra-formats` encoders/decoders. It understands mod structure (`mod.toml`, directory conventions) and can batch-process all assets in a mod. The Asset Studio (D040) provides the same conversions via GUI.
+**`ic mod convert`** is game-aware and operates on entire mod directories. It converts between legacy C&C asset formats (`.shp`, `.aud`, `.vqa`) and modern Bevy-native formats (PNG, OGG, WebM) using `ic-cnc-content` encoders/decoders. It understands mod structure (`mod.toml`, directory conventions) and can batch-process all assets in a mod. The Asset Studio (D040) provides the same conversions via GUI.
 
 They differ in scope: `cnc-formats convert` handles single-file conversions; `ic mod convert` handles mod-directory batch operations with game-aware defaults (e.g. choosing OGG bitrate based on asset type).
 

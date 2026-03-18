@@ -192,7 +192,7 @@
 <tr><th>Step ID</th><th>Build Step (What to Implement)</th><th>Primary Milestone</th><th>Priority</th><th>Hard Depends On</th><th>Exit Artifact / Proof</th></tr>
 </thead>
 <tbody>
-<tr><td><code>G1</code></td><td><code>ra-formats</code> can parse core RA asset formats (<code>.mix</code>, <code>.shp</code>, <code>.pal</code>) and enumerate assets from real data dirs</td><td><code>M1</code></td><td><code>P-Core</code></td><td><code>M0</code></td><td>Parser corpus test pass + asset listing on real RA data</td></tr>
+<tr><td><code>G1</code></td><td><code>ic-cnc-content</code> can parse core RA asset formats (<code>.mix</code>, <code>.shp</code>, <code>.pal</code>) and enumerate assets from real data dirs</td><td><code>M1</code></td><td><code>P-Core</code></td><td><code>M0</code></td><td>Parser corpus test pass + asset listing on real RA data</td></tr>
 <tr><td><code>G2</code></td><td>Bevy can load parsed map tiles/sprites and render a RA map scene correctly (camera + palette-correct sprite draw)</td><td><code>M1</code></td><td><code>P-Core</code></td><td><code>G1</code></td><td>Static map render slice (faithful map + sprite placement)</td></tr>
 <tr><td><code>G3</code></td><td>Unit sprite animation playback baseline (idle/move/fire/death sequences)</td><td><code>M1</code></td><td><code>P-Core</code></td><td><code>G2</code></td><td>Animated units visible in rendered scene with correct sequence timing</td></tr>
 <tr><td><code>G4</code></td><td>Input/cursor baseline in gameplay scene (cursor state changes, hover hit-test, click targeting primitives)</td><td><code>M2</code> (early UI seam work)</td><td><code>P-Core</code></td><td><code>G2</code></td><td>Cursor + hover feedback working on entities/cells</td></tr>

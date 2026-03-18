@@ -189,7 +189,7 @@
 <li><strong>Execution overlay mapping:</strong> <code>M0.CORE.FORMAT_FOUNDATION</code> (P-Core); <code>M1.CORE.FORMAT_LOADING</code> (runtime path)</li>
 <li><strong>Deferred features / extensions:</strong> none</li>
 <li><strong>Canonical for:</strong> MiniYAML auto-detection, runtime conversion, and the <code>cnc-formats convert</code> CLI subcommand</li>
-<li><strong>Scope:</strong> <code>ra-formats</code> crate (runtime auto-conversion), <code>cnc-formats</code> crate (CLI <code>convert</code> subcommand)</li>
+<li><strong>Scope:</strong> <code>ic-cnc-content</code> crate (runtime auto-conversion), <code>cnc-formats</code> crate (CLI <code>convert</code> subcommand)</li>
 <li><strong>Decision:</strong> MiniYAML files load directly at runtime via auto-detection and in-memory conversion. No pre-conversion step is required. The <code>cnc-formats convert --format miniyaml --to yaml</code> CLI subcommand is also provided for permanent on-disk migration (<code>--format</code> auto-detected from extension when unambiguous; <code>--to</code> always required).</li>
 <li><strong>Why:</strong>
 <ul>
@@ -208,7 +208,7 @@
 </ul>
 <hr>
 <h3 id="auto-detection-algorithm"><a class="header" href="#auto-detection-algorithm">Auto-Detection Algorithm</a></h3>
-<p>When <code>ra-formats</code> loads a <code>.yaml</code> file, it inspects the first non-empty lines:</p>
+<p>When <code>ic-cnc-content</code> loads a <code>.yaml</code> file, it inspects the first non-empty lines:</p>
 <ol>
 <li><strong>Tab-indented content</strong> (MiniYAML uses tabs; standard YAML uses spaces)</li>
 <li><strong><code>^</code> inheritance markers</strong> (MiniYAML-specific syntax for trait inheritance)</li>
@@ -246,7 +246,7 @@ pub mod miniyaml {
     }
 }
 
-// ra-formats (GPL v3) — IC integration layer for runtime auto-detection
+// ic-cnc-content (GPL v3) — IC integration layer for runtime auto-detection
 /// Detect whether a `.yaml` file contains standard YAML or MiniYAML.
 /// Returns the detected format for routing to the correct parser.
 pub fn detect_format(content: &amp;str) -&gt; DetectedFormat;

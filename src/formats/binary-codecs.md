@@ -5,7 +5,7 @@
 > - [CnC_Red_Alert](https://github.com/electronicarts/CnC_Red_Alert) — VQA/VQ video format definitions (VQ/ and WINVQ/ directories)
 > - [Vanilla-Conquer](https://github.com/TheAssemblyArmada/Vanilla-Conquer) — decompiled structs where EA headers use only `#define` offsets (FNT `FontHeader`)
 >
-> These are the authoritative definitions for `ra-formats` crate implementation. Field names, sizes, and types must match exactly for binary compatibility.
+> These are the authoritative definitions for `ic-cnc-content` crate implementation. Field names, sizes, and types must match exactly for binary compatibility.
 
 ### MIX Archive Format (.mix)
 
@@ -223,7 +223,7 @@ Where `w₁`, `w₂` are little-endian 16-bit words and `b₁` is a single byte.
 
 **Key detail:** Short copies use *relative* backward references (from current output position), while medium and long copies use *absolute* offsets from the start of the output buffer. This dual addressing is a distinctive feature of LCW.
 
-> **Security (V38):** All `ra-formats` decompressors (LCW, LZ4, ADPCM) must enforce decompression ratio caps (256:1), absolute output size limits, and loop iteration counters. Every format parser must have a `cargo-fuzz` target. Archive extraction (`.oramap` ZIP) must use `strict-path` `PathBoundary` to prevent Zip Slip. See `06-SECURITY.md` § Vulnerability 38.
+> **Security (V38):** All `ic-cnc-content` decompressors (LCW, LZ4, ADPCM) must enforce decompression ratio caps (256:1), absolute output size limits, and loop iteration counters. Every format parser must have a `cargo-fuzz` target. Archive extraction (`.oramap` ZIP) must use `strict-path` `PathBoundary` to prevent Zip Slip. See `06-SECURITY.md` § Vulnerability 38.
 
 #### IFF Chunk ID Macro
 
@@ -425,7 +425,7 @@ void Set_DD_Palette(void *palette) {
 // Writing PCX palette:  value <<= 2;  (6-bit → 8-bit)
 ```
 
-**Implementation note for ra-formats:** When loading `.pal` files, expose both the raw 6-bit values and a convenience method that returns 8-bit values (left-shift by 2). The 6-bit values are the canonical form — all palette operations in the original game work in 6-bit space.
+**Implementation note for ic-cnc-content:** When loading `.pal` files, expose both the raw 6-bit values and a convenience method that returns 8-bit values (left-shift by 2). The 6-bit values are the canonical form — all palette operations in the original game work in 6-bit space.
 
 ---
 

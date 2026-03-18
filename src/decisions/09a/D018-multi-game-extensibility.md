@@ -142,7 +142,7 @@ The locked axes collectively ensure that all ranked players share identical simu
 6. Spatial queries use a `SpatialIndex` trait — spatial hash is the RA1 impl; BVH/R-tree could slot in without touching combat/targeting
 7. `GameModule` trait bundles component registration, system pipeline, pathfinder, spatial index, fog provider, damage resolver, order validator, format loaders, render backends, and experience profiles (see D041 for the 5 additional trait abstractions)
 8. `PlayerOrder` is extensible to game-specific commands
-9. Engine crates use `ic-*` naming (not `ra-*`) to reflect game-agnostic identity (see D039). Exception: `ra-formats` stays because it reads C&C-family file formats specifically.
+9. Engine crates use `ic-*` naming (not `ra-*`) to reflect game-agnostic identity (see D039). Exception: `ic-cnc-content` stays because it reads C&C-family file formats specifically.
 
 **What this does NOT mean:**
 - We don't build RA2 support now. Red Alert + Tiberian Dawn are the focus through Phase 3-4.

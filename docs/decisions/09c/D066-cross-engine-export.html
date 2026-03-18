@@ -183,7 +183,7 @@
                     <main>
                         <h2 id="d066-cross-engine-export--editor-extensibility"><a class="header" href="#d066-cross-engine-export--editor-extensibility">D066: Cross-Engine Export &amp; Editor Extensibility</a></h2>
 <p><strong>Decision:</strong> The IC SDK (scenario editor + asset studio) can export complete content packages — missions, campaigns, cutscenes, music, audio, textures, animations, unit definitions — to original Red Alert and OpenRA formats. The SDK is itself extensible via the same tiered modding system (YAML → Lua → WASM) that powers the game, making it a fully moddable content creation platform.</p>
-<p><strong>Context:</strong> IC already imports from Red Alert and OpenRA (D025, D026, ra-formats). The Asset Studio (D040) converts between individual asset formats bidirectionally (.shp↔.png, .aud↔.wav, .vqa↔.mp4). But there is no holistic export pipeline — no way to author a complete mission in IC’s superior tooling and then produce a package that loads in original Red Alert or OpenRA. This is the “content authoring platform” step: IC becomes the tool that the C&amp;C community uses to create content for <em>any</em> C&amp;C engine, not just IC itself. This posture — creating value for the broader community regardless of which engine they play on — is core to the project’s philosophy (see <code>13-PHILOSOPHY.md</code> Principle #6: “Build with the community, not just for them”).</p>
+<p><strong>Context:</strong> IC already imports from Red Alert and OpenRA (D025, D026, ic-cnc-content). The Asset Studio (D040) converts between individual asset formats bidirectionally (.shp↔.png, .aud↔.wav, .vqa↔.mp4). But there is no holistic export pipeline — no way to author a complete mission in IC’s superior tooling and then produce a package that loads in original Red Alert or OpenRA. This is the “content authoring platform” step: IC becomes the tool that the C&amp;C community uses to create content for <em>any</em> C&amp;C engine, not just IC itself. This posture — creating value for the broader community regardless of which engine they play on — is core to the project’s philosophy (see <code>13-PHILOSOPHY.md</code> Principle #6: “Build with the community, not just for them”).</p>
 <p>Equally important: the editor itself must be extensible. If IC is a modding platform, then the tools that create mods must also be moddable. A community member building a RA2 game module needs custom editor panels for voxel placement. A total conversion might need a custom terrain brush. Editor extensions follow the same tiered model that game mods use.</p>
 <h3 id="export-targets"><a class="header" href="#export-targets">Export Targets</a></h3>
 <h4 id="target-1-original-red-alert-doswin95-format"><a class="header" href="#target-1-original-red-alert-doswin95-format">Target 1: Original Red Alert (DOS/Win95 format)</a></h4>
@@ -202,7 +202,7 @@
 <tr><td><strong>Cutscenes</strong></td><td>.mp4 / .webm</td><td>.vqa (VQ compressed)</td><td>Resolution downscale to 320×200 or 640×400. Palette quantization. Audio track interleaved as Westwood ADPCM</td></tr>
 <tr><td><strong>Music</strong></td><td>.ogg / .wav</td><td>.aud (music format)</td><td>Full-length music tracks encoded as Westwood AUD. Alternative: export as standard .wav alongside custom <code>theme.ini</code></td></tr>
 <tr><td><strong>String tables</strong></td><td>IC YAML localization</td><td><code>.eng</code> / <code>.ger</code> / etc. string files</td><td>IC string keys mapped to RA string table offsets</td></tr>
-<tr><td><strong>Archives</strong></td><td>Loose files (from export pipeline)</td><td>.mix (optional packing)</td><td>All exported files optionally bundled into a .mix for distribution. CRC hash table generated per ra-formats § MIX</td></tr>
+<tr><td><strong>Archives</strong></td><td>Loose files (from export pipeline)</td><td>.mix (optional packing)</td><td>All exported files optionally bundled into a .mix for distribution. CRC hash table generated per ic-cnc-content § MIX</td></tr>
 </tbody>
 </table>
 </div>
@@ -542,7 +542,7 @@ ic export --target ra1,openra,ic maps/ -o ./export/
 <li><strong>D070 (Asymmetric Commander &amp; Field Ops Co-op):</strong> D070 scenarios/templates are expected to be IC-native. Exporters may downcompile fragments (maps, units, simple triggers), but role orchestration, request/response HUD flows, and asymmetric role permissions require fidelity warnings and usually manual redesign.</li>
 <li><strong>D040 (Asset Studio):</strong> Asset conversion (D040’s Cross-Game Asset Bridge) is the per-file foundation. D066 orchestrates whole-project export using D040’s converters.</li>
 <li><strong>D062 (Mod Profiles):</strong> A mod profile can embed export target preference. “RA1 Compatible” profile constrains features to RA1-exportable subset.</li>
-<li><strong>ra-formats write support:</strong> D066 is the primary consumer of ra-formats write support (Phase 6a). The exporter calls into ra-formats encoders for .shp, .pal, .aud, .vqa, .mix generation.</li>
+<li><strong>ic-cnc-content write support:</strong> D066 is the primary consumer of ic-cnc-content write support (Phase 6a). The exporter calls into ic-cnc-content encoders for .shp, .pal, .aud, .vqa, .mix generation.</li>
 </ul>
 <h3 id="phase"><a class="header" href="#phase">Phase</a></h3>
 <ul>

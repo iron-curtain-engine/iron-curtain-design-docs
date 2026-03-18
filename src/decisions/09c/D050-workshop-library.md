@@ -18,7 +18,7 @@ The Workshop is split into three layers with clean boundaries. The bottom layer 
 │  Game Integration Layer (per-project, engine-specific)  │
 │                                                         │
 │  IC: Bevy plugin, lobby auto-download, game_module,     │
-│       .icpkg extension, `ic mod` CLI, ra-formats,       │
+│       .icpkg extension, `ic mod` CLI, ic-cnc-content,       │
 │       Bevy-native format recommendations (D049),        │
 │       replay P2P, update delivery, balance channels     │
 │                                                         │

@@ -189,7 +189,7 @@
 <li><strong>Execution overlay mapping:</strong> <code>M0.CORE.FORMAT_FOUNDATION</code> (P-Core); alias registry is part of the YAML loading pipeline</li>
 <li><strong>Deferred features / extensions:</strong> none</li>
 <li><strong>Canonical for:</strong> OpenRA trait-name-to-IC-component alias resolution</li>
-<li><strong>Scope:</strong> <code>ra-formats</code> crate (<code>alias.rs</code>), YAML loading pipeline</li>
+<li><strong>Scope:</strong> <code>ic-cnc-content</code> crate (<code>alias.rs</code>), YAML loading pipeline</li>
 <li><strong>Decision:</strong> OpenRA trait names are accepted as YAML aliases for IC-native component keys. Both <code>Armament:</code> (OpenRA) and <code>combat:</code> (IC) resolve to the same component. Aliases emit a deprecation warning (suppressible per-mod). The alias registry maps all ~130 OpenRA trait names.</li>
 <li><strong>Why:</strong>
 <ul>
@@ -203,7 +203,7 @@
 <li><strong>Out of current scope:</strong> Automatic batch renaming tool (could be added to <code>ic mod import</code> later)</li>
 <li><strong>Invariants preserved:</strong> Deterministic sim (alias resolution is load-time-only, produces identical component data). No C#.</li>
 <li><strong>Compatibility / Export impact:</strong> OpenRA YAML loads unmodified. IC-native export always uses canonical IC names.</li>
-<li><strong>Public interfaces / types / commands:</strong> <code>AliasRegistry</code>, <code>alias.rs</code> in <code>ra-formats</code></li>
+<li><strong>Public interfaces / types / commands:</strong> <code>AliasRegistry</code>, <code>alias.rs</code> in <code>ic-cnc-content</code></li>
 <li><strong>Affected docs:</strong> <code>02-ARCHITECTURE.md</code> § Component Model, <code>04-MODDING.md</code> § Vocabulary Aliases</li>
 <li><strong>Keywords:</strong> vocabulary, alias, trait name, OpenRA compatibility, YAML alias, Armament, combat, component mapping</li>
 </ul>
@@ -245,7 +245,7 @@ rifle_infantry:
 </tbody>
 </table>
 </div>
-<p>The full alias registry (~130 entries) lives in <code>ra-formats::alias</code> and is generated from the OpenRA trait catalog in <code>11-OPENRA-FEATURES.md</code>.</p>
+<p>The full alias registry (~130 entries) lives in <code>ic-cnc-content::alias</code> and is generated from the OpenRA trait catalog in <code>11-OPENRA-FEATURES.md</code>.</p>
 <h3 id="stability-guarantee"><a class="header" href="#stability-guarantee">Stability Guarantee</a></h3>
 <p><strong>Aliases are permanent.</strong> Once an alias is registered, it is never removed. This ensures that OpenRA mods loaded today will still load in any future IC version. New aliases may be added as OpenRA evolves.</p>
 <h3 id="rationale"><a class="header" href="#rationale">Rationale</a></h3>

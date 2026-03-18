@@ -81,7 +81,7 @@
 
 ---
 
-### 14. Asset Pipeline & Format Parsing (`ra-formats`)
+### 14. Asset Pipeline & Format Parsing (`ic-cnc-content`)
 
 **Surface:** `.mix`, `.shp`, `.pal`, `.aud`, `.oramap` parsers, `StrictPath`, virtual filesystem.
 

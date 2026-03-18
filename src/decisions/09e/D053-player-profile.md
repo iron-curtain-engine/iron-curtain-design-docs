@@ -42,7 +42,7 @@ A player profile contains these sections, each with its own visibility controls:
 
 **Avatar system:**
 
-- **Pre-built gallery:** Ships with ~60 avatars extracted from C&C unit portraits, faction emblems, and structure icons (using game assets the player already owns — loaded by `ra-formats`, not distributed by IC). Each game module contributes its own set.
+- **Pre-built gallery:** Ships with ~60 avatars extracted from C&C unit portraits, faction emblems, and structure icons (using game assets the player already owns — loaded by `ic-cnc-content`, not distributed by IC). Each game module contributes its own set.
 - **Custom upload:** Players can set any 128×128 PNG image (max 64 KB) as their avatar. The image is stored in the local profile. When joining a lobby, only the SHA-256 hash is transmitted (32 bytes). Other clients fetch the actual image on demand from the player (via the relay, same channel as P2P resource sharing from D052). Fetched avatars are cached locally.
 - **Content moderation:** Custom avatars are not moderated by IC (no central server to moderate). Community servers can optionally enforce "gallery-only avatars" as a room policy. Players can report abusive avatars to community moderators via the same mechanism used for reporting cheaters (D052 revocation).
 - **Hash-based deduplication:** Two players using the same custom avatar send the same hash. The image is fetched once and shared from cache. This also means pre-built gallery avatars never need network transfer — both clients have them locally.

@@ -6,7 +6,7 @@ This section defines the concrete implementation path from "no code" to "a Bevy 
 
 The first runnable is the "Hello World" of the engine. Until a Bevy window opens and renders actual Red Alert assets, everything is theory. This milestone:
 
-- **Validates `ra-formats`.** Can we actually parse `.mix`, `.shp`, `.pal`, `.tmp` into usable data?
+- **Validates `ic-cnc-content`.** Can we actually parse `.mix`, `.shp`, `.pal`, `.tmp` into usable data?
 - **Validates the Bevy integration.** Can we get RA sprites into Bevy's rendering pipeline?
 - **Validates the isometric math.** Can we convert grid coordinates to screen coordinates correctly?
 - **Generates community interest.** "Red Alert map rendered faithfully in Rust at 4K 144fps" is the first public proof that IC is real.
@@ -24,9 +24,9 @@ We cannot copy code from OpenRA (C#) or the Remastered Collection (proprietary C
 
 ### Implementation Steps
 
-#### Step 1: `cnc-formats` + `ra-formats` — Parse Everything (Weeks 1–2)
+#### Step 1: `cnc-formats` + `ic-cnc-content` — Parse Everything (Weeks 1–2)
 
-Build the `cnc-formats` crate (MIT/Apache-2.0, standalone) to read all Red Alert binary formats — pure Rust, zero Bevy dependency. Then build `ra-formats` (GPL, IC monorepo) as a thin wrapper adding EA-derived constants and Bevy asset integration.
+Build the `cnc-formats` crate (MIT/Apache-2.0, standalone) to read all Red Alert binary formats — pure Rust, zero Bevy dependency. Then build `ic-cnc-content` (GPL, IC monorepo) as a thin wrapper adding EA-derived constants and Bevy asset integration.
 
 **Deliverables:**
 
@@ -47,7 +47,7 @@ Build the `cnc-formats` crate (MIT/Apache-2.0, standalone) to read all Red Alert
 
 The "Hello RA" moment — a Bevy window opens and displays a single Red Alert sprite with the correct palette applied.
 
-**What this proves:** `cnc-formats` → `ra-formats` output can flow into Bevy's `Image` / `TextureAtlas` pipeline. Palette-indexed sprites render correctly on a GPU.
+**What this proves:** `cnc-formats` → `ic-cnc-content` output can flow into Bevy's `Image` / `TextureAtlas` pipeline. Palette-indexed sprites render correctly on a GPU.
 
 **Implementation:**
 
@@ -181,14 +181,14 @@ See `05-FORMATS.md` § "Content Source Detection and Installed Asset Locations" 
 
 ### Timeline Summary
 
-| Weeks | Step                 | Milestone                                                    | Phase Alignment |
-| ----- | -------------------- | ------------------------------------------------------------ | --------------- |
-| 1–2   | `ra-formats` parsers | CLI can dump any MIX/SHP/PAL/TMP/AUD file                    | Phase 0         |
-| 3     | Bevy + one sprite    | Window opens, animated RA infantry on screen                 | Phase 0 → 1     |
-| 4–5   | Map rendering        | Any `.oramap` renders as isometric terrain grid              | Phase 1         |
-| 6–8   | Sprites + animations | Units and buildings on map, idle animations, camera controls | Phase 1         |
-| 9–10  | Shroud + selection   | Fog overlay, selection box, cursor context switching         | Phase 1         |
-| 11–12 | Sidebar chrome       | Classic RA layout assembled — first complete visual frame    | Phase 1         |
+| Weeks | Step                     | Milestone                                                    | Phase Alignment |
+| ----- | ------------------------ | ------------------------------------------------------------ | --------------- |
+| 1–2   | `ic-cnc-content` parsers | CLI can dump any MIX/SHP/PAL/TMP/AUD file                    | Phase 0         |
+| 3     | Bevy + one sprite        | Window opens, animated RA infantry on screen                 | Phase 0 → 1     |
+| 4–5   | Map rendering            | Any `.oramap` renders as isometric terrain grid              | Phase 1         |
+| 6–8   | Sprites + animations     | Units and buildings on map, idle animations, camera controls | Phase 1         |
+| 9–10  | Shroud + selection       | Fog overlay, selection box, cursor context switching         | Phase 1         |
+| 11–12 | Sidebar chrome           | Classic RA layout assembled — first complete visual frame    | Phase 1         |
 
 **Phase 0 exit:** Steps 1–2 complete (parsers + one sprite in Bevy). **Phase 1 exit:** All six steps complete — any OpenRA RA map loads and renders with sprites, animations, camera, shroud, and sidebar layout at 144fps on mid-range hardware.
 

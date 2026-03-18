@@ -549,7 +549,7 @@ custom_sprite: "https://evil.com/exploit.shp"
 <tr><td>Cross-engine</td><td>V35, V36, 07-CROSS-ENGINE.md</td><td>2</td><td>F14</td></tr>
 <tr><td>External tools (ICRP)</td><td>D071</td><td>1</td><td>F2</td></tr>
 <tr><td>Player identity / display</td><td>V46, V56</td><td>2</td><td>—</td></tr>
-<tr><td>Format parsing (cnc-formats + ra-formats)</td><td>V38</td><td>1</td><td>—</td></tr>
+<tr><td>Format parsing (cnc-formats + ic-cnc-content)</td><td>V38</td><td>1</td><td>—</td></tr>
 <tr><td>LLM content</td><td>V40</td><td>1</td><td>—</td></tr>
 <tr><td>Console / communication</td><td>D058, D059</td><td>2</td><td>F8</td></tr>
 <tr><td>Spectator / observer</td><td>D071, D055</td><td>—</td><td>F7, F16</td></tr>
@@ -560,7 +560,7 @@ custom_sprite: "https://evil.com/exploit.shp"
 <h3 id="verification-known-good-areas"><a class="header" href="#verification-known-good-areas">Verification: Known-Good Areas</a></h3>
 <p>These areas were audited and found to be well-designed with no gaps:</p>
 <ul>
-<li><strong>V38 ra-formats parser safety:</strong> Comprehensive — decompression ratio caps, per-format entry limits, iteration counters, mandatory fuzzing, Zip Slip defense via strict-path. Well-referenced across documents.</li>
+<li><strong>V38 ic-cnc-content parser safety:</strong> Comprehensive — decompression ratio caps, per-format entry limits, iteration counters, mandatory fuzzing, Zip Slip defense via strict-path. Well-referenced across documents.</li>
 <li><strong>V18 Workshop supply chain:</strong> Five independent layers with academic precedent citations (fractureiser, npm, crates.io). Defense-in-depth is thorough.</li>
 <li><strong>V2 Order validation:</strong> Deterministic validation inside sim (D012) is architecturally sound — validation IS the anti-cheat, not a bolt-on.</li>
 <li><strong>V14 Transport encryption:</strong> Follows GNS/DTLS patterns. Sequence-bound nonces, identity binding, mandatory encryption — no shortcuts.</li>

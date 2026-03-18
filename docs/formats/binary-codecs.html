@@ -189,7 +189,7 @@
 <li><a href="https://github.com/electronicarts/CnC_Red_Alert">CnC_Red_Alert</a> — VQA/VQ video format definitions (VQ/ and WINVQ/ directories)</li>
 <li><a href="https://github.com/TheAssemblyArmada/Vanilla-Conquer">Vanilla-Conquer</a> — decompiled structs where EA headers use only <code>#define</code> offsets (FNT <code>FontHeader</code>)</li>
 </ul>
-<p>These are the authoritative definitions for <code>ra-formats</code> crate implementation. Field names, sizes, and types must match exactly for binary compatibility.</p>
+<p>These are the authoritative definitions for <code>ic-cnc-content</code> crate implementation. Field names, sizes, and types must match exactly for binary compatibility.</p>
 </blockquote>
 <h3 id="mix-archive-format-mix"><a class="header" href="#mix-archive-format-mix">MIX Archive Format (.mix)</a></h3>
 <p><strong>Source:</strong> <code>REDALERT/MIXFILE.H</code>, <code>REDALERT/MIXFILE.CPP</code>, <code>REDALERT/CRC.H</code>, <code>REDALERT/CRC.CPP</code></p>
@@ -379,7 +379,7 @@ typedef enum {
 <p>Where <code>w₁</code>, <code>w₂</code> are little-endian 16-bit words and <code>b₁</code> is a single byte.</p>
 <p><strong>Key detail:</strong> Short copies use <em>relative</em> backward references (from current output position), while medium and long copies use <em>absolute</em> offsets from the start of the output buffer. This dual addressing is a distinctive feature of LCW.</p>
 <blockquote>
-<p><strong>Security (V38):</strong> All <code>ra-formats</code> decompressors (LCW, LZ4, ADPCM) must enforce decompression ratio caps (256:1), absolute output size limits, and loop iteration counters. Every format parser must have a <code>cargo-fuzz</code> target. Archive extraction (<code>.oramap</code> ZIP) must use <code>strict-path</code> <code>PathBoundary</code> to prevent Zip Slip. See <code>06-SECURITY.md</code> § Vulnerability 38.</p>
+<p><strong>Security (V38):</strong> All <code>ic-cnc-content</code> decompressors (LCW, LZ4, ADPCM) must enforce decompression ratio caps (256:1), absolute output size limits, and loop iteration counters. Every format parser must have a <code>cargo-fuzz</code> target. Archive extraction (<code>.oramap</code> ZIP) must use <code>strict-path</code> <code>PathBoundary</code> to prevent Zip Slip. See <code>06-SECURITY.md</code> § Vulnerability 38.</p>
 </blockquote>
 <h4 id="iff-chunk-id-macro"><a class="header" href="#iff-chunk-id-macro">IFF Chunk ID Macro</a></h4>
 <pre><code class="language-c">// From IFF.H — used by MIX, icon set, and other IFF-based formats
@@ -538,7 +538,7 @@ void Set_DD_Palette(void *palette) {
 // Reading PCX palette:  value &gt;&gt;= 2;  (8-bit → 6-bit)
 // Writing PCX palette:  value &lt;&lt;= 2;  (6-bit → 8-bit)
 </code></pre>
-<p><strong>Implementation note for ra-formats:</strong> When loading <code>.pal</code> files, expose both the raw 6-bit values and a convenience method that returns 8-bit values (left-shift by 2). The 6-bit values are the canonical form — all palette operations in the original game work in 6-bit space.</p>
+<p><strong>Implementation note for ic-cnc-content:</strong> When loading <code>.pal</code> files, expose both the raw 6-bit values and a convenience method that returns 8-bit values (left-shift by 2). The 6-bit values are the canonical form — all palette operations in the original game work in 6-bit space.</p>
 <hr>
 <h3 id="aud-audio-format-aud"><a class="header" href="#aud-audio-format-aud">AUD Audio Format (.aud)</a></h3>
 <p><strong>Source:</strong> <code>REDALERT/WIN32LIB/AUDIO.H</code>, <code>REDALERT/ADPCM.CPP</code>, <code>REDALERT/ITABLE.CPP</code>, <code>REDALERT/DTABLE.CPP</code>, <code>REDALERT/WIN32LIB/SOSCOMP.H</code></p>

@@ -20,7 +20,7 @@ Phase 0 (Foundation)
 **Goal:** Read everything OpenRA reads, produce nothing visible yet.
 
 ### Deliverables
-- `ra-formats` crate: parse `.mix` archives, SHP/TMP sprites, `.aud` audio, `.pal` palettes, `.vqa` video
+- `ic-cnc-content` crate: parse `.mix` archives, SHP/TMP sprites, `.aud` audio, `.pal` palettes, `.vqa` video
 - Parse OpenRA YAML manifests, map format, rule definitions
 - `cnc-formats` CLI tool — Phase 0 subcommands: `validate` (structural correctness check), `inspect` (dump archive contents and format metadata, `--json` for machine-readable output), `convert` (extensible `--format`/`--to` format conversion; **text:** `--format miniyaml --to yaml` behind `miniyaml` feature; **binary:** SHP↔PNG, SHP↔GIF, AUD↔WAV, VQA↔AVI, WSA↔PNG/GIF, TMP→PNG, PAL→PNG, FNT→PNG behind `convert` feature; **text sprites:** `--to ist` / `--format ist` behind `ist` feature flag)
 - **Runtime MiniYAML loading (D025):** MiniYAML files load directly at runtime — auto-converts in memory, no pre-conversion required
@@ -56,7 +56,7 @@ Phase 0 (Foundation)
 - `IC_DATA_DIR` environment variable and `--data-dir` CLI flag override support
 
 ### Release
-Open source `cnc-formats` (MIT/Apache-2.0) early. Useful standalone for any C&C tool or modding project, builds credibility and community interest. `ra-formats` (GPL) wraps it with EA-derived details and Bevy asset integration.
+Open source `cnc-formats` (MIT/Apache-2.0) early. Useful standalone for any C&C tool or modding project, builds credibility and community interest. `ic-cnc-content` (GPL) wraps it with EA-derived details and Bevy asset integration.
 
 ### Exit Criteria
 - Can parse any OpenRA mod's YAML rules into typed Rust structs
@@ -259,7 +259,7 @@ Units moving, shooting, dying — headless sim + rendered. Record replay file. P
 - Lobby system, game browser, NAT traversal via relay
 - Replay system (already enabled by Phase 2 architecture)
 - `CommunityBridge` for shared server browser with OpenRA and CnCNet
-- **Foreign replay import (D056):** `OpenRAReplayDecoder` and `RemasteredReplayDecoder` in `ra-formats`; `ForeignReplayPlayback` NetworkModel; `ic replay import` CLI converter; divergence tracking UI; automated behavioral regression testing against foreign replay corpus
+- **Foreign replay import (D056):** `OpenRAReplayDecoder` and `RemasteredReplayDecoder` in `ic-cnc-content`; `ForeignReplayPlayback` NetworkModel; `ic replay import` CLI converter; divergence tracking UI; automated behavioral regression testing against foreign replay corpus
 - **Ranked matchmaking (D055):** Glicko-2 rating system (D041), 10 placement matches, YAML-configurable tier system (Cold War military ranks for RA: Conscript → Supreme Commander, 7+2 tiers × 3 divisions = 23 positions), 3-month seasons with soft reset, dual display (tier badge + rating number), faction-specific optional ratings, small-population matchmaking degradation, map veto system
 - **Subfaction selection in multiplayer lobby (proposed — pending formal adoption via D019):** Allies pick a nation (England, France, Germany, Greece), Soviets pick an institution (Red Army, NKVD, GRU, Science Bureau) — each with one thematic passive + one tech tree mod. Classic preset uses RA1's original 5-country 10% passives. Starts as casual/skirmish only; promoted to ranked after one full season of balance telemetry confirms no subfaction exceeds 55% win rate. Community subfactions via YAML Workshop. See `research/subfaction-country-system-study.md`
 - **Leaderboards:** global, per-faction, per-map — with public profiles and replay links

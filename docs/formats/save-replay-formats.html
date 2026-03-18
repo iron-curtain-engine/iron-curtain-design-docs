@@ -507,7 +507,7 @@ pub struct EmbeddedResources {
 </ol>
 <p>The game thread contributes ~1–1.5 ms every 300 ticks (~20 seconds at Slower default) for keyframe production — well within the 67 ms tick budget (Slower default). The LZ4 compression and disk write happen asynchronously on the background writer. Full <code>SimSnapshot</code> keyframes (every 3000 ticks) cost more (~2–3 ms game thread) because they serialize all entities rather than just changed components.</p>
 <h3 id="foreign-replay-decoders-d056"><a class="header" href="#foreign-replay-decoders-d056">Foreign Replay Decoders (D056)</a></h3>
-<p><code>ra-formats</code> includes decoders for foreign replay file formats, enabling direct playback and conversion to <code>.icrep</code>:</p>
+<p><code>ic-cnc-content</code> includes decoders for foreign replay file formats, enabling direct playback and conversion to <code>.icrep</code>:</p>
 <div class="table-wrapper">
 <table>
 <thead>

@@ -7,7 +7,7 @@
 - **Execution overlay mapping:** `M0.CORE.FORMAT_FOUNDATION` (P-Core); alias registry is part of the YAML loading pipeline
 - **Deferred features / extensions:** none
 - **Canonical for:** OpenRA trait-name-to-IC-component alias resolution
-- **Scope:** `ra-formats` crate (`alias.rs`), YAML loading pipeline
+- **Scope:** `ic-cnc-content` crate (`alias.rs`), YAML loading pipeline
 - **Decision:** OpenRA trait names are accepted as YAML aliases for IC-native component keys. Both `Armament:` (OpenRA) and `combat:` (IC) resolve to the same component. Aliases emit a deprecation warning (suppressible per-mod). The alias registry maps all ~130 OpenRA trait names.
 - **Why:**
   - Zero migration friction — existing OpenRA YAML loads without renaming any key
@@ -18,7 +18,7 @@
 - **Out of current scope:** Automatic batch renaming tool (could be added to `ic mod import` later)
 - **Invariants preserved:** Deterministic sim (alias resolution is load-time-only, produces identical component data). No C#.
 - **Compatibility / Export impact:** OpenRA YAML loads unmodified. IC-native export always uses canonical IC names.
-- **Public interfaces / types / commands:** `AliasRegistry`, `alias.rs` in `ra-formats`
+- **Public interfaces / types / commands:** `AliasRegistry`, `alias.rs` in `ic-cnc-content`
 - **Affected docs:** `02-ARCHITECTURE.md` § Component Model, `04-MODDING.md` § Vocabulary Aliases
 - **Keywords:** vocabulary, alias, trait name, OpenRA compatibility, YAML alias, Armament, combat, component mapping
 
@@ -48,20 +48,20 @@ When an alias is used, parsing succeeds with a deprecation warning: `"Armament" 
 
 ### Sample Alias Table (excerpt)
 
-| OpenRA Trait Name | IC Component Key | Notes |
-|-------------------|------------------|-------|
-| `Armament` | `combat` | Weapon attachment |
-| `Valued` | `buildable` | Cost and build time |
-| `Mobile` | `mobile` | Same name (no alias needed) |
-| `Health` | `health` | Same name |
-| `Building` | `building` | Same name |
-| `Selectable` | `selectable` | Same name |
-| `Aircraft` | `mobile` + `locomotor: fly` | Decomposed into standard mobile component |
-| `Harvester` | `harvester` | Same name |
-| `WithSpriteBody` | `sprite_body` | Rendering component |
-| `RenderSprites` | `sprite_renderer` | Rendering component |
+| OpenRA Trait Name | IC Component Key            | Notes                                     |
+| ----------------- | --------------------------- | ----------------------------------------- |
+| `Armament`        | `combat`                    | Weapon attachment                         |
+| `Valued`          | `buildable`                 | Cost and build time                       |
+| `Mobile`          | `mobile`                    | Same name (no alias needed)               |
+| `Health`          | `health`                    | Same name                                 |
+| `Building`        | `building`                  | Same name                                 |
+| `Selectable`      | `selectable`                | Same name                                 |
+| `Aircraft`        | `mobile` + `locomotor: fly` | Decomposed into standard mobile component |
+| `Harvester`       | `harvester`                 | Same name                                 |
+| `WithSpriteBody`  | `sprite_body`               | Rendering component                       |
+| `RenderSprites`   | `sprite_renderer`           | Rendering component                       |
 
-The full alias registry (~130 entries) lives in `ra-formats::alias` and is generated from the OpenRA trait catalog in `11-OPENRA-FEATURES.md`.
+The full alias registry (~130 entries) lives in `ic-cnc-content::alias` and is generated from the OpenRA trait catalog in `11-OPENRA-FEATURES.md`.
 
 ### Stability Guarantee
 

@@ -27,46 +27,46 @@ The tracker is therefore **Markdown-first** for now, with a documented schema th
 
 ### `DesignStatus`
 
-| Value | Meaning |
-| --- | --- |
-| `NotMapped` | Feature/decision exists but is not yet represented in the tracker overlay |
-| `Mentioned` | Mentioned in roadmap/docs but not yet tied to a canonical decision or integrated cross-doc mapping |
-| `Decisioned` | Canonical decision/spec exists, but cross-doc integration or tracker audit is limited |
+| Value        | Meaning                                                                                                           |
+| ------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `NotMapped`  | Feature/decision exists but is not yet represented in the tracker overlay                                         |
+| `Mentioned`  | Mentioned in roadmap/docs but not yet tied to a canonical decision or integrated cross-doc mapping                |
+| `Decisioned` | Canonical decision/spec exists, but cross-doc integration or tracker audit is limited                             |
 | `Integrated` | Cross-doc propagation is complete enough for planning (architecture + UX + security/modding links where relevant) |
-| `Audited` | Explicit review performed for contradictions/dependency placement (e.g., netcode/pathfinding audit passes) |
+| `Audited`    | Explicit review performed for contradictions/dependency placement (e.g., netcode/pathfinding audit passes)        |
 
 ### `CodeStatus`
 
-| Value | Meaning |
-| --- | --- |
-| `NotStarted` | No implementation evidence linked |
-| `Prototype` | Isolated proof-of-concept exists |
-| `InProgress` | Active implementation underway |
-| `VerticalSlice` | End-to-end narrow path works |
-| `FeatureComplete` | Intended feature scope implemented |
-| `Validated` | Feature complete and validated (tests/playtests/ops checks as appropriate) |
+| Value             | Meaning                                                                    |
+| ----------------- | -------------------------------------------------------------------------- |
+| `NotStarted`      | No implementation evidence linked                                          |
+| `Prototype`       | Isolated proof-of-concept exists                                           |
+| `InProgress`      | Active implementation underway                                             |
+| `VerticalSlice`   | End-to-end narrow path works                                               |
+| `FeatureComplete` | Intended feature scope implemented                                         |
+| `Validated`       | Feature complete and validated (tests/playtests/ops checks as appropriate) |
 
 ### `ValidationStatus`
 
-| Value | Meaning |
-| --- | --- |
-| `None` | No validation evidence recorded |
-| `SpecReview` | Design-doc/spec review only |
-| `AutomatedTests` | Automated test evidence exists |
-| `Playtest` | Human playtesting evidence exists |
-| `OpsValidated` | Operations/service validation evidence exists |
-| `Shipped` | Public release/ship evidence exists |
+| Value            | Meaning                                       |
+| ---------------- | --------------------------------------------- |
+| `None`           | No validation evidence recorded               |
+| `SpecReview`     | Design-doc/spec review only                   |
+| `AutomatedTests` | Automated test evidence exists                |
+| `Playtest`       | Human playtesting evidence exists             |
+| `OpsValidated`   | Operations/service validation evidence exists |
+| `Shipped`        | Public release/ship evidence exists           |
 
 ### `DependencyEdgeKind`
 
-| Value | Meaning |
-| --- | --- |
-| `HardDependsOn` | Non-negotiable dependency |
-| `SoftDependsOn` | Strong preference; stubs/parallel work possible |
-| `ValidationDependsOn` | Needed to validate/ship, not necessarily to prototype |
-| `EnablesParallelWork` | Unlocks a lane but is not a direct blocker |
-| `PolicyGate` | Legal/governance/security prerequisite |
-| `IntegrationGate` | Feature exists but milestone cannot exit until integration is complete |
+| Value                 | Meaning                                                                |
+| --------------------- | ---------------------------------------------------------------------- |
+| `HardDependsOn`       | Non-negotiable dependency                                              |
+| `SoftDependsOn`       | Strong preference; stubs/parallel work possible                        |
+| `ValidationDependsOn` | Needed to validate/ship, not necessarily to prototype                  |
+| `EnablesParallelWork` | Unlocks a lane but is not a direct blocker                             |
+| `PolicyGate`          | Legal/governance/security prerequisite                                 |
+| `IntegrationGate`     | Feature exists but milestone cannot exit until integration is complete |
 
 ## Tracker Record Shapes (Spec-Level)
 
@@ -253,7 +253,7 @@ milestones:
 
 feature_clusters:
   - id: "M1.CORE.RA_FORMATS_PARSE"
-    name: "ra-formats parsing (.mix/.shp/.pal/.aud/.vqa)"
+    name: "ic-cnc-content parsing (.mix/.shp/.pal/.aud/.vqa)"
     milestone: M1
     roadmap_phase: "Phase 0"
     hard_deps: [M0.CORE.TRACKER_FOUNDATION]

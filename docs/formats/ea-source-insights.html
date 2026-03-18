@@ -201,7 +201,7 @@ OutList.Add(EventClass(EventClass::IDLE, TargetClass(tech)));
 <h3 id="keep-data-driven-rules-ini--miniyaml--yaml"><a class="header" href="#keep-data-driven-rules-ini--miniyaml--yaml">Keep: Data-Driven Rules (INI → MiniYAML → YAML)</a></h3>
 <p>Original reads unit stats and game rules from <code>.ini</code> files at runtime. This data-driven philosophy is what made C&amp;C so moddable. The lineage: <code>INI → MiniYAML → YAML</code> — each step more expressive, same philosophy.</p>
 <h3 id="keep-mix-archive-concept"><a class="header" href="#keep-mix-archive-concept">Keep: MIX Archive Concept</a></h3>
-<p>Simple flat archive with hash-based lookup. No compression in the archive itself (individual files may be compressed). For <code>ra-formats</code>: read MIX as-is for compatibility; native format can modernize.</p>
+<p>Simple flat archive with hash-based lookup. No compression in the archive itself (individual files may be compressed). For <code>ic-cnc-content</code>: read MIX as-is for compatibility; native format can modernize.</p>
 <h3 id="keep-compression-flexibility"><a class="header" href="#keep-compression-flexibility">Keep: Compression Flexibility</a></h3>
 <p>Original implements LCW, LZO, and LZW compression. LZO was settled on for save games:</p>
 <pre><code class="language-cpp">// From SAVELOAD.CPP

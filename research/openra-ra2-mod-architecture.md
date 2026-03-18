@@ -1458,7 +1458,7 @@ The 11-type armor system with per-weapon `Versus:` multipliers means IC needs an
 - Animated sequences (helicopter rotor)
 - Standardized lighting (Scale: 11.7, specific light direction)
 
-IC's Bevy rendering pipeline needs VXL loading in `ra-formats` and a component-based multi-part model assembly system.
+IC's Bevy rendering pipeline needs VXL loading in `ic-cnc-content` and a component-based multi-part model assembly system.
 
 #### 9. Support Power Pattern
 

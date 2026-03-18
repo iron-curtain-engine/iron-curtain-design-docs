@@ -44,19 +44,19 @@ This document defines the automated testing infrastructure for Iron Curtain. Eve
 
 ### Tier 3: Nightly (scheduled, <2 hours)
 
-| Test Category              | What It Verifies                                                | Tool / Framework       |
-| -------------------------- | --------------------------------------------------------------- | ---------------------- |
-| Fuzz testing               | `ra-formats` parser, YAML loader, network protocol deserializer | cargo-fuzz / libFuzzer |
-| Property-based testing     | Sim invariants hold across random order sequences               | proptest               |
-| Performance benchmarks     | Tick time, memory allocation, pathfinding cost vs budget        | criterion              |
-| Zero-allocation assertion  | Hot-path functions allocate 0 heap bytes in steady state        | custom allocator hook  |
-| Sandbox escape tests       | WASM module attempts all known escape vectors → all blocked     | custom harness         |
-| Lua resource exhaustion    | `string.rep` bomb, infinite loop, memory bomb → all caught      | custom harness         |
-| Desync injection           | Deliberately desync one client → detection fires within N ticks | custom harness         |
-| Cross-platform determinism | Same scenario on Linux + Windows → identical hash               | CI matrix comparison   |
-| Unicode/BiDi sanitization  | RTL/BiDi QA corpus (rtl-bidi-qa-corpus.md) categories A–I       | custom harness         |
-| Display name validation    | UTS #39 confusable corpus → all impersonation attempts blocked  | custom harness         |
-| Save/load round-trip       | Save game → load → continue 1000 ticks → hash matches fresh run | custom harness         |
+| Test Category              | What It Verifies                                                    | Tool / Framework       |
+| -------------------------- | ------------------------------------------------------------------- | ---------------------- |
+| Fuzz testing               | `ic-cnc-content` parser, YAML loader, network protocol deserializer | cargo-fuzz / libFuzzer |
+| Property-based testing     | Sim invariants hold across random order sequences                   | proptest               |
+| Performance benchmarks     | Tick time, memory allocation, pathfinding cost vs budget            | criterion              |
+| Zero-allocation assertion  | Hot-path functions allocate 0 heap bytes in steady state            | custom allocator hook  |
+| Sandbox escape tests       | WASM module attempts all known escape vectors → all blocked         | custom harness         |
+| Lua resource exhaustion    | `string.rep` bomb, infinite loop, memory bomb → all caught          | custom harness         |
+| Desync injection           | Deliberately desync one client → detection fires within N ticks     | custom harness         |
+| Cross-platform determinism | Same scenario on Linux + Windows → identical hash                   | CI matrix comparison   |
+| Unicode/BiDi sanitization  | RTL/BiDi QA corpus (rtl-bidi-qa-corpus.md) categories A–I           | custom harness         |
+| Display name validation    | UTS #39 confusable corpus → all impersonation attempts blocked      | custom harness         |
+| Save/load round-trip       | Save game → load → continue 1000 ticks → hash matches fresh run     | custom harness         |
 
 **Gate rule:** Failures create high-priority issues. Regressions in performance benchmarks block the next release.
 

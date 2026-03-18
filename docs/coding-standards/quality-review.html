@@ -360,7 +360,7 @@ mod tests {
 <p><strong>Integration tests</strong> (in <code>tests/</code> directory): Test multiple systems working together. May use a Bevy <code>World</code> with multiple systems running. May load test fixtures from <code>tests/fixtures/</code>. These verify that the pieces fit together correctly.</p>
 </li>
 <li>
-<p><strong>Format tests</strong> (in <code>tests/format/</code>): Test <code>ra-formats</code> parsers against synthetic fixtures. Round-trip tests (parse → write → parse → compare). These validate that IC reads the same formats that RA and OpenRA produce.</p>
+<p><strong>Format tests</strong> (in <code>tests/format/</code>): Test <code>ic-cnc-content</code> parsers against synthetic fixtures. Round-trip tests (parse → write → parse → compare). These validate that IC reads the same formats that RA and OpenRA produce.</p>
 </li>
 <li>
 <p><strong>Regression tests</strong>: When a bug is found and fixed, a test is added that reproduces the original bug. The test name references the issue: <code>#[test] fn issue_42_harvester_loop_on_sold_refinery()</code>. This test must never be deleted.</p>

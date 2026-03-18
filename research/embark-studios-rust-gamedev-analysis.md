@@ -315,7 +315,7 @@ The build pipeline is non-trivial:
 
 ### Lessons for Iron Curtain
 
-- **IC's `ra-formats` crate doesn't need this pattern.** IC reads C&C file formats from data files, not through a C++ API. The physx-rs pattern is relevant only if IC ever needs to wrap a C++ library (unlikely given the Bevy ecosystem).
+- **IC's `ic-cnc-content` crate doesn't need this pattern.** IC reads C&C file formats from data files, not through a C++ API. The physx-rs pattern is relevant only if IC ever needs to wrap a C++ library (unlikely given the Bevy ecosystem).
 - **The deref pattern for inheritance simulation is well-proven.** If IC's game module system (D018) needs inheritance-like component hierarchies, this pattern works — but Bevy's ECS composition model is preferable.
 - **Platform-specific struct layouts are a real concern for C FFI.** If IC ever exposes a C API (for the WASM sandbox boundary in D005), struct layout verification is essential.
 - **Build time is a genuine concern with C++ dependencies.** IC's decision to stay pure-Rust (D001) avoids this entirely. The physx-rs experience validates that decision.

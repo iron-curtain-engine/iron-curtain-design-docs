@@ -242,8 +242,8 @@
 </table>
 </div>
 <p><strong>Filename convention:</strong> <code>&lt;data_dir&gt;/screenshots/&lt;YYYY-MM-DD&gt;-&lt;HHMMSS&gt;.png</code> (UTC timestamp). The screenshot hotkey is configurable in <code>config.toml</code>.</p>
-<h3 id="ra-formats-write-support"><a class="header" href="#ra-formats-write-support">ra-formats Write Support</a></h3>
-<p><code>ra-formats</code> currently focuses on reading C&amp;C file formats. Write support extends the crate for the Asset Studio (D040) and mod toolchain:</p>
+<h3 id="ic-cnc-content-write-support"><a class="header" href="#ic-cnc-content-write-support">ic-cnc-content Write Support</a></h3>
+<p><code>ic-cnc-content</code> currently focuses on reading C&amp;C file formats. Write support extends the crate for the Asset Studio (D040) and mod toolchain:</p>
 <div class="table-wrapper">
 <table>
 <thead>
@@ -298,7 +298,7 @@
 <li>
 <p><strong>Format importer (shared, format-specific)</strong></p>
 <ul>
-<li>Parses/validates formats via <code>ra-formats</code> (and source-specific adapters where needed)</li>
+<li>Parses/validates formats via <code>ic-cnc-content</code> (and source-specific adapters where needed)</li>
 <li>Imports/extracts data into IC-managed storage/CAS</li>
 <li>Builds indexes used by D068 install profiles and D069 maintenance flows</li>
 <li>Emits provenance and repair/re-scan metadata</li>

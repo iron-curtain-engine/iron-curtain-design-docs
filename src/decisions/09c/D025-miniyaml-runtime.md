@@ -7,7 +7,7 @@
 - **Execution overlay mapping:** `M0.CORE.FORMAT_FOUNDATION` (P-Core); `M1.CORE.FORMAT_LOADING` (runtime path)
 - **Deferred features / extensions:** none
 - **Canonical for:** MiniYAML auto-detection, runtime conversion, and the `cnc-formats convert` CLI subcommand
-- **Scope:** `ra-formats` crate (runtime auto-conversion), `cnc-formats` crate (CLI `convert` subcommand)
+- **Scope:** `ic-cnc-content` crate (runtime auto-conversion), `cnc-formats` crate (CLI `convert` subcommand)
 - **Decision:** MiniYAML files load directly at runtime via auto-detection and in-memory conversion. No pre-conversion step is required. The `cnc-formats convert --format miniyaml --to yaml` CLI subcommand is also provided for permanent on-disk migration (`--format` auto-detected from extension when unambiguous; `--to` always required).
 - **Why:**
   - Zero-friction import of existing OpenRA mods (drop a mod folder in, play immediately)
@@ -25,7 +25,7 @@
 
 ### Auto-Detection Algorithm
 
-When `ra-formats` loads a `.yaml` file, it inspects the first non-empty lines:
+When `ic-cnc-content` loads a `.yaml` file, it inspects the first non-empty lines:
 
 1. **Tab-indented content** (MiniYAML uses tabs; standard YAML uses spaces)
 2. **`^` inheritance markers** (MiniYAML-specific syntax for trait inheritance)
@@ -67,7 +67,7 @@ pub mod miniyaml {
     }
 }
 
-// ra-formats (GPL v3) — IC integration layer for runtime auto-detection
+// ic-cnc-content (GPL v3) — IC integration layer for runtime auto-detection
 /// Detect whether a `.yaml` file contains standard YAML or MiniYAML.
 /// Returns the detected format for routing to the correct parser.
 pub fn detect_format(content: &str) -> DetectedFormat;

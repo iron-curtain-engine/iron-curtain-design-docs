@@ -270,13 +270,13 @@ This is a privacy concern, not a direct exploit — but combined with other info
 
 **Phase:** Opt-in tracking and proxy routing ship with CommunityBridge integration (Phase 5).
 
-## Vulnerability 38: `ra-formats` Parser Safety — Decompression Bombs & Fuzzing Gap
+## Vulnerability 38: `ic-cnc-content` Parser Safety — Decompression Bombs & Fuzzing Gap
 
 ### The Problem
 
 **Severity: HIGH**
 
-`ra-formats` processes untrusted binary data from multiple sources: `.mix` archives, `.oramap` ZIP files, Workshop packages, downloaded replays, and shared save games. The current design documents format specifications in detail but do not address defensive parsing:
+`ic-cnc-content` processes untrusted binary data from multiple sources: `.mix` archives, `.oramap` ZIP files, Workshop packages, downloaded replays, and shared save games. The current design documents format specifications in detail but do not address defensive parsing:
 
 1. **Decompression bombs:** LCW decompression (used by `.shp`, `.tmp`, `.vqa`, `.wsa`) has no decompression ratio cap and no maximum output size. A crafted `.shp` frame with LCW data claiming a 4 GB output from 100 bytes of compressed input is currently unbounded. The `uncompressed_length` field in save files (`SaveHeader`) is trusted for pre-allocation without validation.
 
@@ -294,7 +294,7 @@ This is a privacy concern, not a direct exploit — but combined with other info
 
 **Decompression ratio cap:** Maximum 256:1 decompression ratio for all codecs (LCW, LZ4). Absolute output size caps per format: SHP frame max 16 MB, VQA frame max 32 MB, save game snapshot max 64 MB. Reject input exceeding these limits before allocation.
 
-**Mandatory fuzzing:** Every format parser in `ra-formats` must have a `cargo-fuzz` target as a Phase 0 exit criterion. Fuzz targets accept arbitrary bytes and must not panic. Property-based testing with `proptest` for round-trip encode/decode where write support exists (Phase 6a).
+**Mandatory fuzzing:** Every format parser in `ic-cnc-content` must have a `cargo-fuzz` target as a Phase 0 exit criterion. Fuzz targets accept arbitrary bytes and must not panic. Property-based testing with `proptest` for round-trip encode/decode where write support exists (Phase 6a).
 
 **Per-format entry caps:** MIX archives: max 16,384 entries (original RA archives contain ~1,500). SHP files: max 65,536 frames. VQA files: max 100,000 frames (~90 minutes at 15 fps). TMP icon sets: max 65,536 tiles. WSA animations: max 10,000 frames. FNT fonts: max 256 characters (one byte index space). These caps are configurable but have safe defaults.
 
@@ -304,7 +304,7 @@ This is a privacy concern, not a direct exploit — but combined with other info
 
 **Path boundary enforcement:** All archive extraction (`.oramap` ZIP, Workshop `.icpkg`) uses `strict-path` `PathBoundary` to prevent Zip Slip and path traversal. See § Path Security Infrastructure.
 
-**Phase:** Fuzzing infrastructure and decompression caps ship with `ra-formats` in Phase 0. Entry caps and iteration counters are part of each format parser's implementation.
+**Phase:** Fuzzing infrastructure and decompression caps ship with `ic-cnc-content` in Phase 0. Entry caps and iteration counters are part of each format parser's implementation.
 
 ## Vulnerability 39: Lua Sandbox Resource Limit Edge Cases
 

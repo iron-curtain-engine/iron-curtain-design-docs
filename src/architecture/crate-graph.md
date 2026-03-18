@@ -15,17 +15,17 @@ These exist from Phase 0, day one, in separate repositories (D076). They have ze
 ```
 ic-protocol  (shared types: PlayerOrder, TimestampedOrder)
     ↑         (depends on: fixed-game-math)
-    ├── ic-sim      (depends on: ic-protocol, ra-formats, fixed-game-math, deterministic-rng, bevy_ecs [public])
+    ├── ic-sim      (depends on: ic-protocol, ic-cnc-content, fixed-game-math, deterministic-rng, bevy_ecs [public])
     ├── ic-net      (depends on: ic-protocol; contains RelayCore library — no ic-sim dependency)
-    ├── ra-formats  (wraps cnc-formats + EA-derived constants — .mix, .shp, .pal, YAML)
+    ├── ic-cnc-content  (wraps cnc-formats + EA-derived constants — .mix, .shp, .pal, YAML)
     ├── ic-render   (depends on: ic-sim for reading state)
     ├── ic-ui       (depends on: ic-sim, ic-render; reads SQLite for player analytics — D034)
-    ├── ic-audio    (depends on: ra-formats)
+    ├── ic-audio    (depends on: ic-cnc-content)
     ├── ic-script   (depends on: ic-sim, ic-protocol)
     ├── ic-ai       (depends on: ic-sim, ic-protocol, ic-llm; reads SQLite for adaptive difficulty — D034; contains LlmOrchestratorAi/LlmPlayerAi — D044)
     ├── ic-llm      (standalone — LlmProvider trait, prompt infra, skill library; embeds candle-core/candle-transformers/tokenizers for Tier 1 CPU inference — D047; no ic-sim, no ic-ai imports)
     ├── ic-paths    (standalone — platform path resolution, portable mode, credential store; wraps `app-path` + `strict-path` + `keyring` + `aes-gcm` + `argon2` + `zeroize` crates)
-    ├── ic-editor   (depends on: ic-render, ic-sim, ic-ui, ic-protocol, ra-formats, ic-paths; SDK binary — D038+D040)
+    ├── ic-editor   (depends on: ic-render, ic-sim, ic-ui, ic-protocol, ic-cnc-content, ic-paths; SDK binary — D038+D040)
     └── ic-game     (depends on: everything above EXCEPT ic-editor)
 
 ic-server (top-level binary; depends on: ic-net for RelayCore, ic-protocol, ic-paths;
@@ -233,7 +233,7 @@ Most crates are self-explanatory from the dependency graph, but three that appea
 **Responsibilities:**
 - **Sound effects:** Weapon fire, explosions, unit acknowledgments, UI clicks. Triggered by sim events (combat, production, movement) via Bevy observer systems.
 - **EVA voice system:** Plays notification audio triggered by `notification_system()` events. Manages a priority queue — high-priority notifications (nuke launch, base under attack) interrupt low-priority ones. Respects per-notification cooldowns.
-- **Music playback:** Three modes — jukebox (classic sequential/shuffle), sequential (ordered playlist), and dynamic (mood-tagged tracks with game-state-driven transitions and crossfade). Supports `.aud` (original RA format via `ra-formats`) and modern formats (OGG, WAV via Bevy). Theme-specific intro tracks (D032 — Hell March for Classic theme). Dynamic mode monitors combat, base threat, and objective state to select appropriate mood category. See § "Red Alert Experience Recreation Strategy" for full music system design and D038 in `decisions/09f-tools.md` for scenario editor integration.
+- **Music playback:** Three modes — jukebox (classic sequential/shuffle), sequential (ordered playlist), and dynamic (mood-tagged tracks with game-state-driven transitions and crossfade). Supports `.aud` (original RA format via `ic-cnc-content`) and modern formats (OGG, WAV via Bevy). Theme-specific intro tracks (D032 — Hell March for Classic theme). Dynamic mode monitors combat, base threat, and objective state to select appropriate mood category. See § "Red Alert Experience Recreation Strategy" for full music system design and D038 in `decisions/09f-tools.md` for scenario editor integration.
 - **Spatial audio:** 3D positional audio for effects — explosions louder when camera is near. Uses Bevy's spatial audio with listener at `GameCamera.position` (see § "Camera System").
 - **VoIP playback:** Decodes incoming Opus voice frames from `MessageLane::Voice` and mixes them into the audio output. Handles per-player volume, muting, and optional spatial panning (D059 § Spatial Audio). Voice replay playback syncs Opus frames to game ticks.
 - **Ambient soundscapes:** Per-biome ambient loops (waves for coastal maps, wind for snow maps). Weather system (D022) can modify ambient tracks.
@@ -258,7 +258,7 @@ pub struct Jukebox {
 }
 ```
 
-**Format support:** `.aud` (IMA ADPCM, via `ra-formats` decoder), `.ogg`, `.wav`, `.mp3` (via Kira/`bevy_kira_audio`). Audio backend is Kira (chosen over rodio/Oddio for sub-frame scheduling, clock-synced crossfade, and per-track DSP). No platform-specific code in `ic-audio`.
+**Format support:** `.aud` (IMA ADPCM, via `ic-cnc-content` decoder), `.ogg`, `.wav`, `.mp3` (via Kira/`bevy_kira_audio`). Audio backend is Kira (chosen over rodio/Oddio for sub-frame scheduling, clock-synced crossfade, and per-track DSP). No platform-specific code in `ic-audio`.
 
 > **Complete audio design:** Library evaluation, bus architecture, dynamic music FSM, EVA priority system, sound pooling, WASM constraints, and performance budget are specified in `research/audio-library-music-integration-design.md`.
 

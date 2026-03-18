@@ -27,7 +27,7 @@ A Rust-native RTS engine that supports OpenRA resource formats (`.mix`, `.shp`, 
 | 04  | `04-MODDING.md`                    | YAML rules, Lua scripting, WASM modules, templating, resource packs, mod SDK                                                                                          | You're working on data formats, scripting, or mod support                                                                                |
 | 04+ | `modding/campaigns.md`             | Campaign system: branching graphs, persistent state, unit carryover, co-op                                                                                            | You're designing or implementing campaign missions and branching logic                                                                   |
 | 04+ | `modding/workshop.md`              | Workshop: federated registry, P2P distribution, semver deps, modpacks, moderation, creator reputation, Workshop API                                                   | You're working on content distribution, Workshop features, mod publishing, or creator tools                                              |
-| 05  | `05-FORMATS.md`                    | File formats, original source code insights, compatibility layer                                                                                                      | You're working on asset loading, ra-formats crate, or OpenRA interop                                                                     |
+| 05  | `05-FORMATS.md`                    | File formats, original source code insights, compatibility layer                                                                                                      | You're working on asset loading, ic-cnc-content crate, or OpenRA interop                                                                 |
 | 06  | `06-SECURITY.md`                   | Threat model, vulnerabilities, mitigations for online play                                                                                                            | You're working on networking, modding sandbox, or anti-cheat                                                                             |
 | 07  | `07-CROSS-ENGINE.md`               | Cross-engine compatibility, protocol adapters, reconciliation                                                                                                         | You're exploring OpenRA interop or multi-engine play                                                                                     |
 | 08  | `08-ROADMAP.md`                    | 36-month development plan with phased milestones                                                                                                                      | You need to plan work or understand phase dependencies                                                                                   |
@@ -69,7 +69,7 @@ These are non-negotiable across the entire project:
 
 ```
 iron-curtain/
-├── ra-formats     # Wraps cnc-formats + EA-derived code; Bevy asset integration; MiniYAML auto-conversion pipeline (C&C-specific, keeps ra- prefix)
+├── ic-cnc-content     # Wraps cnc-formats + EA-derived code; Bevy asset integration; MiniYAML auto-conversion pipeline (C&C-specific, keeps ra- prefix)
 ├── ic-protocol    # PlayerOrder, TimestampedOrder, OrderCodec trait (SHARED boundary)
 ├── ic-sim         # Deterministic simulation (Bevy FixedUpdate systems)
 ├── ic-net         # NetworkModel trait + implementations; RelayCore library (no ic-sim dependency)

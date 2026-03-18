@@ -22,7 +22,7 @@ Six OpenRA mods were studied, ranging from minor C&C variants to completely alie
 
 **Key findings for Iron Curtain:**
 
-1. **Format diversity is extreme.** These 6 mods required 30+ distinct file format decoders. IC's `ra-formats` scope must be extensible or mods will need to ship native code.
+1. **Format diversity is extreme.** These 6 mods required 30+ distinct file format decoders. IC's `ic-cnc-content` scope must be extensible or mods will need to ship native code.
 2. **Every serious mod needs custom C# (= Rust in IC).** Even OpenHV — an original game with no legacy constraints — needed 30+ custom trait classes. The YAML-only modding tier handles ~60–80% of cases; the remaining 20–40% requires code.
 3. **The engine's extensibility points are well-chosen but insufficient.** FileSystem, TerrainFormat, SpriteFormat, and SpriteSequenceFormat are all swappable — but game mechanics (production, building, harvesting) often need wholesale replacement, not just extension.
 4. **Cross-game support requires pluggable game mechanics, not just pluggable data.** OpenKrush replaces Construction, Production, Oil/Resources, Researching, Veterancy — nearly the entire gameplay layer. IC's `GameModule` trait must register entire system pipelines, not just data.
@@ -182,7 +182,7 @@ This is notable: **five DLLs** needed to assemble RA2's feature set by combining
 **RV demonstrates the need for composable game modules.** RA2 borrows the carryall from D2k, traits from Attacque Superior, and base mechanics from RA/TD. IC's design already supports this via `GameModule` composition, but the sheer volume of cross-game trait sharing argues for a robust **first-party component library** (D029) with the 7+ components identified: mind control, carriers, teleport, shields, infection, disguise, temporal.
 
 **Specific implications:**
-- IC needs voxel model support for TS/RA2 (declared in D048 render modes, but format loading needed in `ra-formats`)
+- IC needs voxel model support for TS/RA2 (declared in D048 render modes, but format loading needed in `ic-cnc-content`)
 - The `SupportsMapsFrom` pattern (backward compatibility) is important — IC should support loading maps from compatible mods
 - Custom warheads are one of the most common extension points. IC's warhead system should be easily extensible via YAML + Lua (Tier 1-2), not requiring Rust/WASM for basic variants
 - The 5-DLL composition pattern validates IC's `GameModule` approach — but highlights that a shared trait library (like Attacque Superior) should be an engine-level feature, not a community afterthought
@@ -279,10 +279,10 @@ This is where OpenKrush truly diverges. **Nearly every core gameplay system is r
 
 **Critical implications:**
 
-1. **Format extensibility must be in the modding tier, not just `ra-formats`.** OpenKrush needed 15+ custom binary format decoders. IC must either:
+1. **Format extensibility must be in the modding tier, not just `ic-cnc-content`.** OpenKrush needed 15+ custom binary format decoders. IC must either:
    - Provide a `FormatLoader` trait that WASM mods can implement (Tier 3)
    - Support Kaitai Struct-style format-as-schema definitions (like Stargus — see `research/stratagus-stargus-opencraft-analysis.md`)
-   - Or accept that `ra-formats` will grow to cover multiple game families
+   - Or accept that `ic-cnc-content` will grow to cover multiple game families
 
 2. **The production system must be trait-abstracted.** C&C sidebar production ≠ KKnD site-based construction ≠ RA2's tab-based production. IC's `ProductionQueue` component is fine for C&C, but the `ProductionSystem` trait should be swappable per game module.
 
@@ -442,7 +442,7 @@ Sequences:
 
 **Specific implications:**
 
-1. **IC's `RenderMode` bundles (D048) should support Remastered-quality assets.** The `ShpRemastered` and `MegV3` formats must be loadable by `ra-formats`. TGA and DDS are standard formats Bevy already handles.
+1. **IC's `RenderMode` bundles (D048) should support Remastered-quality assets.** The `ShpRemastered` and `MegV3` formats must be loadable by `ic-cnc-content`. TGA and DDS are standard formats Bevy already handles.
 
 2. **128×128 tile size with 0.1875 scale** reveals the challenge: HD tiles are 8× resolution of originals. IC must handle this via Bevy's camera/viewport scaling — the tile size in the sim stays the same, only the render resolution changes.
 
@@ -660,20 +660,20 @@ pub trait ProductionModel: Send + Sync + 'static {
 
 ## Summary Table: Feature Impact on IC Design
 
-| Finding                                 | IC Design Area                       | Priority | Action                                                |
-| --------------------------------------- | ------------------------------------ | -------- | ----------------------------------------------------- |
-| Mods always need code for new mechanics | Modding tiers (D004, D005)           | P0       | Ensure Lua covers 80% of what currently requires C#   |
-| 30+ custom file formats across mods     | `ra-formats` / format extensibility  | P1       | WASM-based format loaders OR Kaitai-style schemas     |
-| Carrier/spawner is a cross-game pattern | D029 component library               | P1       | Add `SpawnedUnit` to first-party components           |
-| Terrain always gets customized          | `GameModule` terrain registration    | P1       | Trait-abstract terrain (provider, renderer, modifier) |
-| Production models vary radically        | `GameModule` production registration | P1       | Trait-abstract production (`ProductionModel`)         |
-| Content from Steam/GOG/discs/downloads  | Content source system                | P2       | `ContentSource` trait with platform variants          |
-| World spawner systems are common        | Sim / world systems                  | P2       | Generic `WorldSpawner` component                      |
-| Colony/neutral capturable is cross-game | D029 component library               | P2       | Add `NeutralCapturable` to first-party components     |
-| Selection model varies per game         | `GameModule` selection registration  | P2       | `SelectionMode` enum (single, box, priority-box)      |
-| Mod composition via DLL stacking        | `GameModule` dependencies            | P3       | Module dependency declaration                         |
-| Research trees (OpenKrush)              | Tech system generalization           | P3       | `TechRequirement` trait (prerequisite OR research)    |
-| Environmental hazards (sandworms)       | World hazard systems                 | P3       | `WorldHazard` component pattern                       |
+| Finding                                 | IC Design Area                          | Priority | Action                                                |
+| --------------------------------------- | --------------------------------------- | -------- | ----------------------------------------------------- |
+| Mods always need code for new mechanics | Modding tiers (D004, D005)              | P0       | Ensure Lua covers 80% of what currently requires C#   |
+| 30+ custom file formats across mods     | `ic-cnc-content` / format extensibility | P1       | WASM-based format loaders OR Kaitai-style schemas     |
+| Carrier/spawner is a cross-game pattern | D029 component library                  | P1       | Add `SpawnedUnit` to first-party components           |
+| Terrain always gets customized          | `GameModule` terrain registration       | P1       | Trait-abstract terrain (provider, renderer, modifier) |
+| Production models vary radically        | `GameModule` production registration    | P1       | Trait-abstract production (`ProductionModel`)         |
+| Content from Steam/GOG/discs/downloads  | Content source system                   | P2       | `ContentSource` trait with platform variants          |
+| World spawner systems are common        | Sim / world systems                     | P2       | Generic `WorldSpawner` component                      |
+| Colony/neutral capturable is cross-game | D029 component library                  | P2       | Add `NeutralCapturable` to first-party components     |
+| Selection model varies per game         | `GameModule` selection registration     | P2       | `SelectionMode` enum (single, box, priority-box)      |
+| Mod composition via DLL stacking        | `GameModule` dependencies               | P3       | Module dependency declaration                         |
+| Research trees (OpenKrush)              | Tech system generalization              | P3       | `TechRequirement` trait (prerequisite OR research)    |
+| Environmental hazards (sandworms)       | World hazard systems                    | P3       | `WorldHazard` component pattern                       |
 
 ---
 

@@ -20,7 +20,7 @@
 | `OrderCodec`                      | ic-protocol                        | D007      | 5      |
 | `TrackingServer`                  | ic-net                             | D007      | 5      |
 | `LlmProvider`                     | ic-llm                             | D016      | 7      |
-| `FormatRegistry` / `FormatLoader` | ra-formats                         | D018      | 0      |
+| `FormatRegistry` / `FormatLoader` | ic-cnc-content                     | D018      | 0      |
 | `SimReconciler`                   | ic-net                             | D011      | Future |
 | `CommunityBridge`                 | ic-net                             | D011      | Future |
 | `Transport`                       | ic-net                             | D054      | 5      |

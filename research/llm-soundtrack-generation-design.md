@@ -61,7 +61,7 @@ MIDI support in `cnc-formats` is independent of LLM generation. It serves anyone
 
 `cnc-formats` also supports two pre-C&C Westwood audio formats — not part of the LLM generation pipeline, but part of the same audio format toolbox:
 
-- **`.adl` (AdLib OPL2):** Dune II (1992) soundtrack. Sequential OPL2 register writes for Yamaha YM3812 FM synthesis. Behind `adl` feature flag. `cnc-formats` provides the parser (MIT/Apache-2.0); `ra-formats` provides ADL→WAV rendering via `opl-emu` (GPL-3.0, pure Rust OPL emulator) because no permissively-licensed pure Rust OPL emulator exists.
+- **`.adl` (AdLib OPL2):** Dune II (1992) soundtrack. Sequential OPL2 register writes for Yamaha YM3812 FM synthesis. Behind `adl` feature flag. `cnc-formats` provides the parser (MIT/Apache-2.0); `ic-cnc-content` provides ADL→WAV rendering via `opl-emu` (GPL-3.0, pure Rust OPL emulator) because no permissively-licensed pure Rust OPL emulator exists.
 - **`.xmi` (XMIDI / Miles Sound System):** Kyrandia series and other Miles AIL-licensed titles. IFF FORM:XMID container with IFTHEN absolute timing and for-loop markers. Behind `xmi` feature flag (implies `midi`). Clean-room XMI→MID conversion (~300 lines), then the existing MIDI pipeline handles SoundFont rendering to WAV/AUD.
 
 These formats serve the broader Westwood game preservation/modding community. The LLM generation pipeline itself only uses standard MIDI (`.mid`).
@@ -77,12 +77,12 @@ Behind the `midi` feature flag (opt-in, like `meg` and `ist`). Adds three pure R
 
 ### Conversions Added
 
-| Conversion | Direction         | Notes                                                                                                                             |
-| ---------- | ----------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| MID → WAV  | Export            | Requires SoundFont (`.sf2`). `--soundfont` flag (required — `cnc-formats` bundles none; IC ships one in the engine content pack). |
-| WAV → MID  | Export            | Audio-to-MIDI transcription via DSP pipeline (behind `transcribe` + `convert` features — WAV decoding requires `hound` under `convert`). ML-enhanced via `transcribe-ml` feature (Spotify Basic Pitch). Library-only API surface; no CLI `convert` target yet. See `formats/transcribe-upgrade-roadmap.md`. |
-| MID → AUD  | Export            | MID → WAV (SoundFont) → AUD (IMA ADPCM). Two-step, single CLI command.                                                            |
-| AUD → MID  | **Not yet implemented** | Not a documented implementation surface. Would require AUD→WAV decode then WAV→MID transcription; no combined pipeline exists yet. |
+| Conversion | Direction               | Notes                                                                                                                                                                                                                                                                                                       |
+| ---------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| MID → WAV  | Export                  | Requires SoundFont (`.sf2`). `--soundfont` flag (required — `cnc-formats` bundles none; IC ships one in the engine content pack).                                                                                                                                                                           |
+| WAV → MID  | Export                  | Audio-to-MIDI transcription via DSP pipeline (behind `transcribe` + `convert` features — WAV decoding requires `hound` under `convert`). ML-enhanced via `transcribe-ml` feature (Spotify Basic Pitch). Library-only API surface; no CLI `convert` target yet. See `formats/transcribe-upgrade-roadmap.md`. |
+| MID → AUD  | Export                  | MID → WAV (SoundFont) → AUD (IMA ADPCM). Two-step, single CLI command.                                                                                                                                                                                                                                      |
+| AUD → MID  | **Not yet implemented** | Not a documented implementation surface. Would require AUD→WAV decode then WAV→MID transcription; no combined pipeline exists yet.                                                                                                                                                                          |
 
 **MID → AUD makes sense** for modders targeting the original game engine, which expects `.aud` files. The pipeline is: render MIDI through SoundFont to get PCM, then encode PCM as Westwood IMA ADPCM. Both steps use existing `cnc-formats` infrastructure (SoundFont via `rustysynth`, ADPCM via `aud::encode_adpcm()`).
 
@@ -384,7 +384,7 @@ SoundFonts determine the audio quality of rendered MIDI. A General MIDI SoundFon
 - Widely used in open-source projects
 - 30 MB is acceptable within IC's install footprint (a single OGG music track is 2–8 MB)
 
-Alternative: **TimGM6mb** (~6 MB, GPL-2) — lower quality but smaller. GPL-2 is compatible with IC's GPL-3 license but not with `cnc-formats`' MIT/Apache-2.0 standalone crate; bundling should be in `ra-formats` or `ic-audio` if needed.
+Alternative: **TimGM6mb** (~6 MB, GPL-2) — lower quality but smaller. GPL-2 is compatible with IC's GPL-3 license but not with `cnc-formats`' MIT/Apache-2.0 standalone crate; bundling should be in `ic-cnc-content` or `ic-audio` if needed.
 
 ### Selective Installation (D068)
 
@@ -433,7 +433,7 @@ music_generation:
 
 IC's audio pipeline recognizes `.mid` files as a loadable music/SFX format.
 
-8. `ra-formats` Bevy asset loader recognizes `.mid` and auto-renders to PCM via SoundFont at load time
+8. `ic-cnc-content` Bevy asset loader recognizes `.mid` and auto-renders to PCM via SoundFont at load time
 9. Mods can ship `.mid` files directly — engine handles SoundFont rendering transparently
 10. Optional real-time MIDI playback via `rustysynth` for Classic render mode (D048)
 

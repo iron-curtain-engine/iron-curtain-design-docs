@@ -221,7 +221,7 @@ Use this checklist when the source is a **trend signal** (YouTube roundup, trail
 
 ```
 Critical path (sim-first):
-  ra-formats → ic-sim (needs parsed rules) → ic-net (needs sim to test against)
+  ic-cnc-content → ic-sim (needs parsed rules) → ic-net (needs sim to test against)
                                             → ic-render (needs sim state to draw)
                                             → ic-ai (needs sim to run AI against)
 

@@ -90,22 +90,22 @@ Related decisions: D012, D041
 
 ## Crate Workspace
 
-| Crate         | Responsibility                                                                                               | Phase |
-| ------------- | ------------------------------------------------------------------------------------------------------------ | ----- |
-| `ic-protocol` | Shared serializable types (`PlayerOrder`, `TimestampedOrder`, `TickOrders`, `MessageLane`)                   | 0     |
-| `ra-formats`  | IC asset pipeline wrapper: wraps `cnc-formats` + EA-derived code, Bevy integration, MiniYAML auto-conversion | 0–1   |
-| `ic-paths`    | Platform path resolution (XDG/APPDATA/portable mode)                                                         | 1     |
-| `ic-sim`      | Pure deterministic simulation (fixed-point, no I/O, no floats)                                               | 2     |
-| `ic-render`   | Bevy isometric map/sprite renderer, camera, fog rendering                                                    | 1     |
-| `ic-ui`       | Game UI and chrome (Bevy UI), sidebar, power bar, selection, menus                                           | 3–4   |
-| `ic-audio`    | Sound, music, EVA via Kira backend                                                                           | 3     |
-| `ic-net`      | `NetworkModel` implementations, `RelayCore` library                                                          | 5     |
-| `ic-server`   | Unified server binary (D074): relay + optional headless sim for FogAuth/cross-engine                         | 5     |
-| `ic-script`   | Lua (`mlua`) and WASM (`wasmtime`) mod runtimes, deterministic sandbox                                       | 4–5   |
-| `ic-ai`       | Skirmish AI (`PersonalityDrivenAi`), adaptive difficulty, economy/production/military managers               | 4–6   |
-| `ic-llm`      | LLM integration for adaptive missions, briefings, coaching (D016, D044, D073)                                | 6+    |
-| `ic-editor`   | SDK: scenario editor, asset studio, campaign editor (D038, D040)                                             | 6a–6b |
-| `ic-game`     | Main game client binary — Bevy ECS orchestration, ties all systems together                                  | 2+    |
+| Crate            | Responsibility                                                                                               | Phase |
+| ---------------- | ------------------------------------------------------------------------------------------------------------ | ----- |
+| `ic-protocol`    | Shared serializable types (`PlayerOrder`, `TimestampedOrder`, `TickOrders`, `MessageLane`)                   | 0     |
+| `ic-cnc-content` | IC asset pipeline wrapper: wraps `cnc-formats` + EA-derived code, Bevy integration, MiniYAML auto-conversion | 0–1   |
+| `ic-paths`       | Platform path resolution (XDG/APPDATA/portable mode)                                                         | 1     |
+| `ic-sim`         | Pure deterministic simulation (fixed-point, no I/O, no floats)                                               | 2     |
+| `ic-render`      | Bevy isometric map/sprite renderer, camera, fog rendering                                                    | 1     |
+| `ic-ui`          | Game UI and chrome (Bevy UI), sidebar, power bar, selection, menus                                           | 3–4   |
+| `ic-audio`       | Sound, music, EVA via Kira backend                                                                           | 3     |
+| `ic-net`         | `NetworkModel` implementations, `RelayCore` library                                                          | 5     |
+| `ic-server`      | Unified server binary (D074): relay + optional headless sim for FogAuth/cross-engine                         | 5     |
+| `ic-script`      | Lua (`mlua`) and WASM (`wasmtime`) mod runtimes, deterministic sandbox                                       | 4–5   |
+| `ic-ai`          | Skirmish AI (`PersonalityDrivenAi`), adaptive difficulty, economy/production/military managers               | 4–6   |
+| `ic-llm`         | LLM integration for adaptive missions, briefings, coaching (D016, D044, D073)                                | 6+    |
+| `ic-editor`      | SDK: scenario editor, asset studio, campaign editor (D038, D040)                                             | 6a–6b |
+| `ic-game`        | Main game client binary — Bevy ECS orchestration, ties all systems together                                  | 2+    |
 
 **Critical crate boundaries:**
 

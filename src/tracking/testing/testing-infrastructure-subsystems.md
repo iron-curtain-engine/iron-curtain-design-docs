@@ -93,8 +93,8 @@ Using `criterion` for statistical benchmarks with regression detection:
 
 | Target                      | Input Source                        | Known CVE Coverage                                                                       |
 | --------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------- |
-| `ra-formats` (.oramap)      | Random archive bytes                | Zip Slip, decompression bomb, path traversal                                             |
-| `ra-formats` (.mix)         | Random file bytes                   | Buffer overread, integer overflow                                                        |
+| `ic-cnc-content` (.oramap)  | Random archive bytes                | Zip Slip, decompression bomb, path traversal                                             |
+| `ic-cnc-content` (.mix)     | Random file bytes                   | Buffer overread, integer overflow                                                        |
 | YAML tier config            | Random YAML                         | V33 injection vectors                                                                    |
 | Network protocol messages   | Random byte stream                  | V17 state saturation, oversized messages                                                 |
 | Replay file parser          | Random replay bytes                 | V45 frame loss, signature chain gaps                                                     |

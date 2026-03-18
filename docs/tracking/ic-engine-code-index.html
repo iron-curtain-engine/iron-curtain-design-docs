@@ -208,12 +208,12 @@ Canonical design authority: <code>https://github.com/AE26/iron-curtain-design-do
 <tr><th>If you need to…</th><th>Start here</th><th>Then read</th><th>Avoid touching first</th></tr>
 </thead>
 <tbody>
-<tr><td>Parse RA1 assets (.mix, .shp, .pal, .aud)</td><td><code>crates/ra-formats/</code></td><td>format tests, <code>src/05-FORMATS.md</code></td><td>sim/net/render paths</td></tr>
+<tr><td>Parse RA1 assets (.mix, .shp, .pal, .aud)</td><td><code>crates/ic-cnc-content/</code></td><td>format tests, <code>src/05-FORMATS.md</code></td><td>sim/net/render paths</td></tr>
 <tr><td>Implement deterministic sim behavior</td><td><code>crates/ic-sim/</code></td><td><code>ic-protocol/</code>, conformance tests</td><td>render/UI/net paths</td></tr>
 <tr><td>Work on netcode / relay timing</td><td><code>crates/ic-net/</code></td><td><code>ic-protocol/</code>, <code>src/03-NETCODE.md</code></td><td><code>ic-sim</code> internals</td></tr>
 <tr><td>Add UI/HUD feature</td><td><code>crates/ic-ui/</code></td><td><code>ic-render/</code>, <code>src/17-PLAYER-FLOW.md</code></td><td>core sim/net paths</td></tr>
 <tr><td>Add renderer feature (sprites, map, fog)</td><td><code>crates/ic-render/</code></td><td><code>ic-sim/</code> read-only state, Bevy docs</td><td>sim mutation, net internals</td></tr>
-<tr><td>Add audio/music/EVA</td><td><code>crates/ic-audio/</code></td><td><code>ra-formats/</code> for .aud parsing, Kira docs</td><td>sim/net/render internals</td></tr>
+<tr><td>Add audio/music/EVA</td><td><code>crates/ic-audio/</code></td><td><code>ic-cnc-content/</code> for .aud parsing, Kira docs</td><td>sim/net/render internals</td></tr>
 <tr><td>Add Lua/WASM mod feature</td><td><code>crates/ic-script/</code></td><td><code>ic-sim/</code> trait surface, <code>src/04-MODDING.md</code></td><td>sim internals beyond trait API</td></tr>
 <tr><td>Add AI behavior</td><td><code>crates/ic-ai/</code></td><td><code>ic-sim/</code> read view, <code>ic-protocol/</code> orders</td><td>net/render/UI paths</td></tr>
 <tr><td>Add LLM integration feature</td><td><code>crates/ic-llm/</code></td><td><code>ic-sim/</code>, <code>ic-script/</code>, <code>src/decisions/09f/D016-llm-missions.md</code></td><td>core sim/net hot paths</td></tr>
@@ -233,12 +233,12 @@ Canonical design authority: <code>https://github.com/AE26/iron-curtain-design-do
 </thead>
 <tbody>
 <tr><td><code>crates/ic-protocol/</code></td><td>Shared wire types</td><td>Boundary crate between sim and net</td></tr>
-<tr><td><code>crates/ra-formats/</code></td><td>RA1 asset pipeline wrapper</td><td>Wraps <code>cnc-formats</code> + EA-derived code; Bevy <code>AssetSource</code> integration</td></tr>
+<tr><td><code>crates/ic-cnc-content/</code></td><td>RA1 asset pipeline wrapper</td><td>Wraps <code>cnc-formats</code> + EA-derived code; Bevy <code>AssetSource</code> integration</td></tr>
 <tr><td><code>crates/ic-paths/</code></td><td>Platform path resolution + credential store</td><td>Standalone, wraps <code>app-path</code> + <code>strict-path</code> + <code>keyring</code> + <code>aes-gcm</code> + <code>argon2</code> + <code>zeroize</code></td></tr>
 <tr><td><code>crates/ic-sim/</code></td><td>Deterministic simulation</td><td>Pure, no I/O, no floats</td></tr>
 <tr><td><code>crates/ic-render/</code></td><td>Bevy isometric renderer</td><td>Reads sim state (read-only)</td></tr>
 <tr><td><code>crates/ic-ui/</code></td><td>Game UI chrome (Bevy UI)</td><td>Reads sim + render state</td></tr>
-<tr><td><code>crates/ic-audio/</code></td><td>Sound/music/EVA (Kira)</td><td>Reads ra-formats for .aud</td></tr>
+<tr><td><code>crates/ic-audio/</code></td><td>Sound/music/EVA (Kira)</td><td>Reads ic-cnc-content for .aud</td></tr>
 <tr><td><code>crates/ic-net/</code></td><td>Networking + relay server</td><td>RelayCore lib + relay binary</td></tr>
 <tr><td><code>crates/ic-script/</code></td><td>Lua + WASM mod runtimes</td><td>Sandboxed, capability-gated</td></tr>
 <tr><td><code>crates/ic-ai/</code></td><td>Skirmish AI + LLM strategies</td><td>Reads sim state via fog-filtered view; depends on ic-llm</td></tr>
@@ -267,9 +267,9 @@ Canonical design authority: <code>https://github.com/AE26/iron-curtain-design-do
 <li><strong>Common change risks:</strong> changes propagate to both <code>ic-sim</code> and <code>ic-net</code> — coordinate carefully</li>
 <li><strong>Search hints:</strong> <code>PlayerOrder</code>, <code>TimestampedOrder</code>, <code>TickOrders</code>, <code>MessageLane</code></li>
 </ul>
-<h3 id="ra-formats"><a class="header" href="#ra-formats"><code>ra-formats</code></a></h3>
+<h3 id="ic-cnc-content"><a class="header" href="#ic-cnc-content"><code>ic-cnc-content</code></a></h3>
 <ul>
-<li><strong>Path:</strong> <code>crates/ra-formats/</code></li>
+<li><strong>Path:</strong> <code>crates/ic-cnc-content/</code></li>
 <li><strong>Primary responsibility:</strong> IC asset pipeline integration: wraps <code>cnc-formats</code> (binary + text parsers) with EA-derived constants, Bevy <code>AssetSource</code>, MiniYAML auto-conversion pipeline</li>
 <li><strong>Does not own:</strong> rendering, audio playback, game logic, clean-room format parsing (that’s <code>cnc-formats</code>)</li>
 <li><strong>Public interfaces / trait seams:</strong> asset loader functions, <code>MixArchive</code>, <code>ShpFrame</code>, <code>Palette</code>, <code>detect_format()</code>, MiniYAML auto-conversion</li>
@@ -346,7 +346,7 @@ Canonical design authority: <code>https://github.com/AE26/iron-curtain-design-do
 <ul>
 <li><strong>Path:</strong> <code>crates/ic-audio/</code></li>
 <li><strong>Primary responsibility:</strong> Sound effects, music jukebox, EVA voice notifications via Kira audio backend</li>
-<li><strong>Does not own:</strong> .aud file parsing (that’s <code>ra-formats</code>), sim logic, rendering</li>
+<li><strong>Does not own:</strong> .aud file parsing (that’s <code>ic-cnc-content</code>), sim logic, rendering</li>
 <li><strong>Public interfaces / trait seams:</strong> <code>CombatAudioEvent</code>, <code>EvaNotification</code>, <code>MusicStateChange</code>, jukebox state machine</li>
 <li><strong>Key files to read first:</strong> <code>src/lib.rs</code>, <code>src/jukebox.rs</code>, <code>src/eva.rs</code></li>
 <li><strong>Hot paths / perf-sensitive files:</strong> concurrent sound effect mixing (combat scenes with many units)</li>

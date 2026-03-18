@@ -29,7 +29,7 @@ Original reads unit stats and game rules from `.ini` files at runtime. This data
 
 ### Keep: MIX Archive Concept
 
-Simple flat archive with hash-based lookup. No compression in the archive itself (individual files may be compressed). For `ra-formats`: read MIX as-is for compatibility; native format can modernize.
+Simple flat archive with hash-based lookup. No compression in the archive itself (individual files may be compressed). For `ic-cnc-content`: read MIX as-is for compatibility; native format can modernize.
 
 ### Keep: Compression Flexibility
 

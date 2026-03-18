@@ -7,7 +7,7 @@
 - **Execution overlay mapping:** `M1.CORE.FORMAT_LOADING` (P-Core); enum definitions are part of format loading
 - **Deferred features / extensions:** Game modules (RA2, TS) add game-specific enum variants; core enum types remain stable
 - **Canonical for:** Enum naming policy for locomotion, armor, target types, damage states, and stances
-- **Scope:** `ic-sim`, `ra-formats`, `04-MODDING.md`, `11-OPENRA-FEATURES.md`
+- **Scope:** `ic-sim`, `ic-cnc-content`, `04-MODDING.md`, `11-OPENRA-FEATURES.md`
 - **Decision:** IC's canonical enum names for gameplay types match OpenRA's names exactly. Versus tables, weapon definitions, and unit YAML from OpenRA copy-paste into IC without translation.
 - **Why:**
   - Zero migration friction for OpenRA mod content
@@ -27,24 +27,24 @@
 
 **Locomotor types** (unit movement classification):
 
-| Enum Value | Used By | Notes |
-|------------|---------|-------|
-| `Foot` | Infantry | Sub-cell positioning |
-| `Wheeled` | Light vehicles | Road speed bonus |
-| `Tracked` | Tanks, heavy vehicles | Crushes infantry |
-| `Float` | Naval units | Water-only |
-| `Fly` | Aircraft | Ignores terrain |
+| Enum Value | Used By               | Notes                |
+| ---------- | --------------------- | -------------------- |
+| `Foot`     | Infantry              | Sub-cell positioning |
+| `Wheeled`  | Light vehicles        | Road speed bonus     |
+| `Tracked`  | Tanks, heavy vehicles | Crushes infantry     |
+| `Float`    | Naval units           | Water-only           |
+| `Fly`      | Aircraft              | Ignores terrain      |
 
 **Armor types** (damage reduction classification):
 
-| Enum Value | Typical Units |
-|------------|---------------|
-| `None` | Infantry, unarmored |
-| `Light` | Scouts, light vehicles |
-| `Medium` | APCs, medium tanks |
-| `Heavy` | Heavy tanks, Mammoth |
-| `Wood` | Fences, barrels |
-| `Concrete` | Buildings, walls |
+| Enum Value | Typical Units          |
+| ---------- | ---------------------- |
+| `None`     | Infantry, unarmored    |
+| `Light`    | Scouts, light vehicles |
+| `Medium`   | APCs, medium tanks     |
+| `Heavy`    | Heavy tanks, Mammoth   |
+| `Wood`     | Fences, barrels        |
+| `Concrete` | Buildings, walls       |
 
 **Target types** (weapon targeting filters): `Ground`, `Water`, `Air`, `Structure`, `Infantry`, `Vehicle`, `Tree`, `Wall`. Weapon YAML uses `valid_targets` and `invalid_targets` arrays of these values.
 

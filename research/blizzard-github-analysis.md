@@ -730,7 +730,7 @@ The `DebugTestProcess` command is particularly clever — intentionally triggeri
 
 | Finding                                  | Recommendation                                                | IC Design Impact            |
 | ---------------------------------------- | ------------------------------------------------------------- | --------------------------- |
-| Stable IDs for all game elements         | Assign stable YAML-defined IDs, not file-order derived        | ic-sim + ra-formats         |
+| Stable IDs for all game elements         | Assign stable YAML-defined IDs, not file-order derived        | ic-sim + ic-cnc-content     |
 | Ability remapping (remaps_to_ability_id) | Generic ability aliases for mod compatibility                 | ic-sim ability system       |
 | Target type declaration on abilities     | Include Target enum (None/Point/Unit/PointOrUnit) per ability | Order validation            |
 | Multiple weapons per unit                | weapon list, not single attack                                | YAML unit definitions       |

@@ -97,7 +97,7 @@ ic-audio
 ├── bevy_kira_audio  (Bevy plugin — ECS integration)
 │   └── kira         (audio engine — mixer, tweens, spatial, streaming)
 │       └── cpal     (platform audio I/O — shared with VoIP capture)
-├── ra-formats       (.aud IMA ADPCM decoder)
+├── ic-cnc-content       (.aud IMA ADPCM decoder)
 └── bevy             (ECS, asset system, transform queries)
 ```
 
@@ -302,11 +302,11 @@ This avoids the `cpal` device contention problem: Kira owns the output device, a
 
 As defined in `ra-experience.md`, `ic-audio` supports three music playback modes:
 
-| Mode | Behavior | Use Case |
-| --- | --- | --- |
-| `Jukebox` | Sequential or shuffle playlist, no game-state awareness | Classic RA experience, `vanilla` profile |
-| `Sequential` | Ordered playlist, advances on track end | Campaign missions with scripted music order |
-| `Dynamic` | Mood-tagged tracks, game-state-driven transitions with crossfade | `iron_curtain` profile default, SDK missions |
+| Mode         | Behavior                                                         | Use Case                                     |
+| ------------ | ---------------------------------------------------------------- | -------------------------------------------- |
+| `Jukebox`    | Sequential or shuffle playlist, no game-state awareness          | Classic RA experience, `vanilla` profile     |
+| `Sequential` | Ordered playlist, advances on track end                          | Campaign missions with scripted music order  |
+| `Dynamic`    | Mood-tagged tracks, game-state-driven transitions with crossfade | `iron_curtain` profile default, SDK missions |
 
 ### State Machine (Dynamic Mode)
 
@@ -809,13 +809,13 @@ fn should_play_sound(
 
 ### `.aud` IMA ADPCM Decode Path
 
-Original Red Alert audio files use the `.aud` format with IMA ADPCM compression. `ra-formats` provides the decoder; `ic-audio` bridges the decoded PCM into Kira.
+Original Red Alert audio files use the `.aud` format with IMA ADPCM compression. `ic-cnc-content` provides the decoder; `ic-audio` bridges the decoded PCM into Kira.
 
 ```
 .aud file on disk
     │
     ▼
-ra-formats::aud::AudDecoder
+ic-cnc-content::aud::AudDecoder
     │  Reads: sample rate, channels, IMA ADPCM compressed blocks
     │  Outputs: Vec<i16> PCM samples (decoded)
     ▼
@@ -833,7 +833,7 @@ For `.aud` files, pre-decode is always used. Original RA `.aud` files are small 
 ### Custom Bevy Asset Loader
 
 ```rust
-/// Bevy asset loader for .aud files via ra-formats.
+/// Bevy asset loader for .aud files via ic-cnc-content.
 #[derive(Default)]
 pub struct AudAssetLoader;
 
@@ -869,12 +869,12 @@ impl AssetLoader for AudAssetLoader {
 
 Standard formats are handled by Kira's built-in decoders:
 
-| Format | Decode Mode | Rationale |
-| --- | --- | --- |
-| `.aud` (IMA ADPCM) | Pre-decode (always) | Small files (<200 KB decoded), fast integer decode |
-| `.wav` (PCM 16-bit) | Pre-decode if <512 KB, stream if larger | SFX are small; no decode cost. Large WAVs (rare) stream. |
-| `.ogg` (Vorbis) | Stream if >256 KB, pre-decode if smaller | Music tracks stream (3-8 MB). Short SFX pre-decode. |
-| `.mp3` | Stream if >256 KB, pre-decode if smaller | Same policy as OGG. MP3 support for workshop mods. |
+| Format              | Decode Mode                              | Rationale                                                |
+| ------------------- | ---------------------------------------- | -------------------------------------------------------- |
+| `.aud` (IMA ADPCM)  | Pre-decode (always)                      | Small files (<200 KB decoded), fast integer decode       |
+| `.wav` (PCM 16-bit) | Pre-decode if <512 KB, stream if larger  | SFX are small; no decode cost. Large WAVs (rare) stream. |
+| `.ogg` (Vorbis)     | Stream if >256 KB, pre-decode if smaller | Music tracks stream (3-8 MB). Short SFX pre-decode.      |
+| `.mp3`              | Stream if >256 KB, pre-decode if smaller | Same policy as OGG. MP3 support for workshop mods.       |
 
 ### Streaming vs Pre-decode Threshold
 
@@ -899,7 +899,7 @@ Music tracks are always streamed regardless of size (they are played sequentiall
 impl Plugin for IcAudioPlugin {
     fn build(&self, app: &mut App) {
         app
-            // Register .aud loader (ra-formats integration)
+            // Register .aud loader (ic-cnc-content integration)
             .init_asset_loader::<AudAssetLoader>()
             // Kira handles .ogg, .wav, .mp3 natively via bevy_kira_audio
             .add_plugins(AudioPlugin)  // bevy_kira_audio plugin
@@ -967,12 +967,12 @@ Kira's WASM backend supports streaming via `fetch` + `ReadableStream`. Music tra
 
 ### Format Support in WASM
 
-| Format | WASM Support | Notes |
-| --- | --- | --- |
-| `.ogg` | Yes (Kira's pure-Rust Vorbis decoder) | Primary format for browser |
-| `.wav` | Yes (Kira's built-in PCM reader) | Works, but large files waste bandwidth |
-| `.mp3` | Yes (Kira's `symphonia` decoder) | Works; less efficient than OGG |
-| `.aud` | Yes (`ra-formats` is pure Rust) | IMA ADPCM decode is integer-only, WASM-safe |
+| Format | WASM Support                          | Notes                                       |
+| ------ | ------------------------------------- | ------------------------------------------- |
+| `.ogg` | Yes (Kira's pure-Rust Vorbis decoder) | Primary format for browser                  |
+| `.wav` | Yes (Kira's built-in PCM reader)      | Works, but large files waste bandwidth      |
+| `.mp3` | Yes (Kira's `symphonia` decoder)      | Works; less efficient than OGG              |
+| `.aud` | Yes (`ic-cnc-content` is pure Rust)   | IMA ADPCM decode is integer-only, WASM-safe |
 
 ### VoIP in WASM
 
@@ -986,30 +986,30 @@ D059 specifies that VoIP capture uses `cpal`, which maps to `AudioWorklet` on WA
 
 ### CPU Budget
 
-| Component | Budget (per frame @ 60 FPS) | Notes |
-| --- | --- | --- |
-| Music streaming + crossfade | <0.1 ms | Kira decodes on background thread; mixer runs on audio thread |
-| SFX mixing (64 concurrent) | <0.3 ms | Kira mixer is optimized for many voices |
-| EVA queue management | <0.01 ms | Simple priority queue, runs once per frame |
-| Spatial audio updates | <0.1 ms | Distance calculations for active sounds |
-| Combat score calculation | <0.05 ms | Event iteration + decay, runs per-tick |
-| Dynamic music FSM | <0.01 ms | State check + occasional crossfade trigger |
-| VoIP decode + mix (8 players) | <0.2 ms | Opus decode on audio thread (D059 budget) |
-| **Total audio CPU** | **<0.8 ms** | **Target: <1.0 ms per frame** |
+| Component                     | Budget (per frame @ 60 FPS) | Notes                                                         |
+| ----------------------------- | --------------------------- | ------------------------------------------------------------- |
+| Music streaming + crossfade   | <0.1 ms                     | Kira decodes on background thread; mixer runs on audio thread |
+| SFX mixing (64 concurrent)    | <0.3 ms                     | Kira mixer is optimized for many voices                       |
+| EVA queue management          | <0.01 ms                    | Simple priority queue, runs once per frame                    |
+| Spatial audio updates         | <0.1 ms                     | Distance calculations for active sounds                       |
+| Combat score calculation      | <0.05 ms                    | Event iteration + decay, runs per-tick                        |
+| Dynamic music FSM             | <0.01 ms                    | State check + occasional crossfade trigger                    |
+| VoIP decode + mix (8 players) | <0.2 ms                     | Opus decode on audio thread (D059 budget)                     |
+| **Total audio CPU**           | **<0.8 ms**                 | **Target: <1.0 ms per frame**                                 |
 
 Kira's mixer runs on a dedicated audio thread (not the main ECS thread). The budget above includes only the main-thread cost of `ic-audio`'s Bevy systems (queueing sounds, updating state, sending commands to Kira). The actual sample mixing is off-thread and does not compete with sim or render.
 
 ### Memory Budget
 
-| Category | Budget | Rationale |
-| --- | --- | --- |
-| Pre-decoded SFX pool | 32 MB | ~200 unique SFX at ~160 KB average (16-bit PCM, 1-2s each) |
-| EVA voice lines | 8 MB | ~60 voice lines, short duration, pre-decoded for instant playback |
-| Unit voice responses | 16 MB | ~300 voice clips across all unit types |
-| Music streaming buffers | 2 MB | Two 1 MB ring buffers for A/B crossfade streaming |
-| Ambient loops (pre-decoded) | 4 MB | 2-4 looping ambient tracks per biome |
-| VoIP buffers (D059) | 1 MB | 8 player jitter buffers at ~128 KB each |
-| **Total audio memory** | **~63 MB** | **Budget ceiling: 80 MB** |
+| Category                    | Budget     | Rationale                                                         |
+| --------------------------- | ---------- | ----------------------------------------------------------------- |
+| Pre-decoded SFX pool        | 32 MB      | ~200 unique SFX at ~160 KB average (16-bit PCM, 1-2s each)        |
+| EVA voice lines             | 8 MB       | ~60 voice lines, short duration, pre-decoded for instant playback |
+| Unit voice responses        | 16 MB      | ~300 voice clips across all unit types                            |
+| Music streaming buffers     | 2 MB       | Two 1 MB ring buffers for A/B crossfade streaming                 |
+| Ambient loops (pre-decoded) | 4 MB       | 2-4 looping ambient tracks per biome                              |
+| VoIP buffers (D059)         | 1 MB       | 8 player jitter buffers at ~128 KB each                           |
+| **Total audio memory**      | **~63 MB** | **Budget ceiling: 80 MB**                                         |
 
 WASM builds halve the SFX pool budget (16 MB) and rely more on streaming. Workshop mods that add many custom sounds must respect per-mod audio memory limits (enforced by the asset system).
 
@@ -1229,15 +1229,15 @@ Media.GetVoiceVolume()
 
 Summary of the VoIP↔game audio integration:
 
-| Concern | Owner | Integration Point |
-| --- | --- | --- |
-| Microphone capture | D059 audio thread (`cpal` input device) | No conflict — input device is separate |
-| Opus encode/decode | D059 audio thread (`audiopus`) | No conflict — runs off-thread |
-| Jitter buffer | D059 audio thread | Outputs decoded PCM frames |
-| Voice playback mix | `ic-audio` VoipSub track | Decoded PCM fed into Kira via `VoipSource` ring buffer |
-| Output device | Kira (`cpal` output device) | Kira owns the output; VoIP mixes through Kira's graph |
-| Per-player volume | `ic-audio` `VoipSource` | Per-player gain applied before mixing into VoipSub track |
-| Muting | `ic-audio` + `ic-ui` | Muted players have their ring buffer drained silently |
+| Concern            | Owner                                   | Integration Point                                        |
+| ------------------ | --------------------------------------- | -------------------------------------------------------- |
+| Microphone capture | D059 audio thread (`cpal` input device) | No conflict — input device is separate                   |
+| Opus encode/decode | D059 audio thread (`audiopus`)          | No conflict — runs off-thread                            |
+| Jitter buffer      | D059 audio thread                       | Outputs decoded PCM frames                               |
+| Voice playback mix | `ic-audio` VoipSub track                | Decoded PCM fed into Kira via `VoipSource` ring buffer   |
+| Output device      | Kira (`cpal` output device)             | Kira owns the output; VoIP mixes through Kira's graph    |
+| Per-player volume  | `ic-audio` `VoipSource`                 | Per-player gain applied before mixing into VoipSub track |
+| Muting             | `ic-audio` + `ic-ui`                    | Muted players have their ring buffer drained silently    |
 
 The key architectural insight: Kira owns the audio output device. VoIP does not open a separate output stream. Instead, D059's decode pipeline writes decoded PCM into a ring buffer, and a custom Kira sound source on the VoipSub track reads from that buffer. This guarantees no device contention and allows VoIP volume to be controlled by the same bus hierarchy as all other audio.
 
@@ -1245,18 +1245,18 @@ The key architectural insight: Kira owns the audio output device. VoIP does not 
 
 ## Summary of Settled Decisions
 
-| Decision | Choice | Rationale |
-| --- | --- | --- |
-| Audio library | **Kira** via `bevy_kira_audio` | Bus topology, tweening, streaming, spatial audio, effects, WASM support |
-| Mixer topology | 4 primary buses (Music, SFX, Voice, Ambient) with sub-tracks | Matches IC's audio priority tiers and per-category volume control |
-| Music crossfade | A/B sub-tracks with Kira tweening | Native crossfade without custom sample-level code |
-| Dynamic music | Combat-score FSM with 5 moods | Closes the gap between Klepacki's compositional intent and RA's flat jukebox |
-| EVA system | Priority queue with per-type cooldowns, max depth 8 | Prevents spam, ensures critical notifications always play |
-| Sound limits | 64 concurrent (32 WASM), per-category caps, per-type instance limit 3 | Prevents mixer saturation and CPU spikes |
-| `.aud` decode | Pre-decode always, via `ra-formats` → PCM → Kira `StaticSoundData` | Small files, fast decode, zero-latency playback |
-| Streaming threshold | >256 KB OGG/MP3, >512 KB WAV, music always streams | Balances memory usage vs. playback latency |
-| VoIP integration | Decoded PCM → ring buffer → custom Kira source on VoipSub track | Kira owns output device; no device contention |
-| Audio CPU budget | <1.0 ms per frame (main thread); mixer off-thread | Leaves headroom for sim, render, network |
-| Audio memory budget | ~63 MB (ceiling 80 MB); WASM halved | Fits within total engine memory budget |
+| Decision            | Choice                                                                 | Rationale                                                                    |
+| ------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Audio library       | **Kira** via `bevy_kira_audio`                                         | Bus topology, tweening, streaming, spatial audio, effects, WASM support      |
+| Mixer topology      | 4 primary buses (Music, SFX, Voice, Ambient) with sub-tracks           | Matches IC's audio priority tiers and per-category volume control            |
+| Music crossfade     | A/B sub-tracks with Kira tweening                                      | Native crossfade without custom sample-level code                            |
+| Dynamic music       | Combat-score FSM with 5 moods                                          | Closes the gap between Klepacki's compositional intent and RA's flat jukebox |
+| EVA system          | Priority queue with per-type cooldowns, max depth 8                    | Prevents spam, ensures critical notifications always play                    |
+| Sound limits        | 64 concurrent (32 WASM), per-category caps, per-type instance limit 3  | Prevents mixer saturation and CPU spikes                                     |
+| `.aud` decode       | Pre-decode always, via `ic-cnc-content` → PCM → Kira `StaticSoundData` | Small files, fast decode, zero-latency playback                              |
+| Streaming threshold | >256 KB OGG/MP3, >512 KB WAV, music always streams                     | Balances memory usage vs. playback latency                                   |
+| VoIP integration    | Decoded PCM → ring buffer → custom Kira source on VoipSub track        | Kira owns output device; no device contention                                |
+| Audio CPU budget    | <1.0 ms per frame (main thread); mixer off-thread                      | Leaves headroom for sim, render, network                                     |
+| Audio memory budget | ~63 MB (ceiling 80 MB); WASM halved                                    | Fits within total engine memory budget                                       |
 
 **P003 is resolved.** `PG.P003.AUDIO_LIBRARY` gate is cleared. Phase 3 audio implementation (`M3.CORE.AUDIO_EVA_MUSIC`) can proceed.

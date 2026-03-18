@@ -186,7 +186,7 @@
 <h3 id="why-this-matters"><a class="header" href="#why-this-matters">Why This Matters</a></h3>
 <p>The first runnable is the “Hello World” of the engine. Until a Bevy window opens and renders actual Red Alert assets, everything is theory. This milestone:</p>
 <ul>
-<li><strong>Validates <code>ra-formats</code>.</strong> Can we actually parse <code>.mix</code>, <code>.shp</code>, <code>.pal</code>, <code>.tmp</code> into usable data?</li>
+<li><strong>Validates <code>ic-cnc-content</code>.</strong> Can we actually parse <code>.mix</code>, <code>.shp</code>, <code>.pal</code>, <code>.tmp</code> into usable data?</li>
 <li><strong>Validates the Bevy integration.</strong> Can we get RA sprites into Bevy’s rendering pipeline?</li>
 <li><strong>Validates the isometric math.</strong> Can we convert grid coordinates to screen coordinates correctly?</li>
 <li><strong>Generates community interest.</strong> “Red Alert map rendered faithfully in Rust at 4K 144fps” is the first public proof that IC is real.</li>
@@ -207,8 +207,8 @@
 </table>
 </div>
 <h3 id="implementation-steps"><a class="header" href="#implementation-steps">Implementation Steps</a></h3>
-<h4 id="step-1-cnc-formats--ra-formats--parse-everything-weeks-12"><a class="header" href="#step-1-cnc-formats--ra-formats--parse-everything-weeks-12">Step 1: <code>cnc-formats</code> + <code>ra-formats</code> — Parse Everything (Weeks 1–2)</a></h4>
-<p>Build the <code>cnc-formats</code> crate (MIT/Apache-2.0, standalone) to read all Red Alert binary formats — pure Rust, zero Bevy dependency. Then build <code>ra-formats</code> (GPL, IC monorepo) as a thin wrapper adding EA-derived constants and Bevy asset integration.</p>
+<h4 id="step-1-cnc-formats--ic-cnc-content--parse-everything-weeks-12"><a class="header" href="#step-1-cnc-formats--ic-cnc-content--parse-everything-weeks-12">Step 1: <code>cnc-formats</code> + <code>ic-cnc-content</code> — Parse Everything (Weeks 1–2)</a></h4>
+<p>Build the <code>cnc-formats</code> crate (MIT/Apache-2.0, standalone) to read all Red Alert binary formats — pure Rust, zero Bevy dependency. Then build <code>ic-cnc-content</code> (GPL, IC monorepo) as a thin wrapper adding EA-derived constants and Bevy asset integration.</p>
 <p><strong>Deliverables:</strong></p>
 <div class="table-wrapper">
 <table>
@@ -229,7 +229,7 @@
 <p><strong>Test strategy:</strong> Parse every <code>.mix</code> from a stock Red Alert installation. Extract every <code>.shp</code> and verify frame counts match OpenRA’s <code>sequences/*.yaml</code>. Render every <code>.pal</code> as a 16×16 color grid PNG.</p>
 <h4 id="step-2-bevy-window--one-sprite-week-3"><a class="header" href="#step-2-bevy-window--one-sprite-week-3">Step 2: Bevy Window + One Sprite (Week 3)</a></h4>
 <p>The “Hello RA” moment — a Bevy window opens and displays a single Red Alert sprite with the correct palette applied.</p>
-<p><strong>What this proves:</strong> <code>cnc-formats</code> → <code>ra-formats</code> output can flow into Bevy’s <code>Image</code> / <code>TextureAtlas</code> pipeline. Palette-indexed sprites render correctly on a GPU.</p>
+<p><strong>What this proves:</strong> <code>cnc-formats</code> → <code>ic-cnc-content</code> output can flow into Bevy’s <code>Image</code> / <code>TextureAtlas</code> pipeline. Palette-indexed sprites render correctly on a GPU.</p>
 <p><strong>Implementation:</strong></p>
 <ol>
 <li>Load <code>conquer.mix</code> → extract <code>e1.shp</code> (rifle infantry) and <code>temperat.pal</code></li>
@@ -347,7 +347,7 @@ screen_y = (cell_x + cell_y) * tile_half_height
 <tr><th>Weeks</th><th>Step</th><th>Milestone</th><th>Phase Alignment</th></tr>
 </thead>
 <tbody>
-<tr><td>1–2</td><td><code>ra-formats</code> parsers</td><td>CLI can dump any MIX/SHP/PAL/TMP/AUD file</td><td>Phase 0</td></tr>
+<tr><td>1–2</td><td><code>ic-cnc-content</code> parsers</td><td>CLI can dump any MIX/SHP/PAL/TMP/AUD file</td><td>Phase 0</td></tr>
 <tr><td>3</td><td>Bevy + one sprite</td><td>Window opens, animated RA infantry on screen</td><td>Phase 0 → 1</td></tr>
 <tr><td>4–5</td><td>Map rendering</td><td>Any <code>.oramap</code> renders as isometric terrain grid</td><td>Phase 1</td></tr>
 <tr><td>6–8</td><td>Sprites + animations</td><td>Units and buildings on map, idle animations, camera controls</td><td>Phase 1</td></tr>

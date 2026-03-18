@@ -12,7 +12,7 @@ Layer 1:  Data compatibility        (do they load same rules?)→ Very achievabl
 
 Load the same YAML rules, maps, unit definitions, weapon stats as OpenRA.
 
-- `cnc-formats` provides the clean-room MiniYAML parser; `ra-formats` wraps it for IC's asset pipeline and converts to standard YAML
+- `cnc-formats` provides the clean-room MiniYAML parser; `ic-cnc-content` wraps it for IC's asset pipeline and converts to standard YAML
 - Same maps work on both engines
 - Existing mod data migrates automatically
 - **Status:** Core part of Phase 0, already planned
@@ -50,7 +50,7 @@ Implement community master server protocols (OpenRA and CnCNet). IC games show u
 
 ### Level 1: Replay Compatibility (Phase 5-6)
 
-Decode OpenRA `.orarep` and Remastered Collection replay files via `ra-formats` decoders (`OpenRAReplayDecoder`, `RemasteredReplayDecoder`), translate orders via `ForeignReplayCodec`, feed through IC's sim via `ForeignReplayPlayback` NetworkModel. They'll desync eventually (different sim — D011), but the `DivergenceTracker` monitors and surfaces drift in the UI. Players can watch most of a replay before visible divergence. Optionally convert to `.icrep` for archival and analysis tooling.
+Decode OpenRA `.orarep` and Remastered Collection replay files via `ic-cnc-content` decoders (`OpenRAReplayDecoder`, `RemasteredReplayDecoder`), translate orders via `ForeignReplayCodec`, feed through IC's sim via `ForeignReplayPlayback` NetworkModel. They'll desync eventually (different sim — D011), but the `DivergenceTracker` monitors and surfaces drift in the UI. Players can watch most of a replay before visible divergence. Optionally convert to `.icrep` for archival and analysis tooling.
 
 This is also the foundation for **automated behavioral regression testing** — running foreign replay corpora headlessly through IC's sim to catch gross behavioral bugs (units walking through walls, harvesters ignoring ore). Not bit-identical verification, but "does this look roughly right?" sanity checks.
 
@@ -90,7 +90,7 @@ Cross-engine compatibility is a **boundary layer around the sim**, not a modific
 │  Shared wire types (ic-protocol)                                     │
 │    └─ TimestampedOrder / PlayerOrder / codec seams                   │
 │                                                                      │
-│  Data / asset compatibility (cnc-formats + ra-formats)              │
+│  Data / asset compatibility (cnc-formats + ic-cnc-content)              │
 │    └─ MiniYAML, maps, replay decoders, coordinate transforms         │
 │                                                                      │
 │  Deterministic simulation (ic-sim)                                   │
@@ -115,7 +115,7 @@ The cross-engine layer **may**:
 
 ### How it works in practice (by responsibility)
 
-- **Data compatibility (Layer 1)** lives mostly in `ra-formats` + content-loading docs (`D023`, `D024`, `D025`) and is usable without any network interop.
+- **Data compatibility (Layer 1)** lives mostly in `ic-cnc-content` + content-loading docs (`D023`, `D024`, `D025`) and is usable without any network interop.
 - **Community/discovery compatibility (Level 0)** lives in `CommunityBridge` (`ic-net` / `ic-server`) and `ic-ui` browser/lobby UX.
 - **Replay compatibility (Level 1)** uses replay decoders + foreign order codecs + divergence tracking; it is analysis/viewing tooling, not a live trust path.
 - **Casual live cross-play (Level 2+)** adds `ProtocolAdapter` and `SimReconciler` around a `NetworkModel`; the sim remains unchanged.
@@ -401,7 +401,7 @@ This registry is maintained as implementation proceeds (Phase 2+). Each entry do
 Costs almost nothing today, enables deferred cross-engine milestones (`M7` trust/interop host modes and `M11` visual/interop expansion):
 
 1. **`OrderCodec` trait** in `ic-protocol` — orders are wire-format-agnostic from day one
-2. **`CoordTransform`** in `ra-formats` — coordinate systems are explicit, not implicit
+2. **`CoordTransform`** in `ic-cnc-content` — coordinate systems are explicit, not implicit
 3. **`Simulation::snapshot()`/`restore()`/`apply_correction()`** — sim is correctable from outside
 4. **`ProtocolAdapter` slot** in `NetworkModel` trait — network layer is wrappable
 

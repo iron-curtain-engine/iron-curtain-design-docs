@@ -184,7 +184,7 @@
                         <h2 id="d056-foreign-replay-import-openra--remastered-collection"><a class="header" href="#d056-foreign-replay-import-openra--remastered-collection">D056: Foreign Replay Import (OpenRA &amp; Remastered Collection)</a></h2>
 <p><strong>Status:</strong> Settled
 <strong>Phase:</strong> Phase 5 (Multiplayer) — decoders in Phase 2 (Simulation) for testing use
-<strong>Depends on:</strong> D006 (Pluggable Networking), D011 (Cross-Engine Compatibility), <code>ra-formats</code> crate, <code>ic-protocol</code> (OrderCodec trait)</p>
+<strong>Depends on:</strong> D006 (Pluggable Networking), D011 (Cross-Engine Compatibility), <code>ic-cnc-content</code> crate, <code>ic-protocol</code> (OrderCodec trait)</p>
 <h3 id="problem"><a class="header" href="#problem">Problem</a></h3>
 <p>The C&amp;C community has accumulated thousands of replay files across two active engines:</p>
 <ul>
@@ -212,12 +212,12 @@
 </table>
 </div>
 <h3 id="architecture"><a class="header" href="#architecture">Architecture</a></h3>
-<h4 id="foreign-replay-decoders-in-ra-formats"><a class="header" href="#foreign-replay-decoders-in-ra-formats">Foreign Replay Decoders (in <code>ra-formats</code>)</a></h4>
-<p>Foreign replay file parsing belongs in <code>ra-formats</code> — it reads C&amp;C-family file formats, which is exactly what this crate exists for. The decoders produce a uniform intermediate representation:</p>
+<h4 id="foreign-replay-decoders-in-ic-cnc-content"><a class="header" href="#foreign-replay-decoders-in-ic-cnc-content">Foreign Replay Decoders (in <code>ic-cnc-content</code>)</a></h4>
+<p>Foreign replay file parsing belongs in <code>ic-cnc-content</code> — it reads C&amp;C-family file formats, which is exactly what this crate exists for. The decoders produce a uniform intermediate representation:</p>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>/// A decoded foreign replay, normalized to a common structure.
-/// Lives in `ra-formats`. No dependency on `ic-sim` or `ic-net`.
+/// Lives in `ic-cnc-content`. No dependency on `ic-sim` or `ic-net`.
 pub struct ForeignReplay {
     pub source: ReplaySource,
     pub metadata: ForeignReplayMetadata,
@@ -364,7 +364,7 @@ ic replay import --batch ./openra-replays/ -o ./converted/
 </code></pre>
 <p>Conversion process:</p>
 <ol>
-<li>Decode foreign replay via <code>ra-formats</code> decoder</li>
+<li>Decode foreign replay via <code>ic-cnc-content</code> decoder</li>
 <li>Translate all orders via <code>ForeignReplayCodec</code></li>
 <li>Run translated orders through IC’s sim headlessly (generates analysis events + state hashes)</li>
 <li>Write <code>.icrep</code> with <code>Minimal</code> embedding mode + provenance metadata</li>
@@ -420,7 +420,7 @@ ic replay import --batch ./openra-replays/ -o ./converted/
 <li><strong>D006 (Pluggable Networking):</strong> <code>ForeignReplayPlayback</code> is just another <code>NetworkModel</code> implementation — the sim doesn’t know the orders came from a foreign replay.</li>
 <li><strong>D011 (Cross-Engine Compatibility):</strong> Foreign replay playback is “Level 1: Replay Compatibility” from <code>07-CROSS-ENGINE.md</code> — now with concrete architecture.</li>
 <li><strong>D023 (OpenRA Vocabulary Compatibility):</strong> The <code>ForeignReplayCodec</code> uses the same OpenRA vocabulary mapping (trait names, order names) that D023 established for YAML rules.</li>
-<li><strong>D025 (Runtime MiniYAML Loading):</strong> OpenRA <code>.orarep</code> metadata is MiniYAML — parsed by the same <code>ra-formats</code> infrastructure.</li>
+<li><strong>D025 (Runtime MiniYAML Loading):</strong> OpenRA <code>.orarep</code> metadata is MiniYAML — parsed by the same <code>ic-cnc-content</code> infrastructure.</li>
 <li><strong>D027 (Canonical Enum Compatibility):</strong> Foreign order type names (locomotor types, stance names) use D027’s enum mappings.</li>
 </ul>
 <hr>

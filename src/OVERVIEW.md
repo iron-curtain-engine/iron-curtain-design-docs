@@ -85,7 +85,7 @@ Iron Curtain is a new open-source RTS engine built for the Command & Conquer com
 - **Modern Rust on Bevy.** No GC, memory safety, fearless concurrency. ECS scheduling, parallel queries, asset hot-reloading, large plugin ecosystem. 14 focused crates with clear boundaries.
 - **Clean sim/net separation.** `ic-sim` and `ic-net` never import each other — only `ic-protocol`. Swap the network model without touching simulation code.
 - **Multi-game engine.** Game-agnostic core. RA and TD are game modules via a `GameModule` trait. Pathfinding, spatial queries, rendering, fog — all pluggable per game.
-- **Standalone crates.** `ra-formats` parses C&C formats independently. `ic-sim` runs headless for AI training or testing.
+- **Standalone crates.** `ic-cnc-content` parses C&C formats independently. `ic-sim` runs headless for AI training or testing.
 
 ---
 

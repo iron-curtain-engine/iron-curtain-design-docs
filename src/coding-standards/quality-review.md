@@ -183,7 +183,7 @@ Test names describe **what is being tested and what the expected outcome is**, n
 
 - **Integration tests** (in `tests/` directory): Test multiple systems working together. May use a Bevy `World` with multiple systems running. May load test fixtures from `tests/fixtures/`. These verify that the pieces fit together correctly.
 
-- **Format tests** (in `tests/format/`): Test `ra-formats` parsers against synthetic fixtures. Round-trip tests (parse → write → parse → compare). These validate that IC reads the same formats that RA and OpenRA produce.
+- **Format tests** (in `tests/format/`): Test `ic-cnc-content` parsers against synthetic fixtures. Round-trip tests (parse → write → parse → compare). These validate that IC reads the same formats that RA and OpenRA produce.
 
 - **Regression tests**: When a bug is found and fixed, a test is added that reproduces the original bug. The test name references the issue: `#[test] fn issue_42_harvester_loop_on_sold_refinery()`. This test must never be deleted.
 

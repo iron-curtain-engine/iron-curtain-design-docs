@@ -260,7 +260,7 @@
 │   ├── ra/
 │   └── td/
 ├── crates/                         # All Rust crates live here
-│   ├── ra-formats/                 # Wraps cnc-formats + EA-derived code; Bevy asset integration
+│   ├── ic-cnc-content/                 # Wraps cnc-formats + EA-derived code; Bevy asset integration
 │   │   ├── Cargo.toml
 │   │   └── src/
 │   │       ├── lib.rs
@@ -375,7 +375,7 @@
 <tr><td>Add a new C# trait (component)</td><td><code>OpenRA.Mods.RA/Traits/*.cs</code></td><td><code>crates/ic-sim/src/components/*.rs</code></td><td>Rust struct + derive instead of C# class</td></tr>
 <tr><td>Add a new activity (behavior)</td><td><code>OpenRA.Mods.Common/Activities/*.cs</code></td><td><code>crates/ic-sim/src/systems/*.rs</code></td><td>ECS system instead of activity object</td></tr>
 <tr><td>Add a new warhead type</td><td><code>OpenRA.Mods.Common/Warheads/*.cs</code></td><td><code>crates/ic-sim/src/components/combat.rs</code></td><td>Warheads are component data + system logic</td></tr>
-<tr><td>Add a format parser</td><td><code>OpenRA.Game/FileFormats/*.cs</code></td><td><code>crates/ra-formats/src/*.rs</code></td><td>One file per format, same as OpenRA</td></tr>
+<tr><td>Add a format parser</td><td><code>OpenRA.Game/FileFormats/*.cs</code></td><td><code>crates/ic-cnc-content/src/*.rs</code></td><td>One file per format, same as OpenRA</td></tr>
 <tr><td>Add a Lua scripting global</td><td><code>OpenRA.Mods.Common/Scripting/*.cs</code></td><td><code>crates/ic-script/src/*.rs</code></td><td>D024 API surface</td></tr>
 <tr><td>Edit AI behavior</td><td><code>OpenRA.Mods.Common/AI/*.cs</code></td><td><code>crates/ic-ai/src/*.rs</code></td><td>Priority-manager hierarchy</td></tr>
 <tr><td>Edit rendering</td><td><code>OpenRA.Game/Graphics/*.cs</code></td><td><code>crates/ic-render/src/*.rs</code></td><td>Bevy render plugin</td></tr>
@@ -453,7 +453,7 @@
 </table>
 </div>
 <p><strong>Git LFS is not needed.</strong> The design docs already rejected Git LFS for Workshop distribution (“1GB free then paid; designed for source code, not binary asset distribution; no P2P” — see D049). The same reasoning applies to development: IC’s repository is code + YAML + design docs + small original icons. Total committed binary assets will stay well under 10MB.</p>
-<p><strong>CI testing strategy:</strong> Parser and format tests use synthetic fixtures — small, hand-crafted binary files (a 2-frame <code>.shp</code>, a trivial <code>.mix</code> with 3 files, a minimal <code>.pal</code>) committed to <code>tests/fixtures/</code>. These are original creations that exercise <code>ra-formats</code> code without containing EA content. Integration tests requiring real RA assets are gated behind an optional feature flag (<code>#[cfg(feature = "integration")]</code>) and run on CI runners where RA is installed, configured via <code>IC_CONTENT_DIR</code> environment variable.</p>
+<p><strong>CI testing strategy:</strong> Parser and format tests use synthetic fixtures — small, hand-crafted binary files (a 2-frame <code>.shp</code>, a trivial <code>.mix</code> with 3 files, a minimal <code>.pal</code>) committed to <code>tests/fixtures/</code>. These are original creations that exercise <code>ic-cnc-content</code> code without containing EA content. Integration tests requiring real RA assets are gated behind an optional feature flag (<code>#[cfg(feature = "integration")]</code>) and run on CI runners where RA is installed, configured via <code>IC_CONTENT_DIR</code> environment variable.</p>
 <h4 id="repository-asset-layout"><a class="header" href="#repository-asset-layout">Repository Asset Layout</a></h4>
 <p>Extending the source repository layout (see § Source Repository above):</p>
 <pre><code>iron-curtain/

@@ -1,7 +1,7 @@
 # Complete Resource Format Support Map
 
 **Status:** Research / scope map  
-**Purpose:** If the bar is "load and use the original resource files of Dune II, Tiberian Dawn, Red Alert 1, Red Alert 2 / Yuri's Revenge, the Remastered Collection, and Generals / Zero Hour", this document lists the required format families, where current proof already exists, and where the current `cnc-formats` / `ra-formats` split is still too narrow.
+**Purpose:** If the bar is "load and use the original resource files of Dune II, Tiberian Dawn, Red Alert 1, Red Alert 2 / Yuri's Revenge, the Remastered Collection, and Generals / Zero Hour", this document lists the required format families, where current proof already exists, and where the current `cnc-formats` / `ic-cnc-content` split is still too narrow.
 
 This is not a decision update by itself. Current canonical scope still lives in [05-FORMATS](../src/05-FORMATS.md), [D075](../src/decisions/09c/D075-remastered-format-compat.md), and [D076](../src/decisions/09a/D076-standalone-crates.md). This document maps the larger completeness bar and the gaps between that bar and the currently documented crate scope.
 
@@ -44,85 +44,85 @@ That means "complete support" must include more than the currently implemented s
 
 ### 1. Dune II
 
-| Family | Content | Need Mode | Current Proof | Current IC State | Recommended Owner |
-| ------ | ------- | --------- | ------------- | ---------------- | ----------------- |
-| `.PAK` | archive container | Direct load | OpenDUNE ships `buildpak` / `extractpak` tooling | Not documented in current `cnc-formats` scope | Separate `dune-formats` crate or a widened `cnc-formats` if Dune II stays in scope |
-| `.ICN` + `ICON.MAP` | tile / icon graphics and tile grouping | Direct load | OpenDUNE `Tiles_LoadICNFile("ICON.ICN")` and `File_ReadWholeFileLE16("ICON.MAP")` | Missing | Same as above |
-| `.CPS` | fullscreen still images / splash screens | Direct load | OpenDUNE `extractcps.py` and sprite loading code | Missing | Same as above |
-| `.WSA` | animations | Direct load | OpenDUNE `src/wsa.c` | Already supported in `cnc-formats` | `cnc-formats` |
-| Dune II `.SHP` variant | sprites / shape data | Direct load | OpenDUNE `sprites.c` references `SHAPES.SHP` and special-case handling | Current `cnc-formats` `shp` should not be assumed compatible | Separate parser module |
-| scenario / map format | mission and world data | Direct load | OpenDUNE `src/map.c` | Missing | Separate parser module |
-| `.VOC` | speech / SFX | Direct load | OpenDUNE `src/table/sound.c` lists many `.VOC` assets | Missing | Separate audio module |
-| music driver files | soundtrack | Direct load | OpenDUNE `driver.c` uses driver extension with `.XMI` fallback; `README.txt` mentions `.XMI`, MIDI, MT32, FluidSynth | Current `05-FORMATS` says `.adl`; this is not source-clean enough | Source reconciliation required before canonicalizing |
+| Family                 | Content                                  | Need Mode   | Current Proof                                                                                                        | Current IC State                                                  | Recommended Owner                                                                  |
+| ---------------------- | ---------------------------------------- | ----------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `.PAK`                 | archive container                        | Direct load | OpenDUNE ships `buildpak` / `extractpak` tooling                                                                     | Not documented in current `cnc-formats` scope                     | Separate `dune-formats` crate or a widened `cnc-formats` if Dune II stays in scope |
+| `.ICN` + `ICON.MAP`    | tile / icon graphics and tile grouping   | Direct load | OpenDUNE `Tiles_LoadICNFile("ICON.ICN")` and `File_ReadWholeFileLE16("ICON.MAP")`                                    | Missing                                                           | Same as above                                                                      |
+| `.CPS`                 | fullscreen still images / splash screens | Direct load | OpenDUNE `extractcps.py` and sprite loading code                                                                     | Missing                                                           | Same as above                                                                      |
+| `.WSA`                 | animations                               | Direct load | OpenDUNE `src/wsa.c`                                                                                                 | Already supported in `cnc-formats`                                | `cnc-formats`                                                                      |
+| Dune II `.SHP` variant | sprites / shape data                     | Direct load | OpenDUNE `sprites.c` references `SHAPES.SHP` and special-case handling                                               | Current `cnc-formats` `shp` should not be assumed compatible      | Separate parser module                                                             |
+| scenario / map format  | mission and world data                   | Direct load | OpenDUNE `src/map.c`                                                                                                 | Missing                                                           | Separate parser module                                                             |
+| `.VOC`                 | speech / SFX                             | Direct load | OpenDUNE `src/table/sound.c` lists many `.VOC` assets                                                                | Missing                                                           | Separate audio module                                                              |
+| music driver files     | soundtrack                               | Direct load | OpenDUNE `driver.c` uses driver extension with `.XMI` fallback; `README.txt` mentions `.XMI`, MIDI, MT32, FluidSynth | Current `05-FORMATS` says `.adl`; this is not source-clean enough | Source reconciliation required before canonicalizing                               |
 
 **Implication:** Dune II completeness is not "turn on `adl` and call it done". The required bar includes PAK, ICN, CPS, WSA, VOC, Dune-specific SHP, and scenario data. The music row needs a deliberate source-backed correction.
 
 ### 2. Tiberian Dawn / Red Alert 1 (classic Westwood 2D family)
 
-| Family | Content | Need Mode | Current Proof | Current IC State | Recommended Owner |
-| ------ | ------- | --------- | ------------- | ---------------- | ----------------- |
-| `.MIX` | archives | Direct load | OpenRA `mods/cnc/mod.yaml`, `mods/ra/mod.yaml`, local retail samples | Implemented | `cnc-formats` |
-| `.SHP` | sprites | Direct load | OpenRA `SpriteFormats`, local retail samples | Implemented for classic family | `cnc-formats` |
-| `.TMP` | terrain tiles | Direct load | OpenRA `SpriteFormats`, local docs | Implemented | `cnc-formats` |
-| `.PAL` | palettes | Direct load | local retail samples | Implemented | `cnc-formats` |
-| `.AUD` | SFX, speech, music | Direct load | OpenRA `SoundFormats`, local retail samples | Implemented | `cnc-formats` |
-| `.VQA` | video | Direct load | OpenRA `VideoFormats`, local retail samples | Implemented | `cnc-formats` |
-| `.VQP` | VQA interpolation sidecar | Direct load for authentic high-res playback | local retail samples, existing [05-FORMATS](../src/05-FORMATS.md) spec | Documented, but current `cnc-formats` CLI proof surface does not expose it | `cnc-formats` |
-| `.WSA` | menu / campaign animations | Direct load | OpenRA `VideoFormats`, local retail samples | Implemented | `cnc-formats` |
-| `.FNT` | bitmap fonts | Direct load | local retail samples | Implemented | `cnc-formats` |
-| `.INI` | rules / missions / config | Direct load | OpenRA mods, existing docs | Implemented | `cnc-formats` |
-| `.CPS` | fullscreen stills / UI art | Direct load | local retail samples | Missing | `cnc-formats` |
-| `.ENG` | string tables / language data | Direct load | local retail samples | Missing | `cnc-formats` |
-| mission `.BIN` | original terrain / mission binary | Direct load for original-map completeness | existing IC docs already reference RA export as `.bin` terrain | Missing | `ra-formats` or game-module loader |
-| `.MPR` | original map / mission package family | Direct load for original-map completeness | existing IC docs already reference RA export as `.mpr` | Missing | `ra-formats` or game-module loader |
+| Family         | Content                               | Need Mode                                   | Current Proof                                                          | Current IC State                                                           | Recommended Owner                      |
+| -------------- | ------------------------------------- | ------------------------------------------- | ---------------------------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------------- |
+| `.MIX`         | archives                              | Direct load                                 | OpenRA `mods/cnc/mod.yaml`, `mods/ra/mod.yaml`, local retail samples   | Implemented                                                                | `cnc-formats`                          |
+| `.SHP`         | sprites                               | Direct load                                 | OpenRA `SpriteFormats`, local retail samples                           | Implemented for classic family                                             | `cnc-formats`                          |
+| `.TMP`         | terrain tiles                         | Direct load                                 | OpenRA `SpriteFormats`, local docs                                     | Implemented                                                                | `cnc-formats`                          |
+| `.PAL`         | palettes                              | Direct load                                 | local retail samples                                                   | Implemented                                                                | `cnc-formats`                          |
+| `.AUD`         | SFX, speech, music                    | Direct load                                 | OpenRA `SoundFormats`, local retail samples                            | Implemented                                                                | `cnc-formats`                          |
+| `.VQA`         | video                                 | Direct load                                 | OpenRA `VideoFormats`, local retail samples                            | Implemented                                                                | `cnc-formats`                          |
+| `.VQP`         | VQA interpolation sidecar             | Direct load for authentic high-res playback | local retail samples, existing [05-FORMATS](../src/05-FORMATS.md) spec | Documented, but current `cnc-formats` CLI proof surface does not expose it | `cnc-formats`                          |
+| `.WSA`         | menu / campaign animations            | Direct load                                 | OpenRA `VideoFormats`, local retail samples                            | Implemented                                                                | `cnc-formats`                          |
+| `.FNT`         | bitmap fonts                          | Direct load                                 | local retail samples                                                   | Implemented                                                                | `cnc-formats`                          |
+| `.INI`         | rules / missions / config             | Direct load                                 | OpenRA mods, existing docs                                             | Implemented                                                                | `cnc-formats`                          |
+| `.CPS`         | fullscreen stills / UI art            | Direct load                                 | local retail samples                                                   | Missing                                                                    | `cnc-formats`                          |
+| `.ENG`         | string tables / language data         | Direct load                                 | local retail samples                                                   | Missing                                                                    | `cnc-formats`                          |
+| mission `.BIN` | original terrain / mission binary     | Direct load for original-map completeness   | existing IC docs already reference RA export as `.bin` terrain         | Missing                                                                    | `ic-cnc-content` or game-module loader |
+| `.MPR`         | original map / mission package family | Direct load for original-map completeness   | existing IC docs already reference RA export as `.mpr`                 | Missing                                                                    | `ic-cnc-content` or game-module loader |
 
 **Implication:** the classic Westwood family is close, but not complete. `CPS`, `ENG`, and mission `BIN` / `MPR` are still outside the current proof surface, and `VQP` needs to be treated as implemented scope rather than just documented theory.
 
 ### 3. Red Alert 2 / Yuri's Revenge
 
-| Family | Content | Need Mode | Current Proof | Current IC State | Recommended Owner |
-| ------ | ------- | --------- | ------------- | ---------------- | ----------------- |
-| `.MIX` | archives | Direct load | existing Westwood family, OpenRA RA2 study | Core archive support exists | `cnc-formats` |
-| `SHP(TS)` | sprites | Direct load | OpenRA RA2 / TS `SpriteFormats: ShpTS` | Current docs do not distinguish TS-family SHP explicitly | RA2/TS-capable parser layer |
-| `TMP(TS)` | terrain tiles | Direct load | OpenRA RA2 / TS `SpriteFormats: TmpTS` | Current docs do not distinguish TS-family TMP explicitly | RA2/TS-capable parser layer |
-| `.PAL` | palettes / lighting support | Direct load | inherited Westwood palette family | Partially covered, but RA2 normals / lighting use is broader | RA2 module |
-| `.AUD` / `.WAV` | audio | Direct load | OpenRA RA2 study `SoundFormats: Aud, Wav` | AUD covered; original RA2 packaging is not | RA2 module |
-| `.VQA` | video | Direct load | OpenRA RA2 study `VideoFormats: Vqa` | Covered | `cnc-formats` |
-| `.VXL` + `.HVA` | voxel units + animation hierarchy | Direct load | existing [openra-ra2-mod-architecture](openra-ra2-mod-architecture.md) documents VXL/HVA usage heavily | Missing | RA2-specific parser layer |
-| `BAG/IDX` | audio archive package | Direct load | existing [openra-ra2-mod-architecture](openra-ra2-mod-architecture.md) documents `AudioBag` / `BagFile.cs` | Missing | RA2-specific parser layer |
-| `.MAP` | original RA2 map format | Direct load for original-map completeness | existing [openra-ra2-mod-architecture](openra-ra2-mod-architecture.md) notes `.map` import utility | Missing | RA2-specific parser layer |
-| `.CSF` | string tables | Direct load | existing IC docs and broader SAGE/OpenSAGE translation support prove family relevance; not re-verified against raw retail RA2 tree in this pass | Missing | RA2-specific parser layer |
+| Family          | Content                           | Need Mode                                 | Current Proof                                                                                                                                   | Current IC State                                             | Recommended Owner           |
+| --------------- | --------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ | --------------------------- |
+| `.MIX`          | archives                          | Direct load                               | existing Westwood family, OpenRA RA2 study                                                                                                      | Core archive support exists                                  | `cnc-formats`               |
+| `SHP(TS)`       | sprites                           | Direct load                               | OpenRA RA2 / TS `SpriteFormats: ShpTS`                                                                                                          | Current docs do not distinguish TS-family SHP explicitly     | RA2/TS-capable parser layer |
+| `TMP(TS)`       | terrain tiles                     | Direct load                               | OpenRA RA2 / TS `SpriteFormats: TmpTS`                                                                                                          | Current docs do not distinguish TS-family TMP explicitly     | RA2/TS-capable parser layer |
+| `.PAL`          | palettes / lighting support       | Direct load                               | inherited Westwood palette family                                                                                                               | Partially covered, but RA2 normals / lighting use is broader | RA2 module                  |
+| `.AUD` / `.WAV` | audio                             | Direct load                               | OpenRA RA2 study `SoundFormats: Aud, Wav`                                                                                                       | AUD covered; original RA2 packaging is not                   | RA2 module                  |
+| `.VQA`          | video                             | Direct load                               | OpenRA RA2 study `VideoFormats: Vqa`                                                                                                            | Covered                                                      | `cnc-formats`               |
+| `.VXL` + `.HVA` | voxel units + animation hierarchy | Direct load                               | existing [openra-ra2-mod-architecture](openra-ra2-mod-architecture.md) documents VXL/HVA usage heavily                                          | Missing                                                      | RA2-specific parser layer   |
+| `BAG/IDX`       | audio archive package             | Direct load                               | existing [openra-ra2-mod-architecture](openra-ra2-mod-architecture.md) documents `AudioBag` / `BagFile.cs`                                      | Missing                                                      | RA2-specific parser layer   |
+| `.MAP`          | original RA2 map format           | Direct load for original-map completeness | existing [openra-ra2-mod-architecture](openra-ra2-mod-architecture.md) notes `.map` import utility                                              | Missing                                                      | RA2-specific parser layer   |
+| `.CSF`          | string tables                     | Direct load                               | existing IC docs and broader SAGE/OpenSAGE translation support prove family relevance; not re-verified against raw retail RA2 tree in this pass | Missing                                                      | RA2-specific parser layer   |
 
 **Implication:** RA2 is not "classic RA plus a few extras". Supporting RA2 means TS-family SHP/TMP, voxel pipelines, audio bags, map format, and string tables. That is a distinct milestone.
 
 ### 4. Remastered Collection
 
-| Family | Content | Need Mode | Current Proof | Current IC State | Recommended Owner |
-| ------ | ------- | --------- | ------------- | ---------------- | ----------------- |
-| `.MEG` | archive container | Direct load / extract | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Implemented / planned in `cnc-formats` behind `meg` | `cnc-formats` |
-| `.PGM` | map package archive | Direct load / extract | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Implemented / planned with MEG | `cnc-formats` |
-| `.TGA + .META` | HD sprite megasheets | Direct import, optionally direct load | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Planned in `ra-formats` | `ra-formats` |
-| `.DDS` | GPU textures | Direct import, optionally direct load | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Planned in `ra-formats` | `ra-formats` |
-| `.WAV` | HD/remixed audio | Direct load | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Straightforward runtime support | engine audio / `ra-formats` glue |
-| `.BK2` | Bink2 video | Import-only is acceptable | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Planned as import-time WebM conversion | `ra-formats` / Asset Studio |
-| `.XML` | mappings / asset metadata | Parse as needed | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Planned | `ra-formats` |
-| `.DAT / .LOC` | localization data | Parse or import | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Low-priority planned | `ra-formats` |
-| `.MTD` | MegaTexture / UI data | Parse or import | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Low-priority planned | `ra-formats` |
+| Family         | Content                   | Need Mode                             | Current Proof                                                 | Current IC State                                    | Recommended Owner                    |
+| -------------- | ------------------------- | ------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------- | ------------------------------------ |
+| `.MEG`         | archive container         | Direct load / extract                 | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Implemented / planned in `cnc-formats` behind `meg` | `cnc-formats`                        |
+| `.PGM`         | map package archive       | Direct load / extract                 | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Implemented / planned with MEG                      | `cnc-formats`                        |
+| `.TGA + .META` | HD sprite megasheets      | Direct import, optionally direct load | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Planned in `ic-cnc-content`                         | `ic-cnc-content`                     |
+| `.DDS`         | GPU textures              | Direct import, optionally direct load | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Planned in `ic-cnc-content`                         | `ic-cnc-content`                     |
+| `.WAV`         | HD/remixed audio          | Direct load                           | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Straightforward runtime support                     | engine audio / `ic-cnc-content` glue |
+| `.BK2`         | Bink2 video               | Import-only is acceptable             | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Planned as import-time WebM conversion              | `ic-cnc-content` / Asset Studio      |
+| `.XML`         | mappings / asset metadata | Parse as needed                       | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Planned                                             | `ic-cnc-content`                     |
+| `.DAT / .LOC`  | localization data         | Parse or import                       | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Low-priority planned                                | `ic-cnc-content`                     |
+| `.MTD`         | MegaTexture / UI data     | Parse or import                       | [D075](../src/decisions/09c/D075-remastered-format-compat.md) | Low-priority planned                                | `ic-cnc-content`                     |
 
 **Implication:** Remastered already has a coherent split in the docs. The completeness gap here is mostly execution, not scope definition.
 
 ### 5. Generals / Zero Hour
 
-| Family | Content | Need Mode | Current Proof | Current IC State | Recommended Owner |
-| ------ | ------- | --------- | ------------- | ---------------- | ----------------- |
-| `.BIG` | archive container | Direct load | OpenSAGE `GeneralsDefinition` / `GeneralsZeroHourDefinition` probe for `INI.big` / `INIZH.big`; OpenSAGE has `BigArchive` | Missing | separate `sage-formats` or Generals-specific crate |
-| `.W3D` | models / animations / renderable objects | Direct load | OpenSAGE README and `W3dFile` parser | Missing | same |
-| `.WND` | UI layout files | Direct load | OpenSAGE `WndMainMenuSource(@"Menus\\MainMenu.wnd")` and `WndFile` parser | Missing | same |
-| `.STR` | localized strings | Direct load | OpenSAGE `GeneralsDefinition::GetLocalizedStringsPath` + `TranslationManager::LoadStrFile` + `Data\\Patch.str` | Missing | same |
-| `.MAP` | original map format | Direct load | OpenSAGE `MapFile` parser with Generals-specific chunks | Missing | same |
-| `.DDS` / `.TGA` / `.JPG` | textures | Direct load | OpenSAGE `OnDemandTextureLoader` supports `.dds`, `.tga`, `.jpg` | Missing | same |
-| `.APT` + `.CONST` + `.DAT` + `.RU` | GUI / movie asset bundle family | Direct load where used | OpenSAGE `AptFile` parser loads `.apt`, companion `.const`, `.dat`, and `_geometry/*.ru` | Missing | same |
-| `.CSF` | broader SAGE string-table family | Game-family support, but not the primary Generals path | OpenSAGE `TranslationManager` attempts `.csf` before `.str` | Missing | same |
+| Family                             | Content                                  | Need Mode                                              | Current Proof                                                                                                             | Current IC State | Recommended Owner                                  |
+| ---------------------------------- | ---------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- | ---------------- | -------------------------------------------------- |
+| `.BIG`                             | archive container                        | Direct load                                            | OpenSAGE `GeneralsDefinition` / `GeneralsZeroHourDefinition` probe for `INI.big` / `INIZH.big`; OpenSAGE has `BigArchive` | Missing          | separate `sage-formats` or Generals-specific crate |
+| `.W3D`                             | models / animations / renderable objects | Direct load                                            | OpenSAGE README and `W3dFile` parser                                                                                      | Missing          | same                                               |
+| `.WND`                             | UI layout files                          | Direct load                                            | OpenSAGE `WndMainMenuSource(@"Menus\\MainMenu.wnd")` and `WndFile` parser                                                 | Missing          | same                                               |
+| `.STR`                             | localized strings                        | Direct load                                            | OpenSAGE `GeneralsDefinition::GetLocalizedStringsPath` + `TranslationManager::LoadStrFile` + `Data\\Patch.str`            | Missing          | same                                               |
+| `.MAP`                             | original map format                      | Direct load                                            | OpenSAGE `MapFile` parser with Generals-specific chunks                                                                   | Missing          | same                                               |
+| `.DDS` / `.TGA` / `.JPG`           | textures                                 | Direct load                                            | OpenSAGE `OnDemandTextureLoader` supports `.dds`, `.tga`, `.jpg`                                                          | Missing          | same                                               |
+| `.APT` + `.CONST` + `.DAT` + `.RU` | GUI / movie asset bundle family          | Direct load where used                                 | OpenSAGE `AptFile` parser loads `.apt`, companion `.const`, `.dat`, and `_geometry/*.ru`                                  | Missing          | same                                               |
+| `.CSF`                             | broader SAGE string-table family         | Game-family support, but not the primary Generals path | OpenSAGE `TranslationManager` attempts `.csf` before `.str`                                                               | Missing          | same                                               |
 
 **Implication:** Generals support is a new family, not an extension of `cnc-formats`' current Westwood 2D focus. The CLI can still front it, but the parser ownership likely wants a separate SAGE-oriented backend crate or module.
 
@@ -148,7 +148,7 @@ The engine-completeness requirement is:
 That does **not** require one crate to own everything. A reasonable target split is:
 
 - `cnc-formats`: classic Westwood / Petroglyph 2D family
-- `ra-formats` (or RA2 module layer): RA1/RA2-specific glue and EA-derived details
+- `ic-cnc-content` (or RA2 module layer): RA1/RA2-specific glue and EA-derived details
 - `sage-formats` (or equivalent): Generals / ZH SAGE formats
 - separate Dune-specific parser layer if Dune II is kept in the official completeness bar
 

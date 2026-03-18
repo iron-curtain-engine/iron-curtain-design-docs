@@ -295,8 +295,8 @@ ic replay verify [file]    # verify relay signature chain + integrity (see 06-SE
 
 **Key design points:**
 
-1. **Alias registry:** `ra-formats` maintains a compile-time map of OpenRA trait names to IC component names. `Armament` → `combat`, `Valued` → `buildable.cost`, `AttackOmni` → `combat.mode: omni`, etc.
-2. **Bi-directional:** The alias registry is used during YAML parsing (OpenRA names accepted, resolved to IC-native names at load time by `ra-formats`). `cnc-formats convert --format miniyaml --to yaml` performs schema-neutral MiniYAML→YAML structural conversion only — alias resolution is a separate `ra-formats` concern. Both OpenRA and IC-native representations are valid input.
+1. **Alias registry:** `ic-cnc-content` maintains a compile-time map of OpenRA trait names to IC component names. `Armament` → `combat`, `Valued` → `buildable.cost`, `AttackOmni` → `combat.mode: omni`, etc.
+2. **Bi-directional:** The alias registry is used during YAML parsing (OpenRA names accepted, resolved to IC-native names at load time by `ic-cnc-content`). `cnc-formats convert --format miniyaml --to yaml` performs schema-neutral MiniYAML→YAML structural conversion only — alias resolution is a separate `ic-cnc-content` concern. Both OpenRA and IC-native representations are valid input.
 3. **Deprecation warnings:** When an OpenRA alias is used, the parser emits a warning: `"Armament" is accepted but deprecated; prefer "combat"`. Warnings can be suppressed per-mod via `mod.toml` setting.
 4. **No runtime cost:** Aliases resolve during YAML deserialization (load time only). The ECS never sees alias names — only canonical IC component types.
 
@@ -312,7 +312,7 @@ ic replay verify [file]    # verify relay signature chain + integrity (see 06-SE
 - Adopt OpenRA's names wholesale (rejected — some OpenRA names are poorly chosen or C#-specific; IC benefits from cleaner naming)
 - Converter handles everything (rejected — modders still need to re-learn names for new content; aliases let them use familiar names forever)
 
-**Phase:** Phase 0 (alias registry built alongside `ra-formats` YAML parser). Phase 6a (deprecation warnings configurable in `mod.toml`).
+**Phase:** Phase 0 (alias registry built alongside `ic-cnc-content` YAML parser). Phase 6a (deprecation warnings configurable in `mod.toml`).
 
 ---
 

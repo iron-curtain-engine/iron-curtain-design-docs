@@ -324,7 +324,7 @@ Armament → fires → Projectile → travels → hits → Warhead(s) applied
 
 **OpenRA:** 13 palette source types + 9 palette effect types. Runtime palette manipulation for player colors, cloak shimmer, screen flash, palette rotation (water animation).
 
-**Iron Curtain status:** Fully designed across `ra-formats` (`.pal` loading) and `02-ARCHITECTURE.md` § "Extended Gameplay Systems — Palette Effects":
+**Iron Curtain status:** Fully designed across `ic-cnc-content` (`.pal` loading) and `02-ARCHITECTURE.md` § "Extended Gameplay Systems — Palette Effects":
 - `PaletteEffect` enum: `Flash`, `FadeToBlack/White`, `Tint`, `CycleRange`, `PlayerRemap`
 - Player color remapping via `PlayerRemap` (faction colors on units)
 - Palette rotation animation (`CycleRange` for water, ore sparkle)

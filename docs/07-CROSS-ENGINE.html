@@ -190,7 +190,7 @@ Layer 1:  Data compatibility        (do they load same rules?)→ Very achievabl
 <h2 id="layer-1-data-compatibility-do-this"><a class="header" href="#layer-1-data-compatibility-do-this">Layer 1: Data Compatibility (DO THIS)</a></h2>
 <p>Load the same YAML rules, maps, unit definitions, weapon stats as OpenRA.</p>
 <ul>
-<li><code>cnc-formats</code> provides the clean-room MiniYAML parser; <code>ra-formats</code> wraps it for IC’s asset pipeline and converts to standard YAML</li>
+<li><code>cnc-formats</code> provides the clean-room MiniYAML parser; <code>ic-cnc-content</code> wraps it for IC’s asset pipeline and converts to standard YAML</li>
 <li>Same maps work on both engines</li>
 <li>Existing mod data migrates automatically</li>
 <li><strong>Status:</strong> Core part of Phase 0, already planned</li>
@@ -220,7 +220,7 @@ Layer 1:  Data compatibility        (do they load same rules?)→ Very achievabl
 <span class="boring">}</span></code></pre>
 <p>Implement community master server protocols (OpenRA and CnCNet). IC games show up in both browsers, tagged by engine. Your-engine players play your-engine players. Same community, different executables. CnCNet is particularly important — it’s the home of the classic C&amp;C competitive community (RA1, TD, TS, RA2, YR) and has maintained multiplayer infrastructure for these games for over a decade. Appearing in CnCNet’s game browser ensures IC doesn’t fragment the existing community.</p>
 <h3 id="level-1-replay-compatibility-phase-5-6"><a class="header" href="#level-1-replay-compatibility-phase-5-6">Level 1: Replay Compatibility (Phase 5-6)</a></h3>
-<p>Decode OpenRA <code>.orarep</code> and Remastered Collection replay files via <code>ra-formats</code> decoders (<code>OpenRAReplayDecoder</code>, <code>RemasteredReplayDecoder</code>), translate orders via <code>ForeignReplayCodec</code>, feed through IC’s sim via <code>ForeignReplayPlayback</code> NetworkModel. They’ll desync eventually (different sim — D011), but the <code>DivergenceTracker</code> monitors and surfaces drift in the UI. Players can watch most of a replay before visible divergence. Optionally convert to <code>.icrep</code> for archival and analysis tooling.</p>
+<p>Decode OpenRA <code>.orarep</code> and Remastered Collection replay files via <code>ic-cnc-content</code> decoders (<code>OpenRAReplayDecoder</code>, <code>RemasteredReplayDecoder</code>), translate orders via <code>ForeignReplayCodec</code>, feed through IC’s sim via <code>ForeignReplayPlayback</code> NetworkModel. They’ll desync eventually (different sim — D011), but the <code>DivergenceTracker</code> monitors and surfaces drift in the UI. Players can watch most of a replay before visible divergence. Optionally convert to <code>.icrep</code> for archival and analysis tooling.</p>
 <p>This is also the foundation for <strong>automated behavioral regression testing</strong> — running foreign replay corpora headlessly through IC’s sim to catch gross behavioral bugs (units walking through walls, harvesters ignoring ore). Not bit-identical verification, but “does this look roughly right?” sanity checks.</p>
 <p>Full architecture: see <code>decisions/09f/D056-replay-import.md</code>.</p>
 <h3 id="level-2-casual-cross-play-with-periodic-resync-future"><a class="header" href="#level-2-casual-cross-play-with-periodic-resync-future">Level 2: Casual Cross-Play with Periodic Resync (Future)</a></h3>
@@ -247,7 +247,7 @@ Layer 1:  Data compatibility        (do they load same rules?)→ Very achievabl
 │  Shared wire types (ic-protocol)                                     │
 │    └─ TimestampedOrder / PlayerOrder / codec seams                   │
 │                                                                      │
-│  Data / asset compatibility (cnc-formats + ra-formats)              │
+│  Data / asset compatibility (cnc-formats + ic-cnc-content)              │
 │    └─ MiniYAML, maps, replay decoders, coordinate transforms         │
 │                                                                      │
 │  Deterministic simulation (ic-sim)                                   │
@@ -272,7 +272,7 @@ Layer 1:  Data compatibility        (do they load same rules?)→ Very achievabl
 </ul>
 <h3 id="how-it-works-in-practice-by-responsibility"><a class="header" href="#how-it-works-in-practice-by-responsibility">How it works in practice (by responsibility)</a></h3>
 <ul>
-<li><strong>Data compatibility (Layer 1)</strong> lives mostly in <code>ra-formats</code> + content-loading docs (<code>D023</code>, <code>D024</code>, <code>D025</code>) and is usable without any network interop.</li>
+<li><strong>Data compatibility (Layer 1)</strong> lives mostly in <code>ic-cnc-content</code> + content-loading docs (<code>D023</code>, <code>D024</code>, <code>D025</code>) and is usable without any network interop.</li>
 <li><strong>Community/discovery compatibility (Level 0)</strong> lives in <code>CommunityBridge</code> (<code>ic-net</code> / <code>ic-server</code>) and <code>ic-ui</code> browser/lobby UX.</li>
 <li><strong>Replay compatibility (Level 1)</strong> uses replay decoders + foreign order codecs + divergence tracking; it is analysis/viewing tooling, not a live trust path.</li>
 <li><strong>Casual live cross-play (Level 2+)</strong> adds <code>ProtocolAdapter</code> and <code>SimReconciler</code> around a <code>NetworkModel</code>; the sim remains unchanged.</li>
@@ -547,7 +547,7 @@ let game = GameLoop::new(sim, renderer, adapted);
 <p>Costs almost nothing today, enables deferred cross-engine milestones (<code>M7</code> trust/interop host modes and <code>M11</code> visual/interop expansion):</p>
 <ol>
 <li><strong><code>OrderCodec</code> trait</strong> in <code>ic-protocol</code> — orders are wire-format-agnostic from day one</li>
-<li><strong><code>CoordTransform</code></strong> in <code>ra-formats</code> — coordinate systems are explicit, not implicit</li>
+<li><strong><code>CoordTransform</code></strong> in <code>ic-cnc-content</code> — coordinate systems are explicit, not implicit</li>
 <li><strong><code>Simulation::snapshot()</code>/<code>restore()</code>/<code>apply_correction()</code></strong> — sim is correctable from outside</li>
 <li><strong><code>ProtocolAdapter</code> slot</strong> in <code>NetworkModel</code> trait — network layer is wrappable</li>
 </ol>

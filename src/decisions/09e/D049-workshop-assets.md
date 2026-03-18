@@ -49,7 +49,7 @@ Forcing new creators to encode into C&C formats creates unnecessary friction. Fo
 
 ### Why Modern Formats as Default
 
-**Bevy integration:** OGG, WAV, PNG, KTX2, and GLTF load through Bevy's built-in asset pipeline with zero custom code. Every Bevy feature — hot-reload, asset dependencies, async loading, platform abstraction — works automatically. C&C formats require custom `AssetLoader` implementations in ra-formats (wrapping cnc-formats parsers) with manual integration into Bevy's pipeline.
+**Bevy integration:** OGG, WAV, PNG, KTX2, and GLTF load through Bevy's built-in asset pipeline with zero custom code. Every Bevy feature — hot-reload, asset dependencies, async loading, platform abstraction — works automatically. C&C formats require custom `AssetLoader` implementations in ic-cnc-content (wrapping cnc-formats parsers) with manual integration into Bevy's pipeline.
 
 **Security:** OGG (lewton/rodio), PNG (image crate), and WebM decoders in the Rust ecosystem have been fuzz-tested and used in production by thousands of projects. Browser vendors (Chrome, Firefox, Safari) have security-audited these formats for decades. Our .aud/.shp/.vqa parsers in cnc-formats are custom code that has never been independently security-audited. For Workshop content downloaded from untrusted sources, mature parsers with established security track records are strictly safer. C&C format parsers use `BoundedReader` (see `06-SECURITY.md`), but defense in depth favors formats with deeper audit history.
 
@@ -78,7 +78,7 @@ The Asset Studio (D040) converts in both directions:
 - **Export:** OGG/PNG/WebM → .aud/.shp/.vqa (for modders targeting OpenRA compatibility or classic aesthetic)
 - **Batch convert:** `ic mod convert --to-modern` or `ic mod convert --to-classic` converts entire mod directories (binary asset conversion: `.shp` → PNG, `.aud` → OGG, `.vqa` → WebM, and reverse). This is distinct from `cnc-formats convert` which handles single-file format conversion (both text and binary: MiniYAML → YAML, SHP ↔ PNG, AUD ↔ WAV, VQA ↔ AVI, etc.) — see D020 § Conversion Command Boundary for the canonical split.
 
-The engine loads both format families at runtime. `cnc-formats` parsers (via `ra-formats` Bevy integration) handle legacy formats; Bevy's built-in loaders handle modern formats. No manual conversion is ever required — only recommended for new Workshop publications.
+The engine loads both format families at runtime. `cnc-formats` parsers (via `ic-cnc-content` Bevy integration) handle legacy formats; Bevy's built-in loaders handle modern formats. No manual conversion is ever required — only recommended for new Workshop publications.
 
 
 ---

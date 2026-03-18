@@ -98,22 +98,22 @@ OpenRA's map editor handles terrain and actor placement but not mission logic �
 
 ### Capabilities Beyond OpenRA and the Remastered Collection
 
-| Capability         | Remastered Collection                            | OpenRA                                                                 | Iron Curtain                                                                         |
-| ------------------ | ------------------------------------------------ | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| Engine             | Original C++ as DLL, proprietary C# client       | C# / .NET (2007)                                                       | Rust + Bevy (2026)                                                                   |
-| Platforms          | Windows, Xbox                                    | Windows, macOS, Linux                                                  | All + Browser + Mobile                                                               |
-| Max units (smooth) | Unknown (not benchmarked)                        | Community reports of lag in large battles (not independently verified) | 2000+ target                                                                         |
-| Modding            | Steam Workshop maps, limited API                 | MiniYAML + C# (recompile for deep mods)                                | YAML + Lua + WASM (no recompile ever)                                                |
+| Capability         | Remastered Collection                            | OpenRA                                                                 | Iron Curtain                                                                                          |
+| ------------------ | ------------------------------------------------ | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Engine             | Original C++ as DLL, proprietary C# client       | C# / .NET (2007)                                                       | Rust + Bevy (2026)                                                                                    |
+| Platforms          | Windows, Xbox                                    | Windows, macOS, Linux                                                  | All + Browser + Mobile                                                                                |
+| Max units (smooth) | Unknown (not benchmarked)                        | Community reports of lag in large battles (not independently verified) | 2000+ target                                                                                          |
+| Modding            | Steam Workshop maps, limited API                 | MiniYAML + C# (recompile for deep mods)                                | YAML + Lua + WASM (no recompile ever)                                                                 |
 | AI content         | Fixed campaigns                                  | Fixed campaigns + community missions                                   | Enhanced Edition: strategic layer, War Table, dynamic arms race, classic path always available (D021) |
-| Multiplayer        | Proprietary networking (not open-sourced)        | TCP lockstep, 135+ desync issues tracked                               | Relay server, desync diagnosis, signed replays                                       |
-| Competitive        | No ranked, no anti-cheat                         | Community ladders via CnCNet                                           | Ranked matchmaking, Glicko-2, relay-certified results                                |
-| Graphics pipeline  | HD sprites, proprietary renderer                 | Custom renderer with post-processing (since March 2025)                | Classic isometric via Bevy + wgpu (HD assets, post-FX, shaders available to modders) |
-| Source             | C++ engine GPL; networking/rendering proprietary | Open (GPL)                                                             | Open (GPL)                                                                           |
-| Community assets   | Separate ecosystem                               | 18 years of maps/mods                                                  | Loads all OpenRA assets + migration tools                                            |
-| Mod distribution   | Steam Workshop (maps only)                       | Manual file sharing, forum posts                                       | Workshop registry with in-game browser, auto-download on lobby join, Steam source    |
-| Creator support    | None                                             | None                                                                   | Voluntary tipping, creator reputation scores, featured badges (D035)                 |
-| Achievements       | Steam achievements                               | None                                                                   | Per-module + mod-defined achievements, Steam sync for Steam builds (D036)            |
-| Governance         | EA-controlled                                    | Core team, community PRs                                               | Transparent governance, elected community reps, RFC process (D037)                   |
+| Multiplayer        | Proprietary networking (not open-sourced)        | TCP lockstep, 135+ desync issues tracked                               | Relay server, desync diagnosis, signed replays                                                        |
+| Competitive        | No ranked, no anti-cheat                         | Community ladders via CnCNet                                           | Ranked matchmaking, Glicko-2, relay-certified results                                                 |
+| Graphics pipeline  | HD sprites, proprietary renderer                 | Custom renderer with post-processing (since March 2025)                | Classic isometric via Bevy + wgpu (HD assets, post-FX, shaders available to modders)                  |
+| Source             | C++ engine GPL; networking/rendering proprietary | Open (GPL)                                                             | Open (GPL)                                                                                            |
+| Community assets   | Separate ecosystem                               | 18 years of maps/mods                                                  | Loads all OpenRA assets + migration tools                                                             |
+| Mod distribution   | Steam Workshop (maps only)                       | Manual file sharing, forum posts                                       | Workshop registry with in-game browser, auto-download on lobby join, Steam source                     |
+| Creator support    | None                                             | None                                                                   | Voluntary tipping, creator reputation scores, featured badges (D035)                                  |
+| Achievements       | Steam achievements                               | None                                                                   | Per-module + mod-defined achievements, Steam sync for Steam builds (D036)                             |
+| Governance         | EA-controlled                                    | Core team, community PRs                                               | Transparent governance, elected community reps, RFC process (D037)                                    |
 
 ### New Capabilities Not Found Elsewhere
 
@@ -179,7 +179,7 @@ OpenRA is a mature, actively maintained project with 18 years of community inves
 | Competitive   | Community ladders via CnCNet             | Integrated ranked matchmaking, tournament mode                                 |
 | Portability   | Desktop (Windows, macOS, Linux)          | Desktop + WASM (browser) + mobile                                              |
 | Maturity      | 18 years, battle-tested, large community | Clean-sheet modern design, unproven                                            |
-| Campaigns     | Some incomplete (TD, Dune 2000)          | Enhanced Edition: strategic layer + arms race + classic path (D021)             |
+| Campaigns     | Some incomplete (TD, Dune 2000)          | Enhanced Edition: strategic layer + arms race + classic path (D021)            |
 | Mission flow  | Manual mission selection between levels  | Continuous flow: briefing → mission → debrief → next                           |
 | Asset quality | Cannot fix original palette/sprite flaws | Bevy post-FX: palette correction, color grading, optional upscaling            |
 
@@ -343,7 +343,7 @@ These are the projects we actively study. Each serves a different purpose — do
 **What to study:**
 - **Shared C&C engine lineage.** TD and RA share engine code. Cross-referencing both clarifies ambiguous behavior in either.
 - **Game module reference.** When we build the Tiberian Dawn game module (D018), this is the authoritative source for TD-specific logic.
-- **Format compatibility.** TD `.mix` files, terrain, and sprites share formats with RA — validation data for `ra-formats`.
+- **Format compatibility.** TD `.mix` files, terrain, and sprites share formats with RA — validation data for `ic-cnc-content`.
 
 ### Chrono Divide — (TypeScript, browser-based RA2)
 

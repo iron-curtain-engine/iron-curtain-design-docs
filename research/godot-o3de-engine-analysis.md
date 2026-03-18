@@ -220,7 +220,7 @@ O3DE uses a **separate background process** called the Asset Processor:
 
 ### IC Lesson: Asset Pipeline Design
 
-1. **Follow Godot's pluggable loader pattern.** IC's `ra-formats` crate already handles C&C-specific formats. For the broader engine, define a `ResourceLoader` trait in ic-game that `ra-formats` implements. This allows future game modules (TD, RA2) to register their own format handlers.
+1. **Follow Godot's pluggable loader pattern.** IC's `ic-cnc-content` crate already handles C&C-specific formats. For the broader engine, define a `ResourceLoader` trait in ic-game that `ic-cnc-content` implements. This allows future game modules (TD, RA2) to register their own format handlers.
 
 2. **Godot's threaded loading with UIDs is directly applicable.** Bevy already provides async asset loading, but IC should add:
    - UID-based references for stable asset addressing (especially for Workshop resources)

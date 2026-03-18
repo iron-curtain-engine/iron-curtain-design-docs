@@ -2,7 +2,7 @@
 
 **Status:** Settled
 **Phase:** Phase 5 (Multiplayer) — decoders in Phase 2 (Simulation) for testing use
-**Depends on:** D006 (Pluggable Networking), D011 (Cross-Engine Compatibility), `ra-formats` crate, `ic-protocol` (OrderCodec trait)
+**Depends on:** D006 (Pluggable Networking), D011 (Cross-Engine Compatibility), `ic-cnc-content` crate, `ic-protocol` (OrderCodec trait)
 
 ### Problem
 
@@ -32,13 +32,13 @@ Both paths are supported because they serve different needs:
 
 ### Architecture
 
-#### Foreign Replay Decoders (in `ra-formats`)
+#### Foreign Replay Decoders (in `ic-cnc-content`)
 
-Foreign replay file parsing belongs in `ra-formats` — it reads C&C-family file formats, which is exactly what this crate exists for. The decoders produce a uniform intermediate representation:
+Foreign replay file parsing belongs in `ic-cnc-content` — it reads C&C-family file formats, which is exactly what this crate exists for. The decoders produce a uniform intermediate representation:
 
 ```rust
 /// A decoded foreign replay, normalized to a common structure.
-/// Lives in `ra-formats`. No dependency on `ic-sim` or `ic-net`.
+/// Lives in `ic-cnc-content`. No dependency on `ic-sim` or `ic-net`.
 pub struct ForeignReplay {
     pub source: ReplaySource,
     pub metadata: ForeignReplayMetadata,
@@ -196,7 +196,7 @@ ic replay import --batch ./openra-replays/ -o ./converted/
 ```
 
 Conversion process:
-1. Decode foreign replay via `ra-formats` decoder
+1. Decode foreign replay via `ic-cnc-content` decoder
 2. Translate all orders via `ForeignReplayCodec`
 3. Run translated orders through IC's sim headlessly (generates analysis events + state hashes)
 4. Write `.icrep` with `Minimal` embedding mode + provenance metadata
@@ -261,7 +261,7 @@ The mapping is approximate — sub-tick timing differences mean some orders arri
 - **D006 (Pluggable Networking):** `ForeignReplayPlayback` is just another `NetworkModel` implementation — the sim doesn't know the orders came from a foreign replay.
 - **D011 (Cross-Engine Compatibility):** Foreign replay playback is "Level 1: Replay Compatibility" from `07-CROSS-ENGINE.md` — now with concrete architecture.
 - **D023 (OpenRA Vocabulary Compatibility):** The `ForeignReplayCodec` uses the same OpenRA vocabulary mapping (trait names, order names) that D023 established for YAML rules.
-- **D025 (Runtime MiniYAML Loading):** OpenRA `.orarep` metadata is MiniYAML — parsed by the same `ra-formats` infrastructure.
+- **D025 (Runtime MiniYAML Loading):** OpenRA `.orarep` metadata is MiniYAML — parsed by the same `ic-cnc-content` infrastructure.
 - **D027 (Canonical Enum Compatibility):** Foreign order type names (locomotor types, stance names) use D027's enum mappings.
 
 ---

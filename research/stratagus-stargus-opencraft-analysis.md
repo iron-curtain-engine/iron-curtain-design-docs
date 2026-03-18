@@ -383,12 +383,12 @@ Stargus abstracts archive access behind a `Hurricane` base class with two implem
 - `Casc` — reads CASC archives (Remastered StarCraft)
 - `Breeze` — reads from a plain directory (extracted files)
 
-This is relevant to `ra-formats`: IC should consider a similar abstraction if supporting both `.mix` archives (original RA) and any future archive formats.
+This is relevant to `ic-cnc-content`: IC should consider a similar abstraction if supporting both `.mix` archives (original RA) and any future archive formats.
 
 ### IC Relevance
 
-- **Kaitai Struct as documentation layer:** While `ra-formats` doesn't need to use Kaitai Struct (Rust's type system + serde provides equivalent safety), Kaitai `.ksy` schemas are valuable as **machine-readable documentation** for binary formats. If IC ever publishes format specifications, Kaitai schemas are the standard interchange format.
-- **Archive abstraction:** `ra-formats` should expose a trait for archive access, allowing transparent reading from `.mix` files, directories, or future formats.
+- **Kaitai Struct as documentation layer:** While `ic-cnc-content` doesn't need to use Kaitai Struct (Rust's type system + serde provides equivalent safety), Kaitai `.ksy` schemas are valuable as **machine-readable documentation** for binary formats. If IC ever publishes format specifications, Kaitai schemas are the standard interchange format.
+- **Archive abstraction:** `ic-cnc-content` should expose a trait for archive access, allowing transparent reading from `.mix` files, directories, or future formats.
 
 ---
 
@@ -427,8 +427,8 @@ These IC decisions are independently validated by Stratagus:
 | Lua AI API primitives (`AiForce`, `AiSetCollect`, etc.) | `ic-script` should expose similar primitives for Tier 2 AI modding             | Phase 4  |
 | Explicit Lua stdlib policy per tier                     | 04-MODDING.md + 06-SECURITY.md should enumerate allowed/blocked stdlib modules | Phase 4  |
 | External AI socket interface                            | Consider adding to `ic-ai` for ML training and LLM integration                 | Phase 4+ |
-| Archive abstraction layer                               | `ra-formats` should trait-abstract archive access                              | Phase 0  |
-| Kaitai Struct as format documentation                   | Consider publishing `.ksy` schemas alongside `ra-formats`                      | Optional |
+| Archive abstraction layer                               | `ic-cnc-content` should trait-abstract archive access                          | Phase 0  |
+| Kaitai Struct as format documentation                   | Consider publishing `.ksy` schemas alongside `ic-cnc-content`                  | Optional |
 | Lua-definable damage formulas                           | `DamageResolver` (D041) could support Tier 2 Lua overrides                     | Phase 4+ |
 
 ### Anti-Lessons

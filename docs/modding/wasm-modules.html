@@ -869,7 +869,7 @@ pub struct AiEventEntry {
 ) -&gt; Option&lt;Vec&lt;u8&gt;&gt;;
 <span class="boring">}</span></code></pre>
 <p><strong>Security:</strong> Format loading occurs at asset load time, not during simulation ticks. Format loader mods have file read access (through the engine’s archive abstraction) but cannot issue orders, access game state, or call render functions. They decode bytes into engine-standard pixel/audio/mesh data — nothing else.</p>
-<p><strong>Phase:</strong> WASM format loader API ships in Phase 6a alongside the broader mod testing framework. Built-in C&amp;C format loaders (<code>ra-formats</code>) ship in Phase 0.</p>
+<p><strong>Phase:</strong> WASM format loader API ships in Phase 6a alongside the broader mod testing framework. Built-in C&amp;C format loaders (<code>ic-cnc-content</code>) ship in Phase 0.</p>
 <h3 id="mod-testing-framework"><a class="header" href="#mod-testing-framework">Mod Testing Framework</a></h3>
 <p><code>ic mod test</code> is referenced throughout this document but needs a concrete assertion API and test runner design.</p>
 <h4 id="test-file-structure"><a class="header" href="#test-file-structure">Test File Structure</a></h4>

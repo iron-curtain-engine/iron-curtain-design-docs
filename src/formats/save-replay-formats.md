@@ -370,7 +370,7 @@ The game thread contributes ~1–1.5 ms every 300 ticks (~20 seconds at Slower d
 
 ### Foreign Replay Decoders (D056)
 
-`ra-formats` includes decoders for foreign replay file formats, enabling direct playback and conversion to `.icrep`:
+`ic-cnc-content` includes decoders for foreign replay file formats, enabling direct playback and conversion to `.icrep`:
 
 | Format                | Extension                      | Structure                                                        | Decoder                   | Source Documentation                                                |
 | --------------------- | ------------------------------ | ---------------------------------------------------------------- | ------------------------- | ------------------------------------------------------------------- |

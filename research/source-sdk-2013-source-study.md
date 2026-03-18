@@ -218,14 +218,14 @@ Client-side, `RecvProp` tables mirror these declarations. Send proxies can filte
 
 Source SDK's CVE history is a catalog of C/C++ memory safety failures in game engine content pipelines:
 
-| CVE / Exploit | Attack Vector | Root Cause | Severity |
-| --- | --- | --- | --- |
-| CVE-2017-20205 | Crafted ragdoll model file | `nexttoken` copies into 256-byte stack buffer without bounds check; attacker-controlled model data achieves RCE | Critical |
-| CVE-2021-30481 | Steam game invite → RCON ZIP extraction | 2003-era XZip library; `offset_curfile = 0xFFFFFFFE` causes unsigned integer underflow in `lufread()`, `memcpy` with corrupted length → RCE | Critical |
-| PacketEntities RCE | Malicious game server | `CL_CopyExistingEntity` uses attacker-controlled `m_nNewEntity` as array index without bounds check → virtual dispatch hijack → RCE (~80% success due to no ASLR on `xinput1_3.dll`) | Critical |
-| Path traversal | Server-controlled filenames | `snprintf` truncation: long paths overrun 256-byte buffer, truncating file extension past boundary → extension filter bypass; `con_logfile` writes arbitrary files | High |
-| Spray/audio exploit | Custom spray/audio downloads | Download filenames with path traversal → arbitrary file write to client machine | High |
-| `m_nMaxClients=1` trick | Server packet | Server tells client it's in singleplayer → enables privileged commands | High |
+| CVE / Exploit           | Attack Vector                           | Root Cause                                                                                                                                                                           | Severity |
+| ----------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------- |
+| CVE-2017-20205          | Crafted ragdoll model file              | `nexttoken` copies into 256-byte stack buffer without bounds check; attacker-controlled model data achieves RCE                                                                      | Critical |
+| CVE-2021-30481          | Steam game invite → RCON ZIP extraction | 2003-era XZip library; `offset_curfile = 0xFFFFFFFE` causes unsigned integer underflow in `lufread()`, `memcpy` with corrupted length → RCE                                          | Critical |
+| PacketEntities RCE      | Malicious game server                   | `CL_CopyExistingEntity` uses attacker-controlled `m_nNewEntity` as array index without bounds check → virtual dispatch hijack → RCE (~80% success due to no ASLR on `xinput1_3.dll`) | Critical |
+| Path traversal          | Server-controlled filenames             | `snprintf` truncation: long paths overrun 256-byte buffer, truncating file extension past boundary → extension filter bypass; `con_logfile` writes arbitrary files                   | High     |
+| Spray/audio exploit     | Custom spray/audio downloads            | Download filenames with path traversal → arbitrary file write to client machine                                                                                                      | High     |
+| `m_nMaxClients=1` trick | Server packet                           | Server tells client it's in singleplayer → enables privileged commands                                                                                                               | High     |
 
 **Common thread:** Every major vulnerability is in parsing or handling untrusted input (models, archives, network packets, filenames, server-controlled fields) using C/C++ manual memory management without bounds checking.
 
@@ -238,7 +238,7 @@ Source SDK's CVE history is a catalog of C/C++ memory safety failures in game en
 
 1. **Rust eliminates the entire vulnerability class.** Buffer overflows, integer underflows, use-after-free, and format string bugs are compile-time errors in safe Rust. Source's CVE history is the empirical case for IC's language choice.
 
-2. **No `unsafe` in content pipeline.** IC's asset parsers (`ra-formats`, YAML loader, replay parser, network deserializer) must never use `unsafe` for parsing. Use `nom`, `binrw`, or `serde` — safe parsing by construction. The fuzz testing targets in `testing-strategy.md` directly address this.
+2. **No `unsafe` in content pipeline.** IC's asset parsers (`ic-cnc-content`, YAML loader, replay parser, network deserializer) must never use `unsafe` for parsing. Use `nom`, `binrw`, or `serde` — safe parsing by construction. The fuzz testing targets in `testing-strategy.md` directly address this.
 
 3. **Anti-cheat via architecture beats bolted-on scanning.** VAC's failure pattern — external signature scanning that misses novel cheats — validates IC's approach: deterministic sim where the server is authoritative, sandboxed mods via capability tokens, structural guarantees rather than detection.
 
@@ -253,7 +253,7 @@ Source SDK's CVE history is a catalog of C/C++ memory safety failures in game en
 - `M0.QA.TYPE_SAFETY_ENFORCEMENT` (capability tokens, branded types)
 - `M3.SEC.DISPLAY_NAME_VALIDATION` (V46 — untrusted text input)
 - `M8.SEC.AUTHOR_PACKAGE_SIGNING` (V49 — supply chain integrity)
-- All `ra-formats` parsing clusters (`M1.CORE.RA_FORMATS_PARSE`)
+- All `ic-cnc-content` parsing clusters (`M1.CORE.RA_FORMATS_PARSE`)
 
 ---
 
@@ -318,29 +318,29 @@ What exists instead:
 
 ## Consolidated Lesson Matrix
 
-| # | Source SDK Pattern | Problem | IC Answer | IC Cluster(s) |
-| --- | --- | --- | --- | --- |
-| 1 | `#ifdef CLIENT_DLL` in shared code | Builds diverge, shared code is not truly shared | `ic-sim` has zero network imports, zero conditional compilation | `M2.CORE.SIM_FIXED_POINT_AND_ORDERS` |
-| 2 | Deep entity inheritance (5-6 levels) | Tight coupling, override hazards, fragile modding | Bevy ECS component composition | `M2.CORE.GAME_MODULE_AND_SUBSYSTEM_SEAMS` |
-| 3 | `CNetworkVar` dirty tracking via macros | Opaque generated code, hard to debug | Bevy `Changed<T>` change detection | `M4.NET.MINIMAL_LOCKSTEP_ONLINE` |
-| 4 | Float math in shared prediction code | NaN checks, bit-level comparison, platform divergence | Fixed-point `i32`/`i64`, bitwise-deterministic | `M2.CORE.SIM_FIXED_POINT_AND_ORDERS` |
-| 5 | Manual SendProp/RecvProp table mirroring | Silent desync when tables drift | Single schema in `ic-protocol`, derive both ends | `M4.NET.MINIMAL_LOCKSTEP_ONLINE` |
-| 6 | Native C++ mod DLLs, no sandbox | Full system access, RCE-capable mods | YAML/Lua/WASM tiers, capability-token sandbox | `M5.SP.LUA_MISSION_RUNTIME`, `M6.SEC.WASM_INTERMODULE_ISOLATION` |
-| 7 | `memcpy` with attacker-controlled lengths | Buffer overflows, RCE chains (CVE-2017-20205, CVE-2021-30481) | Rust safe parsing, no `unsafe` in content pipeline | `M1.CORE.RA_FORMATS_PARSE`, `M0.QA.CI_PIPELINE_FOUNDATION` |
-| 8 | VAC as external signature scanner | Bolted-on, bypassable, no structural protection | Anti-cheat via deterministic sim + server authority | `M7.SEC.BEHAVIORAL_ANALYSIS_REPORTING` |
-| 9 | ConVar security flags opt-in per variable | Forgetting one flag = exploit | Capability tokens, secure-by-default config | `M0.QA.TYPE_SAFETY_ENFORCEMENT` |
-| 10 | No automated tests, no CI, no fuzzing | Vulnerabilities persist 18 years | `cargo test` + `proptest` + `cargo-fuzz` from day one | `M0.QA.CI_PIPELINE_FOUNDATION` |
-| 11 | Sorted linked list for A* open list | O(n) insertion, only works for ~1000 areas | Binary heap; marker-based open/closed (no per-search clear) | `M2.CORE.PATH_SPATIAL` |
-| 12 | Per-NPC 8ms AI budget (20 NPCs) | 1000 units × 10us = different scale entirely | Tiered processing + batched path requests + aggressive caching | `M6.SP.SKIRMISH_AI_BASELINE` |
-| 13 | Schedule/task interrupt masks (bitmask AND) | O(1) per NPC, elegant and deterministic | Adopt directly: `ConditionBitfield` on each order/behavior | `M6.SP.SKIRMISH_AI_BASELINE` |
-| 14 | Strategy slots for squad coordination | Prevents all-flank degeneracy; 16-member cap | Formation slot types; claim/vacate pattern | `M6.SP.SKIRMISH_AI_BASELINE` |
-| 15 | FGD editor metadata (manually maintained) | Drifts from code; 7 locations per entity | YAML schema = runtime validation = editor schema (one source) | `M8.SDK.CLI_FOUNDATION`, `M9.SDK.D038_SCENARIO_EDITOR_CORE` |
-| 16 | Entity I/O (data-driven event wiring) | Powerful UX, no compile-time validation | YAML event wiring with schema validation at load time | `M8.SDK.CLI_FOUNDATION` |
-| 17 | VScript with no sandbox | Full process access for scripts | Lua resource limits + WASM capability tokens | `M5.SP.LUA_MISSION_RUNTIME` |
-| 18 | PVS filtering (per-client entity visibility) | Correct pattern for hiding server state | Fog-authoritative relay applies same principle to orders | `M4.NET.RELAY_TIME_AUTHORITY_AND_VALIDATION` |
-| 19 | `sv_max_usercmd_future_ticks` | Caps how far ahead clients can send | Relay caps future-tick order submission | `M4.NET.RELAY_TIME_AUTHORITY_AND_VALIDATION` |
-| 20 | Baseline + delta for new connections | Full snapshot then deltas for bandwidth | Reconnection: snapshot + deterministic order replay catch-up | `M4.NET.RECONNECT_BASELINE` |
-| 21 | `net_graph 1/2/3` layered diagnostics | FPS/latency/bandwidth overlay, escalating detail | `/diag 0-3` overlay: basic→detailed→full dev, graph history, mod diagnostics API | `M2.CORE.DIAG_OVERLAY_L1`, `M4.NET.DIAG_OVERLAY_NET` |
+| #   | Source SDK Pattern                           | Problem                                                       | IC Answer                                                                        | IC Cluster(s)                                                    |
+| --- | -------------------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| 1   | `#ifdef CLIENT_DLL` in shared code           | Builds diverge, shared code is not truly shared               | `ic-sim` has zero network imports, zero conditional compilation                  | `M2.CORE.SIM_FIXED_POINT_AND_ORDERS`                             |
+| 2   | Deep entity inheritance (5-6 levels)         | Tight coupling, override hazards, fragile modding             | Bevy ECS component composition                                                   | `M2.CORE.GAME_MODULE_AND_SUBSYSTEM_SEAMS`                        |
+| 3   | `CNetworkVar` dirty tracking via macros      | Opaque generated code, hard to debug                          | Bevy `Changed<T>` change detection                                               | `M4.NET.MINIMAL_LOCKSTEP_ONLINE`                                 |
+| 4   | Float math in shared prediction code         | NaN checks, bit-level comparison, platform divergence         | Fixed-point `i32`/`i64`, bitwise-deterministic                                   | `M2.CORE.SIM_FIXED_POINT_AND_ORDERS`                             |
+| 5   | Manual SendProp/RecvProp table mirroring     | Silent desync when tables drift                               | Single schema in `ic-protocol`, derive both ends                                 | `M4.NET.MINIMAL_LOCKSTEP_ONLINE`                                 |
+| 6   | Native C++ mod DLLs, no sandbox              | Full system access, RCE-capable mods                          | YAML/Lua/WASM tiers, capability-token sandbox                                    | `M5.SP.LUA_MISSION_RUNTIME`, `M6.SEC.WASM_INTERMODULE_ISOLATION` |
+| 7   | `memcpy` with attacker-controlled lengths    | Buffer overflows, RCE chains (CVE-2017-20205, CVE-2021-30481) | Rust safe parsing, no `unsafe` in content pipeline                               | `M1.CORE.RA_FORMATS_PARSE`, `M0.QA.CI_PIPELINE_FOUNDATION`       |
+| 8   | VAC as external signature scanner            | Bolted-on, bypassable, no structural protection               | Anti-cheat via deterministic sim + server authority                              | `M7.SEC.BEHAVIORAL_ANALYSIS_REPORTING`                           |
+| 9   | ConVar security flags opt-in per variable    | Forgetting one flag = exploit                                 | Capability tokens, secure-by-default config                                      | `M0.QA.TYPE_SAFETY_ENFORCEMENT`                                  |
+| 10  | No automated tests, no CI, no fuzzing        | Vulnerabilities persist 18 years                              | `cargo test` + `proptest` + `cargo-fuzz` from day one                            | `M0.QA.CI_PIPELINE_FOUNDATION`                                   |
+| 11  | Sorted linked list for A* open list          | O(n) insertion, only works for ~1000 areas                    | Binary heap; marker-based open/closed (no per-search clear)                      | `M2.CORE.PATH_SPATIAL`                                           |
+| 12  | Per-NPC 8ms AI budget (20 NPCs)              | 1000 units × 10us = different scale entirely                  | Tiered processing + batched path requests + aggressive caching                   | `M6.SP.SKIRMISH_AI_BASELINE`                                     |
+| 13  | Schedule/task interrupt masks (bitmask AND)  | O(1) per NPC, elegant and deterministic                       | Adopt directly: `ConditionBitfield` on each order/behavior                       | `M6.SP.SKIRMISH_AI_BASELINE`                                     |
+| 14  | Strategy slots for squad coordination        | Prevents all-flank degeneracy; 16-member cap                  | Formation slot types; claim/vacate pattern                                       | `M6.SP.SKIRMISH_AI_BASELINE`                                     |
+| 15  | FGD editor metadata (manually maintained)    | Drifts from code; 7 locations per entity                      | YAML schema = runtime validation = editor schema (one source)                    | `M8.SDK.CLI_FOUNDATION`, `M9.SDK.D038_SCENARIO_EDITOR_CORE`      |
+| 16  | Entity I/O (data-driven event wiring)        | Powerful UX, no compile-time validation                       | YAML event wiring with schema validation at load time                            | `M8.SDK.CLI_FOUNDATION`                                          |
+| 17  | VScript with no sandbox                      | Full process access for scripts                               | Lua resource limits + WASM capability tokens                                     | `M5.SP.LUA_MISSION_RUNTIME`                                      |
+| 18  | PVS filtering (per-client entity visibility) | Correct pattern for hiding server state                       | Fog-authoritative relay applies same principle to orders                         | `M4.NET.RELAY_TIME_AUTHORITY_AND_VALIDATION`                     |
+| 19  | `sv_max_usercmd_future_ticks`                | Caps how far ahead clients can send                           | Relay caps future-tick order submission                                          | `M4.NET.RELAY_TIME_AUTHORITY_AND_VALIDATION`                     |
+| 20  | Baseline + delta for new connections         | Full snapshot then deltas for bandwidth                       | Reconnection: snapshot + deterministic order replay catch-up                     | `M4.NET.RECONNECT_BASELINE`                                      |
+| 21  | `net_graph 1/2/3` layered diagnostics        | FPS/latency/bandwidth overlay, escalating detail              | `/diag 0-3` overlay: basic→detailed→full dev, graph history, mod diagnostics API | `M2.CORE.DIAG_OVERLAY_L1`, `M4.NET.DIAG_OVERLAY_NET`             |
 
 ---
 
@@ -406,29 +406,29 @@ Multi-layered: A* closest-area fallback → triangulation (perpendicular offset)
 
 **Patterns to adopt:**
 
-| Source Pattern | IC Application |
-| --- | --- |
-| Marker-based open/closed list | Increment global `u32` per search; compare per-cell. Eliminates O(n) clear. Essential for 1000 units |
-| Cost functor template | `PathCost` trait: `fn cost(&self, from: CellId, to: CellId) -> FixedPoint`. Per-unit-type implementations |
-| Closest-reachable fallback | A* tracks best partial result. Units always move somewhere, never "stuck" |
-| Interrupt condition masks | Each order declares a `ConditionBitfield`. Each tick AND with gathered conditions. O(1) per unit |
-| Strategy slots | Formation has slot types (lead, flank-L, flank-R, rear-guard). Units claim slots. Prevents all-flank degeneracy |
-| Efficiency tiering | Idle units: AI every 4-8 ticks. Combat: every tick. **Criteria must be deterministic** (tick-based, not PVS) |
-| All six caches | Last-known-cell, failed-path, unreachable-target, simplification throttle. All expire by **sim tick**, not wall-clock |
-| Path request priority queue | New orders = high priority (this tick). Replans = low (defer 2-4 ticks). Process in batches within tick budget |
-| Precomputed analysis at load | Hiding spots, choke points, distance fields computed once at map load. `Pathfinder::analyze()` method |
-| Oscillation detector | Count re-plans per unit per second. Flag if excessive. Cheap diagnostic |
+| Source Pattern                | IC Application                                                                                                        |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Marker-based open/closed list | Increment global `u32` per search; compare per-cell. Eliminates O(n) clear. Essential for 1000 units                  |
+| Cost functor template         | `PathCost` trait: `fn cost(&self, from: CellId, to: CellId) -> FixedPoint`. Per-unit-type implementations             |
+| Closest-reachable fallback    | A* tracks best partial result. Units always move somewhere, never "stuck"                                             |
+| Interrupt condition masks     | Each order declares a `ConditionBitfield`. Each tick AND with gathered conditions. O(1) per unit                      |
+| Strategy slots                | Formation has slot types (lead, flank-L, flank-R, rear-guard). Units claim slots. Prevents all-flank degeneracy       |
+| Efficiency tiering            | Idle units: AI every 4-8 ticks. Combat: every tick. **Criteria must be deterministic** (tick-based, not PVS)          |
+| All six caches                | Last-known-cell, failed-path, unreachable-target, simplification throttle. All expire by **sim tick**, not wall-clock |
+| Path request priority queue   | New orders = high priority (this tick). Replans = low (defer 2-4 ticks). Process in batches within tick budget        |
+| Precomputed analysis at load  | Hiding spots, choke points, distance fields computed once at map load. `Pathfinder::analyze()` method                 |
+| Oscillation detector          | Count re-plans per unit per second. Flag if excessive. Cheap diagnostic                                               |
 
 **Patterns to avoid:**
 
-| Source Pattern | Why Not |
-| --- | --- |
-| Sorted linked list for open list | Use binary heap. Source has ~1000 areas; IC has 16K-65K cells |
-| Float costs with NaN guards | Fixed-point eliminates the entire problem |
-| Inheritance-based AI (100+ virtuals in `CAI_BaseNPC`) | `AiStrategy` trait composition |
-| PVS-based dormancy | No single viewpoint in RTS. Use deterministic game-state criteria |
-| Per-NPC 8ms budget | 1000 units sharing 10ms = ~10us per unit. Budget must be aggregate |
-| One-frame-delayed async pathfinding | Breaks determinism. Process within tick, using priority and budgeting |
+| Source Pattern                                        | Why Not                                                               |
+| ----------------------------------------------------- | --------------------------------------------------------------------- |
+| Sorted linked list for open list                      | Use binary heap. Source has ~1000 areas; IC has 16K-65K cells         |
+| Float costs with NaN guards                           | Fixed-point eliminates the entire problem                             |
+| Inheritance-based AI (100+ virtuals in `CAI_BaseNPC`) | `AiStrategy` trait composition                                        |
+| PVS-based dormancy                                    | No single viewpoint in RTS. Use deterministic game-state criteria     |
+| Per-NPC 8ms budget                                    | 1000 units sharing 10ms = ~10us per unit. Budget must be aggregate    |
+| One-frame-delayed async pathfinding                   | Breaks determinism. Process within tick, using priority and budgeting |
 
 **Performance budget reality:** Source processes ~20 NPCs × ~8ms each = ~160ms total AI per frame. IC needs 1000 units in <10ms — roughly **1600x more demanding per unit**. This rules out Source's per-NPC synchronous pathfinding. The combination of tiered processing + batched requests + binary heap A* + aggressive caching + precomputed analysis is necessary.
 
@@ -497,14 +497,14 @@ That is **7 separate locations** that must all agree for one entity to work. No 
 
 ### IC Takeaways (SDK/Editor)
 
-| Source Pattern | Problem | IC Answer |
-| --- | --- | --- |
-| FGD as editor metadata | Manually maintained, drifts from code | **Generate editor schema from YAML definitions.** IC's YAML modding tier means the schema IS the content — no separate FGD-like file. The scenario editor reads the same schemas that the runtime validates against |
-| Entity I/O (inputs/outputs) | Powerful for designers, but no compile-time validation | IC should adopt the concept (data-driven event wiring in the YAML tier) with **schema validation at load time**. Invalid connections rejected before game start |
-| VScript with no sandbox | Full process access | IC's tiered sandboxing (Lua with resource limits, WASM with capability tokens) is the correct answer. Source validates this need |
-| Precaching as convention | Missing precache = runtime crash | IC's asset pipeline should **statically validate** all asset references at content load / Workshop publish time — never discover missing assets at runtime |
-| 7-location entity definition | Massive boilerplate, drift between code/FGD/client/server | IC's approach: define entity in YAML → engine derives ECS components, editor metadata, network replication, and validation from the same source. One definition, multiple derived views |
-| No consistency checking | FGD says one thing, code does another | IC's schema-validated YAML and `cargo test` for Rust types ensure **single source of truth** |
+| Source Pattern               | Problem                                                   | IC Answer                                                                                                                                                                                                           |
+| ---------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FGD as editor metadata       | Manually maintained, drifts from code                     | **Generate editor schema from YAML definitions.** IC's YAML modding tier means the schema IS the content — no separate FGD-like file. The scenario editor reads the same schemas that the runtime validates against |
+| Entity I/O (inputs/outputs)  | Powerful for designers, but no compile-time validation    | IC should adopt the concept (data-driven event wiring in the YAML tier) with **schema validation at load time**. Invalid connections rejected before game start                                                     |
+| VScript with no sandbox      | Full process access                                       | IC's tiered sandboxing (Lua with resource limits, WASM with capability tokens) is the correct answer. Source validates this need                                                                                    |
+| Precaching as convention     | Missing precache = runtime crash                          | IC's asset pipeline should **statically validate** all asset references at content load / Workshop publish time — never discover missing assets at runtime                                                          |
+| 7-location entity definition | Massive boilerplate, drift between code/FGD/client/server | IC's approach: define entity in YAML → engine derives ECS components, editor metadata, network replication, and validation from the same source. One definition, multiple derived views                             |
+| No consistency checking      | FGD says one thing, code does another                     | IC's schema-validated YAML and `cargo test` for Rust types ensure **single source of truth**                                                                                                                        |
 
 **Key insight:** Source's editor tooling is powerful despite its architecture, not because of it. The entity I/O system (wiring logic without code) is brilliant UX that shipped millions of community maps. IC should adopt the concept (data-driven event connections) but implement it through validated YAML schemas rather than manually-maintained FGD files and runtime-discovered errors.
 
@@ -569,17 +569,17 @@ Rich diagnostic tools:
 
 ### IC Takeaways (Netcode)
 
-| Source Pattern | IC Application |
-| --- | --- |
-| Bit-level serialization (`bf_write`/`bf_read`) | Consider compact binary serialization for `ic-protocol`. Lockstep sends orders (small), not full state (large), so bandwidth is less critical — but compact encoding still matters for P2P/mobile |
-| PVS filtering (per-client entity visibility) | Directly maps to fog-authoritative server. Source already solves "don't send data clients shouldn't see" — IC's relay server applies the same principle to order visibility in fog modes |
-| Delta compression for snapshots | Relevant for IC's reconnection path (D010): send full snapshot to reconnecting client, then catch-up via order replay. Source's baseline+delta pattern is the right model |
-| `CUserCmd` with `command_number` + `tick_count` | Maps to IC's `PlayerOrder` with `SimTick` and sequence numbers. Source's tick-count validation (reject impossible timing) maps to IC's relay tick authority (D007) |
-| `sv_max_usercmd_future_ticks` | IC's relay should similarly cap how far ahead a client can send orders — prevents buffering exploits and speed manipulation |
-| CRC32 checksums on commands | IC uses Ed25519 signatures (much stronger). Source's CRC32 is trivially forgeable — validates IC's decision to use cryptographic signing |
-| RCON plaintext auth | IC's community server admin should use proper auth (Ed25519 signed admin tokens, D060), not plaintext passwords |
-| `net_graph` diagnostics | **Designed:** IC's diagnostic overlay (`/diag 0-3`) provides 4-level real-time observability: FPS/tick/RTT (L1), per-system breakdown + pathfinding + memory (L2), ECS inspector + AI viewer + desync debugger (L3). See `10-PERFORMANCE.md` § Diagnostic Overlay, D058 `/diag` commands |
-| Demo recording at network layer | IC's replay system records at the order level (deterministic replay of inputs). Source's network-level recording is more expensive (full state), but the architectural placement is right: capture at the boundary between network and sim |
+| Source Pattern                                  | IC Application                                                                                                                                                                                                                                                                           |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bit-level serialization (`bf_write`/`bf_read`)  | Consider compact binary serialization for `ic-protocol`. Lockstep sends orders (small), not full state (large), so bandwidth is less critical — but compact encoding still matters for P2P/mobile                                                                                        |
+| PVS filtering (per-client entity visibility)    | Directly maps to fog-authoritative server. Source already solves "don't send data clients shouldn't see" — IC's relay server applies the same principle to order visibility in fog modes                                                                                                 |
+| Delta compression for snapshots                 | Relevant for IC's reconnection path (D010): send full snapshot to reconnecting client, then catch-up via order replay. Source's baseline+delta pattern is the right model                                                                                                                |
+| `CUserCmd` with `command_number` + `tick_count` | Maps to IC's `PlayerOrder` with `SimTick` and sequence numbers. Source's tick-count validation (reject impossible timing) maps to IC's relay tick authority (D007)                                                                                                                       |
+| `sv_max_usercmd_future_ticks`                   | IC's relay should similarly cap how far ahead a client can send orders — prevents buffering exploits and speed manipulation                                                                                                                                                              |
+| CRC32 checksums on commands                     | IC uses Ed25519 signatures (much stronger). Source's CRC32 is trivially forgeable — validates IC's decision to use cryptographic signing                                                                                                                                                 |
+| RCON plaintext auth                             | IC's community server admin should use proper auth (Ed25519 signed admin tokens, D060), not plaintext passwords                                                                                                                                                                          |
+| `net_graph` diagnostics                         | **Designed:** IC's diagnostic overlay (`/diag 0-3`) provides 4-level real-time observability: FPS/tick/RTT (L1), per-system breakdown + pathfinding + memory (L2), ECS inspector + AI viewer + desync debugger (L3). See `10-PERFORMANCE.md` § Diagnostic Overlay, D058 `/diag` commands |
+| Demo recording at network layer                 | IC's replay system records at the order level (deterministic replay of inputs). Source's network-level recording is more expensive (full state), but the architectural placement is right: capture at the boundary between network and sim                                               |
 
 **Key insight for lockstep:** Source's netcode is designed for client-server with prediction — fundamentally different from lockstep. However, three patterns translate directly:
 
