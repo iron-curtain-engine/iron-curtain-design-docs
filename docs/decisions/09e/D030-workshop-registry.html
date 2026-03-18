@@ -36,10 +36,10 @@
             const path_to_root = "../../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../../searchindex-709f880f.js";
+            window.path_to_searchindex_js = "../../searchindex-5e4d7c2c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../../toc-a7298cc1.js"></script>
+        <script src="../../toc-97c3ad2d.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -401,11 +401,12 @@ channel = "beta"             # publish to beta channel
 <li><code>ic mod install</code> pulls from release channel unless <code>--include-beta</code> is specified</li>
 <li>Promotion: <code>ic mod promote 1.3.0-beta.1 release</code> → moves resource to release channel without re-upload</li>
 </ul>
-<h3 id="replication--mirroring"><a class="header" href="#replication--mirroring">Replication &amp; Mirroring</a></h3>
-<p>Community Workshop servers can replicate from the official server (pull replication, Artifactory-style):</p>
+<h3 id="replication-federation--mirroring"><a class="header" href="#replication-federation--mirroring">Replication, Federation &amp; Mirroring</a></h3>
+<p>Community Workshop servers can federate with the official server or form their own data-center meshes:</p>
 <ul>
-<li><strong>Pull replication:</strong> Community server periodically syncs popular resources from official. Reduces latency for regional players, provides redundancy.</li>
-<li><strong>Selective sync:</strong> Community servers choose which categories/publishers to replicate (e.g., replicate all Maps but not Mods)</li>
+<li><strong>Pull replication:</strong> Community server periodically syncs resources from upstream servers. Reduces latency for regional players, provides redundancy.</li>
+<li><strong>Push-Sync (Mesh / Swarm Replication):</strong> Trusted servers within a data-center or trusted mesh can use a gossip protocol. When a package is uploaded to Node A, it instantly notifies Nodes B, C, and D. Instead of traditional sequential HTTP transfers, the replica nodes concurrently pull pieces via the built-in P2P swarm <em>and</em> HTTP Web Seeding (BEP 17/19). This natively aggregates BitTorrent pieces and HTTP range requests, providing out-of-the-box enterprise CDN behavior for community hosts.</li>
+<li><strong>Topic/Tag Subscriptions (Selective Sync):</strong> Nodes can be configured to automatically pull data of a <em>specific nature or label</em>. For example, configuring a node with the “Iron Curtain Workshop Server” tag naturally forces it to sync with the rest of the nodes sharing that label, automatically creating a unified data-center group. Subscriptions can target specific categories (e.g., “all Maps”), publishers (e.g., “community-hd-project”), or custom arbitrary tags. The node automatically downloads and seeds all data that matches its subscribed labels.</li>
 <li><strong>Offline bundles:</strong> <code>ic workshop export-bundle</code> creates a portable archive of selected resources for LAN parties or airgapped environments. <code>ic workshop import-bundle</code> loads them into a local repository.</li>
 </ul>
 <h3 id="dependency-resolution"><a class="header" href="#dependency-resolution">Dependency Resolution</a></h3>

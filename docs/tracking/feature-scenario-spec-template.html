@@ -1,0 +1,841 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Feature, Screen &amp; Scenario Spec Template (LLM-Proof) - Iron Curtain — Design Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Design docs for a Rust-native Red Alert RTS engine">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-29075ff1.svg">
+        <link rel="shortcut icon" href="../favicon-96291481.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-2459343d.css">
+        <link rel="stylesheet" href="../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../css/sidebar-logo-511465a2.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-5e4d7c2c.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-97c3ad2d.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Iron Curtain — Design Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs/edit/main/src/tracking/feature-scenario-spec-template.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="feature-screen--scenario-spec-template-llm-proof-design-language"><a class="header" href="#feature-screen--scenario-spec-template-llm-proof-design-language">Feature, Screen &amp; Scenario Spec Template (LLM-Proof Design Language)</a></h1>
+<p>Keywords: feature spec, screen spec, scenario spec, LLM-proof, widget tree, guard condition, non-goals, anti-hallucination, testable contract, Given/When/Then</p>
+<blockquote>
+<p>This template defines a <strong>three-layer specification language</strong> for describing features, GUI screens, and interaction scenarios in Iron Curtain design docs. Its purpose is to make feature descriptions <strong>unambiguous enough that an agentic LLM has one correct interpretation</strong> of every element.</p>
+</blockquote>
+<blockquote>
+<p>For the human-facing player flow, see <a href="../17-PLAYER-FLOW.html"><code>17-PLAYER-FLOW.md</code></a>. For implementation tickets, see <a href="implementation-ticket-template.html"><code>implementation-ticket-template.md</code></a>. For decision capsules, see <a href="../decisions/DECISION-CAPSULE-TEMPLATE.html"><code>../decisions/DECISION-CAPSULE-TEMPLATE.md</code></a>.</p>
+</blockquote>
+<h2 id="when-to-use-this-template"><a class="header" href="#when-to-use-this-template">When To Use This Template</a></h2>
+<p><strong>Use when describing:</strong></p>
+<ul>
+<li>A new UI screen, panel, overlay, or dialog</li>
+<li>A new feature with conditional visibility, guards, or multi-state behavior</li>
+<li>An interaction flow with branching paths</li>
+<li>Any UX behavior where “what it does NOT do” matters as much as what it does</li>
+</ul>
+<p><strong>Do not use for:</strong></p>
+<ul>
+<li>Pure architecture / crate-level design (use <code>02-ARCHITECTURE.md</code> patterns)</li>
+<li>Decision rationale (use decision capsules)</li>
+<li>Implementation work packages (use the ticket template)</li>
+<li>Research notes (use <code>research/*.md</code>)</li>
+</ul>
+<h2 id="the-three-layers"><a class="header" href="#the-three-layers">The Three Layers</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Layer</th><th>Name</th><th>Purpose</th><th>Format</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>1</strong></td><td>Feature Spec</td><td><em>What</em> the feature does, its guards, behavior, and anti-hallucination non-goals</td><td>YAML block</td></tr>
+<tr><td><strong>2</strong></td><td>Screen Spec</td><td><em>How</em> the screen looks — typed widget tree alongside ASCII wireframes</td><td>YAML block</td></tr>
+<tr><td><strong>3</strong></td><td>Scenario Spec</td><td><em>How interactions play out</em> — testable Given/When/Then contracts</td><td>YAML block</td></tr>
+</tbody>
+</table>
+</div>
+<p>Every screen/feature page should include <strong>all three layers</strong>. The ASCII wireframe (existing IC convention) remains for human readability; the YAML specs are the LLM’s source of truth.</p>
+<hr>
+<h2 id="layer-1--feature-spec"><a class="header" href="#layer-1--feature-spec">Layer 1 — Feature Spec</a></h2>
+<p>Place this as a YAML code block near the top of the feature’s documentation section. One Feature Spec per distinct feature or interaction unit.</p>
+<h3 id="schema"><a class="header" href="#schema">Schema</a></h3>
+<pre><code class="language-yaml">feature:
+  # Required fields
+  id: string            # Unique ID: F-{SCREEN}-{FEATURE}, e.g. F-MAIN-MENU-CONTINUE
+  title: string         # Human-readable name
+  decision_refs: [Dxxx] # Related design decisions
+  milestone: Mx         # Execution overlay milestone
+  priority: P-*         # P-Core | P-Differentiator | P-Creator | P-Scale | P-Optional
+  
+  # Context
+  state_machine_context: string  # Application state: InMenus | Loading | InGame | InReplay | GameEnded
+  entry_point: string            # How the user reaches this feature
+  platforms: [string]            # Desktop | Tablet | Phone | Deck | TV | Browser
+  
+  # Visibility &amp; enablement
+  guards:                        # When is this visible/enabled?
+    - condition: string          # Boolean expression using game state
+      effect: string             # visible_and_enabled | visible_but_disabled | hidden
+      
+  # Behavior (what it does)
+  behavior:
+    {state_name}: string         # One entry per behavioral branch
+    
+  # Anti-hallucination anchors (what it does NOT do)
+  non_goals:
+    - string                     # Explicit statements of excluded behavior
+</code></pre>
+<h3 id="field-guide"><a class="header" href="#field-guide">Field Guide</a></h3>
+<p><strong><code>id</code></strong> — Use the pattern <code>F-{SCREEN}-{FEATURE}</code>. Screen portion matches <code>SCR-*</code> IDs from Layer 2. Examples: <code>F-MAIN-MENU-CONTINUE</code>, <code>F-SETTINGS-PERF-PROFILE</code>, <code>F-LOBBY-READY-CHECK</code>.</p>
+<p><strong><code>guards</code></strong> — Define every condition that affects visibility or enablement. Use readable boolean expressions referencing game state variables. An LLM reading this should know <em>exactly</em> when the feature appears.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th><code>effect</code> value</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>visible_and_enabled</code></td><td>Rendered and interactive</td></tr>
+<tr><td><code>visible_but_disabled</code></td><td>Rendered but greyed out / non-interactive (with tooltip explaining why)</td></tr>
+<tr><td><code>hidden</code></td><td>Not rendered at all</td></tr>
+</tbody>
+</table>
+</div>
+<p><strong><code>behavior</code></strong> — One entry per behavioral branch. Key names should be descriptive state/condition names. This replaces prose like “if X then it does Y, otherwise Z” with an explicit map.</p>
+<p><strong><code>non_goals</code></strong> — <strong>The single most powerful section.</strong> LLMs fill specification gaps with plausible-sounding features. Every <code>non_goals</code> entry eliminates a class of hallucinated implementation. Write these aggressively — anything the feature <em>could plausibly do but shouldn’t</em> belongs here.</p>
+<p>Good non-goals:</p>
+<ul>
+<li>“Does not auto-select a branch for the player”</li>
+<li>“Does not show a confirmation dialog (Principle: respect the player’s intent)”</li>
+<li>“Does not affect simulation, balance, or ranked eligibility”</li>
+</ul>
+<p>Bad non-goals (too vague):</p>
+<ul>
+<li>“Does not do bad things”</li>
+<li>“Does not break the game”</li>
+</ul>
+<h3 id="example-main-menu--continue-campaign"><a class="header" href="#example-main-menu--continue-campaign">Example (Main Menu — Continue Campaign)</a></h3>
+<pre><code class="language-yaml">feature:
+  id: F-MAIN-MENU-CONTINUE
+  title: "Continue Campaign (Main Menu)"
+  decision_refs: [D021, D033, D069]
+  milestone: M4
+  priority: P-Core
+  state_machine_context: InMenus
+  entry_point: "Main Menu → Continue Campaign button"
+  platforms: [Desktop, Tablet, Phone, Deck, TV, Browser]
+  
+  guards:
+    - condition: "campaign_save_exists == true"
+      effect: visible_and_enabled
+    - condition: "campaign_save_exists == false"
+      effect: hidden
+  
+  behavior:
+    single_next_mission: "Launches directly into the next mission (briefing → loading → InGame)"
+    multiple_available_or_pending_branch: "Opens campaign map at current progression point for player selection"
+  
+  non_goals:
+    - "Does not start a new campaign (that's Campaign → New)"
+    - "Does not provide difficulty selection (set during campaign creation)"
+    - "Does not auto-select a branch when multiple paths are available"
+    - "Does not show a 'no save found' error — button is simply hidden"
+</code></pre>
+<hr>
+<h2 id="layer-2--screen-spec"><a class="header" href="#layer-2--screen-spec">Layer 2 — Screen Spec</a></h2>
+<p>Place this alongside (not replacing) the ASCII wireframe for each screen. One Screen Spec per distinct screen or panel.</p>
+<h3 id="schema-1"><a class="header" href="#schema-1">Schema</a></h3>
+<pre><code class="language-yaml">screen:
+  # Identity
+  id: string                   # Unique ID: SCR-{NAME}, e.g. SCR-MAIN-MENU
+  title: string                # Human-readable screen name
+  context: string              # Application state machine context
+  
+  # Layout
+  layout: string               # Layout strategy name
+  platform_variants:           # Per-platform layout overrides
+    {Platform}: string
+    
+  # Background (if applicable)
+  background:
+    type: static | conditional
+    # For static:
+    source: string
+    # For conditional:
+    options:
+      - id: string
+        condition: string
+        source: string
+    fallback: string           # ID of the fallback option
+    
+  # Widget tree
+  widgets:
+    - id: string               # Unique widget ID (used in Scenario Specs)
+      type: string             # Widget type (see Widget Types below)
+      label: string            # Display text (may contain {template_vars})
+      guard: string | null     # Visibility condition (null = always visible)
+      guard_effect: string     # hidden | disabled (default: hidden)
+      action:
+        type: string           # navigate | quit_to_desktop | open_url | set_flag | submit | toggle | ...
+        target: string         # Target screen ID, URL, etc.
+      confirm_dialog: bool     # Whether action requires confirmation (default: false)
+      position: int            # Visual order in parent container
+      tooltip: string          # Hover/long-press text
+      
+  # Footer / chrome elements
+  footer:
+    - id: string
+      type: Label | Link
+      content: string
+      position: string         # bottom_left | bottom_center | bottom_right
+      
+  # Contextual overlays (badges, hints, tickers)
+  contextual_elements:
+    - id: string
+      type: string
+      guard: string
+      content: string
+      appears: once | always | {condition}
+      dismiss_action: object
+</code></pre>
+<h3 id="widget-types"><a class="header" href="#widget-types">Widget Types</a></h3>
+<p>Use these standard type names for consistency across all screen specs:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Type</th><th>Description</th><th>Common Properties</th></tr>
+</thead>
+<tbody>
+<tr><td><code>MenuButton</code></td><td>Primary navigation button in a menu list</td><td><code>label</code>, <code>action</code>, <code>guard</code>, <code>position</code></td></tr>
+<tr><td><code>IconButton</code></td><td>Small button with icon, optional label</td><td><code>icon</code>, <code>label</code>, <code>action</code>, <code>tooltip</code></td></tr>
+<tr><td><code>Toggle</code></td><td>On/off switch</td><td><code>label</code>, <code>value_binding</code>, <code>guard</code></td></tr>
+<tr><td><code>Dropdown</code></td><td>Select from a list of options</td><td><code>label</code>, <code>options</code>, <code>value_binding</code>, <code>guard</code></td></tr>
+<tr><td><code>Slider</code></td><td>Numeric range selector</td><td><code>label</code>, <code>min</code>, <code>max</code>, <code>step</code>, <code>value_binding</code></td></tr>
+<tr><td><code>TextInput</code></td><td>Single-line text entry</td><td><code>label</code>, <code>placeholder</code>, <code>value_binding</code>, <code>validation</code></td></tr>
+<tr><td><code>Label</code></td><td>Non-interactive display text</td><td><code>content</code>, <code>position</code></td></tr>
+<tr><td><code>Badge</code></td><td>Small indicator attached to another element</td><td><code>content</code>, <code>guard</code>, <code>attach_to</code></td></tr>
+<tr><td><code>CalloutHint</code></td><td>Dismissible contextual tip (D065)</td><td><code>content</code>, <code>guard</code>, <code>appears</code>, <code>dismiss_action</code></td></tr>
+<tr><td><code>NewsTicker</code></td><td>Scrolling announcement strip</td><td><code>source</code>, <code>guard</code></td></tr>
+<tr><td><code>ProgressBar</code></td><td>Visual progress indicator</td><td><code>value_binding</code>, <code>label</code></td></tr>
+<tr><td><code>TabBar</code></td><td>Horizontal tab navigation</td><td><code>tabs: [{id, label, target_panel}]</code></td></tr>
+<tr><td><code>Panel</code></td><td>Container for grouped widgets</td><td><code>children</code>, <code>layout</code></td></tr>
+<tr><td><code>Table</code></td><td>Structured data display</td><td><code>columns</code>, <code>data_source</code>, <code>row_action</code></td></tr>
+<tr><td><code>Card</code></td><td>Self-contained content block</td><td><code>title</code>, <code>content</code>, <code>actions</code>, <code>guard</code></td></tr>
+<tr><td><code>Wireframe</code></td><td>Placeholder for complex custom rendering</td><td><code>description</code>, <code>rendering_notes</code></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="conditional-navigation"><a class="header" href="#conditional-navigation">Conditional Navigation</a></h3>
+<p>When a button’s target depends on state, use inline conditionals:</p>
+<pre><code class="language-yaml">action:
+  type: navigate
+  target:
+    conditional:
+      - condition: "next_missions.count == 1 &amp;&amp; !pending_branch"
+        target: SCR-BRIEFING
+      - condition: "next_missions.count &gt; 1 || pending_branch"
+        target: SCR-CAMPAIGN-MAP
+</code></pre>
+<h3 id="example-main-menu--abbreviated"><a class="header" href="#example-main-menu--abbreviated">Example (Main Menu — abbreviated)</a></h3>
+<pre><code class="language-yaml">screen:
+  id: SCR-MAIN-MENU
+  title: "Main Menu"
+  context: InMenus
+  layout: center_panel_over_background
+  platform_variants:
+    Phone: bottom_sheet_drawer
+    TV: large_text_d_pad_grid
+
+  background:
+    type: conditional
+    options:
+      - id: shellmap
+        condition: "theme in [Remastered, Modern]"
+        source: "shellmap_ai_battle"
+      - id: static
+        condition: "theme == Classic"
+        source: "theme_title_image"
+      - id: highlights
+        condition: "user_pref == highlights &amp;&amp; highlight_library.count &gt; 0"
+        source: "highlight_library.random()"
+      - id: campaign_scene
+        condition: "user_pref == campaign_scene &amp;&amp; active_campaign != null"
+        source: "campaign.menu_scenes[campaign_state]"
+    fallback: shellmap
+
+  widgets:
+    - id: btn-continue-campaign
+      type: MenuButton
+      label: "► Continue Campaign"
+      guard: "campaign_save_exists"
+      guard_effect: hidden
+      action:
+        type: navigate
+        target:
+          conditional:
+            - condition: "next_missions.count == 1 &amp;&amp; !pending_branch"
+              target: SCR-BRIEFING
+            - condition: "next_missions.count &gt; 1 || pending_branch"
+              target: SCR-CAMPAIGN-MAP
+      position: 1
+
+    - id: btn-campaign
+      type: MenuButton
+      label: "► Campaign"
+      guard: null
+      action: { type: navigate, target: SCR-CAMPAIGN-SELECT }
+      position: 2
+
+    - id: btn-skirmish
+      type: MenuButton
+      label: "► Skirmish"
+      guard: null
+      action: { type: navigate, target: SCR-SKIRMISH-SETUP }
+      position: 3
+
+    - id: btn-multiplayer
+      type: MenuButton
+      label: "► Multiplayer"
+      guard: null
+      action: { type: navigate, target: SCR-MULTIPLAYER-HUB }
+      position: 4
+
+    - id: btn-replays
+      type: MenuButton
+      label: "► Replays"
+      guard: null
+      action: { type: navigate, target: SCR-REPLAY-BROWSER }
+      position: 5
+
+    - id: btn-workshop
+      type: MenuButton
+      label: "► Workshop"
+      guard: null
+      action: { type: navigate, target: SCR-WORKSHOP-BROWSER }
+      position: 6
+
+    - id: btn-settings
+      type: MenuButton
+      label: "► Settings"
+      guard: null
+      action: { type: navigate, target: SCR-SETTINGS }
+      position: 7
+
+    - id: btn-profile
+      type: MenuButton
+      label: "► Profile"
+      guard: null
+      action: { type: navigate, target: SCR-PROFILE }
+      position: 8
+
+    - id: btn-encyclopedia
+      type: MenuButton
+      label: "► Encyclopedia"
+      guard: null
+      action: { type: navigate, target: SCR-ENCYCLOPEDIA }
+      position: 9
+
+    - id: btn-credits
+      type: MenuButton
+      label: "► Credits"
+      guard: null
+      action: { type: navigate, target: SCR-CREDITS }
+      position: 10
+
+    - id: btn-quit
+      type: MenuButton
+      label: "► Quit"
+      guard: null
+      action: { type: quit_to_desktop }
+      confirm_dialog: false
+      position: 11
+
+  footer:
+    - id: lbl-version
+      type: Label
+      content: "Iron Curtain v{engine_version}"
+      position: bottom_left
+    - id: lbl-community
+      type: Link
+      content: "community.ironcurtain.dev"
+      position: bottom_center
+      action: { type: open_url, url: "https://community.ironcurtain.dev" }
+    - id: lbl-mod-version
+      type: Label
+      content: "{game_module_name} {game_module_version}"
+      position: bottom_right
+
+  contextual_elements:
+    - id: badge-mod-profile
+      type: Badge
+      guard: "active_mod_profile != default"
+      content: "{active_mod_profile.name}"
+      appears: always
+    - id: ticker-news
+      type: NewsTicker
+      guard: "theme == Modern"
+      content: "tracking_server.announcements"
+      appears: always
+    - id: hint-tutorial
+      type: CalloutHint
+      guard: "is_new_player &amp;&amp; !tutorial_hint_dismissed"
+      content: "New? Try the tutorial → Commander School"
+      appears: once
+      dismiss_action: { type: set_flag, flag: tutorial_hint_dismissed }
+</code></pre>
+<hr>
+<h2 id="layer-3--scenario-spec"><a class="header" href="#layer-3--scenario-spec">Layer 3 — Scenario Spec</a></h2>
+<p>Scenarios are <strong>testable interaction contracts</strong> in Given/When/Then format. They describe every meaningful interaction path through a feature or screen. An LLM implementing the feature should be able to use scenarios as acceptance criteria.</p>
+<h3 id="schema-2"><a class="header" href="#schema-2">Schema</a></h3>
+<pre><code class="language-yaml">scenarios:
+  - id: string                 # Unique ID: SCEN-{SCREEN}-{DESCRIPTION}
+    title: string              # Human-readable scenario name
+    feature_ref: string        # F-* ID from Layer 1
+    screen_ref: string         # SCR-* ID from Layer 2
+    
+    given:                     # Preconditions (game state)
+      - string
+    when:                      # User actions
+      - action: string         # click | hover | press_key | drag | long_press | swipe | ...
+        target: string         # Widget ID from Layer 2 (btn-*, lbl-*, etc.)
+        value: string          # Optional: input value, key name, etc.
+    then:                      # Expected outcomes
+      - string                 # State changes, visual changes, navigation
+      # Or structured:
+      - navigate_to: string    # SCR-* target
+      - state_change: string   # State mutation description
+      - visual: string         # Visual feedback description
+    
+    # Optional: explicitly excluded behaviors for this scenario
+    never:
+      - string                 # Things that must NOT happen in this scenario
+</code></pre>
+<h3 id="scenario-coverage-guidelines"><a class="header" href="#scenario-coverage-guidelines">Scenario Coverage Guidelines</a></h3>
+<p>For each feature, write scenarios covering:</p>
+<ol>
+<li><strong>Happy path</strong> — the default, most common interaction</li>
+<li><strong>Guard-false path</strong> — what happens when a guard condition is not met</li>
+<li><strong>Each behavioral branch</strong> — one scenario per entry in <code>behavior:</code> from Layer 1</li>
+<li><strong>Edge cases</strong> — empty states, first-time use, error recovery</li>
+<li><strong>Platform-specific paths</strong> — if the interaction differs on Phone/TV/Deck</li>
+</ol>
+<p>The <code>never</code> field is optional but powerful for critical scenarios where wrong behavior would be dangerous (e.g., “never auto-starts a ranked match without ready-check”).</p>
+<h3 id="example-main-menu--continue-campaign-scenarios"><a class="header" href="#example-main-menu--continue-campaign-scenarios">Example (Main Menu — Continue Campaign scenarios)</a></h3>
+<pre><code class="language-yaml">scenarios:
+  - id: SCEN-MAIN-MENU-CONTINUE-SINGLE
+    title: "Continue Campaign — single next mission"
+    feature_ref: F-MAIN-MENU-CONTINUE
+    screen_ref: SCR-MAIN-MENU
+    given:
+      - "Player has an active campaign save"
+      - "Campaign state has exactly one available next mission"
+      - "No urgent pending branch decision exists"
+    when:
+      - action: click
+        target: btn-continue-campaign
+    then:
+      - navigate_to: SCR-BRIEFING
+      - "Briefing loads for the single available next mission"
+      - "No campaign map is shown"
+    never:
+      - "Campaign map is not displayed when only one mission is available"
+      - "Player is not asked to choose a mission"
+
+  - id: SCEN-MAIN-MENU-CONTINUE-BRANCH
+    title: "Continue Campaign — multiple paths available"
+    feature_ref: F-MAIN-MENU-CONTINUE
+    screen_ref: SCR-MAIN-MENU
+    given:
+      - "Player has an active campaign save"
+      - "Campaign state has multiple available missions OR an urgent pending branch"
+    when:
+      - action: click
+        target: btn-continue-campaign
+    then:
+      - navigate_to: SCR-CAMPAIGN-MAP
+      - "Campaign map opens at current progression point"
+      - "Available mission nodes are highlighted for selection"
+    never:
+      - "A mission is not auto-selected for the player"
+      - "The game does not launch directly into any mission"
+
+  - id: SCEN-MAIN-MENU-NO-CAMPAIGN-SAVE
+    title: "Continue Campaign button hidden without save"
+    feature_ref: F-MAIN-MENU-CONTINUE
+    screen_ref: SCR-MAIN-MENU
+    given:
+      - "Player has no active campaign save"
+    then:
+      - "btn-continue-campaign is not rendered"
+      - "First visible button in the menu is btn-campaign (position 2)"
+    never:
+      - "Continue Campaign button is not shown greyed out"
+      - "No error message or empty state is displayed for missing saves"
+
+  - id: SCEN-MAIN-MENU-QUIT
+    title: "Quit exits immediately without confirmation"
+    feature_ref: F-MAIN-MENU-QUIT
+    screen_ref: SCR-MAIN-MENU
+    given:
+      - "Player is on the main menu"
+    when:
+      - action: click
+        target: btn-quit
+    then:
+      - "Application exits to desktop immediately"
+    never:
+      - "No 'Are you sure?' confirmation dialog is shown"
+      - "No save prompt appears (campaign auto-saves at safe points, not on quit)"
+</code></pre>
+<h3 id="example-no-dead-end-guidance-panel"><a class="header" href="#example-no-dead-end-guidance-panel">Example (No-Dead-End Guidance Panel)</a></h3>
+<p>This pattern applies to any button whose feature requires a prerequisite that may not be met (UX Principle 3):</p>
+<pre><code class="language-yaml">feature:
+  id: F-CAMPAIGN-GENERATIVE
+  title: "Generative Campaign (New)"
+  decision_refs: [D016, D047]
+  milestone: M10
+  priority: P-Optional
+  state_machine_context: InMenus
+  entry_point: "Main Menu → Campaign → Generative Campaign"
+  platforms: [Desktop, Tablet, Phone, Deck, TV, Browser]
+
+  guards:
+    - condition: "llm_provider_configured == true"
+      effect: visible_and_enabled
+    - condition: "llm_provider_configured == false"
+      effect: visible_and_enabled  # NOT greyed out — opens guidance panel
+
+  behavior:
+    llm_ready: "Opens generative campaign setup screen"
+    llm_not_configured: "Opens guidance panel with configuration links"
+
+  non_goals:
+    - "Button is never greyed out or hidden — always clickable (Principle 3)"
+    - "Does not silently fail if no LLM is configured"
+    - "Does not auto-configure an LLM provider"
+    - "Guidance panel does not use upsell language"
+
+scenarios:
+  - id: SCEN-GENERATIVE-CAMPAIGN-READY
+    title: "Generative Campaign with LLM configured"
+    feature_ref: F-CAMPAIGN-GENERATIVE
+    screen_ref: SCR-CAMPAIGN-SELECT
+    given:
+      - "Player has at least one LLM provider configured"
+    when:
+      - action: click
+        target: btn-generative-campaign
+    then:
+      - navigate_to: SCR-GENERATIVE-SETUP
+      - "Setup screen shows prompt input, campaign options"
+
+  - id: SCEN-GENERATIVE-CAMPAIGN-NO-LLM
+    title: "Generative Campaign without LLM — guidance panel"
+    feature_ref: F-CAMPAIGN-GENERATIVE
+    screen_ref: SCR-CAMPAIGN-SELECT
+    given:
+      - "Player has no LLM provider configured"
+    when:
+      - action: click
+        target: btn-generative-campaign
+    then:
+      - "Guidance panel appears explaining what's needed"
+      - "Panel includes [Enable Built-in AI →] button"
+      - "Panel includes [Connect Provider →] button"
+      - "Panel includes [Browse Workshop →] link for community configs"
+    never:
+      - "Button is not greyed out"
+      - "No error toast or modal error dialog appears"
+      - "No 'you need to upgrade' or upsell language is used"
+</code></pre>
+<hr>
+<h2 id="integration-with-existing-ic-docs"><a class="header" href="#integration-with-existing-ic-docs">Integration With Existing IC Docs</a></h2>
+<h3 id="relationship-to-existing-formats"><a class="header" href="#relationship-to-existing-formats">Relationship to Existing Formats</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>IC Convention</th><th>Spec Layer</th><th>Relationship</th></tr>
+</thead>
+<tbody>
+<tr><td>ASCII wireframe</td><td>Layer 2</td><td><strong>Kept.</strong> Wireframe stays for human readability. Widget tree YAML is the canonical machine-parseable source</td></tr>
+<tr><td>Button description table</td><td>Layer 2</td><td><strong>Replaced</strong> by <code>widgets:</code> entries with typed fields</td></tr>
+<tr><td>Decision capsule</td><td>—</td><td><strong>Complementary.</strong> Capsules define <em>policy</em>; specs define <em>visible behavior</em></td></tr>
+<tr><td>Navigation map</td><td>Layer 3</td><td><strong>Complementary.</strong> Navigation map shows the tree; scenarios show the <em>interaction contracts</em> at each node</td></tr>
+<tr><td>Implementation ticket template</td><td>—</td><td><strong>Downstream.</strong> Tickets reference Feature and Scenario IDs for traceability</td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="where-specs-live"><a class="header" href="#where-specs-live">Where Specs Live</a></h3>
+<p>Specs are embedded as YAML code blocks in the existing <code>player-flow/*.md</code> files. They live alongside the prose and wireframes, not in separate files. This keeps all information about a screen in one place.</p>
+<p><strong>Recommended page structure:</strong></p>
+<pre><code class="language-markdown">## Screen Name
+
+### Layout
+
+(ASCII wireframe — preserved for human readability)
+
+### Feature Spec
+
+(Layer 1 YAML block)
+
+### Screen Spec
+
+(Layer 2 YAML block)
+
+### Scenarios
+
+(Layer 3 YAML blocks)
+
+### Design Rules / Cross-References
+
+(Prose — preserved for context, rationale, edge cases)
+</code></pre>
+<h3 id="non-goals--granularity-guidelines"><a class="header" href="#non-goals--granularity-guidelines">Non-Goals — Granularity Guidelines</a></h3>
+<p>Write non-goals at the <strong>feature level</strong> (Layer 1), not per-widget. For complex screens, group non-goals by feature area:</p>
+<ul>
+<li><strong>Feature-level non-goals</strong> (always): “Does not start a new campaign”, “Does not affect ranked eligibility”</li>
+<li><strong>Interaction-level non-goals</strong> (in scenarios, <code>never:</code> field): “Does not show confirmation dialog”, “Does not auto-select”</li>
+<li><strong>Screen-level non-goals</strong> (only if the entire screen has easily confused scope): “This screen does not handle mod installation — that’s SCR-WORKSHOP”</li>
+</ul>
+<p>Avoid per-widget non-goals like “btn-quit does not save the game” — that belongs in the scenario’s <code>never:</code> field instead.</p>
+<h3 id="incremental-adoption"><a class="header" href="#incremental-adoption">Incremental Adoption</a></h3>
+<p>This template is designed for incremental adoption:</p>
+<ol>
+<li><strong>New features</strong> — use all three layers from day one</li>
+<li><strong>Existing pages</strong> — add specs during the next edit pass for that page</li>
+<li><strong>Pilot</strong> — start with <code>main-menu.md</code> as the reference conversion</li>
+</ol>
+<p>No existing page needs to be rewritten. When editing a page for any reason, add specs for the section being edited.</p>
+<hr>
+<h2 id="anti-hallucination-checklist"><a class="header" href="#anti-hallucination-checklist">Anti-Hallucination Checklist</a></h2>
+<p>When reviewing a spec (or writing one), verify:</p>
+<ul>
+<li><input disabled="" type="checkbox"> Every guard condition is explicit — no implicit “obviously visible” assumptions</li>
+<li><input disabled="" type="checkbox"> Every behavioral branch in Layer 1 has at least one scenario in Layer 3</li>
+<li><input disabled="" type="checkbox"> Every conditional navigation uses the structured <code>conditional:</code> format, not prose</li>
+<li><input disabled="" type="checkbox"> Non-goals cover the most likely LLM misinterpretations (confirmation dialogs, auto-selection, hidden vs. disabled)</li>
+<li><input disabled="" type="checkbox"> Widget IDs are unique across the entire screen spec</li>
+<li><input disabled="" type="checkbox"> Platform variants are noted where they diverge from Desktop default</li>
+<li><input disabled="" type="checkbox"> The <code>never:</code> field in critical scenarios catches dangerous false-positive behaviors</li>
+<li><input disabled="" type="checkbox"> Guard effects are explicit: <code>hidden</code> vs. <code>disabled</code> (never ambiguous “unavailable”)</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../tracking/implementation-ticket-template.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../tracking/future-language-audit.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../tracking/implementation-ticket-template.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../tracking/future-language-audit.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-c2a407aa.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>

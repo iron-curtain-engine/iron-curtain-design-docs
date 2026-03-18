@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-709f880f.js";
+            window.path_to_searchindex_js = "../searchindex-5e4d7c2c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-a7298cc1.js"></script>
+        <script src="../toc-97c3ad2d.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -203,7 +203,7 @@
 <li><strong>Classify priority</strong> (<code>P-Core</code>, <code>P-Differentiator</code>, <code>P-Creator</code>, <code>P-Scale</code>, <code>P-Optional</code>).</li>
 <li><strong>Assign primary milestone</strong> (<code>M0–M11</code>) using dependency-first sequencing (not novelty/recency).</li>
 <li><strong>Record dependency edges</strong> in <code>tracking/milestone-dependency-map.md</code> (<code>hard</code>, <code>soft</code>, <code>validation</code>, <code>policy</code>, <code>integration</code>).</li>
-<li><strong>Map canonical docs</strong> (decision(s), roadmap phase, UX/security/community docs if affected).</li>
+<li><strong>Map canonical docs</strong> (decision(s), roadmap phase, UX/security/community docs if affected). If the feature changes a player-facing screen or dialog, also add or update the relevant <code>player-flow/*.md</code> page and its <code>Feature Spec</code> / <code>Screen Spec</code> / <code>Scenario Spec</code> blocks per <code>tracking/feature-scenario-spec-template.md</code> when that surface is being defined or revised.</li>
 <li><strong>Update tracker representation</strong>:
 <ul>
 <li>Dxxx row (if decisioned), and/or</li>
@@ -220,6 +220,7 @@
 <li><a href="../08-ROADMAP.html"><code>08-ROADMAP.md</code></a> — canonical phase roadmap</li>
 <li><a href="../tracking/milestone-dependency-map.html"><code>tracking/milestone-dependency-map.md</code></a> — detailed milestone DAG and feature cluster dependencies</li>
 <li><a href="../tracking/project-tracker-schema.html"><code>tracking/project-tracker-schema.md</code></a> — optional automation companion (tracker field meanings + schema/YAML reference)</li>
+<li><a href="../tracking/feature-scenario-spec-template.html"><code>tracking/feature-scenario-spec-template.md</code></a> — three-layer UI/spec format for player-facing screens and interaction contracts</li>
 <li><a href="../tracking/future-language-audit.html"><code>tracking/future-language-audit.md</code></a> — canonical-doc future/deferred wording classification and remediation queue</li>
 <li><a href="../tracking/deferral-wording-patterns.html"><code>tracking/deferral-wording-patterns.md</code></a> — replacement wording patterns for planned deferrals / North Star claims / proposal-only notes</li>
 <li><a href="../tracking/external-code-project-bootstrap.html"><code>tracking/external-code-project-bootstrap.md</code></a> — bootstrap procedure for external implementation repos (design alignment + escalation workflow)</li>

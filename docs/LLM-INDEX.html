@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-709f880f.js";
+            window.path_to_searchindex_js = "searchindex-5e4d7c2c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-a7298cc1.js"></script>
+        <script src="toc-97c3ad2d.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -273,6 +273,7 @@
 <tr><td>Testing strategy, CI/CD pipeline, automated verification</td><td><code>src/tracking/testing-strategy.md</code></td><td><code>src/06-SECURITY.md</code>, <code>src/10-PERFORMANCE.md</code>, <code>src/16-CODING-STANDARDS.md</code></td><td>Use for “how is X tested?”, CI gate definitions, fuzz targets, performance benchmarks, release criteria</td></tr>
 <tr><td>Type-safety invariants, newtype policy, deterministic collections</td><td><code>src/architecture/type-safety.md</code>, <code>src/16-CODING-STANDARDS.md</code> (§ Type-Safety Coding Standards)</td><td><code>src/06-SECURITY.md</code></td><td>Use for “what types enforce X?”, clippy config, code review checklists for type safety</td></tr>
 <tr><td>Future/deferral wording audit / “is this planned or vague?”</td><td><code>src/tracking/future-language-audit.md</code>, <code>src/tracking/deferral-wording-patterns.md</code></td><td><code>src/18-PROJECT-TRACKER.md</code>, <code>src/14-METHODOLOGY.md</code>, <code>AGENTS.md</code></td><td>Use for classifying future-facing wording and converting vague prose into planned deferrals / North Star claims</td></tr>
+<tr><td>Feature / screen / scenario specs for UI implementation</td><td><code>src/tracking/feature-scenario-spec-template.md</code></td><td><code>src/17-PLAYER-FLOW.md</code>, <code>src/player-flow/*.md</code>, <code>src/tracking/implementation-ticket-template.md</code></td><td>Three-layer LLM-proof spec format: Feature Spec (guards, behavior, non-goals), Screen Spec (typed widget tree), Scenario Spec (Given/When/Then contracts). Use when implementing any UI screen or feature to get exact widget IDs, guard conditions, and testable acceptance criteria</td></tr>
 </tbody>
 </table>
 </div>
@@ -305,7 +306,8 @@
 <li>Prefer <code>src/tracking/future-language-audit.md</code> + <code>src/tracking/deferral-wording-patterns.md</code> for reviews of vague future wording, deferral placement, and North Star claim formatting</li>
 <li>Prefer <code>src/tracking/testing-strategy.md</code> for CI/CD pipeline definitions, test tier assignments, fuzz targets, performance benchmarks, and release criteria</li>
 <li>Prefer <code>src/architecture/type-safety.md</code> + <code>src/16-CODING-STANDARDS.md</code> § Type-Safety Coding Standards for newtype policy, deterministic collection bans, typestate patterns, and clippy configuration</li>
-<li>Prefer <code>src/player-flow/*.md</code> (individual screen files) for UI layout / screen wording questions — use the index in <code>17-PLAYER-FLOW.md</code> to route to the right file</li>
+<li>Prefer <code>src/tracking/feature-scenario-spec-template.md</code> when implementing a UI screen or feature — the three-layer spec (Feature/Screen/Scenario) provides exact widget IDs, guard conditions, behavioral branches, non-goals, and Given/When/Then acceptance criteria that eliminate ambiguity</li>
+<li>Prefer <code>src/player-flow/*.md</code> (individual screen files) for UI layout / screen wording questions — use the index in <code>17-PLAYER-FLOW.md</code> to route to the right file. If the page includes Feature/Screen/Scenario spec blocks, those are canonical for implementation</li>
 <li>Prefer <code>08-ROADMAP.md</code> only for “when / phase” questions</li>
 <li>Prefer research docs only when the question is “why this prior art?” or “what did we learn from X?”</li>
 </ul>

@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-709f880f.js";
+            window.path_to_searchindex_js = "../searchindex-5e4d7c2c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-a7298cc1.js"></script>
+        <script src="../toc-97c3ad2d.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -215,6 +215,7 @@
 <li>a <strong>milestone</strong> (<code>M0–M11</code>)</li>
 <li>a <strong>priority</strong> (<code>P-Core</code>, <code>P-Differentiator</code>, <code>P-Creator</code>, <code>P-Scale</code>, <code>P-Optional</code>)</li>
 <li>dependency references (<code>G*</code>, <code>Dxxx</code>, <code>Pxxx</code>, cluster IDs)</li>
+<li>related <strong>Feature / Screen / Scenario spec refs</strong> for UI or player-facing work (<code>F-*</code>, <code>SCR-*</code>, <code>SCEN-*</code>) or <code>—</code> when not applicable</li>
 <li>a verification/evidence plan</li>
 </ul>
 <p>If the work is not mapped in the overlay yet, it is a <strong>proposal</strong> and should not be tracked as scheduled implementation work.</p>
@@ -227,6 +228,9 @@
 - `Primary Ladder Step:` `G#` (or `—` if not yet decomposed)
 - `Priority:` `P-*`
 - `Feature Cluster(s):` `M#.X.*`
+- `Feature Spec Refs:` `F-*` (or `—`)
+- `Screen Spec Refs:` `SCR-*` (or `—`)
+- `Scenario Refs:` `SCEN-*` (or `—`)
 - `Related Decisions:` `Dxxx`, `Dyyy`
 - `Pending Decision Gates:` `Pxxx` (or `—`)
 
@@ -294,6 +298,9 @@ One paragraph: what this ticket implements and what milestone progress it unlock
 - `Primary Ladder Step:` `G7`
 - `Priority:` `P-Core`
 - `Feature Cluster(s):` `M2.CORE.PATH_SPATIAL`
+- `Feature Spec Refs:` `—`
+- `Screen Spec Refs:` `—`
+- `Scenario Refs:` `—`
 - `Related Decisions:` `D013`, `D045`, `D015`, `D041`
 - `Pending Decision Gates:` `P002`
 
@@ -375,6 +382,7 @@ Wire the selected `Pathfinder` and `SpatialIndex` implementations into determini
 <h2 id="common-failure-modes-avoid"><a class="header" href="#common-failure-modes-avoid">Common Failure Modes (Avoid)</a></h2>
 <ul>
 <li>Ticket title says “implement X” but does not name a <code>G*</code> step or milestone</li>
+<li>UI/player-flow ticket references a screen page but not the specific <code>F-*</code> / <code>SCR-*</code> / <code>SCEN-*</code> contracts it implements</li>
 <li>No non-goals, so the ticket silently expands into later-milestone work</li>
 <li>“Done” marked without evidence artifact</li>
 <li>Implementing a later-milestone feature because it was “nearby” in code</li>
@@ -389,7 +397,7 @@ Wire the selected `Pathfinder` and `SpatialIndex` implementations into determini
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../tracking/future-language-audit.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../tracking/feature-scenario-spec-template.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -403,7 +411,7 @@ Wire the selected `Pathfinder` and `SpatialIndex` implementations into determini
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../tracking/future-language-audit.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../tracking/feature-scenario-spec-template.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

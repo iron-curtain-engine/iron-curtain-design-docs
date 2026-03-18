@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-709f880f.js";
+            window.path_to_searchindex_js = "searchindex-5e4d7c2c.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-a7298cc1.js"></script>
+        <script src="toc-97c3ad2d.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -220,7 +220,7 @@
 </table>
 </div>
 <h3 id="3-no-dead-end-buttons"><a class="header" href="#3-no-dead-end-buttons">3. No Dead-End Buttons</a></h3>
-<p>Every button is always clickable (D033). If a feature requires a download, configuration, or prerequisite, the button opens a guidance panel explaining what’s needed and offering a direct path to resolve it — never a greyed-out icon with no explanation. Examples:</p>
+<p>Every rendered button is always clickable (D033). If a feature requires a download, configuration, or prerequisite, the button opens a guidance panel explaining what’s needed and offering a direct path to resolve it — never a greyed-out icon with no explanation. Context-dependent actions with no meaningful target (for example, Continue Campaign when no active campaign save exists) may be hidden rather than shown disabled; what we never ship is a visible dead-end control. Examples:</p>
 <ul>
 <li>“New Generative Campaign” without an LLM configured → guidance panel with [Configure LLM Provider →] and [Browse Workshop →] links</li>
 <li>“Campaign” without campaign content installed → guidance panel with [Install Campaign Core (Recommended) →] and [Install Full Campaign (Music + Cutscenes) →] and [Manage Content →]</li>
@@ -258,6 +258,15 @@
 </ul>
 <h3 id="8-platform-responsive-layout"><a class="header" href="#8-platform-responsive-layout">8. Platform-Responsive Layout</a></h3>
 <p>The UI adapts to the device, not the other way around. <code>ScreenClass</code> (Phone / Tablet / Desktop / TV) drives layout decisions. <code>InputCapabilities</code> (touch, mouse+keyboard, gamepad) drives interaction patterns. The flow chart in this document describes the Desktop experience; platform adaptations are noted where they diverge.</p>
+<h3 id="specification-language-for-ui-screens"><a class="header" href="#specification-language-for-ui-screens">Specification Language for UI Screens</a></h3>
+<p>These principles are enforced through a <strong>three-layer specification format</strong> that eliminates ambiguity when describing screens to human developers and AI agents:</p>
+<ul>
+<li><strong>Feature Spec</strong> — what a feature does (guards, behavior, non-goals as anti-hallucination anchors)</li>
+<li><strong>Screen Spec</strong> — typed widget tree (IDs, types, guards, actions, platform variants)</li>
+<li><strong>Scenario Spec</strong> — testable Given/When/Then interaction contracts</li>
+</ul>
+<p>See <a href="tracking/feature-scenario-spec-template.html"><code>tracking/feature-scenario-spec-template.md</code></a> for the full schema, widget type catalog, and annotated examples.
+When a page contains these YAML blocks, they are the canonical implementation contract for that screen; the surrounding prose and ASCII wireframe remain the human-readable explanation.</p>
 <hr>
 <h2 id="application-state-machine"><a class="header" href="#application-state-machine">Application State Machine</a></h2>
 <p>The game transitions through a fixed set of states (see <code>02-ARCHITECTURE.md</code> § “Game Lifecycle State Machine”):</p>
