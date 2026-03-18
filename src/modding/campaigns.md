@@ -227,6 +227,8 @@ Recommended first-party policy:
 - **Normal mode:** free saving/reloading before or after decisions
 - **Ironman / commit modes:** autosave immediately after a tactical dilemma selection or other branch-committing decision, and treat that branch as locked
 
+A campaign may also mark a small number of optional spotlight operations as explicit **`commit` missions**. These inherit the same autosave-and-lock behavior even when the wider campaign is not running in Ironman.
+
 The "world moves without you" rule is about authored consequences and opportunity cost, not an anti-save-scum guarantee by itself.
 
 ### Campaign Validation and Coverage
@@ -848,8 +850,12 @@ Every optional operation should answer five concrete questions:
 - **Intel Ops** — reveal routes, access codes, shroud, patrol schedules, composition, branch availability
 - **Operation-Reveal Ops** — expose hidden sites, convoys, labs, safe houses, assault windows, or regional follow-up branches that become new selectable mission cards
 - **Tech Ops** — unlock prototypes, support powers, expansion-pack units, or equipment pools
-- **Denial Ops** — prevent enemy deployment, delay superweapons, disable defenses, close enemy branches
+- **Denial Ops** — prevent enemy deployment, delay strategic capabilities, disable defenses, disrupt production lines, or close enemy branches
+- **Program-Interference Ops** — hit one stage of an enemy capability program (materials, prototype, training, doctrine rollout, test, deployment, sustainment) to deny, delay, degrade, corrupt, capture, or expose it
 - **Faction Favor Ops** — gain resistance cells, defectors, scientists, naval contacts, partisans, or local guides
+- **Third-Party Influence Ops** — win, protect, arm, evacuate, or keep hold of local actors so they provide staging rights, FOBs, support packages, route access, or local knowledge instead of helping the enemy
+- **Prevention Ops** — stop a collaborator network, coerced militia, captured depot, or compromised safehouse from turning into a later enemy advantage
+- **Endurance-Shaping Ops** — attack or preserve supply corridors, depots, bridges, power, and relief routes so later missions change how long each side can sustain pressure
 - **Rescue / Recovery Ops** — retrieve captured heroes, reduce compromise level, recover stolen prototypes, save wounded rosters
 
 **Reward design principles:**
@@ -862,6 +868,11 @@ Every optional operation should answer five concrete questions:
 6. **Quantify anything that changes difficulty.** Prefer "first reinforcement wave delayed 180 seconds," "2 Super Tanks added to M14," or "40% of the map revealed at mission start" over "better intel" or "harder defense."
 7. **Differentiate attempt-failure from expiration.** A failed SpecOps raid and an ignored operation that expired are not always the same state; the authored card and briefing should say which consequence belongs to which.
 8. **Let SpecOps reveal commander work.** An intel raid, sabotage, or defector extraction can reveal a new commander operation card such as an interception, assault window, convoy ambush, or theater branch.
+9. **Treat third-party actors as persistent theater assets.** A won militia should grant a real start location, FOB, safe route, reinforcements, or support package; a lost militia should create a concrete enemy advantage, not just remove a possible buff.
+10. **Let prevention matter.** Some optional operations exist primarily to stop a bad future state. "No rear-area uprising in M14" or "enemy does not get urban guides next mission" is a valid high-value reward.
+11. **Endurance missions should culminate, not merely count down.** When logistics and time pressure are the fantasy, use operations to lengthen or shorten each side's sustainment window; when a clock hits zero, production stall, reinforcement failure, withdrawal, or morale break is often a better consequence than total annihilation.
+12. **Capability timing must be authored, not emergent chaos.** If optional operations can make MiGs, satellite recon, heavy armor, or advanced naval assets arrive earlier or later, the campaign must define the baseline timing, the allowed shift window, and the exact early/on-time/late mission variants that consume that timing.
+13. **Reward intel chains, not just isolated raids.** When one operation reveals a follow-up operation (e.g., an intel raid exposes a prototype lab, which becomes a new Tech Theft card), completing the chain in sequence should grant a **compound chain bonus** — better reward quality, an exclusive branch, or a unique asset that neither operation alone would produce. This rewards investigative depth over cherry-picking the easiest ops and makes "follow the thread" a satisfying strategic pattern.
 
 #### Commander Alternatives Must Quantify Their Trade-Offs
 
@@ -889,7 +900,7 @@ Good commander-alternative descriptions answer four things:
 
 ```yaml
 # Optional operation outcome → main campaign effect
-# All implemented via existing D021 state_effects + flags + Lua
+# All implemented via existing D021 state_effects + flags + asset-ledger entries + Lua
 
 # ── SpecOps / direct tactical advantage ────────────────────────────
 optional_operation_rewards:
@@ -956,11 +967,146 @@ optional_operation_rewards:
     main_mission_effect: "Enemy cannot field Super Tanks in the final act"
     briefing_line: "The prototype line is in ruins. Moscow will not be deploying Super Tanks."
 
+  falsify_nuclear_test:
+    flags:
+      soviet_nuke_program_unstable: true
+    main_mission_effect: "Enemy reaches deployment later, but the first strike window is unreliable or aborts outright"
+    briefing_line: "Their test data is poisoned. They may think the device is ready. It isn't."
+
+  sabotage_iron_curtain_calibration:
+    flags:
+      iron_curtain_calibration_corrupted: true
+    main_mission_effect: "Enemy can still trigger the system, but the first pulse may miss, underperform, or backfire"
+    briefing_line: "The emitters are out of sync. If they fire that machine, it may hurt them more than us."
+
+  sabotage_heavy_tank_tooling:
+    flags:
+      enemy_heavy_armor_quality_reduced: true
+    main_mission_effect: "Enemy still fields heavy armor, but it arrives later, in lower numbers, or with weaker veterancy and repair rate"
+    briefing_line: "Their heavy-tank line is still running, but the workmanship is poor and the output is behind schedule."
+
+  raid_winterization_depot:
+    flags:
+      enemy_winter_package_denied: true
+    main_mission_effect: "Enemy vehicles lose their cold-weather edge in the next snow mission and reinforcement timing slips"
+    briefing_line: "Their winter gear never reached the front. The cold will hurt them as much as us."
+
+  capture_radar_cipher_team:
+    flags:
+      enemy_air_coordination_degraded: true
+    main_mission_effect: "Enemy air and artillery coordination becomes slower, less accurate, or partially blind in the next act"
+    briefing_line: "Their cipher team is gone. Expect confusion between their spotters and strike wings."
+
+  accelerate_mig_readiness:
+    flags:
+      soviet_mig_timing: early
+    main_mission_effect: "Enemy MiGs appear 1 phase earlier than the baseline campaign schedule in authored consumer missions"
+    briefing_line: "Their air arm is ahead of schedule. Expect MiGs sooner than command predicted."
+
+  delay_advanced_naval_group:
+    flags:
+      soviet_naval_group_timing: delayed
+    main_mission_effect: "Enemy cruiser / submarine package arrives 1 phase late or understrength in authored naval consumer missions"
+    briefing_line: "The drydocks are damaged and the fuel trains are late. Their fleet won't be ready on time."
+
+  secure_satellite_uplink:
+    flags:
+      allied_satellite_recon_timing: early
+    main_mission_effect: "Player reconnaissance package comes online 1 phase early in authored consumer missions"
+    briefing_line: "The uplink is live ahead of schedule. Strategic reconnaissance is now in play."
+
   unlock_aftermath_prototype:
     flags:
       chrono_tank_salvaged: true
     main_mission_effect: "Chrono Tank prototype added to equipment pool for Act 3"
     briefing_line: "Our engineers restored one functional Chrono Tank from the Italian salvage yard."
+
+# ── Third-party support and blowback ───────────────────────────────
+  arm_the_resistance:
+    flags:
+      greece_resistance_active: true
+      greece_forward_lz_unlocked: true
+    main_mission_effect: "Next theater mission starts from a forward village with 2 militia squads and a live repair depot"
+    briefing_line: "The resistance has opened a landing zone inland. You'll hit the next target from much closer."
+
+  rescue_partisan_engineers:
+    flags:
+      partisan_engineers_active: true
+    main_mission_effect: "A friendly engineer team repairs one bridge and prebuilds one power plant in the next act"
+    briefing_line: "The engineers you pulled out are already at work on our route east."
+
+  ignore_city_plea:
+    flags:
+      belgrade_militia_coerced: true
+    main_mission_effect: "Enemy gains urban guides, one ambush marker, and a rear-area FOB in the next city mission"
+    briefing_line: "We left the city to its fate. The occupiers now have local hands helping them."
+
+# ── Endurance shaping / operational sustainment ────────────────────
+  secure_supply_corridor:
+    flags:
+      allied_endurance_bonus_seconds: 180
+    main_mission_effect: "Your next bridgehead hold lasts 180 seconds longer before supply exhaustion sets in"
+    briefing_line: "The corridor is open. Your forces can hold the line longer than expected."
+
+  destroy_fuel_reserve:
+    flags:
+      enemy_endurance_penalty_seconds: 240
+    main_mission_effect: "Enemy offensive culminates 240 seconds earlier in the next endurance mission"
+    briefing_line: "Their fuel reserve went up in flames. They cannot keep this tempo for long."
+
+  # Training cadre acquisition — the asset required by support-operative promotion (see §Support Operatives)
+  establish_specops_cadre:
+    flags:
+      allied_specops_training_cadre: true
+    main_mission_effect: "Unlocks elite black-ops team promotion pipeline; surviving veteran infantry can now be promoted to SpecOps detachments between missions"
+    briefing_line: "The commando school is running. Our best soldiers can now train for special operations."
+
+# ── Soft-timer endurance mission example ───────────────────────────
+# A bridgehead hold where supply depletion is the clock.
+# Earlier optional ops shape how long each side can sustain pressure.
+#
+#   mission:
+#     id: allied_11_bridgehead
+#     type: endurance
+#
+#     endurance_system:
+#       player_sustainment:
+#         base_ticks: 12000              # 10 minutes before supply exhaustion
+#         bonus_from_flags:
+#           allied_endurance_bonus_seconds: ticks  # add seconds from §secure_supply_corridor
+#         on_exhaustion:
+#           effect: production_stall     # refineries stop, repair halts, no new units
+#           ui_warning_at_remaining: 2400  # 2-minute warning
+#       enemy_sustainment:
+#         base_ticks: 14400              # enemy lasts 12 minutes baseline
+#         penalty_from_flags:
+#           enemy_endurance_penalty_seconds: ticks  # subtract from §destroy_fuel_reserve
+#         on_exhaustion:
+#           effect: offensive_culmination  # enemy stops attacking, retreats to defensive positions
+#           briefing_hint: "Their fuel ran out. Expect their advance to stall."
+#
+#     objectives:
+#       primary:
+#         - id: hold_bridgehead
+#           description: "Hold the crossing until the enemy offensive culminates"
+#           completion: enemy_exhausted
+#       secondary:
+#         - id: capture_forward_depot
+#           description: "Seize the enemy depot to extend your own sustainment"
+#           reward:
+#             player_sustainment_bonus_ticks: 3600  # +3 minutes
+#         - id: destroy_fuel_train
+#           description: "Destroy the incoming fuel convoy to shorten the enemy window"
+#           reward:
+#             enemy_sustainment_penalty_ticks: 2400  # -2 minutes
+#
+#     outcomes:
+#       victory_held:
+#         condition: "bridgehead_intact AND enemy_exhausted"
+#         description: "The enemy ran out of steam. The bridgehead is secure."
+#       defeat_overrun:
+#         condition: "bridgehead_destroyed"
+#         description: "Our supply lines collapsed first."
 
 # ── Compound bonuses (multiple successful operations stack) ────────
   # If both spy network AND radar destroyed:
@@ -1323,7 +1469,7 @@ pub struct CampaignAssetLedgerEntry {
     pub owner: AssetOwner,
     pub state: AssetState,
     pub quantity: u32,
-    pub quality: Option<String>,      // e.g. full / damaged / unstable / reduced_range
+    pub quality: Option<String>,      // campaign-authored quality tag; see §Recommended Quality Vocabulary below
     pub unlocked_in_phase: Option<String>,
     pub consumed_by: Vec<MissionId>,
 }
@@ -1332,6 +1478,7 @@ pub struct CampaignAssetLedgerEntry {
 pub enum AssetOwner {
     Player,
     Enemy,
+    Neutral,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -1340,6 +1487,141 @@ pub enum AssetState {
     Partial,
     Denied,
 }
+
+#### Strategic-Layer Pattern: Programs, Support Actors, and Endurance Anchors
+
+The D021 asset ledger is not limited to prototype units. First-party campaigns should also use it for:
+
+- **enemy or player capability programs** — nuclear tracks, Chronosphere progress, Iron Curtain deployment, heavy-armor lines, radar networks, elite training cadres, chemical stockpiles, weather projects
+- **committed third-party support actors** — resistance cells, militias, defectors, naval contacts, exile air wings, black-market engineers, rear-area collaborators
+- **endurance anchors** — held-open supply corridors, damaged depots, secured FOBs, sabotaged rail lines, threatened evacuation windows
+
+The key question is not "is this a unit?" but "is this a persistent campaign-scale capability or liability that later missions consume?"
+
+**Recommended representation pattern:**
+
+- Use **`owner`** for who currently benefits: `Player`, `Enemy`, or `Neutral`
+- Use **`state`** for broad status: `Acquired`, `Partial`, or `Denied`
+- Use **`quality`** for the exact authored flavor: `unstable`, `delayed`, `coerced`, `staging_rights`, `urban_harassment`, `held_open`, `exhausted`, `early`, `on_schedule`
+- Use **`consumed_by`** to name the missions or acts that should react to it explicitly
+
+```yaml
+strategic_layer:
+  asset_ledger:
+    entries:
+      - asset_id: soviet_nuclear_program
+        owner: Enemy
+        state: Partial
+        quantity: 1
+        quality: unstable
+        consumed_by: [allied_12, allied_14]
+
+      - asset_id: soviet_heavy_armor_line
+        owner: Enemy
+        state: Partial
+        quantity: 1
+        quality: reduced_output
+        consumed_by: [allied_09, allied_12]
+
+      - asset_id: soviet_mig_wing
+        owner: Enemy
+        state: Acquired
+        quantity: 1
+        quality: early
+        unlocked_in_phase: phase_4
+        consumed_by: [allied_08, allied_11]
+
+      - asset_id: allied_satellite_recon
+        owner: Player
+        state: Partial
+        quantity: 1
+        quality: delayed
+        unlocked_in_phase: phase_6
+        consumed_by: [allied_11, allied_14]
+
+      - asset_id: greek_resistance
+        owner: Player
+        state: Acquired
+        quantity: 1
+        quality: staging_rights
+        consumed_by: [allied_08, allied_11]
+
+      - asset_id: belgrade_militia
+        owner: Enemy
+        state: Partial
+        quantity: 1
+        quality: coerced_guides
+        consumed_by: [allied_10]
+
+      - asset_id: danube_supply_corridor
+        owner: Player
+        state: Partial
+        quantity: 1
+        quality: held_open
+        consumed_by: [allied_11]
+```
+
+**Third-party actor rule:** use `Neutral` while an actor is uncommitted or wavering, then flip the owner when the actor becomes a concrete support or hostility source. If a campaign wants more narrative nuance before commitment, `CampaignState.flags` or `WorldMapState.narrative_state` can track intermediate values such as `wavering`, `under_threat`, or `abandoned`.
+
+**Endurance rule:** endurance is usually authored as a combination of mission-local timers plus campaign-carried logistics state. A "held-open corridor" asset can add setup time, reinforce a base, or delay culmination; a sabotaged fuel reserve can shorten an enemy offensive window or suppress reinforcement waves.
+
+**Capability-war rule:** the same ledger should also carry mid-tier capability deltas, not just grand projects. A reduced-output tank line, a denied winterization package, a disrupted radar net, or an unfinished elite-training cadre may matter more across a campaign than a single flashy superweapon branch.
+
+**Timing-window rule:** capability timing should be handled as an authored window, not a freeform simulation. The classic path defines the baseline arrival. Optional operations and enemy initiatives may move selected capabilities to `early`, `on_schedule`, or `delayed`, typically by one phase or 1-2 missions. Consumer missions should then select authored early/on-time/late variants rather than trying to improvise balance at runtime.
+
+#### Recommended Quality Vocabulary
+
+The `quality` field on `CampaignAssetLedgerEntry` is a free-form authored string. First-party campaigns should draw from these categories:
+
+| Category | Tokens | Typical Use |
+|---|---|---|
+| **Condition** | `full`, `damaged`, `unstable`, `reduced_output`, `reduced_range`, `unreliable` | Physical state of a prototype, program, or facility |
+| **Timing** | `early`, `on_schedule`, `delayed`, `accelerated` | Capability arrival window relative to baseline |
+| **Actor relationship** | `staging_rights`, `coerced`, `coerced_guides`, `allied_guides`, `sanctuary`, `defected`, `wavering` | Third-party actor alignment / contribution |
+| **Logistics** | `held_open`, `exhausted`, `interdicted`, `resupplied`, `critical` | Supply corridor, depot, or sustainment state |
+| **Intelligence** | `exposed`, `compromised`, `intact`, `decrypted`, `corrupted` | Status of intel, cover, or counter-intelligence |
+
+This is not an enum — campaigns and mods may define any string. The table exists so first-party content uses consistent vocabulary and consumer missions can pattern-match reliably.
+
+#### Enemy Counter-Intelligence Escalation
+
+Successful SpecOps should not be risk-free. If the player runs multiple covert operations successfully, the enemy should adapt — not through emergent AI, but through **authored campaign-state escalation**.
+
+**Recommended escalation ladder:**
+
+1. **Baseline** — standard patrol density, normal detection thresholds, no counter-ops
+2. **Heightened security** — tighter patrols, shorter stealth windows, additional detection triggers in authored mission variants
+3. **Active counter-ops** — enemy launches their own initiative: mole hunts, bait operations, compromised safehouses, trap intel
+4. **Hardened posture** — enemy restructures deployments, moves high-value targets, or accelerates programs to reduce exposure windows
+
+**Implementation:** track escalation as a campaign flag or asset-ledger entry (e.g., `enemy_opsec_level: heightened`). Consumer missions read this state and select authored variants: tighter patrol routes, shorter extraction windows, an extra detection phase, or a counter-operative ambush event. The escalation resets partially when the player fails or skips SpecOps, or when a specific counter-intelligence operation neutralizes the enemy's awareness.
+
+**Design intent:** this prevents SpecOps from being pure upside. The player should weigh "run another raid now for the asset" against "the enemy is getting wise — save my team for the really valuable op." This pairs naturally with the operational tempo mechanic (see below) and the hero availability model.
+
+```yaml
+# Counter-intelligence escalation in the asset ledger
+strategic_layer:
+  asset_ledger:
+    entries:
+      - asset_id: enemy_opsec_posture
+        owner: Enemy
+        state: Acquired
+        quantity: 1
+        quality: heightened       # baseline → heightened → active_counterops → hardened
+        consumed_by: [allied_08, allied_10, allied_12]
+```
+
+```lua
+-- Mission reads enemy OPSEC level and adjusts detection parameters
+local opsec = Campaign.get_asset_state("enemy_opsec_posture")
+if opsec and opsec.quality == "active_counterops" then
+    -- Tighter patrol routes, shorter stealth windows
+    Ai.modify("enemy_patrols", { detection_radius_pct = 130, patrol_density = "high" })
+    -- Counter-op ambush event at extraction point
+    Trigger.enable("counterop_ambush_at_extraction")
+    UI.show_notification("Intel: Enemy counter-intelligence is active. Expect resistance at the extraction point.")
+end
+```
 
 /// Explicit strategic front / territory state for campaigns that persist one.
 /// This is presentation / territory state, not a replacement for
@@ -1543,8 +1825,11 @@ Warcraft III-style hero campaigns (for example, Tanya gaining XP, levels, unlock
 - Persistent hero XP, level, and skill points across missions
 - Skill unlocks and mission rewards via debrief/intermission flow
 - Hero death/injury policies per character (`must survive`, `wounded`, `campaign_continue`)
+- Hero availability states (`ready`, `fatigued`, `wounded`, `captured`, `lost`) with authored recovery windows
 - Hero-specific flags/stats for branching dialogue and mission conditions
 - Hero loadout/equipment assignment using the standard campaign inventory system
+- Optional support-operative roster definitions for non-hero SpecOps teams
+- Optional mission risk tiers (`routine`, `high_risk`, `commit`) for spotlight operations
 
 **Example YAML (campaign-level hero progression config):**
 
@@ -1690,6 +1975,18 @@ campaign:
         loadout_slots:
           ability: 3
           gear: 2
+        # Status-ladder transitions: how hero state changes trigger campaign branches
+        status_transitions:
+          wounded:
+            unavailable_missions: 2          # sits out 2 missions, then recovers to ready
+            recovery_operation: tanya_field_hospital  # optional: a side op can speed recovery
+          captured:
+            triggers_branch: tanya_rescue    # rescue mission becomes available
+            compromise_per_mission: 1        # each mission delay leaks intel (see hero capture escalation)
+            max_compromise_before_lost: 4    # after 4 missions, hero is permanently lost
+          lost:
+            terminal: true                   # hero removed from roster for this campaign run
+            narrative_flag: tanya_lost        # set for briefing/ending variant selection
 
     mission_rewards:
       by_mission:
@@ -1712,7 +2009,278 @@ campaign:
                   qty: 1
 ```
 
+#### Recommended Hero Availability Model (No Arcade Lives)
+
+IC should not treat heroes as having abstract extra lives in the Mario sense. The better fit for D021 is a **status ladder** that preserves stakes while keeping the campaign playable:
+
+`ready -> fatigued -> wounded -> captured -> lost`
+
+**Recommended interpretation:**
+
+- **Ready** — hero can be deployed normally
+- **Fatigued** — hero is overextended; still available for low-stakes use if the author allows it, but should usually sit out spotlight SpecOps
+- **Wounded** — hero survives but is unavailable for a bounded number of missions or until a recovery operation completes
+- **Captured** — hero is removed from the roster and becomes the center of a rescue / exploitation branch
+- **Lost** — terminal state for this campaign run (death, irreversible disappearance, or political removal)
+
+**Default first-party stance:** flagship heroes such as Tanya and Volkov should usually hit `wounded` or `captured` before reaching `lost` on Standard difficulty. Permanent loss should be rare, visible, and either authored as a high-stakes consequence or enabled by Ironman / harsher modes.
+
+This is the intended thematic split for first-party content: the marquee heroes are the people who are "not supposed to get killed" in ordinary optional operations. Elite SpecOps teams are not afforded the same protection.
+
+**Diegetic resilience, not extra lives:** if authors want to cushion risk, do it through campaign fiction:
+
+- medevac coverage
+- resistance safehouses
+- extraction APCs
+- field surgery teams
+- armored retrieval teams
+- bribed prison contacts
+
+These can convert a fatal outcome into `wounded` or `captured` once, which serves the same balancing purpose as a "life" without feeling gamey.
+
+#### Support Operatives: Hero-Adjacent, Not Hero-Equivalent
+
+Campaigns that lean on SpecOps should not depend on a single superstar always being available. D021 should support **elite non-hero operatives**: Allied black-ops assault teams, Spetsnaz raiders, combat engineers, recon detachments, spy pairs, or partisan specialists.
+
+These units sit between a normal roster squad and a marquee hero:
+
+- weaker than Tanya / Volkov individually
+- expected to operate in teams rather than solo
+- can handle routine and some high-risk optional operations
+- usually have veterancy and equipment persistence, but not a full hero skill tree
+- gain better success odds, stealth windows, or objective quality when accompanied by a flagship hero
+- can be killed permanently in normal campaign play without triggering a hero-style capture/rescue branch
+- should be replaceable after losses, but replacement should cost time, resources, and often some veterancy/equipment quality
+- should usually read visually as ordinary infantry with only subtle elite markers such as a special rank pip, badge, portrait frame, or selection marker
+- should not normally be available as mass-producible barracks units in the first-party campaign
+
+**Recommended dispatch tiers for optional operations:**
+
+- **`hero_required`** — only for rare signature missions or rescue branches built around that character
+- **`hero_preferred`** — elite team can attempt it, but dispatching the hero improves odds, reward quality, timing window, or extraction safety
+- **`team_viable`** — an elite special-operations detachment is sufficient; hero dispatch is optional bonus value
+- **`commander_variant`** — hero unavailable? The mission can still be tackled as a loud commander-supported or commander-only alternative
+
+```yaml
+hero_toolkit:
+  heroes:
+    - character_id: tanya
+      role: flagship_hero
+      death_policy: wounded
+      availability:
+        fatigue_after_optional_specops: 1
+        wounded_unavailable_missions: 2
+
+  support_operatives:
+    - unit_type: allied_special_ops_team
+      display_name: "Allied Black Ops Team"
+      role: elite_specops
+      death_policy: normal
+      replacement_delay_missions: 1
+      veterancy_loss_on_rebuild: 1
+      not_buildable_in_standard_production: true
+      preferred_team_size: 4              # Allies favor smaller, faster insertion teams
+      presentation_profile:
+        base_silhouette: rifle_infantry
+        elite_marker: veteran_rank_badge
+        ui_reveal_strength: subtle
+      acquisition:
+        source: veteran_promotion
+        minimum_veterancy: elite
+        consumes_line_roster_unit: true
+        requires_asset: allied_specops_training_cadre
+        training_delay_missions: 1
+      can_lead_routine_specops: true
+      can_attempt_high_risk_specops: true
+      insertion_profiles:
+        - foot_infiltration
+        - paradrop
+        - helicopter_lift
+        - truck_cover
+        - civilian_cover_if_authored
+      signature_capabilities:
+        - demolition_charges
+        - timed_bombs
+        - covert_breach_tools
+      hero_bonus_if_attached:
+        reward_quality: +1
+        extraction_safety: +1
+
+    - unit_type: soviet_spetsnaz_team
+      display_name: "Soviet Spetsnaz Team"
+      role: elite_specops
+      death_policy: normal
+      replacement_delay_missions: 1
+      veterancy_loss_on_rebuild: 1
+      not_buildable_in_standard_production: true
+      preferred_team_size: 5              # Soviets favor heavier assault squads — intentional faction asymmetry
+      presentation_profile:
+        base_silhouette: rifle_infantry
+        elite_marker: spetsnaz_rank_flash
+        ui_reveal_strength: subtle
+      acquisition:
+        source: veteran_promotion
+        minimum_veterancy: elite
+        consumes_line_roster_unit: true
+        requires_asset: soviet_specops_training_cadre
+        training_delay_missions: 1
+      can_lead_routine_specops: true
+      can_attempt_high_risk_specops: true
+      insertion_profiles:
+        - foot_infiltration
+        - helicopter_lift
+        - paradrop
+        - truck_cover
+        - civilian_cover_if_authored
+      signature_capabilities:
+        - demolition_charges
+        - sabotage_kit
+        - covert_breach_tools
+      hero_bonus_if_attached:
+        stealth_window_seconds: 45
+        objective_speed_pct: 15
+
+missions:
+  steel_archive_raid:
+    role: SPECOPS
+    dispatch_tier: hero_preferred
+    if_hero_absent:
+      fallback_variant: team_viable
+```
+
+**Recommended first-party pattern:** keep a small bench of 2-4 elite detachments per faction/theater so the player can keep doing SpecOps even when Tanya or Volkov is recovering, captured, or being saved for a more valuable operation. Those detachments may suffer normal fatalities and even be wiped out; the campaign replaces them through training/recruitment delays rather than hero-style rescue logic.
+
+**Recommended acquisition / promotion rule:**
+
+- elite SpecOps teams should usually enter the roster through **promotion, rescue, allied grant, or theater transfer**, not through ordinary unit production
+- a surviving infantry squad that reaches the required veterancy can become a **promotion candidate** between missions
+- promoting that squad should consume it from the general line roster and convert it into a smaller, scarcer elite detachment with better insertion/loadout options
+- if the promoted team dies, the player loses the accumulated investment and must wait for a new candidate or replacement pipeline
+- first-party content should present this as "we selected the best survivors for special duty", not as buying commandos from a barracks queue
+
+**Recommended presentation / loadout rule:**
+
+- elite SpecOps should mostly look like slightly better-equipped line infantry rather than comic-book superheroes
+- their special status should be communicated with subtle markers: rank insignia, colored shoulder flash, command pip, portrait frame, or small UI badge
+- their distinction should come more from **mission profile** than silhouette: charges, covert entry, paradrop, helicopter lift, safehouse spawn, or civilian/truck-cover insertion where authored
+- disguise or cover identities should remain **scenario-authored capabilities**, not universal always-on toggles for every match
+
+#### Risk Tiers for Optional Operations
+
+Optional missions do not all need the same commitment level. Some should be routine opportunistic raids; others should be explicitly risky, high-value spotlights.
+
+**Recommended risk tiers:**
+
+- **`routine`** — standard optional mission; normal save/load expectations
+- **`high_risk`** — stronger penalties or better rewards, but still follows normal campaign save policy
+- **`commit`** — a high-risk, high-reward optional operation that autosaves on launch and locks the outcome even outside full-campaign Ironman
+
+Use `commit` sparingly. It is not a replacement for global Ironman; it is a spotlight flag for the handful of optional operations where the whole fantasy is "you get one shot at this."
+
+Good candidates for `commit`:
+
+- rescue windows that will permanently close
+- one-chance prototype thefts
+- deep-cover exfiltrations where discovery changes the whole theater
+- deniable political operations with no do-over
+- top-tier tech-denial raids that can permanently reshape the act
+
+**Frequency rule:** first-party campaigns should usually cap `commit` missions at **1-2 per act** and badge them clearly in the War Table UI before launch.
+
+```yaml
+missions:
+  behind_enemy_lines:
+    role: SPECOPS
+    dispatch_tier: hero_required
+    risk_tier: commit
+    required_hero: tanya
+
+  spy_network:
+    role: SPECOPS
+    dispatch_tier: hero_preferred
+    risk_tier: high_risk
+    preferred_hero: tanya
+    fallback_variant: team_viable
+
+  nuclear_escalation:
+    role: SPECOPS
+    dispatch_tier: hero_preferred
+    risk_tier: commit
+    preferred_operatives:
+      - soviet_spetsnaz_team
+      - volkov
+```
+
+**Interaction with expiring opportunities:** A `commit` mission that is also an expiring opportunity stacks both constraints: the player has a limited window to launch it, and once launched, the outcome is locked. This combination is valid and dramatically powerful — but should be used at most **once per campaign** and displayed with both the time window and the `COMMIT` badge on the War Table card. The briefing must clearly state: "This operation will not wait, and there are no second chances."
+
 **Why this fits the design:** The engine core stays game-agnostic (hero progression is campaign/game-module content, not an engine-core assumption), and the feature composes cleanly with D021 branches, D038 intermissions, and D065 tutorial/onboarding flows.
+
+#### Operational Tempo and Bench Fatigue
+
+Running SpecOps back-to-back should have a cost beyond individual hero fatigue. The **bench itself** should wear down if the player over-relies on covert operations without spacing them out.
+
+**Recommended tempo model:**
+
+- Each SpecOps mission (regardless of success) adds a `tempo_pressure` increment to campaign state
+- Tempo pressure decays by 1 for each main operation completed without launching a SpecOps mission
+- At **low tempo** (0-1): normal stealth windows, normal team availability, normal reward quality
+- At **moderate tempo** (2-3): elite teams need longer rotation between ops; stealth windows in authored missions tighten slightly; replacement delays increase by 1 mission
+- At **high tempo** (4+): enemy counter-intelligence escalates (see §Enemy Counter-Intelligence Escalation); extraction risk increases; team rebuild delays double
+
+**Implementation:** tempo is a simple integer campaign flag. Consumer missions read it and select authored difficulty variants:
+
+```yaml
+# Campaign-level tempo tracking
+persistent_state:
+  custom_flags:
+    specops_tempo_pressure: 0
+
+# Mission-level tempo reaction
+missions:
+  chrono_convoy_intercept:
+    role: SPECOPS
+    risk_tier: high_risk
+    tempo_variants:
+      low:                                # tempo 0-1
+        stealth_window_ticks: 1800        # 90 seconds
+        extraction_difficulty: normal
+      moderate:                           # tempo 2-3
+        stealth_window_ticks: 1200        # 60 seconds
+        extraction_difficulty: contested
+      high:                               # tempo 4+
+        stealth_window_ticks: 600         # 30 seconds
+        extraction_difficulty: hot_pursuit
+        counterop_event: true
+```
+
+**Design intent:** this creates a natural pacing rhythm. The player who spaces out SpecOps between main operations keeps their bench fresh and the enemy unaware. The player who runs three raids in a row may succeed in all of them — but will find the fourth much harder, with worn-down teams facing an alert enemy. This makes the "save Tanya for later" decision real and strategic.
+
+#### Post-Mission Debrief as Strategic Feedback
+
+The campaign should close the feedback loop after every mission. The debrief screen is not just a score tally — it is the primary tool for teaching the player how the strategic layer works.
+
+**Recommended debrief structure:**
+
+1. **Mission outcome** — what happened, which outcome ID was triggered
+2. **Assets earned** — what the player gained from this mission (roster survivors, captured equipment, flags set, operations revealed)
+3. **Assets lost** — what the player spent or failed to protect (hero injuries, team casualties, expired opportunities that closed during this mission)
+4. **Strategic impact** — how this mission's outcome changes the War Table: new operations available, enemy initiatives advanced, capability timing shifted, asset-ledger entries updated
+5. **Comparison hint (optional)** — a single line indicating what the player could have gained from an alternative outcome, without spoiling specific branch content: *"An operative approach to this mission would have yielded additional intel."*
+
+**Implementation:** the debrief reads `CampaignState` diffs (state before mission vs. state after) and presents them as categorized line items. This is campaign-UI content (`ic-ui`), not sim logic.
+
+```lua
+-- Debrief data provided by the campaign system after mission completion
+Events.on("mission_debrief", function(ctx)
+    -- ctx.earned contains new assets, flags, operations revealed
+    -- ctx.lost contains casualties, expired ops, compromise increments
+    -- ctx.strategic contains War Table deltas (new cards, shifted timings, ledger changes)
+    -- ctx.comparison_hint is an optional authored string from the mission YAML
+    UI.show_debrief(ctx)
+end)
+```
+
+**Design intent:** players often do not understand how optional operations connect to later missions. The debrief screen makes those connections explicit: *"Your sabotage of the radar calibration facility means enemy air coordination will be degraded in the next act."* This turns every mission into a teaching moment for the strategic layer.
 
 ### Special Operations Mission Archetypes (Hero-in-Battle)
 
@@ -2124,7 +2692,7 @@ campaign:
 | `current_phase` | string | `CampaignState.strategic_layer.current_phase.phase_id` matches this phase ID |
 | `operation_status` | map | A named operation matches a status such as `available`, `completed`, `failed`, `skipped`, or `expired` |
 | `initiative_status` | map | A named enemy initiative matches `revealed`, `countered`, `activated`, or `expired` |
-| `asset_state` | map | Asset-ledger entry matches a requested state / quality / quantity tuple (for example `chrono_tank: { state: partial, quality: damaged, quantity_gte: 1 }`) |
+| `asset_state` | map | Asset-ledger entry matches a requested state / owner / quality / quantity tuple (for example `chrono_tank: { owner: player, state: partial, quality: damaged, quantity_gte: 1 }`) |
 | `flag` | map | All specified flags match their values in `CampaignState.flags` |
 | `hero_level_gte` | map | Hero character's level >= value (e.g., `{ tanya: 3 }`) |
 | `{}` (empty) | — | Matches everything — use as fallback |
@@ -2171,6 +2739,7 @@ local phase = Campaign.get_phase()
 local spy_network = Campaign.get_operation_state("ic_spy_network")
 local lazarus = Campaign.get_initiative_state("project_lazarus")
 local chrono_tank = Campaign.get_asset_state("chrono_tank")
+local greek_resistance = Campaign.get_asset_state("greek_resistance")
 
 if phase and phase.phase_id == "phase_6" then
     UI.show_notification("Final-act operations are now live.")
@@ -2186,6 +2755,10 @@ end
 
 if chrono_tank and chrono_tank.state == "partial" then
     UI.show_notification("Chrono Tank restored in damaged condition. Temporal shift unavailable.")
+end
+
+if greek_resistance and greek_resistance.owner == "player" and greek_resistance.quality == "staging_rights" then
+    UI.show_notification("Greek resistance has opened a forward landing zone for this operation.")
 end
 
 -- === Writing campaign state ===
@@ -2223,6 +2796,28 @@ Campaign.set_asset_state("super_tanks", {
     quantity = 0,
     consumed_by = { "allied_14" },
 })
+Campaign.set_asset_state("soviet_nuclear_program", {
+    owner = "enemy",
+    state = "partial",
+    quantity = 1,
+    quality = "unstable",
+    consumed_by = { "allied_12", "allied_14" },
+})
+Campaign.set_asset_state("greek_resistance", {
+    owner = "player",
+    state = "acquired",
+    quantity = 1,
+    quality = "staging_rights",
+    consumed_by = { "allied_08", "allied_11" },
+})
+Campaign.set_asset_state("belgrade_militia", {
+    owner = "enemy",
+    state = "partial",
+    quantity = 1,
+    quality = "coerced_guides",
+    consumed_by = { "allied_10" },
+})
+Campaign.set_flag("enemy_endurance_penalty_seconds", 240)
 
 -- Update roster: mark which units survived
 -- (automatic if carryover mode is "surviving" — manual if "selected")
