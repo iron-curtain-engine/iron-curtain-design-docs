@@ -188,9 +188,21 @@ Do not market it as a guaranteed ranked/certified feature unless a separate expl
 
 ## IC-Hosted Cross-Engine Relay: Security Architecture
 
-When IC hosts and a foreign client joins IC's relay, IC controls the entire server-side trust pipeline. The core principle: **"join our server"** is always more secure than **"we join theirs"** — IC's relay infrastructure (time authority, order validation, behavioral analysis, replay signing) applies to every connected client regardless of engine. IC-hosted cross-engine play gives IC control over 7 of 10 security properties; IC-joining-foreign gives control over 1.
+When IC hosts and a foreign client joins IC's relay, IC controls the server-side trust pipeline for the properties the relay can enforce (time authority, structural order validation, behavioral analysis, replay signing). Sim authority defaults to **client-reference mode** — one IC client's sim is the reference, not the relay server (which does not run `ic-sim` in default relay deployment per D074). Operators can deploy **relay-headless** mode for full server-side sim authority at higher cost. The core principle: **"join our server"** is always more secure than **"we join theirs"** — but the strength varies by deployment mode. IC-hosted cross-engine play gives IC control over 7 of 10 security properties; IC-joining-foreign gives control over 1.
 
 **Full detail:** [Relay Security Architecture](cross-engine/relay-security.md) — foreign client connection pipeline, trust tier classification (Native/VerifiedForeign/UnverifiedForeign), `ForeignOrderPipeline` with `StructurallyChecked<TimestampedOrder>` return type (relay-level structural validation; full sim validation via D012 happens on each client after broadcast), per-engine behavioral baselines, sim reconciliation under IC authority (`CrossEngineAuthorityMode`), IC-hosts-vs-IC-joins security comparison matrix, and lobby trust UX.
+
+### Compatibility Packs (Cross-Engine Sim Alignment)
+
+When a foreign client connects, IC's whole-match switchable subsystems (balance, pathfinding, sim-affecting QoL) must be configured to approximate the foreign engine's behavior — otherwise systematic drift causes rapid desync. A **CompatibilityPack** bundles this configuration: `MatchCompatibilityConfig` (whole-match sim-affecting axes only — not per-player presentation, not per-AI-slot commanders), OrderCodec, behavioral baseline, known divergences, expected correction rate, and optionally a recommended AI commander. Packs auto-activate on protocol identification for live sessions (Level 2+) and are inferred from replay metadata for replay import (Level 1).
+
+**Full detail:** [Compatibility Packs](cross-engine/compatibility-packs.md) — data model, auto-selection pipeline design, `ForeignHandshakeInfo` envelope (separate from canonical `VersionInfo` — foreign-client exception to the version gate), `CompatibilityReport` for pre-join display, `TranslationResult` with `SemanticLoss` levels, `TranslationHealth` live indicator, `OrderTypeRegistry` for mod-aware translator registration, mid-game failure protocol, `CrossEngineReplayMeta`, Workshop distribution, and pre-join risk assessment UX. Phase 5 delivery: pack data model + replay import configuration (Level 1). Live cross-engine use (Level 2+) not yet scheduled.
+
+### Translator-Authoritative Fog Protection (Cross-Engine Anti-Maphack)
+
+In lockstep, every client has full game state — a modified foreign client can maphack. When IC hosts a cross-engine match, the translator-authoritative model solves this: IC's translator becomes the sole interface to the foreign client, sending real orders for visible entities and fabricated **decoy orders** for fogged entities. A maphacking foreign client sees ghosts, not real positions.
+
+**Full detail:** [FogAuth & Decoy Architecture](cross-engine/fogauth-decoy-architecture.md) — `AuthoritativeRelay` struct, `CuratedOrder` enum (Real/Decoy/Withheld), 4 decoy tiers (stale → freeze → plausible ghosts → adversarial counterintelligence), fog-lift transitions, `CrossEngineFogProtection` per-match toggle, `ForeignOrderFirewall` anomaly detection, security analysis with directional trust asymmetry, and deployment modes. Implementation: M11 (`P-Optional`, pending P007 — client game loop strategy). Cross-engine translator-authoritative model depends on native FogAuth.
 
 ## Cross-Engine Gotchas (Design + UX + Security Warnings)
 
@@ -265,6 +277,14 @@ If a cross-engine mode is fun, players will ask for ranked support immediately. 
 - collect telemetry/replays
 - validate stability and trust assumptions
 - promote only after a separate certification decision
+
+### 8) Translation failures need player feedback, not silent drops
+
+When a gameplay order cannot be translated between engines, silent dropping creates invisible gameplay degradation — the player issues a command, nothing happens, and they don't know why. Every untranslatable **gameplay** order must produce visible feedback: a notification ("Chrono Shift not available in this cross-engine session"), a substitution ("Force-move approximated as standard move"), or an escalation to the reconciler. Non-gameplay events with no sim effect (camera movement, chat, UI-only pings) may be silently dropped. The `TranslationFailureResponse` protocol in the [Compatibility Packs](cross-engine/compatibility-packs.md) sub-page defines the response strategy per order category.
+
+### 9) Protocol translation without sim alignment produces fast desync — always use a compatibility pack
+
+Protocol-level order translation (`OrderCodec`) makes packets understandable between engines. But if IC is running its default balance/pathfinding/production rules while the foreign engine runs OpenRA's, the sims diverge systematically on every tick. A `CompatibilityPack` auto-selects the sim-affecting match configuration (balance, pathfinding, sim-affecting QoL) that aligns IC's switchable subsystems with the foreign engine's expected behavior. AI commander selection remains per-slot (D043) — packs may recommend an AI commander, but the host decides per slot. Without a pack, cross-engine play is a constant fight against systematic drift that the reconciler cannot realistically correct. With a pack, the reconciler handles only edge-case divergence.
 
 ## Architecture for Compatibility
 

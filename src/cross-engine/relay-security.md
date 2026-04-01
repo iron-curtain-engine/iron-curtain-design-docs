@@ -1,17 +1,26 @@
 # IC-Hosted Cross-Engine Relay: Security Architecture
 
-When IC hosts and a foreign client (e.g., OpenRA) joins IC's relay, IC controls the entire server-side trust pipeline. This section specifies exactly what IC enforces, what it cannot enforce, and the protocol-level design for foreign client sessions. The core principle: **"join our server"** is always more secure than **"we join theirs"** because IC's relay infrastructure — time authority, order validation, behavioral analysis, replay signing — applies to every connected client regardless of engine.
+When IC hosts a cross-engine session, foreign clients (e.g., OpenRA) connect to IC's relay through a **protocol adapter/bridge** layer (`ProtocolAdapter` / `NetcodeBridgeModel` — see 07-CROSS-ENGINE.md, network-model-trait.md). The adapter translates between the foreign engine's native protocol and IC's wire protocol; IC's relay sees a standard session with reduced capabilities. IC controls the relay-side trust properties: time authority, structural order validation, behavioral analysis, and replay signing. Sim authority defaults to **client-reference mode** (one IC client's sim is the reference) unless the operator deploys relay-headless mode (D074). This section specifies exactly what IC enforces, what it cannot enforce, and the protocol-level design for foreign client sessions. The core principle: **"join our server"** is always more secure than **"we join theirs"** — but trust strength varies by deployment mode.
 
 ## Foreign Client Connection Pipeline
 
+> **Interop seam — unsettled.** The canonical cross-engine architecture places the interop boundary at a **`ProtocolAdapter`** / **`NetcodeBridgeModel`** layer (07-CROSS-ENGINE.md § ProtocolAdapter, network-model-trait.md § NetcodeBridgeModel). A foreign engine like OpenRA does *not* natively speak IC's wire protocol (X25519+Ed25519 handshake, IC `VersionInfo`, `ForeignHandshakeInfo`, IC-framed orders). The pipeline below shows the **logical message flow** — what IC's relay sees — not a claim that the foreign client implements IC's protocol directly.
+>
+> The `ProtocolAdapter` is an IC-side inner layer — it wraps an inner `NetworkModel`, translating between a foreign wire protocol and IC's canonical `TickOrders` interface. The foreign client speaks its native protocol; the adapter (running within IC's relay or as an IC-hosted bridge service) handles all translation. The `GameLoop` and relay core never know a foreign engine is involved. Specific deployment details (adapter embedded in relay vs. standalone bridge process) are a Level 2+ design question. The relay sees a standard `ForeignClientSession` with reduced capabilities regardless. Trust tier assignment (Tier 1 vs Tier 2) reflects codec fidelity, not deployment topology.
+
 ```
-Foreign Client (OpenRA)                    IC Relay Server
+Foreign Client                             IC Relay Server
+(via adapter/bridge — see note above)
         │                                        │
         ├──── X25519 key exchange ───────────────►│
         │     + Ed25519 identity binding (D052)   │ derive AES-256-GCM session key
         │                                        │ (TransportCrypto — connection-establishment.md)
         ├──── ProtocolIdentification ───────────►│
-        │     { engine: "openra", version: "..." }│ select OrderCodec
+        │     { VersionInfo { sim_hash: 0, ... }, │ detect zeroed hashes +
+        │       ForeignHandshakeInfo {            │   ForeignHandshakeInfo →
+        │         engine: "openra", version,     │   cross-engine admission
+        │         game_module: "ra1", ... } }    │   (skip native version gate,
+        │                                        │    require CompatibilityPack)
         │                                        │
         │◄─── CapabilityNegotiation ─────────────┤
         │     { supported_orders: [...],          │
@@ -25,15 +34,20 @@ Foreign Client (OpenRA)                    IC Relay Server
 
 ```rust
 /// Per-connection state for a foreign client on IC's relay.
+/// Design-ready for Level 2+ live cross-engine sessions (not yet scheduled).
+/// Phase 5 uses ForeignReplayPlayback (Level 1) which does not create
+/// live ForeignClientSession instances.
 pub struct ForeignClientSession {
     pub player_id: PlayerId,
     pub codec: Box<dyn OrderCodec>,
     pub protocol_id: ProtocolId,
     pub engine_version: String,
+    pub game_module: GameModuleId,               // which game (RA1, TD, TS, etc.)
+    pub compatibility_pack: Option<CompatibilityPackId>, // auto-selected pack (Level 2+)
     pub trust_tier: CrossEngineTrustTier,
     pub capabilities: CrossEngineCapabilities,
     pub behavior_profile: PlayerBehaviorProfile, // Kaladin — same as native clients
-    pub rejection_count: u32,                    // orders that failed validation
+    pub rejection_count: u32,                    // orders that failed structural validation (relay-side)
     pub last_hash_match: Option<u64>,            // last tick where state hashes agreed
 }
 
@@ -81,7 +95,10 @@ pub enum CrossEngineTrustTier {
 Foreign orders pass through the same validation pipeline as native orders, with one additional decoding step:
 
 ```
-Wire bytes → OrderCodec.decode() → TimestampedOrder → validate_order() → accept/reject
+Wire bytes → OrderCodec.decode() → TimestampedOrder → structural_check() → forward to all clients
+                                                                           (D012 sim validation
+                                                                            runs on each IC client
+                                                                            after broadcast)
 ```
 
 ```rust
@@ -97,7 +114,29 @@ pub struct ForeignOrderPipeline {
     /// Orders that decode successfully but fail structural validation.
     /// Logged for behavioral scoring — repeated invalid orders indicate
     /// a modified client or exploit attempt.
-    pub rejection_log: Vec<(SimTick, PlayerId, PlayerOrder, OrderValidity)>,
+    ///
+    /// Uses `StructuralRejection` (relay-side reasons: field bounds,
+    /// unrecognized order type, rate limit) — NOT `OrderValidity` (D041),
+    /// which is the sim-side enum returned by `OrderValidator::validate()`
+    /// with access to `SimReadView`. The relay has no sim state.
+    pub rejection_log: Vec<(SimTick, PlayerId, PlayerOrder, StructuralRejection)>,
+}
+
+/// Relay-side structural rejection reasons.
+/// Distinct from `OrderValidity` (D041) which requires sim state.
+/// The relay can only check format/bounds — it cannot know whether
+/// a player has enough resources or owns the target unit.
+pub enum StructuralRejection {
+    /// Wire bytes could not be decoded by the engine-specific codec.
+    DecodeFailed,
+    /// Order type not in the codec's known vocabulary.
+    UnrecognizedOrderType,
+    /// Field value outside structural bounds (e.g., coordinates off-map).
+    FieldOutOfBounds,
+    /// Player exceeded order rate limit.
+    RateLimited,
+    /// Order targets a player ID that doesn't exist in the session.
+    InvalidPlayerId,
 }
 
 /// Wrapper indicating relay-level structural checks have passed.
@@ -122,14 +161,15 @@ impl ForeignOrderPipeline {
     /// Returns `StructurallyChecked<TimestampedOrder>` — downstream relay
     /// code can trust that decoding and structural validation passed, but
     /// full sim validation (D012) occurs on each client after broadcast.
-    pub fn process(&mut self, tick: SimTick, player: PlayerId, raw: &[u8]) -> Result<StructurallyChecked<TimestampedOrder>, ForeignOrderError> {
+    pub fn process(&mut self, tick: SimTick, player: PlayerId, raw: &[u8]) -> Result<StructurallyChecked<TimestampedOrder>, StructuralRejection> {
         // Step 1: Decode via engine-specific codec
         let order = self.codec.decode(raw)
-            .map_err(|e| ForeignOrderError::DecodeFailed(e))?;
+            .map_err(|_| StructuralRejection::DecodeFailed)?;
 
         // Step 2: Structural validation (field bounds, order type recognized)
         if !order.order.is_structurally_valid() {
-            return Err(ForeignOrderError::StructurallyInvalid);
+            self.rejection_log.push((tick, player, order.order.clone(), StructuralRejection::FieldOutOfBounds));
+            return Err(StructuralRejection::FieldOutOfBounds);
         }
 
         // Step 3: Relay forwards the structurally valid order to all clients.
@@ -190,15 +230,22 @@ pub enum CrossEngineAuthorityMode {
 }
 ```
 
-**IC-as-authority flow:**
-1. One IC client's sim is designated the **reference sim** (default). Alternatively, operators can deploy relay-headless mode where `ic-server` runs `ic-sim` headlessly — this is a special deployment similar to FogAuth (see D074 deployment table).
+**IC-as-authority flow (Level 2+, client-reference mode — default):**
+
+In the default cross-engine deployment, the relay remains a lightweight order router (D074 relay mode: ~2–10 KB/game, no sim). One **IC client's sim** is designated the reference — not the relay, not a headless server. This is a weaker trust posture than "IC controls the entire server-side trust pipeline" because the reference sim runs on a player's machine, not IC-controlled infrastructure. The relay still provides time authority, structural order validation, behavioral analysis, and replay signing — but sim authority is delegated to a client.
+
+1. One IC client's sim is designated the **reference sim**
 2. Every `hash_interval_ticks`, the reference sim broadcasts a state hash to all clients
 3. Foreign clients compare against their own sim state
 4. On divergence: the reference sim sends `EntityCorrection` packets to foreign clients (bounded by `max_correction_magnitude`)
 5. Foreign clients apply corrections to converge toward IC's state
 6. **IC never accepts inbound corrections** — `SimReconciler` is not instantiated on the authority side
 
-**Why this matters:** When IC joins an OpenRA server, IC must trust the foreign server's corrections (bounded by `is_sane_correction()`, but still accepting external state). When OpenRA joins IC, the trust arrow points outward — IC dictates state, never receives corrections. A compromised foreign client can refuse corrections (causing visible desync and eventual disconnection) but cannot inject false state into IC's sim.
+**Relay-headless mode (operator-deployed alternative):**
+
+Operators who need stronger sim authority can deploy `ic-server` in **relay-headless** mode (D074 deployment table: "Cross-engine relay-headless" — real CPU per game). In this mode, `ic-server` runs `ic-sim` as a headless reference sim, giving the server infrastructure full sim authority. This is a heavier deployment similar to FogAuth, not the default.
+
+**Why this matters:** When IC joins an OpenRA server, IC must trust the foreign server's corrections (bounded by `is_sane_correction()`, but still accepting external state). When OpenRA joins IC, the trust arrow points outward — IC dictates state, never receives corrections. A compromised foreign client can refuse corrections (causing visible desync and eventual disconnection) but cannot inject false state into IC's sim. The trust posture is strongest in relay-headless mode (server-controlled sim), moderate in client-reference mode (player-controlled sim), and weakest when IC joins a foreign server.
 
 ## Security Comparison: IC Hosts vs. IC Joins
 
@@ -209,10 +256,10 @@ pub enum CrossEngineAuthorityMode {
 | **Rate limiting**       | IC's 3-layer system on all clients                                                                                                                                                                                         | Foreign server's policy (unknown, possibly none)          |
 | **Behavioral analysis** | Kaladin on ALL client input streams                                                                                                                                                                                        | Only on IC client's own input                             |
 | **Replay signing**      | IC relay signs — certified evidence chain                                                                                                                                                                                  | Foreign replay format, likely unsigned                    |
-| **Sim authority**       | IC sim is reference — corrections flow outward                                                                                                                                                                             | Foreign sim is reference — IC accepts bounded corrections |
+| **Sim authority**       | IC sim is reference — corrections flow outward. Default: one IC client is reference (client-reference mode). Operator-deployed: relay-headless runs `ic-sim` on server (D074).                                             | Foreign sim is reference — IC accepts bounded corrections |
 | **Correction trust**    | IC never accepts external corrections                                                                                                                                                                                      | IC must trust foreign corrections (bounded)               |
 | **Evidence signing**    | Relay signs order log + replay (Ed25519) — evidence chain for post-match review, NOT ranked certification (cross-engine matches are unranked by default; ranked requires explicit M7+/M11 decision per 07-CROSS-ENGINE.md) | Uncertified — P2P trust at best                           |
-| **Maphack prevention**  | Same — lockstep architectural limit                                                                                                                                                                                        | Same — lockstep architectural limit                       |
+| **Maphack prevention**  | Baseline (relay/client-ref): same lockstep limit — all clients have full state. M11+: translator-authoritative fog (fogauth-decoy-architecture.md) could filter state to foreign clients, pending P007 and native FogAuth. | Same — lockstep architectural limit                       |
 | **Client integrity**    | Cannot verify foreign binary                                                                                                                                                                                               | Cannot verify foreign binary                              |
 
 **Bottom line:** IC-hosted cross-engine play gives IC control over 7 of 10 security properties. IC-joining-foreign gives IC control over 1 (its own local validation). The recommendation for cross-engine play is clear: **always prefer IC as host**.
@@ -226,3 +273,14 @@ When a foreign client joins an IC-hosted lobby, the UI must communicate trust po
 - **Tooltip per player** shows exactly what IS and ISN'T enforced for that player's trust tier
 - **Host setting:** `max_foreign_tier: u8` — controls which foreign clients may join. `0` = native IC clients only (Tier 0). `1` = allow verified foreign clients (Tier 0 + Tier 1). `2` = allow any client (Tier 0 + Tier 1 + Tier 2). Default is `0` for ranked (enforced by ranking authority), `2` for unranked casual. The value is a ceiling on the foreign tier admitted — higher number = more permissive.
 - **Match record** includes trust tier metadata — so later evidence analysis (for any `M7+`/`M11` certification decision) can correlate trust tier with match quality/incidents
+
+## Related Sub-Pages
+
+| Topic | Page |
+|---|---|
+| **Compatibility Packs** — sim-configuration bundles (balance, pathfinding, QoL) for foreign engine alignment, auto-selection, translation fidelity, pre-join UX | [Compatibility Packs](compatibility-packs.md) |
+| **FogAuth & Decoy Architecture** — translator-authoritative fog protection, decoy generation, `ForeignOrderFirewall`, per-match toggle | [FogAuth & Decoy Architecture](fogauth-decoy-architecture.md) |
+
+### ForeignOrderFirewall Integration
+
+Beyond structural validation (`ForeignOrderPipeline` above), cross-engine connections pass through a `ForeignOrderFirewall` that detects adversarial order patterns specific to foreign clients — build-cancel oscillation exploits, pathfinding probe patterns, rapid retarget bots, and biased reconciliation drift. The firewall feeds into the existing Kaladin behavioral analysis pipeline. See [FogAuth & Decoy Architecture § Foreign Order Firewall](fogauth-decoy-architecture.md#foreign-order-firewall) for details.

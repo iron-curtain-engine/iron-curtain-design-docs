@@ -16,3 +16,4 @@ IC follows an **efficiency-first** philosophy: better algorithms → cache-frien
 | **Profiling & Regression**       | Profiling strategy, regression testing, benchmark infrastructure                                                              | [profiling](performance/profiling.md)                   |
 | **Delta Encoding & Invariants**  | Change tracking performance, decision record, cross-document performance invariants                                           | [delta-encoding](performance/delta-encoding.md)         |
 | **RAM Mode**                     | Minimal memory footprint mode for constrained environments                                                                    | [ram-mode](performance/ram-mode.md)                     |
+| **Data Layout Spectrum**         | Non-ECS data layouts (SoA, AoSoA, Arrow, SIMD), per-subsystem mapping, infrastructure efficiency | [data-layout-spectrum](performance/data-layout-spectrum.md) |

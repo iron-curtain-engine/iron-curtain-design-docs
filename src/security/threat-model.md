@@ -117,7 +117,7 @@ fn validate_order(&self, player: PlayerId, order: &PlayerOrder) -> OrderValidity
 }
 ```
 
-**Key:** Validation is deterministic and inside the sim. All clients run the same validation → all agree on rejections → no desync. Relay server also validates before broadcasting (defense in depth).
+**Key:** Validation is deterministic and inside the sim. All clients run the same validation → all agree on rejections → no desync. The relay server performs **structural** validation before broadcasting (field bounds, order type recognized, rate limits — defense in depth) but does not run `ic-sim`; D012 sim validation is authoritative and runs on every client.
 
 **Scaling consideration (uBO pattern):** At relay scale (thousands of orders/second across many games), the `match` dispatch above is adequate — RTS order type cardinality is low (~20 types). However, if mod-defined order types or conditional validation rules (D028) significantly expand the rule set, a **token-dispatch** pattern — bucketing validators by a discriminant key (order type + context flags), skipping irrelevant validators entirely — would avoid linear scanning. This is the same architecture uBlock Origin uses to evaluate ~300K filter rules in <1ms: extract a discriminating token, look up only the matching bucket (see `research/ublock-origin-pattern-matching-analysis.md`). For most IC deployments, the simple `match` suffices; the dispatch pattern is insurance for heavily modded environments.
 
