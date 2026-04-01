@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-58788810.js";
+            window.path_to_searchindex_js = "../searchindex-f685a9d4.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9a2c99cb.js"></script>
+        <script src="../toc-35baaca3.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -182,15 +182,24 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="ic-hosted-cross-engine-relay-security-architecture"><a class="header" href="#ic-hosted-cross-engine-relay-security-architecture">IC-Hosted Cross-Engine Relay: Security Architecture</a></h1>
-<p>When IC hosts and a foreign client (e.g., OpenRA) joins IC’s relay, IC controls the entire server-side trust pipeline. This section specifies exactly what IC enforces, what it cannot enforce, and the protocol-level design for foreign client sessions. The core principle: <strong>“join our server”</strong> is always more secure than <strong>“we join theirs”</strong> because IC’s relay infrastructure — time authority, order validation, behavioral analysis, replay signing — applies to every connected client regardless of engine.</p>
+<p>When IC hosts a cross-engine session, foreign clients (e.g., OpenRA) connect to IC’s relay through a <strong>protocol adapter/bridge</strong> layer (<code>ProtocolAdapter</code> / <code>NetcodeBridgeModel</code> — see 07-CROSS-ENGINE.md, network-model-trait.md). The adapter translates between the foreign engine’s native protocol and IC’s wire protocol; IC’s relay sees a standard session with reduced capabilities. IC controls the relay-side trust properties: time authority, structural order validation, behavioral analysis, and replay signing. Sim authority defaults to <strong>client-reference mode</strong> (one IC client’s sim is the reference) unless the operator deploys relay-headless mode (D074). This section specifies exactly what IC enforces, what it cannot enforce, and the protocol-level design for foreign client sessions. The core principle: <strong>“join our server”</strong> is always more secure than <strong>“we join theirs”</strong> — but trust strength varies by deployment mode.</p>
 <h2 id="foreign-client-connection-pipeline"><a class="header" href="#foreign-client-connection-pipeline">Foreign Client Connection Pipeline</a></h2>
-<pre><code>Foreign Client (OpenRA)                    IC Relay Server
+<blockquote>
+<p><strong>Interop seam — unsettled.</strong> The canonical cross-engine architecture places the interop boundary at a <strong><code>ProtocolAdapter</code></strong> / <strong><code>NetcodeBridgeModel</code></strong> layer (07-CROSS-ENGINE.md § ProtocolAdapter, network-model-trait.md § NetcodeBridgeModel). A foreign engine like OpenRA does <em>not</em> natively speak IC’s wire protocol (X25519+Ed25519 handshake, IC <code>VersionInfo</code>, <code>ForeignHandshakeInfo</code>, IC-framed orders). The pipeline below shows the <strong>logical message flow</strong> — what IC’s relay sees — not a claim that the foreign client implements IC’s protocol directly.</p>
+<p>The <code>ProtocolAdapter</code> is an IC-side inner layer — it wraps an inner <code>NetworkModel</code>, translating between a foreign wire protocol and IC’s canonical <code>TickOrders</code> interface. The foreign client speaks its native protocol; the adapter (running within IC’s relay or as an IC-hosted bridge service) handles all translation. The <code>GameLoop</code> and relay core never know a foreign engine is involved. Specific deployment details (adapter embedded in relay vs. standalone bridge process) are a Level 2+ design question. The relay sees a standard <code>ForeignClientSession</code> with reduced capabilities regardless. Trust tier assignment (Tier 1 vs Tier 2) reflects codec fidelity, not deployment topology.</p>
+</blockquote>
+<pre><code>Foreign Client                             IC Relay Server
+(via adapter/bridge — see note above)
         │                                        │
         ├──── X25519 key exchange ───────────────►│
         │     + Ed25519 identity binding (D052)   │ derive AES-256-GCM session key
         │                                        │ (TransportCrypto — connection-establishment.md)
         ├──── ProtocolIdentification ───────────►│
-        │     { engine: "openra", version: "..." }│ select OrderCodec
+        │     { VersionInfo { sim_hash: 0, ... }, │ detect zeroed hashes +
+        │       ForeignHandshakeInfo {            │   ForeignHandshakeInfo →
+        │         engine: "openra", version,     │   cross-engine admission
+        │         game_module: "ra1", ... } }    │   (skip native version gate,
+        │                                        │    require CompatibilityPack)
         │                                        │
         │◄─── CapabilityNegotiation ─────────────┤
         │     { supported_orders: [...],          │
@@ -204,15 +213,20 @@
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>/// Per-connection state for a foreign client on IC's relay.
+/// Design-ready for Level 2+ live cross-engine sessions (not yet scheduled).
+/// Phase 5 uses ForeignReplayPlayback (Level 1) which does not create
+/// live ForeignClientSession instances.
 pub struct ForeignClientSession {
     pub player_id: PlayerId,
     pub codec: Box&lt;dyn OrderCodec&gt;,
     pub protocol_id: ProtocolId,
     pub engine_version: String,
+    pub game_module: GameModuleId,               // which game (RA1, TD, TS, etc.)
+    pub compatibility_pack: Option&lt;CompatibilityPackId&gt;, // auto-selected pack (Level 2+)
     pub trust_tier: CrossEngineTrustTier,
     pub capabilities: CrossEngineCapabilities,
     pub behavior_profile: PlayerBehaviorProfile, // Kaladin — same as native clients
-    pub rejection_count: u32,                    // orders that failed validation
+    pub rejection_count: u32,                    // orders that failed structural validation (relay-side)
     pub last_hash_match: Option&lt;u64&gt;,            // last tick where state hashes agreed
 }
 
@@ -258,7 +272,10 @@ pub struct CrossEngineCapabilities {
 <p><strong>Policy:</strong> Ranked/certified matches require all-Tier-0 (native IC only). Cross-engine matches are <strong>unranked by default</strong> but IC’s relay still enforces every layer it can — the match is more secure than unmanaged interop even without ranked certification.</p>
 <h2 id="order-validation-for-foreign-clients"><a class="header" href="#order-validation-for-foreign-clients">Order Validation for Foreign Clients</a></h2>
 <p>Foreign orders pass through the same validation pipeline as native orders, with one additional decoding step:</p>
-<pre><code>Wire bytes → OrderCodec.decode() → TimestampedOrder → validate_order() → accept/reject
+<pre><code>Wire bytes → OrderCodec.decode() → TimestampedOrder → structural_check() → forward to all clients
+                                                                           (D012 sim validation
+                                                                            runs on each IC client
+                                                                            after broadcast)
 </code></pre>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -274,7 +291,29 @@ pub struct ForeignOrderPipeline {
     /// Orders that decode successfully but fail structural validation.
     /// Logged for behavioral scoring — repeated invalid orders indicate
     /// a modified client or exploit attempt.
-    pub rejection_log: Vec&lt;(SimTick, PlayerId, PlayerOrder, OrderValidity)&gt;,
+    ///
+    /// Uses `StructuralRejection` (relay-side reasons: field bounds,
+    /// unrecognized order type, rate limit) — NOT `OrderValidity` (D041),
+    /// which is the sim-side enum returned by `OrderValidator::validate()`
+    /// with access to `SimReadView`. The relay has no sim state.
+    pub rejection_log: Vec&lt;(SimTick, PlayerId, PlayerOrder, StructuralRejection)&gt;,
+}
+
+/// Relay-side structural rejection reasons.
+/// Distinct from `OrderValidity` (D041) which requires sim state.
+/// The relay can only check format/bounds — it cannot know whether
+/// a player has enough resources or owns the target unit.
+pub enum StructuralRejection {
+    /// Wire bytes could not be decoded by the engine-specific codec.
+    DecodeFailed,
+    /// Order type not in the codec's known vocabulary.
+    UnrecognizedOrderType,
+    /// Field value outside structural bounds (e.g., coordinates off-map).
+    FieldOutOfBounds,
+    /// Player exceeded order rate limit.
+    RateLimited,
+    /// Order targets a player ID that doesn't exist in the session.
+    InvalidPlayerId,
 }
 
 /// Wrapper indicating relay-level structural checks have passed.
@@ -299,14 +338,15 @@ impl ForeignOrderPipeline {
     /// Returns `StructurallyChecked&lt;TimestampedOrder&gt;` — downstream relay
     /// code can trust that decoding and structural validation passed, but
     /// full sim validation (D012) occurs on each client after broadcast.
-    pub fn process(&amp;mut self, tick: SimTick, player: PlayerId, raw: &amp;[u8]) -&gt; Result&lt;StructurallyChecked&lt;TimestampedOrder&gt;, ForeignOrderError&gt; {
+    pub fn process(&amp;mut self, tick: SimTick, player: PlayerId, raw: &amp;[u8]) -&gt; Result&lt;StructurallyChecked&lt;TimestampedOrder&gt;, StructuralRejection&gt; {
         // Step 1: Decode via engine-specific codec
         let order = self.codec.decode(raw)
-            .map_err(|e| ForeignOrderError::DecodeFailed(e))?;
+            .map_err(|_| StructuralRejection::DecodeFailed)?;
 
         // Step 2: Structural validation (field bounds, order type recognized)
         if !order.order.is_structurally_valid() {
-            return Err(ForeignOrderError::StructurallyInvalid);
+            self.rejection_log.push((tick, player, order.order.clone(), StructuralRejection::FieldOutOfBounds));
+            return Err(StructuralRejection::FieldOutOfBounds);
         }
 
         // Step 3: Relay forwards the structurally valid order to all clients.
@@ -358,16 +398,19 @@ pub enum CrossEngineAuthorityMode {
     },
 }
 <span class="boring">}</span></code></pre>
-<p><strong>IC-as-authority flow:</strong></p>
+<p><strong>IC-as-authority flow (Level 2+, client-reference mode — default):</strong></p>
+<p>In the default cross-engine deployment, the relay remains a lightweight order router (D074 relay mode: ~2–10 KB/game, no sim). One <strong>IC client’s sim</strong> is designated the reference — not the relay, not a headless server. This is a weaker trust posture than “IC controls the entire server-side trust pipeline” because the reference sim runs on a player’s machine, not IC-controlled infrastructure. The relay still provides time authority, structural order validation, behavioral analysis, and replay signing — but sim authority is delegated to a client.</p>
 <ol>
-<li>One IC client’s sim is designated the <strong>reference sim</strong> (default). Alternatively, operators can deploy relay-headless mode where <code>ic-server</code> runs <code>ic-sim</code> headlessly — this is a special deployment similar to FogAuth (see D074 deployment table).</li>
+<li>One IC client’s sim is designated the <strong>reference sim</strong></li>
 <li>Every <code>hash_interval_ticks</code>, the reference sim broadcasts a state hash to all clients</li>
 <li>Foreign clients compare against their own sim state</li>
 <li>On divergence: the reference sim sends <code>EntityCorrection</code> packets to foreign clients (bounded by <code>max_correction_magnitude</code>)</li>
 <li>Foreign clients apply corrections to converge toward IC’s state</li>
 <li><strong>IC never accepts inbound corrections</strong> — <code>SimReconciler</code> is not instantiated on the authority side</li>
 </ol>
-<p><strong>Why this matters:</strong> When IC joins an OpenRA server, IC must trust the foreign server’s corrections (bounded by <code>is_sane_correction()</code>, but still accepting external state). When OpenRA joins IC, the trust arrow points outward — IC dictates state, never receives corrections. A compromised foreign client can refuse corrections (causing visible desync and eventual disconnection) but cannot inject false state into IC’s sim.</p>
+<p><strong>Relay-headless mode (operator-deployed alternative):</strong></p>
+<p>Operators who need stronger sim authority can deploy <code>ic-server</code> in <strong>relay-headless</strong> mode (D074 deployment table: “Cross-engine relay-headless” — real CPU per game). In this mode, <code>ic-server</code> runs <code>ic-sim</code> as a headless reference sim, giving the server infrastructure full sim authority. This is a heavier deployment similar to FogAuth, not the default.</p>
+<p><strong>Why this matters:</strong> When IC joins an OpenRA server, IC must trust the foreign server’s corrections (bounded by <code>is_sane_correction()</code>, but still accepting external state). When OpenRA joins IC, the trust arrow points outward — IC dictates state, never receives corrections. A compromised foreign client can refuse corrections (causing visible desync and eventual disconnection) but cannot inject false state into IC’s sim. The trust posture is strongest in relay-headless mode (server-controlled sim), moderate in client-reference mode (player-controlled sim), and weakest when IC joins a foreign server.</p>
 <h2 id="security-comparison-ic-hosts-vs-ic-joins"><a class="header" href="#security-comparison-ic-hosts-vs-ic-joins">Security Comparison: IC Hosts vs. IC Joins</a></h2>
 <div class="table-wrapper">
 <table>
@@ -380,10 +423,10 @@ pub enum CrossEngineAuthorityMode {
 <tr><td><strong>Rate limiting</strong></td><td>IC’s 3-layer system on all clients</td><td>Foreign server’s policy (unknown, possibly none)</td></tr>
 <tr><td><strong>Behavioral analysis</strong></td><td>Kaladin on ALL client input streams</td><td>Only on IC client’s own input</td></tr>
 <tr><td><strong>Replay signing</strong></td><td>IC relay signs — certified evidence chain</td><td>Foreign replay format, likely unsigned</td></tr>
-<tr><td><strong>Sim authority</strong></td><td>IC sim is reference — corrections flow outward</td><td>Foreign sim is reference — IC accepts bounded corrections</td></tr>
+<tr><td><strong>Sim authority</strong></td><td>IC sim is reference — corrections flow outward. Default: one IC client is reference (client-reference mode). Operator-deployed: relay-headless runs <code>ic-sim</code> on server (D074).</td><td>Foreign sim is reference — IC accepts bounded corrections</td></tr>
 <tr><td><strong>Correction trust</strong></td><td>IC never accepts external corrections</td><td>IC must trust foreign corrections (bounded)</td></tr>
 <tr><td><strong>Evidence signing</strong></td><td>Relay signs order log + replay (Ed25519) — evidence chain for post-match review, NOT ranked certification (cross-engine matches are unranked by default; ranked requires explicit M7+/M11 decision per 07-CROSS-ENGINE.md)</td><td>Uncertified — P2P trust at best</td></tr>
-<tr><td><strong>Maphack prevention</strong></td><td>Same — lockstep architectural limit</td><td>Same — lockstep architectural limit</td></tr>
+<tr><td><strong>Maphack prevention</strong></td><td>Baseline (relay/client-ref): same lockstep limit — all clients have full state. M11+: translator-authoritative fog (fogauth-decoy-architecture.md) could filter state to foreign clients, pending P007 and native FogAuth.</td><td>Same — lockstep architectural limit</td></tr>
 <tr><td><strong>Client integrity</strong></td><td>Cannot verify foreign binary</td><td>Cannot verify foreign binary</td></tr>
 </tbody>
 </table>
@@ -398,6 +441,20 @@ pub enum CrossEngineAuthorityMode {
 <li><strong>Host setting:</strong> <code>max_foreign_tier: u8</code> — controls which foreign clients may join. <code>0</code> = native IC clients only (Tier 0). <code>1</code> = allow verified foreign clients (Tier 0 + Tier 1). <code>2</code> = allow any client (Tier 0 + Tier 1 + Tier 2). Default is <code>0</code> for ranked (enforced by ranking authority), <code>2</code> for unranked casual. The value is a ceiling on the foreign tier admitted — higher number = more permissive.</li>
 <li><strong>Match record</strong> includes trust tier metadata — so later evidence analysis (for any <code>M7+</code>/<code>M11</code> certification decision) can correlate trust tier with match quality/incidents</li>
 </ul>
+<h2 id="related-sub-pages"><a class="header" href="#related-sub-pages">Related Sub-Pages</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Topic</th><th>Page</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Compatibility Packs</strong> — sim-configuration bundles (balance, pathfinding, QoL) for foreign engine alignment, auto-selection, translation fidelity, pre-join UX</td><td><a href="compatibility-packs.html">Compatibility Packs</a></td></tr>
+<tr><td><strong>FogAuth &amp; Decoy Architecture</strong> — translator-authoritative fog protection, decoy generation, <code>ForeignOrderFirewall</code>, per-match toggle</td><td><a href="fogauth-decoy-architecture.html">FogAuth &amp; Decoy Architecture</a></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="foreignorderfirewall-integration"><a class="header" href="#foreignorderfirewall-integration">ForeignOrderFirewall Integration</a></h3>
+<p>Beyond structural validation (<code>ForeignOrderPipeline</code> above), cross-engine connections pass through a <code>ForeignOrderFirewall</code> that detects adversarial order patterns specific to foreign clients — build-cancel oscillation exploits, pathfinding probe patterns, rapid retarget bots, and biased reconciliation drift. The firewall feeds into the existing Kaladin behavioral analysis pipeline. See <a href="fogauth-decoy-architecture.html#foreign-order-firewall">FogAuth &amp; Decoy Architecture § Foreign Order Firewall</a> for details.</p>
 
                     </main>
 
@@ -407,7 +464,7 @@ pub enum CrossEngineAuthorityMode {
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
-                            <a rel="next prefetch" href="../08-ROADMAP.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                            <a rel="next prefetch" href="../cross-engine/compatibility-packs.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                             </a>
 
@@ -421,7 +478,7 @@ pub enum CrossEngineAuthorityMode {
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 
-                    <a rel="next prefetch" href="../08-ROADMAP.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                    <a rel="next prefetch" href="../cross-engine/compatibility-packs.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
                     </a>
             </nav>

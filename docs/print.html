@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-58788810.js";
+            window.path_to_searchindex_js = "searchindex-f685a9d4.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-9a2c99cb.js"></script>
+        <script src="toc-35baaca3.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -879,6 +879,9 @@
 <tr><td>Workshop content protection / premium enforcement / PurchaseRecord / watermarking</td><td><code>research/workshop-content-protection-design.md</code></td><td><code>src/decisions/09e/D046-community-platform.md</code> (premium schema), <code>src/decisions/09e/D035-creator-attribution.md</code> (tipping/free model), <code>src/decisions/09b/D052-community-servers.md</code> (SCR system), <code>research/credential-protection-design.md</code> (CredentialStore/DEK)</td><td>Five-layer stack: PurchaseRecord SCR, AES-256-GCM content encryption, X25519+HKDF key wrapping, IK/DK/SK key hierarchy, Tardos fingerprinting; D035 reconciliation; creator payment flow; Phase 5–6a</td></tr>
 <tr><td>Replay highlights / POTG / auto-highlight detection / highlight reel</td><td><code>src/decisions/09d/D077-replay-highlights.md</code>, <code>research/replay-highlights-potg-design.md</code></td><td><code>src/formats/save-replay-formats.md</code> (<code>.icrep</code> format), <code>src/formats/replay-keyframes-analysis.md</code> (21 analysis events), <code>src/player-flow/replays.md</code> (replay viewer), <code>src/player-flow/post-game.md</code> (post-game screen + POTG), <code>src/player-flow/main-menu.md</code> (highlight background)</td><td>D077 canonical decision; four-dimension scoring pipeline (engagement/momentum/anomaly/rarity), POTG post-game viewport, highlight camera AI, SQLite highlight library, main menu highlight background, community highlight packs, Lua/WASM custom detectors; Phase 2–3–6a</td></tr>
 <tr><td>Voice-text bridge / STT captions / TTS voice synthesis / AI voice personas / speech accessibility</td><td><code>src/decisions/09g/D079-voice-text-bridge.md</code></td><td><code>src/decisions/09g/D059-communication.md</code> (VoIP + muting), <code>src/player-flow/settings.md</code> (settings panel), <code>src/player-flow/llm-setup-guide.md</code> (pluggable backend pattern)</td><td>D079 Draft decision; two formats: (1) auto-captions (STT via local Whisper or cloud), (2) text-to-voice pipeline with per-player AI personas (TTS via local Piper or cloud ElevenLabs/Azure). Three-way mute (voice/synth/text). Pluggable backends. Phase 5 (basic STT/TTS) → Phase 6a (personas) → Phase 7 (cross-language)</td></tr>
+<tr><td>Cross-engine compatibility packs / ForeignHandshakeInfo / TranslationHealth / cross-engine replay</td><td><code>src/cross-engine/compatibility-packs.md</code></td><td><code>src/07-CROSS-ENGINE.md</code>, <code>src/cross-engine/relay-security.md</code>, <code>src/decisions/09b/D052-community-servers.md</code>, <code>src/security/vulns-mods-replays.md</code> (canonical <code>VersionInfo</code> + version gate)</td><td><code>CompatibilityPack</code> struct, <code>ForeignHandshakeInfo</code> envelope (separate from canonical <code>VersionInfo</code>), foreign-client exception to version gate, auto-selection pipeline, <code>OrderTypeRegistry</code> for mod-aware codecs, <code>TranslationResult</code> with <code>SemanticLoss</code>, <code>TranslationHealth</code> live UI, Workshop distribution, pre-join risk assessment</td></tr>
+<tr><td>FogAuth decoy architecture / translator-authoritative fog / cross-engine anti-maphack</td><td><code>src/cross-engine/fogauth-decoy-architecture.md</code></td><td><code>src/cross-engine/relay-security.md</code>, <code>src/06-SECURITY.md</code>, <code>research/fog-authoritative-server-design.md</code></td><td><code>AuthoritativeRelay</code>, <code>CuratedOrder</code> (Real/Decoy/Withheld), 4 decoy tiers, <code>ForeignOrderFirewall</code>, directional trust asymmetry, <code>CrossEngineFogProtection</code> toggle, M11 (<code>P-Optional</code>, pending P007)</td></tr>
+<tr><td>Non-ECS data layouts / SoA / AoSoA / Arrow / SIMD bitfields / P2P data layout</td><td><code>src/performance/data-layout-spectrum.md</code></td><td><code>src/10-PERFORMANCE.md</code>, <code>src/02-ARCHITECTURE.md</code></td><td>5-level spectrum (Full ECS → SoA → AoSoA → Arrow → SIMD bitfields), per-subsystem mapping, <code>PieceBitfield</code>, <code>FogBitmap</code>, <code>InfluenceMap</code>, <code>DamageEventTile</code>, content-aware piece ordering, cache tiering</td></tr>
 <tr><td>Replay takeover / take command / branched replays / time machine / temporal campaign</td><td><code>src/decisions/09d/D078-time-machine.md</code></td><td><code>src/formats/save-replay-formats.md</code> (branched replay metadata), <code>src/player-flow/replays.md</code> (takeover UX), <code>src/modding/campaigns.md</code> (time-machine YAML + Lua API), <code>src/architecture/game-loop.md</code> (InReplay → Loading → InGame), <code>src/player-flow/multiplayer.md</code> (time-machine game modes)</td><td>D078 Draft decision; four layers: (1) replay takeover with speculative branch preview (Phase 3), (2) campaign time machine with convergence puzzles, information locks, causal loops, dual-state battlefields (Phase 4), (3) multiplayer Chrono Capture/Time Race/temporal support powers (Phase 5), (4) temporal pincer co-op (Phase 7). Experimental — requires community validation</td></tr>
 <tr><td>Testing strategy, CI/CD pipeline, automated verification</td><td><code>src/tracking/testing-strategy.md</code></td><td><code>src/06-SECURITY.md</code>, <code>src/10-PERFORMANCE.md</code>, <code>src/16-CODING-STANDARDS.md</code></td><td>Use for “how is X tested?”, CI gate definitions, fuzz targets, performance benchmarks, release criteria</td></tr>
 <tr><td>Type-safety invariants, newtype policy, deterministic collections</td><td><code>src/architecture/type-safety.md</code>, <code>src/16-CODING-STANDARDS.md</code> (§ Type-Safety Coding Standards)</td><td><code>src/06-SECURITY.md</code></td><td>Use for “what types enforce X?”, clippy config, code review checklists for type safety</td></tr>
@@ -945,8 +948,8 @@
 <tr><td><code>05-FORMATS.md</code></td><td>5 topic files</td><td><code>formats/</code></td></tr>
 <tr><td><code>06-SECURITY.md</code></td><td>9 vulnerability-group files</td><td><code>security/</code></td></tr>
 <tr><td><code>08-ROADMAP.md</code></td><td>1 sub-file (Phases 6a–7)</td><td><code>roadmap/</code></td></tr>
-<tr><td><code>07-CROSS-ENGINE.md</code></td><td>1 sub-file (Relay Security)</td><td><code>cross-engine/</code></td></tr>
-<tr><td><code>10-PERFORMANCE.md</code></td><td>6 topic files</td><td><code>performance/</code></td></tr>
+<tr><td><code>07-CROSS-ENGINE.md</code></td><td>3 sub-files (Relay Security, Compatibility Packs, FogAuth Decoy)</td><td><code>cross-engine/</code></td></tr>
+<tr><td><code>10-PERFORMANCE.md</code></td><td>7 topic files</td><td><code>performance/</code></td></tr>
 <tr><td><code>11-OPENRA-FEATURES.md</code></td><td>7 section files</td><td><code>openra-features/</code></td></tr>
 <tr><td><code>14-METHODOLOGY.md</code></td><td>1 sub-file (Research Rigor)</td><td><code>methodology/</code></td></tr>
 <tr><td><code>15-SERVER-GUIDE.md</code></td><td>1 sub-file (Operations)</td><td><code>server-guide/</code></td></tr>
@@ -22918,7 +22921,7 @@ impl NetworkModel for FogAuthClientNetwork {
     }
 }
 <span class="boring">}</span></code></pre>
-<p><strong>Key:</strong> Validation is deterministic and inside the sim. All clients run the same validation → all agree on rejections → no desync. Relay server also validates before broadcasting (defense in depth).</p>
+<p><strong>Key:</strong> Validation is deterministic and inside the sim. All clients run the same validation → all agree on rejections → no desync. The relay server performs <strong>structural</strong> validation before broadcasting (field bounds, order type recognized, rate limits — defense in depth) but does not run <code>ic-sim</code>; D012 sim validation is authoritative and runs on every client.</p>
 <p><strong>Scaling consideration (uBO pattern):</strong> At relay scale (thousands of orders/second across many games), the <code>match</code> dispatch above is adequate — RTS order type cardinality is low (~20 types). However, if mod-defined order types or conditional validation rules (D028) significantly expand the rule set, a <strong>token-dispatch</strong> pattern — bucketing validators by a discriminant key (order type + context flags), skipping irrelevant validators entirely — would avoid linear scanning. This is the same architecture uBlock Origin uses to evaluate ~300K filter rules in &lt;1ms: extract a discriminating token, look up only the matching bucket (see <code>research/ublock-origin-pattern-matching-analysis.md</code>). For most IC deployments, the simple <code>match</code> suffices; the dispatch pattern is insurance for heavily modded environments.</p>
 <h2 id="vulnerability-3-lag-switch-timing-manipulation"><a class="header" href="#vulnerability-3-lag-switch-timing-manipulation">Vulnerability 3: Lag Switch (Timing Manipulation)</a></h2>
 <h3 id="the-problem-2"><a class="header" href="#the-problem-2">The Problem</a></h3>
@@ -25220,8 +25223,14 @@ Layer 1:  Data compatibility        (do they load same rules?)→ Very achievabl
 </ul>
 <p>Do not market it as a guaranteed ranked/certified feature unless a separate explicit <code>M7+</code>/<code>M11</code> decision certifies a specific mixed-client trust path.</p>
 <h2 id="ic-hosted-cross-engine-relay-security-architecture"><a class="header" href="#ic-hosted-cross-engine-relay-security-architecture">IC-Hosted Cross-Engine Relay: Security Architecture</a></h2>
-<p>When IC hosts and a foreign client joins IC’s relay, IC controls the entire server-side trust pipeline. The core principle: <strong>“join our server”</strong> is always more secure than <strong>“we join theirs”</strong> — IC’s relay infrastructure (time authority, order validation, behavioral analysis, replay signing) applies to every connected client regardless of engine. IC-hosted cross-engine play gives IC control over 7 of 10 security properties; IC-joining-foreign gives control over 1.</p>
+<p>When IC hosts and a foreign client joins IC’s relay, IC controls the server-side trust pipeline for the properties the relay can enforce (time authority, structural order validation, behavioral analysis, replay signing). Sim authority defaults to <strong>client-reference mode</strong> — one IC client’s sim is the reference, not the relay server (which does not run <code>ic-sim</code> in default relay deployment per D074). Operators can deploy <strong>relay-headless</strong> mode for full server-side sim authority at higher cost. The core principle: <strong>“join our server”</strong> is always more secure than <strong>“we join theirs”</strong> — but the strength varies by deployment mode. IC-hosted cross-engine play gives IC control over 7 of 10 security properties; IC-joining-foreign gives control over 1.</p>
 <p><strong>Full detail:</strong> <a href="#ic-hosted-cross-engine-relay-security-architecture-1">Relay Security Architecture</a> — foreign client connection pipeline, trust tier classification (Native/VerifiedForeign/UnverifiedForeign), <code>ForeignOrderPipeline</code> with <code>StructurallyChecked&lt;TimestampedOrder&gt;</code> return type (relay-level structural validation; full sim validation via D012 happens on each client after broadcast), per-engine behavioral baselines, sim reconciliation under IC authority (<code>CrossEngineAuthorityMode</code>), IC-hosts-vs-IC-joins security comparison matrix, and lobby trust UX.</p>
+<h3 id="compatibility-packs-cross-engine-sim-alignment"><a class="header" href="#compatibility-packs-cross-engine-sim-alignment">Compatibility Packs (Cross-Engine Sim Alignment)</a></h3>
+<p>When a foreign client connects, IC’s whole-match switchable subsystems (balance, pathfinding, sim-affecting QoL) must be configured to approximate the foreign engine’s behavior — otherwise systematic drift causes rapid desync. A <strong>CompatibilityPack</strong> bundles this configuration: <code>MatchCompatibilityConfig</code> (whole-match sim-affecting axes only — not per-player presentation, not per-AI-slot commanders), OrderCodec, behavioral baseline, known divergences, expected correction rate, and optionally a recommended AI commander. Packs auto-activate on protocol identification for live sessions (Level 2+) and are inferred from replay metadata for replay import (Level 1).</p>
+<p><strong>Full detail:</strong> <a href="#cross-engine-compatibility-packs">Compatibility Packs</a> — data model, auto-selection pipeline design, <code>ForeignHandshakeInfo</code> envelope (separate from canonical <code>VersionInfo</code> — foreign-client exception to the version gate), <code>CompatibilityReport</code> for pre-join display, <code>TranslationResult</code> with <code>SemanticLoss</code> levels, <code>TranslationHealth</code> live indicator, <code>OrderTypeRegistry</code> for mod-aware translator registration, mid-game failure protocol, <code>CrossEngineReplayMeta</code>, Workshop distribution, and pre-join risk assessment UX. Phase 5 delivery: pack data model + replay import configuration (Level 1). Live cross-engine use (Level 2+) not yet scheduled.</p>
+<h3 id="translator-authoritative-fog-protection-cross-engine-anti-maphack"><a class="header" href="#translator-authoritative-fog-protection-cross-engine-anti-maphack">Translator-Authoritative Fog Protection (Cross-Engine Anti-Maphack)</a></h3>
+<p>In lockstep, every client has full game state — a modified foreign client can maphack. When IC hosts a cross-engine match, the translator-authoritative model solves this: IC’s translator becomes the sole interface to the foreign client, sending real orders for visible entities and fabricated <strong>decoy orders</strong> for fogged entities. A maphacking foreign client sees ghosts, not real positions.</p>
+<p><strong>Full detail:</strong> <a href="#fogauth--decoy-architecture-for-cross-engine-play">FogAuth &amp; Decoy Architecture</a> — <code>AuthoritativeRelay</code> struct, <code>CuratedOrder</code> enum (Real/Decoy/Withheld), 4 decoy tiers (stale → freeze → plausible ghosts → adversarial counterintelligence), fog-lift transitions, <code>CrossEngineFogProtection</code> per-match toggle, <code>ForeignOrderFirewall</code> anomaly detection, security analysis with directional trust asymmetry, and deployment modes. Implementation: M11 (<code>P-Optional</code>, pending P007 — client game loop strategy). Cross-engine translator-authoritative model depends on native FogAuth.</p>
 <h2 id="cross-engine-gotchas-design--ux--security-warnings"><a class="header" href="#cross-engine-gotchas-design--ux--security-warnings">Cross-Engine Gotchas (Design + UX + Security Warnings)</a></h2>
 <p>These are the common traps that make cross-engine features look better on paper than they behave in production.</p>
 <h3 id="1-shared-browser--shared-gameplay-trust"><a class="header" href="#1-shared-browser--shared-gameplay-trust">1) Shared browser != shared gameplay trust</a></h3>
@@ -25290,6 +25299,10 @@ Layer 1:  Data compatibility        (do they load same rules?)→ Very achievabl
 <li>validate stability and trust assumptions</li>
 <li>promote only after a separate certification decision</li>
 </ul>
+<h3 id="8-translation-failures-need-player-feedback-not-silent-drops"><a class="header" href="#8-translation-failures-need-player-feedback-not-silent-drops">8) Translation failures need player feedback, not silent drops</a></h3>
+<p>When a gameplay order cannot be translated between engines, silent dropping creates invisible gameplay degradation — the player issues a command, nothing happens, and they don’t know why. Every untranslatable <strong>gameplay</strong> order must produce visible feedback: a notification (“Chrono Shift not available in this cross-engine session”), a substitution (“Force-move approximated as standard move”), or an escalation to the reconciler. Non-gameplay events with no sim effect (camera movement, chat, UI-only pings) may be silently dropped. The <code>TranslationFailureResponse</code> protocol in the <a href="#cross-engine-compatibility-packs">Compatibility Packs</a> sub-page defines the response strategy per order category.</p>
+<h3 id="9-protocol-translation-without-sim-alignment-produces-fast-desync--always-use-a-compatibility-pack"><a class="header" href="#9-protocol-translation-without-sim-alignment-produces-fast-desync--always-use-a-compatibility-pack">9) Protocol translation without sim alignment produces fast desync — always use a compatibility pack</a></h3>
+<p>Protocol-level order translation (<code>OrderCodec</code>) makes packets understandable between engines. But if IC is running its default balance/pathfinding/production rules while the foreign engine runs OpenRA’s, the sims diverge systematically on every tick. A <code>CompatibilityPack</code> auto-selects the sim-affecting match configuration (balance, pathfinding, sim-affecting QoL) that aligns IC’s switchable subsystems with the foreign engine’s expected behavior. AI commander selection remains per-slot (D043) — packs may recommend an AI commander, but the host decides per slot. Without a pack, cross-engine play is a constant fight against systematic drift that the reconciler cannot realistically correct. With a pack, the reconciler handles only edge-case divergence.</p>
 <h2 id="architecture-for-compatibility"><a class="header" href="#architecture-for-compatibility">Architecture for Compatibility</a></h2>
 <h3 id="ordercodec-wire-format-translation"><a class="header" href="#ordercodec-wire-format-translation">OrderCodec: Wire Format Translation</a></h3>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
@@ -25431,15 +25444,24 @@ let game = GameLoop::new(sim, renderer, adapted);
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="ic-hosted-cross-engine-relay-security-architecture-1"><a class="header" href="#ic-hosted-cross-engine-relay-security-architecture-1">IC-Hosted Cross-Engine Relay: Security Architecture</a></h1>
-<p>When IC hosts and a foreign client (e.g., OpenRA) joins IC’s relay, IC controls the entire server-side trust pipeline. This section specifies exactly what IC enforces, what it cannot enforce, and the protocol-level design for foreign client sessions. The core principle: <strong>“join our server”</strong> is always more secure than <strong>“we join theirs”</strong> because IC’s relay infrastructure — time authority, order validation, behavioral analysis, replay signing — applies to every connected client regardless of engine.</p>
+<p>When IC hosts a cross-engine session, foreign clients (e.g., OpenRA) connect to IC’s relay through a <strong>protocol adapter/bridge</strong> layer (<code>ProtocolAdapter</code> / <code>NetcodeBridgeModel</code> — see 07-CROSS-ENGINE.md, network-model-trait.md). The adapter translates between the foreign engine’s native protocol and IC’s wire protocol; IC’s relay sees a standard session with reduced capabilities. IC controls the relay-side trust properties: time authority, structural order validation, behavioral analysis, and replay signing. Sim authority defaults to <strong>client-reference mode</strong> (one IC client’s sim is the reference) unless the operator deploys relay-headless mode (D074). This section specifies exactly what IC enforces, what it cannot enforce, and the protocol-level design for foreign client sessions. The core principle: <strong>“join our server”</strong> is always more secure than <strong>“we join theirs”</strong> — but trust strength varies by deployment mode.</p>
 <h2 id="foreign-client-connection-pipeline"><a class="header" href="#foreign-client-connection-pipeline">Foreign Client Connection Pipeline</a></h2>
-<pre><code>Foreign Client (OpenRA)                    IC Relay Server
+<blockquote>
+<p><strong>Interop seam — unsettled.</strong> The canonical cross-engine architecture places the interop boundary at a <strong><code>ProtocolAdapter</code></strong> / <strong><code>NetcodeBridgeModel</code></strong> layer (07-CROSS-ENGINE.md § ProtocolAdapter, network-model-trait.md § NetcodeBridgeModel). A foreign engine like OpenRA does <em>not</em> natively speak IC’s wire protocol (X25519+Ed25519 handshake, IC <code>VersionInfo</code>, <code>ForeignHandshakeInfo</code>, IC-framed orders). The pipeline below shows the <strong>logical message flow</strong> — what IC’s relay sees — not a claim that the foreign client implements IC’s protocol directly.</p>
+<p>The <code>ProtocolAdapter</code> is an IC-side inner layer — it wraps an inner <code>NetworkModel</code>, translating between a foreign wire protocol and IC’s canonical <code>TickOrders</code> interface. The foreign client speaks its native protocol; the adapter (running within IC’s relay or as an IC-hosted bridge service) handles all translation. The <code>GameLoop</code> and relay core never know a foreign engine is involved. Specific deployment details (adapter embedded in relay vs. standalone bridge process) are a Level 2+ design question. The relay sees a standard <code>ForeignClientSession</code> with reduced capabilities regardless. Trust tier assignment (Tier 1 vs Tier 2) reflects codec fidelity, not deployment topology.</p>
+</blockquote>
+<pre><code>Foreign Client                             IC Relay Server
+(via adapter/bridge — see note above)
         │                                        │
         ├──── X25519 key exchange ───────────────►│
         │     + Ed25519 identity binding (D052)   │ derive AES-256-GCM session key
         │                                        │ (TransportCrypto — connection-establishment.md)
         ├──── ProtocolIdentification ───────────►│
-        │     { engine: "openra", version: "..." }│ select OrderCodec
+        │     { VersionInfo { sim_hash: 0, ... }, │ detect zeroed hashes +
+        │       ForeignHandshakeInfo {            │   ForeignHandshakeInfo →
+        │         engine: "openra", version,     │   cross-engine admission
+        │         game_module: "ra1", ... } }    │   (skip native version gate,
+        │                                        │    require CompatibilityPack)
         │                                        │
         │◄─── CapabilityNegotiation ─────────────┤
         │     { supported_orders: [...],          │
@@ -25453,15 +25475,20 @@ let game = GameLoop::new(sim, renderer, adapted);
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
 </span>/// Per-connection state for a foreign client on IC's relay.
+/// Design-ready for Level 2+ live cross-engine sessions (not yet scheduled).
+/// Phase 5 uses ForeignReplayPlayback (Level 1) which does not create
+/// live ForeignClientSession instances.
 pub struct ForeignClientSession {
     pub player_id: PlayerId,
     pub codec: Box&lt;dyn OrderCodec&gt;,
     pub protocol_id: ProtocolId,
     pub engine_version: String,
+    pub game_module: GameModuleId,               // which game (RA1, TD, TS, etc.)
+    pub compatibility_pack: Option&lt;CompatibilityPackId&gt;, // auto-selected pack (Level 2+)
     pub trust_tier: CrossEngineTrustTier,
     pub capabilities: CrossEngineCapabilities,
     pub behavior_profile: PlayerBehaviorProfile, // Kaladin — same as native clients
-    pub rejection_count: u32,                    // orders that failed validation
+    pub rejection_count: u32,                    // orders that failed structural validation (relay-side)
     pub last_hash_match: Option&lt;u64&gt;,            // last tick where state hashes agreed
 }
 
@@ -25507,7 +25534,10 @@ pub struct CrossEngineCapabilities {
 <p><strong>Policy:</strong> Ranked/certified matches require all-Tier-0 (native IC only). Cross-engine matches are <strong>unranked by default</strong> but IC’s relay still enforces every layer it can — the match is more secure than unmanaged interop even without ranked certification.</p>
 <h2 id="order-validation-for-foreign-clients"><a class="header" href="#order-validation-for-foreign-clients">Order Validation for Foreign Clients</a></h2>
 <p>Foreign orders pass through the same validation pipeline as native orders, with one additional decoding step:</p>
-<pre><code>Wire bytes → OrderCodec.decode() → TimestampedOrder → validate_order() → accept/reject
+<pre><code>Wire bytes → OrderCodec.decode() → TimestampedOrder → structural_check() → forward to all clients
+                                                                           (D012 sim validation
+                                                                            runs on each IC client
+                                                                            after broadcast)
 </code></pre>
 <pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
 </span><span class="boring">fn main() {
@@ -25523,7 +25553,29 @@ pub struct ForeignOrderPipeline {
     /// Orders that decode successfully but fail structural validation.
     /// Logged for behavioral scoring — repeated invalid orders indicate
     /// a modified client or exploit attempt.
-    pub rejection_log: Vec&lt;(SimTick, PlayerId, PlayerOrder, OrderValidity)&gt;,
+    ///
+    /// Uses `StructuralRejection` (relay-side reasons: field bounds,
+    /// unrecognized order type, rate limit) — NOT `OrderValidity` (D041),
+    /// which is the sim-side enum returned by `OrderValidator::validate()`
+    /// with access to `SimReadView`. The relay has no sim state.
+    pub rejection_log: Vec&lt;(SimTick, PlayerId, PlayerOrder, StructuralRejection)&gt;,
+}
+
+/// Relay-side structural rejection reasons.
+/// Distinct from `OrderValidity` (D041) which requires sim state.
+/// The relay can only check format/bounds — it cannot know whether
+/// a player has enough resources or owns the target unit.
+pub enum StructuralRejection {
+    /// Wire bytes could not be decoded by the engine-specific codec.
+    DecodeFailed,
+    /// Order type not in the codec's known vocabulary.
+    UnrecognizedOrderType,
+    /// Field value outside structural bounds (e.g., coordinates off-map).
+    FieldOutOfBounds,
+    /// Player exceeded order rate limit.
+    RateLimited,
+    /// Order targets a player ID that doesn't exist in the session.
+    InvalidPlayerId,
 }
 
 /// Wrapper indicating relay-level structural checks have passed.
@@ -25548,14 +25600,15 @@ impl ForeignOrderPipeline {
     /// Returns `StructurallyChecked&lt;TimestampedOrder&gt;` — downstream relay
     /// code can trust that decoding and structural validation passed, but
     /// full sim validation (D012) occurs on each client after broadcast.
-    pub fn process(&amp;mut self, tick: SimTick, player: PlayerId, raw: &amp;[u8]) -&gt; Result&lt;StructurallyChecked&lt;TimestampedOrder&gt;, ForeignOrderError&gt; {
+    pub fn process(&amp;mut self, tick: SimTick, player: PlayerId, raw: &amp;[u8]) -&gt; Result&lt;StructurallyChecked&lt;TimestampedOrder&gt;, StructuralRejection&gt; {
         // Step 1: Decode via engine-specific codec
         let order = self.codec.decode(raw)
-            .map_err(|e| ForeignOrderError::DecodeFailed(e))?;
+            .map_err(|_| StructuralRejection::DecodeFailed)?;
 
         // Step 2: Structural validation (field bounds, order type recognized)
         if !order.order.is_structurally_valid() {
-            return Err(ForeignOrderError::StructurallyInvalid);
+            self.rejection_log.push((tick, player, order.order.clone(), StructuralRejection::FieldOutOfBounds));
+            return Err(StructuralRejection::FieldOutOfBounds);
         }
 
         // Step 3: Relay forwards the structurally valid order to all clients.
@@ -25607,16 +25660,19 @@ pub enum CrossEngineAuthorityMode {
     },
 }
 <span class="boring">}</span></code></pre>
-<p><strong>IC-as-authority flow:</strong></p>
+<p><strong>IC-as-authority flow (Level 2+, client-reference mode — default):</strong></p>
+<p>In the default cross-engine deployment, the relay remains a lightweight order router (D074 relay mode: ~2–10 KB/game, no sim). One <strong>IC client’s sim</strong> is designated the reference — not the relay, not a headless server. This is a weaker trust posture than “IC controls the entire server-side trust pipeline” because the reference sim runs on a player’s machine, not IC-controlled infrastructure. The relay still provides time authority, structural order validation, behavioral analysis, and replay signing — but sim authority is delegated to a client.</p>
 <ol>
-<li>One IC client’s sim is designated the <strong>reference sim</strong> (default). Alternatively, operators can deploy relay-headless mode where <code>ic-server</code> runs <code>ic-sim</code> headlessly — this is a special deployment similar to FogAuth (see D074 deployment table).</li>
+<li>One IC client’s sim is designated the <strong>reference sim</strong></li>
 <li>Every <code>hash_interval_ticks</code>, the reference sim broadcasts a state hash to all clients</li>
 <li>Foreign clients compare against their own sim state</li>
 <li>On divergence: the reference sim sends <code>EntityCorrection</code> packets to foreign clients (bounded by <code>max_correction_magnitude</code>)</li>
 <li>Foreign clients apply corrections to converge toward IC’s state</li>
 <li><strong>IC never accepts inbound corrections</strong> — <code>SimReconciler</code> is not instantiated on the authority side</li>
 </ol>
-<p><strong>Why this matters:</strong> When IC joins an OpenRA server, IC must trust the foreign server’s corrections (bounded by <code>is_sane_correction()</code>, but still accepting external state). When OpenRA joins IC, the trust arrow points outward — IC dictates state, never receives corrections. A compromised foreign client can refuse corrections (causing visible desync and eventual disconnection) but cannot inject false state into IC’s sim.</p>
+<p><strong>Relay-headless mode (operator-deployed alternative):</strong></p>
+<p>Operators who need stronger sim authority can deploy <code>ic-server</code> in <strong>relay-headless</strong> mode (D074 deployment table: “Cross-engine relay-headless” — real CPU per game). In this mode, <code>ic-server</code> runs <code>ic-sim</code> as a headless reference sim, giving the server infrastructure full sim authority. This is a heavier deployment similar to FogAuth, not the default.</p>
+<p><strong>Why this matters:</strong> When IC joins an OpenRA server, IC must trust the foreign server’s corrections (bounded by <code>is_sane_correction()</code>, but still accepting external state). When OpenRA joins IC, the trust arrow points outward — IC dictates state, never receives corrections. A compromised foreign client can refuse corrections (causing visible desync and eventual disconnection) but cannot inject false state into IC’s sim. The trust posture is strongest in relay-headless mode (server-controlled sim), moderate in client-reference mode (player-controlled sim), and weakest when IC joins a foreign server.</p>
 <h2 id="security-comparison-ic-hosts-vs-ic-joins"><a class="header" href="#security-comparison-ic-hosts-vs-ic-joins">Security Comparison: IC Hosts vs. IC Joins</a></h2>
 <div class="table-wrapper">
 <table>
@@ -25629,10 +25685,10 @@ pub enum CrossEngineAuthorityMode {
 <tr><td><strong>Rate limiting</strong></td><td>IC’s 3-layer system on all clients</td><td>Foreign server’s policy (unknown, possibly none)</td></tr>
 <tr><td><strong>Behavioral analysis</strong></td><td>Kaladin on ALL client input streams</td><td>Only on IC client’s own input</td></tr>
 <tr><td><strong>Replay signing</strong></td><td>IC relay signs — certified evidence chain</td><td>Foreign replay format, likely unsigned</td></tr>
-<tr><td><strong>Sim authority</strong></td><td>IC sim is reference — corrections flow outward</td><td>Foreign sim is reference — IC accepts bounded corrections</td></tr>
+<tr><td><strong>Sim authority</strong></td><td>IC sim is reference — corrections flow outward. Default: one IC client is reference (client-reference mode). Operator-deployed: relay-headless runs <code>ic-sim</code> on server (D074).</td><td>Foreign sim is reference — IC accepts bounded corrections</td></tr>
 <tr><td><strong>Correction trust</strong></td><td>IC never accepts external corrections</td><td>IC must trust foreign corrections (bounded)</td></tr>
 <tr><td><strong>Evidence signing</strong></td><td>Relay signs order log + replay (Ed25519) — evidence chain for post-match review, NOT ranked certification (cross-engine matches are unranked by default; ranked requires explicit M7+/M11 decision per 07-CROSS-ENGINE.md)</td><td>Uncertified — P2P trust at best</td></tr>
-<tr><td><strong>Maphack prevention</strong></td><td>Same — lockstep architectural limit</td><td>Same — lockstep architectural limit</td></tr>
+<tr><td><strong>Maphack prevention</strong></td><td>Baseline (relay/client-ref): same lockstep limit — all clients have full state. M11+: translator-authoritative fog (fogauth-decoy-architecture.md) could filter state to foreign clients, pending P007 and native FogAuth.</td><td>Same — lockstep architectural limit</td></tr>
 <tr><td><strong>Client integrity</strong></td><td>Cannot verify foreign binary</td><td>Cannot verify foreign binary</td></tr>
 </tbody>
 </table>
@@ -25646,6 +25702,572 @@ pub enum CrossEngineAuthorityMode {
 <li><strong>Tooltip per player</strong> shows exactly what IS and ISN’T enforced for that player’s trust tier</li>
 <li><strong>Host setting:</strong> <code>max_foreign_tier: u8</code> — controls which foreign clients may join. <code>0</code> = native IC clients only (Tier 0). <code>1</code> = allow verified foreign clients (Tier 0 + Tier 1). <code>2</code> = allow any client (Tier 0 + Tier 1 + Tier 2). Default is <code>0</code> for ranked (enforced by ranking authority), <code>2</code> for unranked casual. The value is a ceiling on the foreign tier admitted — higher number = more permissive.</li>
 <li><strong>Match record</strong> includes trust tier metadata — so later evidence analysis (for any <code>M7+</code>/<code>M11</code> certification decision) can correlate trust tier with match quality/incidents</li>
+</ul>
+<h2 id="related-sub-pages"><a class="header" href="#related-sub-pages">Related Sub-Pages</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Topic</th><th>Page</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Compatibility Packs</strong> — sim-configuration bundles (balance, pathfinding, QoL) for foreign engine alignment, auto-selection, translation fidelity, pre-join UX</td><td><a href="#cross-engine-compatibility-packs">Compatibility Packs</a></td></tr>
+<tr><td><strong>FogAuth &amp; Decoy Architecture</strong> — translator-authoritative fog protection, decoy generation, <code>ForeignOrderFirewall</code>, per-match toggle</td><td><a href="#fogauth--decoy-architecture-for-cross-engine-play">FogAuth &amp; Decoy Architecture</a></td></tr>
+</tbody>
+</table>
+</div>
+<h3 id="foreignorderfirewall-integration"><a class="header" href="#foreignorderfirewall-integration">ForeignOrderFirewall Integration</a></h3>
+<p>Beyond structural validation (<code>ForeignOrderPipeline</code> above), cross-engine connections pass through a <code>ForeignOrderFirewall</code> that detects adversarial order patterns specific to foreign clients — build-cancel oscillation exploits, pathfinding probe patterns, rapid retarget bots, and biased reconciliation drift. The firewall feeds into the existing Kaladin behavioral analysis pipeline. See <a href="#foreign-order-firewall">FogAuth &amp; Decoy Architecture § Foreign Order Firewall</a> for details.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="cross-engine-compatibility-packs"><a class="header" href="#cross-engine-compatibility-packs">Cross-Engine Compatibility Packs</a></h1>
+<blockquote>
+<p><strong>Sub-page of:</strong> <a href="#07--cross-engine-compatibility">Cross-Engine Compatibility</a>
+<strong>Status:</strong> Design-ready. Phase 5 delivery: pack data model + replay import configuration (Level 1). Live cross-engine handshake and in-match translation (Level 2+) deferred pending Level 2+ scheduling.
+<strong>Key decisions:</strong> D011, D018, D019, D033, D043, D045</p>
+</blockquote>
+<h2 id="overview-1"><a class="header" href="#overview-1">Overview</a></h2>
+<p>A <strong>CompatibilityPack</strong> bundles all the configuration needed to make IC’s simulation align with a specific foreign engine version. It connects IC’s existing switchable subsystems — balance presets (D019), pathfinding presets (D045), and sim-affecting QoL toggles (D033) — into a coherent package that activates when replaying foreign replays (Phase 5, Level 1) or, in a future live cross-engine session (Level 2+, not yet scheduled), auto-activates during the protocol handshake.</p>
+<p>Without compatibility packs, cross-engine play drifts into systematic desync because IC’s default behavior (IC Default balance, IC pathfinding, IC production rules) diverges from the foreign engine’s behavior. With compatibility packs, the switchable traits (D041) are set to their closest-matching configuration, reducing reconciler corrections to edge cases only.</p>
+<h2 id="data-model"><a class="header" href="#data-model">Data Model</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct CompatibilityPack {
+    /// Which engine and version range this pack targets.
+    pub target_engine: EngineTag,              // "openra", "cncnet", "remastered"
+    pub target_version_range: VersionRange,    // e.g., "&gt;=20231015"
+    
+    /// Match-level sim configuration to activate.
+    /// Covers only the sim-affecting axes (balance preset, pathfinding preset,
+    /// sim-affecting QoL toggles) — NOT per-player presentation settings
+    /// (theme, render mode, client-only QoL) and NOT per-AI-slot commanders
+    /// (D043 — see `recommended_ai_commander` below). This distinction
+    /// follows the sim/client split in D019, D033, and D045: sim-affecting
+    /// settings are whole-match (lobby-enforced), while presentation axes
+    /// are per-player and AI selection is per-slot.
+    pub match_config: MatchCompatibilityConfig,
+    
+    /// OrderCodec to use for wire translation (registered in OrderTypeRegistry).
+    pub codec: OrderCodecId,
+    
+    /// Known behavioral baseline: expected sim behavior characteristics
+    /// used by the reconciler to distinguish expected drift from bugs.
+    pub behavioral_baseline: BehavioralBaseline,
+    
+    /// Known divergences that do NOT indicate bugs or cheating.
+    /// The reconciler tolerates these without triggering desync alerts.
+    pub known_divergences: Vec&lt;KnownDivergence&gt;,
+    
+    /// Expected correction rate (corrections per 100 ticks) under normal play.
+    /// If actual rate exceeds this by 3×, flag the match for investigation.
+    pub expected_correction_rate: f32,
+    
+    /// Validation status — has this pack been verified against replay corpus?
+    pub validation_status: PackValidationStatus,
+    
+    /// Recommended AI commander for cross-engine matches using this pack.
+    /// Advisory only — the host selects AI per slot in the lobby (D043).
+    /// This recommendation helps the host pick an AI whose behavior
+    /// approximates the foreign engine's built-in AI.
+    pub recommended_ai_commander: Option&lt;AiCommanderId&gt;,
+}
+
+/// The sim-affecting subset of an experience profile.
+/// An experience profile (D033) bundles six axes: balance, pathfinding, QoL,
+/// AI, theme, and render mode. Only balance, pathfinding, and sim-affecting
+/// QoL are whole-match lobby settings where all players must agree. Theme
+/// and render mode are per-player presentation. AI presets are per-AI-slot
+/// (D043) — the host selects an AI commander per slot, not a match-wide
+/// AI setting — so they are NOT part of this struct.
+pub struct MatchCompatibilityConfig {
+    /// Balance preset to use (D019). Whole-match — all players must agree.
+    pub balance_preset: BalancePresetId,
+    /// Pathfinding preset to use (D045). Whole-match — all players must agree.
+    pub pathfinding_preset: PathfindingPresetId,
+    /// Sim-affecting QoL toggles (D033 production/commands/gameplay sections).
+    /// Whole-match — all players must agree.
+    pub sim_qol_overrides: Vec&lt;(QolToggleId, bool)&gt;,
+}
+
+pub struct BehavioralBaseline {
+    /// Expected pathfinding characteristics (e.g., units may take wider paths)
+    pub pathfinding_tolerance: PathfindingTolerance,
+    /// Expected production timing variance (e.g., ±2 ticks on build completion)
+    pub production_timing_tolerance_ticks: u32,
+    /// Expected damage calculation variance (rounding differences)
+    pub damage_rounding_tolerance: i32,
+}
+
+pub struct KnownDivergence {
+    pub category: DivergenceCategory,
+    pub description: String,
+    pub severity: DivergenceSeverity,
+}
+
+pub enum DivergenceCategory {
+    PathfindingTieBreaking,
+    ProductionQueueOrdering,
+    DamageRounding,
+    RngSequenceDrift,
+    HarvesterBehavior,
+    ProjectileTracking,
+}
+
+pub enum PackValidationStatus {
+    /// Verified against a corpus of 100+ replays from the target engine
+    Verified { replay_count: u32, last_verified: String },
+    /// Community-submitted, partially tested
+    CommunityTested { tester_count: u32 },
+    /// Untested — use at own risk
+    Untested,
+}
+<span class="boring">}</span></code></pre>
+<h2 id="auto-selection-pipeline"><a class="header" href="#auto-selection-pipeline">Auto-Selection Pipeline</a></h2>
+<blockquote>
+<p><strong>Phase delivery note:</strong> The auto-selection pipeline below is the design for live cross-engine sessions (Level 2+, not yet scheduled). For Phase 5 (Level 1, replay import), pack selection is manual or inferred from the replay file’s engine metadata.</p>
+</blockquote>
+<p>When a foreign client connects to an IC-hosted game (or IC joins a foreign-hosted game), the compatibility pack is selected automatically during the protocol handshake:</p>
+<pre><code>1. ProtocolIdentification received
+   → Extract engine tag + version from the handshake
+   
+2. Query CompatibilityPack registry
+   → Find pack matching (engine_tag, version) with best validation_status
+   
+3. If found:
+   → Activate match_config (sets balance, pathfinding, sim-affecting QoL)
+   → Apply recommended_ai_commander as lobby default (host can override per-slot)
+   → Register codec in OrderTypeRegistry
+   → Configure reconciler with behavioral_baseline + known_divergences
+   → Display pack info in lobby: "Using OpenRA v20231015 compatibility"
+   
+4. If NOT found:
+   → Display warning: "No compatibility pack available for [engine] [version]"
+   → Offer to proceed with IC defaults (expect high desync rate)
+   → Or suggest downloading a pack from Workshop
+</code></pre>
+<h2 id="handshake-integration"><a class="header" href="#handshake-integration">Handshake Integration</a></h2>
+<blockquote>
+<p><strong>Phase delivery note:</strong> The handshake extensions below are the design for live cross-engine sessions (Level 2+). For Phase 5 (Level 1), replay import uses <code>ForeignReplayPlayback</code> which does not require a live handshake.</p>
+<p><strong>Schema ownership:</strong> The canonical <code>VersionInfo</code> is defined in <code>security/vulns-mods-replays.md</code> § Vulnerability 10 and includes <code>engine_version</code>, <code>sim_hash</code>, <code>mod_manifest_hash</code>, and <code>protocol_version</code>. Those fields remain unchanged and are used for native IC-to-IC version matching. The struct below is a <strong>proposed foreign-handshake envelope</strong> — a separate type that wraps the existing handshake with cross-engine fields. It does NOT replace <code>VersionInfo</code>. If accepted for Level 2+, it would live alongside <code>VersionInfo</code> in the handshake sequence; this page documents the proposed shape. Do not treat this struct as authoritative.</p>
+</blockquote>
+<p>The cross-engine handshake (Level 2+) would use a <strong>separate envelope</strong> alongside the canonical <code>VersionInfo</code>:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>/// Foreign-handshake envelope — sent IN ADDITION TO the canonical
+/// VersionInfo (which carries sim_hash, mod_manifest_hash, etc.).
+/// Native IC clients send only VersionInfo. Foreign clients send
+/// both VersionInfo (best-effort) and ForeignHandshakeInfo.
+pub struct ForeignHandshakeInfo {
+    pub engine: EngineTag,                   // "openra", "cncnet", "remastered"
+    pub engine_version: String,              // foreign engine's version string
+    pub game_module: GameModuleId,           // which game (RA1, TD, TS, etc.)
+    pub mod_profile_fingerprint: Option&lt;[u8; 32]&gt;,  // D062 profile hash (if available)
+    pub capabilities: Vec&lt;Capability&gt;,       // what the foreign client supports
+}
+<span class="boring">}</span></code></pre>
+<p>The <code>game_module</code> field is critical — an OpenRA RA1 game has different compatibility requirements than an OpenRA TD game, even at the same engine version.</p>
+<h3 id="foreign-client-exception-to-the-version-gate"><a class="header" href="#foreign-client-exception-to-the-version-gate">Foreign-Client Exception to the Version Gate</a></h3>
+<p>The canonical version gate (<code>vulns-mods-replays.md</code> § Vulnerability 10) requires <strong>exact equality</strong> on <code>sim_hash</code> and <code>mod_manifest_hash</code> and uses <code>VersionInfo</code> to filter incompatible games from the server browser. This rule is correct for native IC-to-IC connections and remains unchanged.</p>
+<p>Foreign clients cannot satisfy this gate — their engine has no IC sim binary to hash, and their mod manifest format differs. The cross-engine handshake handles this explicitly:</p>
+<ol>
+<li><strong>Foreign clients send <code>VersionInfo</code> with zeroed <code>sim_hash</code> and <code>mod_manifest_hash</code>.</strong> The relay detects the zeroed fields alongside a present <code>ForeignHandshakeInfo</code> and routes the connection through the <strong>cross-engine admission path</strong> instead of the native version gate.</li>
+<li><strong>Cross-engine admission</strong> skips <code>sim_hash</code>/<code>mod_manifest_hash</code> equality checks and instead requires: (a) a matched <code>CompatibilityPack</code> for the foreign engine/version, (b) <code>protocol_version</code> compatibility, and (c) host has set <code>max_foreign_tier ≥ 1</code> (relay-security.md § Lobby Trust UX).</li>
+<li><strong>Server browser filtering:</strong> Games hosted with <code>max_foreign_tier = 0</code> (default for ranked) are invisible to foreign clients. Games with <code>max_foreign_tier ≥ 1</code> appear in cross-engine listings with an engine badge and trust tier indicator.</li>
+<li><strong>Native clients are never affected.</strong> The zeroed-field exception triggers only when <code>ForeignHandshakeInfo</code> is also present. A native IC client sending zeroed hashes without <code>ForeignHandshakeInfo</code> is rejected by the standard gate (patched/corrupted binary).</li>
+</ol>
+<p>This exception path preserves the canonical version-mismatch defense for native play while enabling controlled cross-engine admission.</p>
+<h2 id="order-vocabulary-intersection"><a class="header" href="#order-vocabulary-intersection">Order Vocabulary Intersection</a></h2>
+<p>Before a cross-engine match begins, IC computes a <code>CompatibilityReport</code> showing which orders can be translated:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct CompatibilityReport {
+    /// Orders that translate perfectly between engines
+    pub fully_compatible: Vec&lt;OrderTypeId&gt;,
+    /// Orders that translate with approximation (e.g., waypoint count differs)
+    pub approximate: Vec&lt;(OrderTypeId, String)&gt;,  // (order, approximation note)
+    /// Orders that cannot be translated (game-specific features)
+    pub incompatible: Vec&lt;(OrderTypeId, String)&gt;,  // (order, reason)
+    /// Overall compatibility percentage
+    pub compatibility_score: f32,
+}
+<span class="boring">}</span></code></pre>
+<p>This report is displayed in the pre-join confirmation screen (see <a href="#ic-hosted-cross-engine-relay-security-architecture-1">Relay Security Architecture</a>). Players see exactly what works and what doesn’t before committing to a cross-engine match.</p>
+<h3 id="ordertyperegistry"><a class="header" href="#ordertyperegistry">OrderTypeRegistry</a></h3>
+<blockquote>
+<p><strong>Relationship to existing design:</strong> The existing <code>OrderCodec</code> trait in <code>07-CROSS-ENGINE.md</code> handles single-codec translation. <code>OrderTypeRegistry</code> is a proposed evolution for multi-codec dispatch when multiple game modules or mods register independent codecs. Not required for Phase 5 Level 1 (replay import uses a single codec per <code>ForeignReplayPlayback</code> session).</p>
+</blockquote>
+<p>Mod-aware translator registration:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct OrderTypeRegistry {
+    /// Codecs registered by game module
+    module_codecs: HashMap&lt;GameModuleId, Vec&lt;Box&lt;dyn OrderCodec&gt;&gt;&gt;,
+    /// Codecs registered by compatibility packs
+    pack_codecs: HashMap&lt;CompatibilityPackId, Vec&lt;Box&lt;dyn OrderCodec&gt;&gt;&gt;,
+    /// Codecs registered by mods (for mod-specific orders)
+    mod_codecs: HashMap&lt;ModId, Vec&lt;Box&lt;dyn OrderCodec&gt;&gt;&gt;,
+}
+<span class="boring">}</span></code></pre>
+<p>When translating an order, the registry checks: pack codec → module codec → mod codec → fail with <code>TranslationResult::Untranslatable</code>.</p>
+<h2 id="translation-fidelity"><a class="header" href="#translation-fidelity">Translation Fidelity</a></h2>
+<p>Every translated order carries a fidelity assessment:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum TranslationResult {
+    /// Perfect 1:1 translation, no information loss
+    Exact(TranslatedOrder),
+    /// Translated with approximation — order is valid but not perfectly equivalent
+    Approximated {
+        order: TranslatedOrder,
+        loss: SemanticLoss,
+        description: String,
+    },
+    /// Cannot translate — order type doesn't exist in target engine
+    Untranslatable {
+        original: OrderTypeId,
+        reason: String,
+    },
+}
+
+pub enum SemanticLoss {
+    /// Minor: target receives slightly different parameters (e.g., waypoint snapped to grid)
+    Minor,
+    /// Moderate: order intent preserved but execution will differ noticeably
+    Moderate,
+    /// Major: order intent partially lost (fallback to nearest equivalent)
+    Major,
+}
+<span class="boring">}</span></code></pre>
+<h3 id="live-translation-health-indicator"><a class="header" href="#live-translation-health-indicator">Live Translation Health Indicator</a></h3>
+<p>During a cross-engine match, the UI displays a <code>TranslationHealth</code> indicator:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct TranslationHealth {
+    /// Rolling average translation fidelity (0.0 = all failures, 1.0 = all exact)
+    pub fidelity_score: f32,
+    /// Number of approximated orders in last 100 ticks
+    pub recent_approximations: u32,
+    /// Number of untranslatable orders in last 100 ticks  
+    pub recent_failures: u32,
+    /// Trend: improving, stable, or degrading
+    pub trend: HealthTrend,
+}
+<span class="boring">}</span></code></pre>
+<p>Displayed as a small icon in the match UI (green/yellow/red). Players can expand it to see detailed translation statistics.</p>
+<h2 id="mid-game-translation-failure-protocol"><a class="header" href="#mid-game-translation-failure-protocol">Mid-Game Translation Failure Protocol</a></h2>
+<p>When an order cannot be translated during gameplay:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum TranslationFailureResponse {
+    /// Drop silently — ONLY for non-gameplay events that have no sim effect
+    /// (e.g., camera movement, chat, UI-only pings). Gameplay orders must
+    /// never use SilentDrop — see gotcha #8 in 07-CROSS-ENGINE.md.
+    SilentDrop,
+    /// Substitute a safe fallback (e.g., untranslatable ability → Stop command)
+    Substitute { fallback: TranslatedOrder, reason: String },
+    /// Notify the player and skip — significant orders
+    NotifyAndSkip { reason: String },
+    /// Escalate — critical failure (e.g., synchronization-relevant order type unknown)
+    Escalate { trigger_reconciler: bool },
+}
+<span class="boring">}</span></code></pre>
+<p>The response strategy is defined per order category in the compatibility pack. Critical orders (build, attack, move) always <code>Escalate</code>. Non-gameplay events (camera movement, chat) use <code>SilentDrop</code>. All other gameplay orders must use <code>Substitute</code>, <code>NotifyAndSkip</code>, or <code>Escalate</code> — never <code>SilentDrop</code>.</p>
+<h2 id="workshop-distribution"><a class="header" href="#workshop-distribution">Workshop Distribution</a></h2>
+<blockquote>
+<p><strong>Proposed category.</strong> <code>CompatibilityPack</code> is not yet listed in the canonical Workshop resource categories (D030). Adding it requires a D030 category update when Level 2+ cross-engine play is formally scheduled. Until then, packs can be distributed as tagged <code>Mod</code> resources with a <code>cross-engine-compat</code> tag.</p>
+</blockquote>
+<p>Compatibility packs would be a Workshop resource category:</p>
+<ul>
+<li><strong>Proposed category:</strong> <code>CompatibilityPack</code> (pending D030 update)</li>
+<li><strong>Metadata:</strong> target engine, version range, validation status, last-verified date</li>
+<li><strong>Dependencies:</strong> May depend on mod data packs (e.g., a Combined Arms compatibility pack depends on the Combined Arms mod data)</li>
+<li><strong>Versioning:</strong> Semver, tied to both IC version and target engine version</li>
+<li><strong>Validation:</strong> Community testing infrastructure — packs include a replay corpus and automated verification scores</li>
+</ul>
+<h2 id="pre-join-risk-assessment"><a class="header" href="#pre-join-risk-assessment">Pre-Join Risk Assessment</a></h2>
+<p>Before entering a cross-engine lobby, IC displays a confirmation screen:</p>
+<pre><code>┌─────────────────────────────────────────────────────────────────┐
+│  Cross-Engine Match: OpenRA v20231015                           │
+│                                                                  │
+│  Compatibility Pack: openra-ra1-2023 (Verified, 847 replays)   │
+│  Compatibility Score: 94% (23 of 245 order types approximate)  │
+│                                                                  │
+│  ⚠ Known Limitations:                                           │
+│  • Pathfinding tie-breaking may differ (cosmetic)               │
+│  • Chrono Shift targeting uses grid snap (minor)                │
+│  • Custom mod orders not supported                              │
+│                                                                  │
+│  ⚠ Security:                                                    │
+│  • Fog-of-war protection: Full (translator-authoritative)       │
+│  • Maphack protection: Active decoys                            │
+│  • The foreign client cannot be verified as unmodified           │
+│                                                                  │
+│  [Join Match]  [View Full Report]  [Cancel]                     │
+└─────────────────────────────────────────────────────────────────┘
+</code></pre>
+<h2 id="cross-engine-replay-provenance"><a class="header" href="#cross-engine-replay-provenance">Cross-Engine Replay Provenance</a></h2>
+<blockquote>
+<p><strong>Schema ownership:</strong> The canonical <code>.icrep</code> metadata schema is defined in <code>formats/save-replay-formats.md</code> § Metadata (JSON). Foreign replay CLI conversion uses a <code>converted_from</code> block defined in <code>decisions/09f/D056-replay-import.md</code>. The struct below is a <strong>proposed extension</strong> for live cross-engine matches (Level 2+, not yet scheduled). If accepted, these fields would be added to the canonical schema in <code>save-replay-formats.md</code> as an optional <code>cross_engine</code> block — this page documents the proposed shape. Do not treat this struct as authoritative. For Phase 5 Level 1 (replay import), the existing <code>converted_from</code> provenance in D056 is sufficient.</p>
+</blockquote>
+<p>Replays from live cross-engine matches would include additional metadata:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct CrossEngineReplayMeta {
+    /// Engines involved in this match
+    pub engines: Vec&lt;EngineParticipant&gt;,
+    /// Compatibility pack used
+    pub compatibility_pack: CompatibilityPackId,
+    /// Translation fidelity log (per-tick summary, not per-order)
+    pub translation_summary: TranslationSummary,
+    /// Translation failure log
+    pub translation_failures: Vec&lt;TranslationFailureRecord&gt;,
+    /// Authority mode used (if fog-authoritative)
+    pub authority_mode: Option&lt;CrossEngineAuthorityMode&gt;,
+    /// Reconciliation corrections applied (Level 2+)
+    pub corrections_applied: u32,
+}
+<span class="boring">}</span></code></pre>
+<p>This metadata is included in the replay file alongside <code>CertifiedMatchResult</code> and visible in the replay viewer’s info panel.</p>
+<h2 id="implementation-phase"><a class="header" href="#implementation-phase">Implementation Phase</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Component</th><th>Phase</th><th>Priority</th><th>Notes</th></tr>
+</thead>
+<tbody>
+<tr><td><code>CompatibilityPack</code> data model</td><td>Phase 5</td><td>Critical</td><td>Used by Level 1 replay import</td></tr>
+<tr><td><code>game_module</code> in handshake</td><td>Phase 2</td><td>High</td><td>Native IC handshake field</td></tr>
+<tr><td>Pack-based replay import config</td><td>Phase 5</td><td>Critical</td><td>Level 1: <code>ForeignReplayPlayback</code> loads pack for sim alignment</td></tr>
+<tr><td>Auto-selection pipeline</td><td>Level 2+ (not yet scheduled)</td><td>Critical</td><td>Live cross-engine sessions only</td></tr>
+<tr><td><code>CompatibilityReport</code> + pre-join UI</td><td>Level 2+ (not yet scheduled)</td><td>High</td><td>Live cross-engine sessions only</td></tr>
+<tr><td><code>TranslationHealth</code> live indicator</td><td>Level 2+ (not yet scheduled)</td><td>Medium</td><td>Live cross-engine sessions only</td></tr>
+<tr><td>Workshop distribution</td><td>Phase 5+</td><td>Medium</td><td>Packs useful for replay import even without live play</td></tr>
+<tr><td>Replay provenance metadata</td><td>Phase 5+</td><td>Medium</td><td>Extends existing <code>converted_from</code> (D056)</td></tr>
+<tr><td>Mid-game failure protocol</td><td>Level 2+ (not yet scheduled)</td><td>Medium</td><td>Live cross-engine sessions only</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="architectural-compliance"><a class="header" href="#architectural-compliance">Architectural Compliance</a></h2>
+<ul>
+<li><strong>Sim unchanged:</strong> The compatibility pack selects <em>which</em> already-registered <code>Pathfinder</code>, balance preset, and QoL configuration the sim uses, via existing trait-based switchability (D041). No new sim-level code.</li>
+<li><strong>Relay unchanged:</strong> The relay remains a lightweight order router. Translation happens in the <code>ProtocolAdapter</code> layer (ic-net), not in the relay core.</li>
+<li><strong>NetworkModel boundary preserved:</strong> The compatibility pack is configuration data, not a new NetworkModel.</li>
+</ul>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="fogauth--decoy-architecture-for-cross-engine-play"><a class="header" href="#fogauth--decoy-architecture-for-cross-engine-play">FogAuth &amp; Decoy Architecture for Cross-Engine Play</a></h1>
+<blockquote>
+<p><strong>Sub-page of:</strong> <a href="#07--cross-engine-compatibility">Cross-Engine Compatibility</a>
+<strong>Status:</strong> Design-ready architecture. Native FogAuth implementation: M11 (<code>P-Optional</code>, pending P007 — client game loop strategy). Cross-engine translator-authoritative model: depends on native FogAuth.
+<strong>Depends on:</strong> <code>research/fog-authoritative-server-design.md</code> (native FogAuth design), P007 resolution (game loop variant for FogAuth clients)</p>
+</blockquote>
+<h2 id="problem-statement"><a class="header" href="#problem-statement">Problem Statement</a></h2>
+<p>In lockstep multiplayer, every client has full game state in memory. A modified client can render enemy positions through fog-of-war (maphack). For native IC clients, the FogAuth server model prevents this by withholding fogged data entirely. But for cross-engine play, IC cannot control the foreign client’s binary — the foreign client’s lockstep partner is IC’s translator, and the translator must send <em>something</em> for fogged areas or the foreign client desyncs.</p>
+<p>The translator-authoritative model solves this: instead of sending nothing (which breaks lockstep) or sending real data (which enables maphack), the translator sends <strong>fabricated decoy data</strong> for fogged entities.</p>
+<h2 id="core-architecture"><a class="header" href="#core-architecture">Core Architecture</a></h2>
+<h3 id="translator-as-sole-interface"><a class="header" href="#translator-as-sole-interface">Translator as Sole Interface</a></h3>
+<p>When IC hosts a cross-engine match, the <code>AuthoritativeRelay</code> runs:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct AuthoritativeRelay {
+    /// The real, authoritative simulation
+    sim: SimState,
+    /// Per-player visibility computation
+    visibility: VisibilityComputer,
+    /// Decoy generator for cross-engine fog protection
+    decoys: DecoyGenerator,
+    /// Per-foreign-client translator sessions
+    translators: HashMap&lt;PlayerId, TranslatorSession&gt;,
+    /// Standard relay core for order routing
+    relay_core: RelayCore,
+}
+<span class="boring">}</span></code></pre>
+<p>The foreign client’s lockstep partner is NOT another player’s sim — it’s IC’s translator. The translator runs the real sim, computes per-player visibility, and produces a <strong>curated order stream</strong> per foreign client.</p>
+<h3 id="two-parallel-states"><a class="header" href="#two-parallel-states">Two Parallel States</a></h3>
+<p>For each foreign client, IC maintains:</p>
+<ol>
+<li><strong>Real state:</strong> The authoritative sim (same as all IC clients see)</li>
+<li><strong>Curated stream:</strong> The order stream sent to the foreign client, containing:
+<ul>
+<li>Real orders for entities the foreign player can see (in their fog-of-war vision)</li>
+<li>Decoy orders for entities the foreign player cannot see</li>
+</ul>
+</li>
+</ol>
+<h3 id="curated-order-types"><a class="header" href="#curated-order-types">Curated Order Types</a></h3>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum CuratedOrder {
+    /// Real order from a visible entity — forwarded unmodified
+    Real(TranslatedOrder),
+    /// Ghost order for a fogged entity — fabricated by DecoyGenerator
+    Decoy(TranslatedOrder),
+    /// Order withheld — entity is fogged, no decoy needed (e.g., entity is idle)
+    Withheld,
+}
+<span class="boring">}</span></code></pre>
+<h2 id="decoy-generation-tiers"><a class="header" href="#decoy-generation-tiers">Decoy Generation Tiers</a></h2>
+<h3 id="tier-0--stale-orders-baseline"><a class="header" href="#tier-0--stale-orders-baseline">Tier 0 — Stale Orders (baseline)</a></h3>
+<p>When an entity exits vision, the translator <strong>stops sending real orders</strong> and either:</p>
+<ul>
+<li>Sends no orders (entity appears frozen at last-known position on the foreign client), or</li>
+<li>Repeats the last known order (entity appears to continue its last action)</li>
+</ul>
+<p>Cheapest to implement. Provides basic fog protection but a sophisticated observer can notice entities “freezing” when they leave vision.</p>
+<h3 id="tier-1--last-known-freeze"><a class="header" href="#tier-1--last-known-freeze">Tier 1 — Last-Known Freeze</a></h3>
+<p>The foreign client sees entities at their last-known position. No new orders are generated. This is equivalent to what a maphacking player would see in a native game with FogAuth — entities simply don’t exist outside vision.</p>
+<p>The difference: in native FogAuth, fogged entities are removed from the client’s ECS. In cross-engine play, fogged entities persist on the foreign client with stale state.</p>
+<h3 id="tier-2--plausible-ghost-behavior"><a class="header" href="#tier-2--plausible-ghost-behavior">Tier 2 — Plausible Ghost Behavior</a></h3>
+<p>The <code>DecoyGenerator</code> produces <strong>plausible-looking fake orders</strong> that match the entity type’s expected behavior:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum GhostBehavior {
+    /// Unit patrols between last-known position and nearby waypoints
+    Patrol { waypoints: Vec&lt;WorldPos&gt;, speed: FixedPoint },
+    /// Harvester drives to nearest (last-known) resource field and back
+    Harvest { resource_pos: WorldPos, refinery_pos: WorldPos },
+    /// Building appears to be producing (animation, queued unit ghosts)
+    StaticBuilding { production_visible: bool },
+    /// Fake base expansion — MCV deploys, construction starts
+    FakeExpand { target_pos: WorldPos },
+}
+<span class="boring">}</span></code></pre>
+<p>Ghost behavior is entity-type-appropriate:</p>
+<ul>
+<li><strong>Infantry/vehicles:</strong> Patrol between plausible positions</li>
+<li><strong>Harvesters:</strong> Follow harvest cycles to known resource fields</li>
+<li><strong>Buildings:</strong> Static, may appear to be producing</li>
+<li><strong>MCVs (rare):</strong> May appear to be relocating or expanding</li>
+</ul>
+<p>The ghost orders must be <strong>valid in the foreign engine’s protocol</strong> — the compatibility pack’s behavioral baseline informs which orders the foreign engine accepts.</p>
+<h3 id="tier-3--adversarial-counterintelligence-phase-6"><a class="header" href="#tier-3--adversarial-counterintelligence-phase-6">Tier 3 — Adversarial Counterintelligence (Phase 6+)</a></h3>
+<p>Active disinformation:</p>
+<ul>
+<li>Fake army movements to draw enemy scouts or premature attacks</li>
+<li>Decoy expansions at secondary bases to split enemy attention</li>
+<li>Fabricated production queues suggesting a tech switch</li>
+</ul>
+<p>Tier 3 is opt-in and only available in casual/friendly matches where both players agree. It’s explicitly a “fun mode” — not for any competitive context.</p>
+<h2 id="fog-lift-transitions"><a class="header" href="#fog-lift-transitions">Fog-Lift Transitions</a></h2>
+<p>When a fogged entity enters a foreign player’s vision, the ghost must transition to the real entity seamlessly:</p>
+<pre><code>Tick N:   Entity outside vision → ghost at position G, patrolling
+Tick N+1: Entity enters vision → real position is R (may differ from G)
+Tick N+2: Translator sends Move order from G → R (2–5 tick transition)
+Tick N+3: Entity reaches R, now receiving real orders
+</code></pre>
+<p>The transition is indistinguishable from a unit being given new commands. No desync, no teleportation, no protocol violation. OpenRA’s sync hashing, original RA’s simple lockstep, and CnCNet’s tunnel relay all handle Move orders correctly.</p>
+<p><strong>Pre-correction window:</strong> The translator starts sending the real position 2–3 ticks before the entity enters vision, so the ghost “naturally” moves toward the real position before the player sees it.</p>
+<h2 id="security-analysis"><a class="header" href="#security-analysis">Security Analysis</a></h2>
+<h3 id="directional-trust-asymmetry"><a class="header" href="#directional-trust-asymmetry">Directional Trust Asymmetry</a></h3>
+<p>The data flows are fundamentally asymmetric:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Direction</th><th>What Flows</th><th>Who Controls</th></tr>
+</thead>
+<tbody>
+<tr><td>Foreign → IC</td><td><strong>Orders only</strong></td><td>Foreign client generates, IC validates</td></tr>
+<tr><td>IC → Foreign</td><td><strong>State</strong> (curated)</td><td>IC translator generates, foreign client renders</td></tr>
+</tbody>
+</table>
+</div>
+<p>The foreign client can only control its own units — every order is validated by IC’s real sim. The translator controls the foreign client’s entire perception of non-owned entities. A malicious foreign client cannot:</p>
+<ul>
+<li>Inject orders for units it doesn’t own (IC validates ownership)</li>
+<li>Speed-hack (relay owns the clock)</li>
+<li>Lag-switch (missed deadline = idle order injected)</li>
+<li>See through fog (fog shows ghosts, not real positions)</li>
+</ul>
+<p>A malicious foreign client CAN:</p>
+<ul>
+<li>Send adversarial order patterns (mitigated by <code>ForeignOrderFirewall</code>)</li>
+<li>Refuse to play (disconnects, handled by standard flow)</li>
+</ul>
+<h3 id="what-a-sophisticated-attacker-could-do"><a class="header" href="#what-a-sophisticated-attacker-could-do">What a Sophisticated Attacker Could Do</a></h3>
+<p><strong>Statistical ghost detection:</strong> Recording ghost positions across many games could reveal patterns (e.g., ghosts always patrol in circles). Mitigated by varying ghost parameters per match using the commit-reveal game seed as RNG input.</p>
+<p><strong>Timing analysis:</strong> Comparing timing of visible vs. fogged orders in the curated stream. Mitigated by inserting ghost orders with timing characteristics matching real orders from the same player.</p>
+<h3 id="trust-model"><a class="header" href="#trust-model">Trust Model</a></h3>
+<p>The fundamental assertion: <strong>IC’s authority server is honest.</strong> If compromised, the decoy system could feed disinformation to unfairly advantage IC players. Mitigated by existing relay trust infrastructure (signing keys, community server reputation).</p>
+<h2 id="configuration--per-match-toggle"><a class="header" href="#configuration--per-match-toggle">Configuration — Per-Match Toggle</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum CrossEngineFogProtection {
+    /// Full translator-authoritative fog with decoy generation. Default.
+    Full,
+    /// FogAuth without decoys. Foreign clients receive no *new real data* for
+    /// fogged entities — entities freeze at their last-visible position until
+    /// they re-enter the foreign client's fog boundary. This is a state freeze,
+    /// not literal silence (which would break lockstep). May cause visible
+    /// "pop-in" on fog lift as frozen entities snap to current positions.
+    FogAuthOnly,
+    /// No fog protection. Full lockstep — both sides see everything.
+    /// Foreign client CAN maphack. Requires explicit player consent.
+    Disabled,
+}
+<span class="boring">}</span></code></pre>
+<p><strong>Cross-engine ranked policy:</strong> Cross-engine live play (Level 2+) is unranked by default — any promotion to ranked status requires a separate certification decision covering trust model, authority attestation, and enforcement (see <code>07-CROSS-ENGINE.md</code> § Anti-cheat warning). Within that unranked context, <code>Full</code> is the default and recommended setting. The toggle applies to casual/unranked cross-engine matches only.</p>
+<p><strong>Player consent:</strong> Reducing fog protection below <code>Full</code> requires:</p>
+<ol>
+<li>Host confirmation (with typed “I understand” for <code>Disabled</code>)</li>
+<li>All IC players in the lobby must confirm (“I Accept the Risk — Stay” / “Leave Lobby”)</li>
+</ol>
+<h2 id="foreign-order-firewall"><a class="header" href="#foreign-order-firewall">Foreign Order Firewall</a></h2>
+<p>The <code>ForeignOrderFirewall</code> adds cross-engine-specific anomaly <strong>scoring</strong> between structural validation and broadcast. It is strictly advisory — it feeds suspicion scores into the existing Kaladin behavioral analysis pipeline but <strong>never blocks or drops orders</strong>. The canonical enforcement model is: relay performs structural validation only; behavioral analysis produces detection/evidence, not heuristic suppression; deterministic order rejection happens in the sim (D012). See <code>relay-security.md</code> § Trust Tier table, <code>vulns-client-cheating.md</code> § Behavioral Detection, and <code>vulns-infrastructure.md</code> § Defense.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ForeignOrderFirewall {
+    pattern_buffer: RingBuffer&lt;OrderPattern&gt;,
+    detectors: Vec&lt;Box&lt;dyn AnomalyDetector&gt;&gt;,
+}
+
+pub enum AnomalyResult {
+    Clean,
+    Suspicious { reason: String, score: f64 },
+}
+<span class="boring">}</span></code></pre>
+<p><strong>Detectors</strong> (scoring-only — feed into Kaladin <code>behavioral_score</code>):</p>
+<ul>
+<li><strong>Build-cancel oscillation:</strong> Flags repeated queue/cancel of same building type (economic exploitation)</li>
+<li><strong>Pathfinding probe:</strong> Flags systematic Move orders covering map in grid pattern (automated map scanning)</li>
+<li><strong>Rapid retarget:</strong> Flags Attack orders changing target faster than human reaction time (bot detection)</li>
+<li><strong>Correction bias:</strong> Flags reconciliation corrections that <em>only</em> benefit the foreign player (tampering indicator)</li>
+</ul>
+<p>All detectors produce a score contribution. The relay <strong>always forwards the order</strong> to IC clients for deterministic sim validation (D012). The firewall’s scores compound with standard Kaladin behavioral scores for post-hoc analysis and, if thresholds are breached, the ranking authority (not the relay) issues anti-cheat actions.</p>
+<h2 id="deployment-modes-1"><a class="header" href="#deployment-modes-1">Deployment Modes</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mode</th><th>FogAuth</th><th>Decoys</th><th>Use Case</th></tr>
+</thead>
+<tbody>
+<tr><td>Casual lockstep (no FogAuth)</td><td>No</td><td>No</td><td>Trusted LAN / friends</td></tr>
+<tr><td>Ranked (native IC)</td><td>Yes</td><td>N/A</td><td>Competitive IC-vs-IC</td></tr>
+<tr><td>Cross-engine IC-hosted</td><td>Yes</td><td>Yes (Tier 0–2)</td><td>IC hosts, foreign joins</td></tr>
+<tr><td>Cross-engine foreign-hosted</td><td>No</td><td>No</td><td>IC joins foreign game</td></tr>
+</tbody>
+</table>
+</div>
+<p>When IC joins a foreign-hosted game, fog protection depends on the foreign engine’s capabilities. IC cannot protect itself from a foreign host’s maphack — the host controls the sim. This is disclosed in the pre-join risk assessment.</p>
+<h2 id="implementation-phases"><a class="header" href="#implementation-phases">Implementation Phases</a></h2>
+<p>Native FogAuth is canonically deferred to M11 (<code>P-Optional</code>, pending P007 — client game loop strategy). The translator-authoritative cross-engine model depends on native FogAuth. This page documents the architecture so it is design-ready when M11 work begins.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Milestone</th><th>What Ships</th><th>Scope</th></tr>
+</thead>
+<tbody>
+<tr><td>M11</td><td>Relay-headless <code>ic-sim</code> for native FogAuth</td><td>Ranked/competitive maphack protection (IC-vs-IC). Requires <code>FogAuthGameLoop</code> or equivalent client loop variant (P007).</td></tr>
+<tr><td>M11+</td><td>Translator-authoritative model</td><td>Cross-engine: Tier 0 fog protection (depends on native FogAuth)</td></tr>
+<tr><td>M11+</td><td>Ghost behavior per entity type</td><td>Cross-engine: Tier 1 + Tier 2 decoys</td></tr>
+<tr><td>M11+</td><td>Adversarial decoys (if community demand)</td><td>Cross-engine: Tier 3 counterintelligence</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<p><strong>Note on earlier delivery:</strong> The architecture would permit bringing FogAuth forward if P007 resolves earlier, but the canonical schedule is M11. The server-side capability infrastructure (<code>ic-server</code> binary, capability flags) supports FogAuth from day one — only the client-side game loop variant is the blocking design question. See <code>architecture/game-loop.md</code>, <code>netcode/network-model-trait.md</code>, and <code>research/fog-authoritative-server-design.md</code>.</p>
+</blockquote>
+<h2 id="architectural-compliance-1"><a class="header" href="#architectural-compliance-1">Architectural Compliance</a></h2>
+<ul>
+<li><strong>ic-sim unchanged:</strong> The sim is not aware of fog protection, decoys, or cross-engine play. It runs the same deterministic tick regardless.</li>
+<li><strong>NetworkModel boundary preserved:</strong> FogAuth is a deployment mode of <code>ic-server</code>, not a sim modification. The sim produces world state; the server/translator decides what each client sees.</li>
+<li><strong>Relay architecture extended:</strong> <code>AuthoritativeRelay</code> is a new relay mode (alongside standard lockstep relay) that adds headless sim + per-client visibility + per-client order curation.</li>
 </ul>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="08--development-roadmap-36-months"><a class="header" href="#08--development-roadmap-36-months">08 — Development Roadmap (36 Months)</a></h1>
@@ -29877,7 +30499,7 @@ If implementation reveals a conflict with canonical design docs:
 <blockquote>
 <p><strong>Canonical reference for:</strong> Keeping design docs aligned with external implementation repos (<code>cnc-formats</code>, <code>fixed-game-math</code>, <code>deterministic-rng</code>, future Tier 2–3 crates).</p>
 </blockquote>
-<h2 id="problem-statement"><a class="header" href="#problem-statement">Problem Statement</a></h2>
+<h2 id="problem-statement-1"><a class="header" href="#problem-statement-1">Problem Statement</a></h2>
 <p>Design docs define capabilities for external standalone crates, but implementation proceeds in separate Git repositories by independent agents. Design divergence accumulates silently when capabilities are added to implementation repos without updating the corresponding design docs.</p>
 <p>This policy codifies the sync points — what must trigger a design-doc update, where to update, and how to detect drift.</p>
 <h2 id="sync-triggers"><a class="header" href="#sync-triggers">Sync Triggers</a></h2>
@@ -36950,8 +37572,8 @@ ranking = true        # Rating authority, signs SCRs (D052)
 matchmaking = true    # Skill-based queue (D055)
 moderation = false    # Overwatch-style review system (D052, opt-in)
 </code></pre>
-<p><strong>“Relay” is IC’s dedicated server.</strong> Unlike traditional game engines (Unreal, Source) where a dedicated server runs a headless simulation, IC’s dedicated server is an <strong>order router with time authority</strong> (D007). It receives player orders, validates them (D012), assigns sub-tick timestamps (D008), and rebroadcasts — it never runs the sim. This makes it extremely lightweight (~2–10 KB memory per game) and is why it’s called “relay.” The same <code>RelayCore</code> library component can also be embedded inside a game client for listen-server mode (“Host Game” button, zero external infrastructure). Enabling the <code>relay</code> capability in <code>ic-server</code> is what makes it a dedicated game server — capable of hosting multiplayer matches, handling NAT traversal, blocking lag switches, signing replays, and providing the trust anchor for ranked play.</p>
-<p><strong>Why a relay is sufficient — and when it isn’t.</strong> IC uses <strong>deterministic lockstep</strong>: all clients run the exact same simulation from the same validated orders. Players send commands (“move unit to X”, “build tank”), not state (“I have 500 tanks”). A compromised client cannot report more units, stronger units, or extra resources — the simulation computes state identically on every machine. Invalid orders (build without resources, control enemy units) are rejected deterministically by every client’s sim and by the relay before broadcast (D012). A cheater who modifies their local state simply desyncs from every other player and gets detected by per-tick sync hash comparison.</p>
+<p><strong>“Relay” is IC’s dedicated server.</strong> Unlike traditional game engines (Unreal, Source) where a dedicated server runs a headless simulation, IC’s dedicated server is an <strong>order router with time authority</strong> (D007). It receives player orders, <strong>structurally validates</strong> them (field bounds, order type recognized, rate limits), assigns sub-tick timestamps (D008), and rebroadcasts — it never runs the sim. Full sim validation (D012 — deterministic rejection of invalid orders like “build without resources”) runs on every client after broadcast, not on the relay. This makes the relay extremely lightweight (~2–10 KB memory per game) and is why it’s called “relay.” The same <code>RelayCore</code> library component can also be embedded inside a game client for listen-server mode (“Host Game” button, zero external infrastructure). Enabling the <code>relay</code> capability in <code>ic-server</code> is what makes it a dedicated game server — capable of hosting multiplayer matches, handling NAT traversal, blocking lag switches, signing replays, and providing the trust anchor for ranked play.</p>
+<p><strong>Why a relay is sufficient — and when it isn’t.</strong> IC uses <strong>deterministic lockstep</strong>: all clients run the exact same simulation from the same validated orders. Players send commands (“move unit to X”, “build tank”), not state (“I have 500 tanks”). A compromised client cannot report more units, stronger units, or extra resources — the simulation computes state identically on every machine. Invalid orders (build without resources, control enemy units) are rejected <strong>deterministically by every client’s sim</strong> (D012). The relay’s structural pre-check filters obviously malformed orders before broadcast (defense in depth), but the authoritative validation is sim-side. A cheater who modifies their local state simply desyncs from every other player and gets detected by per-tick sync hash comparison.</p>
 <p>The one vulnerability lockstep cannot solve is <strong>maphack</strong> — since every client runs the full simulation, all game state exists in client memory, and fog of war is a rendering filter, not a data boundary. IC addresses this with <code>FogAuthoritativeNetwork</code> (06-SECURITY.md) — a deployment mode where the server runs the sim and sends each client only the entities they can see. This is a heavier deployment (real CPU per game, not just order routing), but it uses the same <code>ic-server</code> binary and the same capability infrastructure. An operator enables it per-room or per-match-type — it is not a separate product. The server-side architecture (capability flags, binary, configuration) supports FogAuth from day one; implementation ships at <code>M11</code> (<code>P-Optional</code>). Note: FogAuth clients do not run the full deterministic sim — they maintain a partial world via a reconciler. This means the client-side game loop needs a variant (<code>FogAuthGameLoop</code>) beyond the lockstep <code>GameLoop&lt;N, I&gt;</code> shown in <code>architecture/game-loop.md</code>. The <code>NetworkModel</code> trait boundary preserves the sim/net invariant (D006), but the game loop extension is part of the <code>M11</code> design scope. See <code>research/fog-authoritative-server-design.md</code> § 7 and § 9 for the client reconciler and trait implementation details.</p>
 <div class="table-wrapper">
 <table>
@@ -65398,6 +66020,7 @@ Browser (WASM):
 <tr><td><strong>Profiling &amp; Regression</strong></td><td>Profiling strategy, regression testing, benchmark infrastructure</td><td><a href="#profiling--regression-strategy">profiling</a></td></tr>
 <tr><td><strong>Delta Encoding &amp; Invariants</strong></td><td>Change tracking performance, decision record, cross-document performance invariants</td><td><a href="#delta-encoding-decision-record--invariants">delta-encoding</a></td></tr>
 <tr><td><strong>RAM Mode</strong></td><td>Minimal memory footprint mode for constrained environments</td><td><a href="#ram-mode">ram-mode</a></td></tr>
+<tr><td><strong>Data Layout Spectrum</strong></td><td>Non-ECS data layouts (SoA, AoSoA, Arrow, SIMD), per-subsystem mapping, infrastructure efficiency</td><td><a href="#data-layout-spectrum--infrastructure-performance">data-layout-spectrum</a></td></tr>
 </tbody>
 </table>
 </div>
@@ -66596,7 +67219,7 @@ pub enum DiagValue {
 </table>
 </div>
 <p>All metric reads are <strong>lock-free</strong>: the sim writes to atomic counters/gauges, the overlay reads them on the render thread. No mutex contention, no sim slowdown from enabling the overlay. The ECS inspector (Level 3) uses Bevy’s standard query system and runs in the render schedule, not the sim schedule.</p>
-<h4 id="implementation-phase"><a class="header" href="#implementation-phase">Implementation Phase</a></h4>
+<h4 id="implementation-phase-1"><a class="header" href="#implementation-phase-1">Implementation Phase</a></h4>
 <ul>
 <li><strong>Phase 2 (M2):</strong> Level 1 overlay (FPS, tick time, entity count) — requires only sim tick instrumentation that already exists for benchmarks</li>
 <li><strong>Phase 3 (M3):</strong> Level 2 overlay (per-system breakdown, pathfinding, memory) — requires D031 telemetry instrumentation</li>
@@ -67003,6 +67626,215 @@ max_total_bytes = 1_073_741_824
 <li>Screenshot PNG encoding (background thread)</li>
 </ul>
 <p>This list is finite and auditable. A CI benchmark that tracks per-tick allocation count (via a custom allocator in test builds) will catch regressions.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="data-layout-spectrum--infrastructure-performance"><a class="header" href="#data-layout-spectrum--infrastructure-performance">Data Layout Spectrum &amp; Infrastructure Performance</a></h1>
+<blockquote>
+<p><strong>Sub-page of:</strong> <a href="#10--performance">Performance Philosophy</a>
+<strong>Status:</strong> Design guidance. Applies from Phase 0 onward for format decisions; runtime optimizations phased per subsystem.</p>
+</blockquote>
+<h2 id="overview-2"><a class="header" href="#overview-2">Overview</a></h2>
+<p>IC’s Efficiency Pyramid (algorithm → cache → LOD → amortize → zero-alloc → parallelism) applies primarily to the simulation hot path. But significant computation also occurs in non-ECS subsystems: P2P distribution, Workshop indexing, fog-of-war bitmaps, AI influence maps, damage resolution, and replay analysis.</p>
+<p>These subsystems don’t live in Bevy’s ECS and therefore don’t automatically benefit from ECS data layout. This page defines the data layout spectrum and maps each subsystem to its optimal layout.</p>
+<h2 id="the-data-layout-spectrum"><a class="header" href="#the-data-layout-spectrum">The Data Layout Spectrum</a></h2>
+<p>From most flexible to most hardware-efficient:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Layout</th><th>Description</th><th>Best For</th><th>Rust Crate</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Full ECS</strong></td><td>Bevy archetype tables</td><td>Sim entities (units, buildings, projectiles)</td><td><code>bevy_ecs</code></td></tr>
+<tr><td><strong>SoA</strong></td><td>Struct-of-Arrays via derive macro</td><td>Index/catalog data with frequent column scans</td><td><code>soa-rs</code></td></tr>
+<tr><td><strong>AoSoA</strong></td><td>Array-of-Structs-of-Arrays, tiles of 4–8</td><td>Batch processing with mixed field access</td><td>Manual or <code>nalgebra</code>+<code>simba</code></td></tr>
+<tr><td><strong>Arrow</strong></td><td>Columnar format, zero-copy from disk</td><td>Analytics, replay analysis, read-heavy data</td><td><code>arrow-rs</code> / <code>minarrow</code></td></tr>
+<tr><td><strong>SIMD bitfields</strong></td><td>Wide register operations on packed bits</td><td>Boolean operations (fog, piece tracking)</td><td><code>wide</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Each step trades flexibility for raw throughput. The choice depends on access pattern, data volume, and update frequency.</p>
+<h2 id="per-subsystem-mapping"><a class="header" href="#per-subsystem-mapping">Per-Subsystem Mapping</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Subsystem</th><th>Current (Design)</th><th>Recommended Layout</th><th>Rationale</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Sim entities</strong></td><td>Full ECS (Bevy)</td><td>Keep ECS</td><td>Bevy’s archetype SoA is already optimal</td></tr>
+<tr><td><strong>Workshop resource index</strong></td><td><code>Vec&lt;ResourceListing&gt;</code></td><td><strong>SoA</strong> via <code>soa-rs</code></td><td>Filter by category scans 10KB contiguous array vs. multi-MB scattered structs</td></tr>
+<tr><td><strong>P2P piece bitfields</strong></td><td>Not yet designed</td><td><strong>SIMD bitfields</strong> (<code>wide</code>)</td><td>Piece availability is boolean algebra; 256 pieces per SIMD instruction</td></tr>
+<tr><td><strong>Fog-of-war bitmap</strong></td><td>Per-player grid</td><td><strong>SIMD row bitmaps</strong></td><td>Reveal = single SIMD OR per row; 128 cells per register</td></tr>
+<tr><td><strong>Influence maps</strong></td><td><code>[i32; MAP_AREA]</code></td><td><strong><code>#[repr(C, align(64))]</code></strong></td><td>Auto-vectorized decay/normalize with AVX2/AVX-512</td></tr>
+<tr><td><strong>Damage event buffer</strong></td><td><code>Vec&lt;DamageEvent&gt;</code></td><td><strong>AoSoA tiles of 8</strong></td><td>8 damage events processed per SIMD pass</td></tr>
+<tr><td><strong>Replay analysis</strong></td><td>Not yet designed</td><td><strong>Arrow columnar</strong></td><td>SQL-like queries over order streams; zero-copy from disk</td></tr>
+<tr><td><strong>VersusTable</strong></td><td>Flat array</td><td>Keep current</td><td>Already cache-friendly; no change needed</td></tr>
+<tr><td><strong>Peer scoring</strong></td><td>Not yet designed</td><td><strong>SoA</strong></td><td>Column scans for peer ranking (sort by speed, filter by availability)</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="key-recommendations"><a class="header" href="#key-recommendations">Key Recommendations</a></h2>
+<h3 id="workshop-resource-index--soa"><a class="header" href="#workshop-resource-index--soa">Workshop Resource Index — SoA</a></h3>
+<p>Store browse-time-hot fields in SoA layout:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use soa_rs::Soars;
+
+#[derive(Soars)]
+struct ResourceIndex {
+    id: InternedResourceId,        // 4 bytes
+    category: ResourceCategory,     // 1 byte
+    game_module: GameModuleId,      // 1 byte
+    platform_bits: u8,              // bitflags
+    rating_centile: u8,             // 0-100, pre-computed
+    download_count: u32,            // sort-by-popularity
+    name_hash: u32,                 // fast text search pre-filter
+}
+<span class="boring">}</span></code></pre>
+<p>Filtering 10,000 resources by category scans a contiguous 10KB <code>[ResourceCategory; 10000]</code> (L1 cache) instead of touching scattered multi-KB structs. Full resource details (description, tags, author info) stored in a separate cold-tier <code>Vec&lt;ResourceDetail&gt;</code> indexed by position.</p>
+<h3 id="p2p-piece-tracking--simd-bitfields"><a class="header" href="#p2p-piece-tracking--simd-bitfields">P2P Piece Tracking — SIMD Bitfields</a></h3>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use wide::u64x4;
+
+struct PieceBitfield {
+    blocks: Vec&lt;u64x4&gt;,  // 256 bits per block
+}
+
+impl PieceBitfield {
+    fn useful_pieces(&amp;self, peer_have: &amp;PieceBitfield, in_flight: &amp;PieceBitfield) -&gt; PieceBitfield {
+        PieceBitfield {
+            blocks: self.blocks.iter()
+                .zip(peer_have.blocks.iter())
+                .zip(in_flight.blocks.iter())
+                .map(|((mine, theirs), flying)| {
+                    let need = !*mine;
+                    need &amp; *theirs &amp; !*flying
+                })
+                .collect()
+        }
+    }
+}
+<span class="boring">}</span></code></pre>
+<p>For a 50MB mod with 200 pieces, the entire useful-piece computation is one loop iteration. For 2000 pieces, it’s 8 iterations — versus 2000 scalar boolean operations.</p>
+<h3 id="fog-of-war-bitmap--simd-rows"><a class="header" href="#fog-of-war-bitmap--simd-rows">Fog-of-War Bitmap — SIMD Rows</a></h3>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>use wide::u64x2;
+
+struct FogBitmap {
+    rows: Vec&lt;u64x2&gt;,  // One entry per map row; 128 cells per register
+}
+
+impl FogBitmap {
+    fn reveal(&amp;mut self, cx: usize, cy: usize, sight_mask: &amp;SightMask) {
+        for (dy, mask_row) in sight_mask.rows.iter().enumerate() {
+            let y = cy + dy - sight_mask.radius;
+            if y &lt; self.rows.len() {
+                self.rows[y] |= shift_mask(*mask_row, cx, sight_mask.radius);
+            }
+        }
+    }
+}
+<span class="boring">}</span></code></pre>
+<p>For a unit with sight radius 5, revealing visibility touches ~10 map rows — 10 SIMD ORs instead of ~300 scalar bit-sets.</p>
+<h3 id="influence-maps--aligned-arrays"><a class="header" href="#influence-maps--aligned-arrays">Influence Maps — Aligned Arrays</a></h3>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[repr(C, align(64))]
+struct InfluenceMap {
+    cells: [i32; 128 * 128],  // 64KB, fits in L2
+}
+
+impl InfluenceMap {
+    fn decay(&amp;mut self, numerator: i32, denominator: i32) {
+        for cell in self.cells.iter_mut() {
+            *cell = (*cell * numerator) / denominator;
+        }
+    }
+}
+<span class="boring">}</span></code></pre>
+<p>With 64-byte alignment and simple loop body, LLVM auto-vectorizes: 128×128 decay in ~1000 SIMD instructions (AVX2) vs. ~16,384 scalar.</p>
+<h3 id="damage-events--aosoa-tiles"><a class="header" href="#damage-events--aosoa-tiles">Damage Events — AoSoA Tiles</a></h3>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>#[repr(C, align(32))]
+struct DamageEventTile {
+    attacker_weapon: [InternedId; 8],
+    defender_armor:  [InternedId; 8],
+    base_damage:     [i32; 8],
+    distance_sq:     [i32; 8],
+    attacker_entity: [Entity; 8],
+    defender_entity: [Entity; 8],
+}
+<span class="boring">}</span></code></pre>
+<p>VersusTable lookup (weapon × armor → modifier) can be batched: gather 8 indices, look up 8 modifiers, multiply 8 damages — auto-vectorized.</p>
+<h3 id="replay-analysis--arrow-columnar"><a class="header" href="#replay-analysis--arrow-columnar">Replay Analysis — Arrow Columnar</a></h3>
+<blockquote>
+<p><strong>Not a storage format.</strong> The canonical replay storage format is <code>.icrep</code> (see <code>formats/save-replay-formats.md</code>). Arrow is a <strong>derived analytics/index layer</strong> — replay order streams are converted to Arrow <code>RecordBatch</code> for analysis queries, not stored as Arrow on disk. The <code>.icrep</code> file remains the source of truth; Arrow representation is transient and computed on demand.</p>
+</blockquote>
+<p>When the replay analysis system is built (Phase 4–5), convert replay order streams to Arrow format for querying. Each replay becomes a <code>RecordBatch</code> with columns for tick, player_id, order_type, target coordinates, and payloads. Arrow’s compute kernels provide SIMD-vectorized filter, sort, and aggregate operations. Zero-copy from disk — no deserialization needed for the columnar representation once built.</p>
+<h2 id="efficiency-pyramid-applied-to-p2pworkshop"><a class="header" href="#efficiency-pyramid-applied-to-p2pworkshop">Efficiency Pyramid Applied to P2P/Workshop</a></h2>
+<p>The simulation Efficiency Pyramid applies to infrastructure subsystems too:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Layer</th><th>Sim Example</th><th>Infrastructure Equivalent</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Algorithm</strong></td><td>JPS+ pathfinding</td><td>Content-aware <code>.icpkg</code> piece ordering (manifest first, sprites before audio)</td></tr>
+<tr><td><strong>Cache-friendly</strong></td><td>Archetype SoA</td><td>SoA Workshop index, hot/warm/cold cache tiers</td></tr>
+<tr><td><strong>LOD</strong></td><td>Sim LOD per distance band</td><td>Adaptive <code>PeerLOD</code> — full attention for active transfers, background for seeds</td></tr>
+<tr><td><strong>Amortize</strong></td><td>Fog updates every N ticks</td><td>Staggered background ops (<code>tick % N</code> scheduling for subscription checks, cache cleanup)</td></tr>
+<tr><td><strong>Zero-alloc</strong></td><td><code>TickScratch</code> pre-allocated</td><td><code>InternedResourceId</code> (4-byte interned vs. variable-length string), scratch buffers for piece assembly</td></tr>
+<tr><td><strong>Parallelism</strong></td><td><code>par_iter()</code> last resort</td><td>Pipelined piece validation (hash in background while downloading next piece)</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="content-aware-piece-ordering"><a class="header" href="#content-aware-piece-ordering">Content-Aware Piece Ordering</a></h2>
+<p>The <code>.icpkg</code> package format should define canonical file ordering:</p>
+<ol>
+<li>Package manifest (metadata, dependency list)</li>
+<li>Thumbnail / preview image</li>
+<li>YAML rules (small, needed for lobby display)</li>
+<li>Sprite sheets (needed for rendering)</li>
+<li>Audio files (can stream, lowest priority)</li>
+</ol>
+<p>This ordering means the first pieces of a download contain the metadata and preview — enough to display in the Workshop browser before the full package is downloaded.</p>
+<h2 id="cache-tiering"><a class="header" href="#cache-tiering">Cache Tiering</a></h2>
+<pre><code>Hot tier:   mmap'd — actively playing/editing content (instant access)
+Warm tier:  on-disk — recently used, subscribed, prefetched (disk seek)
+Cold tier:  evictable — LRU, unsubscribed (may need re-download)
+</code></pre>
+<p>The tier management runs on the stagger schedule (not every tick), promoting content on access and demoting on LRU eviction.</p>
+<h2 id="implementation-phasing"><a class="header" href="#implementation-phasing">Implementation Phasing</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Phase</th><th>What to Decide/Implement</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Phase 0–1</strong></td><td>Define <code>.icpkg</code> piece ordering; add <code>#[repr(C, align(64))]</code> to influence map types; design <code>ResourceIndex</code> SoA layout; design P2P piece bitfield type</td></tr>
+<tr><td><strong>Phase 2</strong></td><td>Implement fog SIMD bitmaps; implement influence map alignment; design AoSoA damage tiles</td></tr>
+<tr><td><strong>Phase 3–4</strong></td><td>Implement SoA Workshop index; implement stagger schedule; implement cache tiering</td></tr>
+<tr><td><strong>Phase 4–5</strong></td><td>Design replay analysis on Arrow; implement piece validation pipeline</td></tr>
+<tr><td><strong>Phase 5+</strong></td><td>Profile and implement AoSoA damage tiles (only if bottleneck shown); Arrow replay analysis</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="dependency-summary"><a class="header" href="#dependency-summary">Dependency Summary</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Crate</th><th>License</th><th>Use</th><th>WASM</th></tr>
+</thead>
+<tbody>
+<tr><td><code>soa-rs</code></td><td>MIT/Apache-2.0</td><td>SoA layout for Workshop index, peer tables</td><td>Yes</td></tr>
+<tr><td><code>wide</code></td><td>Zlib/Apache-2.0/MIT</td><td>SIMD bitfields, batch arithmetic</td><td>Partial (scalar fallback)</td></tr>
+<tr><td><code>arrow-rs</code></td><td>Apache-2.0</td><td>Replay analysis, analytics (Phase 4–5)</td><td>Yes</td></tr>
+<tr><td><code>datafusion</code></td><td>Apache-2.0</td><td>SQL queries over replay data (optional)</td><td>No</td></tr>
+</tbody>
+</table>
+</div>
+<p>All compatible with IC’s GPL v3 + modding exception license.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="openra-engine--feature-reference--gap-analysis"><a class="header" href="#openra-engine--feature-reference--gap-analysis">OpenRA Engine — Feature Reference &amp; Gap Analysis</a></h1>
 <p>Exhaustive catalog of every OpenRA engine feature (~700+ traits) with Iron Curtain gap analysis, mapping table, and action plan.</p>

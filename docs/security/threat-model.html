@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-58788810.js";
+            window.path_to_searchindex_js = "../searchindex-f685a9d4.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-9a2c99cb.js"></script>
+        <script src="../toc-35baaca3.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -285,7 +285,7 @@ impl NetworkModel for FogAuthClientNetwork {
     }
 }
 <span class="boring">}</span></code></pre>
-<p><strong>Key:</strong> Validation is deterministic and inside the sim. All clients run the same validation → all agree on rejections → no desync. Relay server also validates before broadcasting (defense in depth).</p>
+<p><strong>Key:</strong> Validation is deterministic and inside the sim. All clients run the same validation → all agree on rejections → no desync. The relay server performs <strong>structural</strong> validation before broadcasting (field bounds, order type recognized, rate limits — defense in depth) but does not run <code>ic-sim</code>; D012 sim validation is authoritative and runs on every client.</p>
 <p><strong>Scaling consideration (uBO pattern):</strong> At relay scale (thousands of orders/second across many games), the <code>match</code> dispatch above is adequate — RTS order type cardinality is low (~20 types). However, if mod-defined order types or conditional validation rules (D028) significantly expand the rule set, a <strong>token-dispatch</strong> pattern — bucketing validators by a discriminant key (order type + context flags), skipping irrelevant validators entirely — would avoid linear scanning. This is the same architecture uBlock Origin uses to evaluate ~300K filter rules in &lt;1ms: extract a discriminating token, look up only the matching bucket (see <code>research/ublock-origin-pattern-matching-analysis.md</code>). For most IC deployments, the simple <code>match</code> suffices; the dispatch pattern is insurance for heavily modded environments.</p>
 <h2 id="vulnerability-3-lag-switch-timing-manipulation"><a class="header" href="#vulnerability-3-lag-switch-timing-manipulation">Vulnerability 3: Lag Switch (Timing Manipulation)</a></h2>
 <h3 id="the-problem-2"><a class="header" href="#the-problem-2">The Problem</a></h3>

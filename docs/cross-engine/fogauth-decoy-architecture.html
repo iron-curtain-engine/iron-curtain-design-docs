@@ -1,0 +1,458 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>FogAuth &amp; Decoy Architecture - Iron Curtain — Design Documentation</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="Design docs for a Rust-native Red Alert RTS engine">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../favicon-29075ff1.svg">
+        <link rel="shortcut icon" href="../favicon-96291481.png">
+        <link rel="stylesheet" href="../css/variables-8adf115d.css">
+        <link rel="stylesheet" href="../css/general-2459343d.css">
+        <link rel="stylesheet" href="../css/chrome-ae938929.css">
+        <link rel="stylesheet" href="../css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="../highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="../tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../css/sidebar-logo-511465a2.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "../";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "../searchindex-f685a9d4.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="../toc-35baaca3.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="../toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Iron Curtain — Design Documentation</h1>
+
+                    <div class="right-buttons">
+                        <a href="../print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/iron-curtain-engine/iron-curtain-design-docs/edit/main/src/cross-engine/fogauth-decoy-architecture.md" title="Suggest an edit" aria-label="Suggest an edit" rel="edit">
+                            <span class=fa-svg id="git-edit-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M421.7 220.3l-11.3 11.3-22.6 22.6-205 205c-6.6 6.6-14.8 11.5-23.8 14.1L30.8 511c-8.4 2.5-17.5 .2-23.7-6.1S-1.5 489.7 1 481.2L38.7 353.1c2.6-9 7.5-17.2 14.1-23.8l205-205 22.6-22.6 11.3-11.3 33.9 33.9 62.1 62.1 33.9 33.9zM96 353.9l-9.3 9.3c-.9 .9-1.6 2.1-2 3.4l-25.3 86 86-25.3c1.3-.4 2.5-1.1 3.4-2l9.3-9.3H112c-8.8 0-16-7.2-16-16V353.9zM453.3 19.3l39.4 39.4c25 25 25 65.5 0 90.5l-14.5 14.5-22.6 22.6-11.3 11.3-33.9-33.9-62.1-62.1L314.3 67.7l11.3-11.3 22.6-22.6 14.5-14.5c25-25 65.5-25 90.5 0z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="fogauth--decoy-architecture-for-cross-engine-play"><a class="header" href="#fogauth--decoy-architecture-for-cross-engine-play">FogAuth &amp; Decoy Architecture for Cross-Engine Play</a></h1>
+<blockquote>
+<p><strong>Sub-page of:</strong> <a href="../07-CROSS-ENGINE.html">Cross-Engine Compatibility</a>
+<strong>Status:</strong> Design-ready architecture. Native FogAuth implementation: M11 (<code>P-Optional</code>, pending P007 — client game loop strategy). Cross-engine translator-authoritative model: depends on native FogAuth.
+<strong>Depends on:</strong> <code>research/fog-authoritative-server-design.md</code> (native FogAuth design), P007 resolution (game loop variant for FogAuth clients)</p>
+</blockquote>
+<h2 id="problem-statement"><a class="header" href="#problem-statement">Problem Statement</a></h2>
+<p>In lockstep multiplayer, every client has full game state in memory. A modified client can render enemy positions through fog-of-war (maphack). For native IC clients, the FogAuth server model prevents this by withholding fogged data entirely. But for cross-engine play, IC cannot control the foreign client’s binary — the foreign client’s lockstep partner is IC’s translator, and the translator must send <em>something</em> for fogged areas or the foreign client desyncs.</p>
+<p>The translator-authoritative model solves this: instead of sending nothing (which breaks lockstep) or sending real data (which enables maphack), the translator sends <strong>fabricated decoy data</strong> for fogged entities.</p>
+<h2 id="core-architecture"><a class="header" href="#core-architecture">Core Architecture</a></h2>
+<h3 id="translator-as-sole-interface"><a class="header" href="#translator-as-sole-interface">Translator as Sole Interface</a></h3>
+<p>When IC hosts a cross-engine match, the <code>AuthoritativeRelay</code> runs:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct AuthoritativeRelay {
+    /// The real, authoritative simulation
+    sim: SimState,
+    /// Per-player visibility computation
+    visibility: VisibilityComputer,
+    /// Decoy generator for cross-engine fog protection
+    decoys: DecoyGenerator,
+    /// Per-foreign-client translator sessions
+    translators: HashMap&lt;PlayerId, TranslatorSession&gt;,
+    /// Standard relay core for order routing
+    relay_core: RelayCore,
+}
+<span class="boring">}</span></code></pre>
+<p>The foreign client’s lockstep partner is NOT another player’s sim — it’s IC’s translator. The translator runs the real sim, computes per-player visibility, and produces a <strong>curated order stream</strong> per foreign client.</p>
+<h3 id="two-parallel-states"><a class="header" href="#two-parallel-states">Two Parallel States</a></h3>
+<p>For each foreign client, IC maintains:</p>
+<ol>
+<li><strong>Real state:</strong> The authoritative sim (same as all IC clients see)</li>
+<li><strong>Curated stream:</strong> The order stream sent to the foreign client, containing:
+<ul>
+<li>Real orders for entities the foreign player can see (in their fog-of-war vision)</li>
+<li>Decoy orders for entities the foreign player cannot see</li>
+</ul>
+</li>
+</ol>
+<h3 id="curated-order-types"><a class="header" href="#curated-order-types">Curated Order Types</a></h3>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum CuratedOrder {
+    /// Real order from a visible entity — forwarded unmodified
+    Real(TranslatedOrder),
+    /// Ghost order for a fogged entity — fabricated by DecoyGenerator
+    Decoy(TranslatedOrder),
+    /// Order withheld — entity is fogged, no decoy needed (e.g., entity is idle)
+    Withheld,
+}
+<span class="boring">}</span></code></pre>
+<h2 id="decoy-generation-tiers"><a class="header" href="#decoy-generation-tiers">Decoy Generation Tiers</a></h2>
+<h3 id="tier-0--stale-orders-baseline"><a class="header" href="#tier-0--stale-orders-baseline">Tier 0 — Stale Orders (baseline)</a></h3>
+<p>When an entity exits vision, the translator <strong>stops sending real orders</strong> and either:</p>
+<ul>
+<li>Sends no orders (entity appears frozen at last-known position on the foreign client), or</li>
+<li>Repeats the last known order (entity appears to continue its last action)</li>
+</ul>
+<p>Cheapest to implement. Provides basic fog protection but a sophisticated observer can notice entities “freezing” when they leave vision.</p>
+<h3 id="tier-1--last-known-freeze"><a class="header" href="#tier-1--last-known-freeze">Tier 1 — Last-Known Freeze</a></h3>
+<p>The foreign client sees entities at their last-known position. No new orders are generated. This is equivalent to what a maphacking player would see in a native game with FogAuth — entities simply don’t exist outside vision.</p>
+<p>The difference: in native FogAuth, fogged entities are removed from the client’s ECS. In cross-engine play, fogged entities persist on the foreign client with stale state.</p>
+<h3 id="tier-2--plausible-ghost-behavior"><a class="header" href="#tier-2--plausible-ghost-behavior">Tier 2 — Plausible Ghost Behavior</a></h3>
+<p>The <code>DecoyGenerator</code> produces <strong>plausible-looking fake orders</strong> that match the entity type’s expected behavior:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum GhostBehavior {
+    /// Unit patrols between last-known position and nearby waypoints
+    Patrol { waypoints: Vec&lt;WorldPos&gt;, speed: FixedPoint },
+    /// Harvester drives to nearest (last-known) resource field and back
+    Harvest { resource_pos: WorldPos, refinery_pos: WorldPos },
+    /// Building appears to be producing (animation, queued unit ghosts)
+    StaticBuilding { production_visible: bool },
+    /// Fake base expansion — MCV deploys, construction starts
+    FakeExpand { target_pos: WorldPos },
+}
+<span class="boring">}</span></code></pre>
+<p>Ghost behavior is entity-type-appropriate:</p>
+<ul>
+<li><strong>Infantry/vehicles:</strong> Patrol between plausible positions</li>
+<li><strong>Harvesters:</strong> Follow harvest cycles to known resource fields</li>
+<li><strong>Buildings:</strong> Static, may appear to be producing</li>
+<li><strong>MCVs (rare):</strong> May appear to be relocating or expanding</li>
+</ul>
+<p>The ghost orders must be <strong>valid in the foreign engine’s protocol</strong> — the compatibility pack’s behavioral baseline informs which orders the foreign engine accepts.</p>
+<h3 id="tier-3--adversarial-counterintelligence-phase-6"><a class="header" href="#tier-3--adversarial-counterintelligence-phase-6">Tier 3 — Adversarial Counterintelligence (Phase 6+)</a></h3>
+<p>Active disinformation:</p>
+<ul>
+<li>Fake army movements to draw enemy scouts or premature attacks</li>
+<li>Decoy expansions at secondary bases to split enemy attention</li>
+<li>Fabricated production queues suggesting a tech switch</li>
+</ul>
+<p>Tier 3 is opt-in and only available in casual/friendly matches where both players agree. It’s explicitly a “fun mode” — not for any competitive context.</p>
+<h2 id="fog-lift-transitions"><a class="header" href="#fog-lift-transitions">Fog-Lift Transitions</a></h2>
+<p>When a fogged entity enters a foreign player’s vision, the ghost must transition to the real entity seamlessly:</p>
+<pre><code>Tick N:   Entity outside vision → ghost at position G, patrolling
+Tick N+1: Entity enters vision → real position is R (may differ from G)
+Tick N+2: Translator sends Move order from G → R (2–5 tick transition)
+Tick N+3: Entity reaches R, now receiving real orders
+</code></pre>
+<p>The transition is indistinguishable from a unit being given new commands. No desync, no teleportation, no protocol violation. OpenRA’s sync hashing, original RA’s simple lockstep, and CnCNet’s tunnel relay all handle Move orders correctly.</p>
+<p><strong>Pre-correction window:</strong> The translator starts sending the real position 2–3 ticks before the entity enters vision, so the ghost “naturally” moves toward the real position before the player sees it.</p>
+<h2 id="security-analysis"><a class="header" href="#security-analysis">Security Analysis</a></h2>
+<h3 id="directional-trust-asymmetry"><a class="header" href="#directional-trust-asymmetry">Directional Trust Asymmetry</a></h3>
+<p>The data flows are fundamentally asymmetric:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Direction</th><th>What Flows</th><th>Who Controls</th></tr>
+</thead>
+<tbody>
+<tr><td>Foreign → IC</td><td><strong>Orders only</strong></td><td>Foreign client generates, IC validates</td></tr>
+<tr><td>IC → Foreign</td><td><strong>State</strong> (curated)</td><td>IC translator generates, foreign client renders</td></tr>
+</tbody>
+</table>
+</div>
+<p>The foreign client can only control its own units — every order is validated by IC’s real sim. The translator controls the foreign client’s entire perception of non-owned entities. A malicious foreign client cannot:</p>
+<ul>
+<li>Inject orders for units it doesn’t own (IC validates ownership)</li>
+<li>Speed-hack (relay owns the clock)</li>
+<li>Lag-switch (missed deadline = idle order injected)</li>
+<li>See through fog (fog shows ghosts, not real positions)</li>
+</ul>
+<p>A malicious foreign client CAN:</p>
+<ul>
+<li>Send adversarial order patterns (mitigated by <code>ForeignOrderFirewall</code>)</li>
+<li>Refuse to play (disconnects, handled by standard flow)</li>
+</ul>
+<h3 id="what-a-sophisticated-attacker-could-do"><a class="header" href="#what-a-sophisticated-attacker-could-do">What a Sophisticated Attacker Could Do</a></h3>
+<p><strong>Statistical ghost detection:</strong> Recording ghost positions across many games could reveal patterns (e.g., ghosts always patrol in circles). Mitigated by varying ghost parameters per match using the commit-reveal game seed as RNG input.</p>
+<p><strong>Timing analysis:</strong> Comparing timing of visible vs. fogged orders in the curated stream. Mitigated by inserting ghost orders with timing characteristics matching real orders from the same player.</p>
+<h3 id="trust-model"><a class="header" href="#trust-model">Trust Model</a></h3>
+<p>The fundamental assertion: <strong>IC’s authority server is honest.</strong> If compromised, the decoy system could feed disinformation to unfairly advantage IC players. Mitigated by existing relay trust infrastructure (signing keys, community server reputation).</p>
+<h2 id="configuration--per-match-toggle"><a class="header" href="#configuration--per-match-toggle">Configuration — Per-Match Toggle</a></h2>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub enum CrossEngineFogProtection {
+    /// Full translator-authoritative fog with decoy generation. Default.
+    Full,
+    /// FogAuth without decoys. Foreign clients receive no *new real data* for
+    /// fogged entities — entities freeze at their last-visible position until
+    /// they re-enter the foreign client's fog boundary. This is a state freeze,
+    /// not literal silence (which would break lockstep). May cause visible
+    /// "pop-in" on fog lift as frozen entities snap to current positions.
+    FogAuthOnly,
+    /// No fog protection. Full lockstep — both sides see everything.
+    /// Foreign client CAN maphack. Requires explicit player consent.
+    Disabled,
+}
+<span class="boring">}</span></code></pre>
+<p><strong>Cross-engine ranked policy:</strong> Cross-engine live play (Level 2+) is unranked by default — any promotion to ranked status requires a separate certification decision covering trust model, authority attestation, and enforcement (see <code>07-CROSS-ENGINE.md</code> § Anti-cheat warning). Within that unranked context, <code>Full</code> is the default and recommended setting. The toggle applies to casual/unranked cross-engine matches only.</p>
+<p><strong>Player consent:</strong> Reducing fog protection below <code>Full</code> requires:</p>
+<ol>
+<li>Host confirmation (with typed “I understand” for <code>Disabled</code>)</li>
+<li>All IC players in the lobby must confirm (“I Accept the Risk — Stay” / “Leave Lobby”)</li>
+</ol>
+<h2 id="foreign-order-firewall"><a class="header" href="#foreign-order-firewall">Foreign Order Firewall</a></h2>
+<p>The <code>ForeignOrderFirewall</code> adds cross-engine-specific anomaly <strong>scoring</strong> between structural validation and broadcast. It is strictly advisory — it feeds suspicion scores into the existing Kaladin behavioral analysis pipeline but <strong>never blocks or drops orders</strong>. The canonical enforcement model is: relay performs structural validation only; behavioral analysis produces detection/evidence, not heuristic suppression; deterministic order rejection happens in the sim (D012). See <code>relay-security.md</code> § Trust Tier table, <code>vulns-client-cheating.md</code> § Behavioral Detection, and <code>vulns-infrastructure.md</code> § Defense.</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>pub struct ForeignOrderFirewall {
+    pattern_buffer: RingBuffer&lt;OrderPattern&gt;,
+    detectors: Vec&lt;Box&lt;dyn AnomalyDetector&gt;&gt;,
+}
+
+pub enum AnomalyResult {
+    Clean,
+    Suspicious { reason: String, score: f64 },
+}
+<span class="boring">}</span></code></pre>
+<p><strong>Detectors</strong> (scoring-only — feed into Kaladin <code>behavioral_score</code>):</p>
+<ul>
+<li><strong>Build-cancel oscillation:</strong> Flags repeated queue/cancel of same building type (economic exploitation)</li>
+<li><strong>Pathfinding probe:</strong> Flags systematic Move orders covering map in grid pattern (automated map scanning)</li>
+<li><strong>Rapid retarget:</strong> Flags Attack orders changing target faster than human reaction time (bot detection)</li>
+<li><strong>Correction bias:</strong> Flags reconciliation corrections that <em>only</em> benefit the foreign player (tampering indicator)</li>
+</ul>
+<p>All detectors produce a score contribution. The relay <strong>always forwards the order</strong> to IC clients for deterministic sim validation (D012). The firewall’s scores compound with standard Kaladin behavioral scores for post-hoc analysis and, if thresholds are breached, the ranking authority (not the relay) issues anti-cheat actions.</p>
+<h2 id="deployment-modes"><a class="header" href="#deployment-modes">Deployment Modes</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Mode</th><th>FogAuth</th><th>Decoys</th><th>Use Case</th></tr>
+</thead>
+<tbody>
+<tr><td>Casual lockstep (no FogAuth)</td><td>No</td><td>No</td><td>Trusted LAN / friends</td></tr>
+<tr><td>Ranked (native IC)</td><td>Yes</td><td>N/A</td><td>Competitive IC-vs-IC</td></tr>
+<tr><td>Cross-engine IC-hosted</td><td>Yes</td><td>Yes (Tier 0–2)</td><td>IC hosts, foreign joins</td></tr>
+<tr><td>Cross-engine foreign-hosted</td><td>No</td><td>No</td><td>IC joins foreign game</td></tr>
+</tbody>
+</table>
+</div>
+<p>When IC joins a foreign-hosted game, fog protection depends on the foreign engine’s capabilities. IC cannot protect itself from a foreign host’s maphack — the host controls the sim. This is disclosed in the pre-join risk assessment.</p>
+<h2 id="implementation-phases"><a class="header" href="#implementation-phases">Implementation Phases</a></h2>
+<p>Native FogAuth is canonically deferred to M11 (<code>P-Optional</code>, pending P007 — client game loop strategy). The translator-authoritative cross-engine model depends on native FogAuth. This page documents the architecture so it is design-ready when M11 work begins.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Milestone</th><th>What Ships</th><th>Scope</th></tr>
+</thead>
+<tbody>
+<tr><td>M11</td><td>Relay-headless <code>ic-sim</code> for native FogAuth</td><td>Ranked/competitive maphack protection (IC-vs-IC). Requires <code>FogAuthGameLoop</code> or equivalent client loop variant (P007).</td></tr>
+<tr><td>M11+</td><td>Translator-authoritative model</td><td>Cross-engine: Tier 0 fog protection (depends on native FogAuth)</td></tr>
+<tr><td>M11+</td><td>Ghost behavior per entity type</td><td>Cross-engine: Tier 1 + Tier 2 decoys</td></tr>
+<tr><td>M11+</td><td>Adversarial decoys (if community demand)</td><td>Cross-engine: Tier 3 counterintelligence</td></tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<p><strong>Note on earlier delivery:</strong> The architecture would permit bringing FogAuth forward if P007 resolves earlier, but the canonical schedule is M11. The server-side capability infrastructure (<code>ic-server</code> binary, capability flags) supports FogAuth from day one — only the client-side game loop variant is the blocking design question. See <code>architecture/game-loop.md</code>, <code>netcode/network-model-trait.md</code>, and <code>research/fog-authoritative-server-design.md</code>.</p>
+</blockquote>
+<h2 id="architectural-compliance"><a class="header" href="#architectural-compliance">Architectural Compliance</a></h2>
+<ul>
+<li><strong>ic-sim unchanged:</strong> The sim is not aware of fog protection, decoys, or cross-engine play. It runs the same deterministic tick regardless.</li>
+<li><strong>NetworkModel boundary preserved:</strong> FogAuth is a deployment mode of <code>ic-server</code>, not a sim modification. The sim produces world state; the server/translator decides what each client sees.</li>
+<li><strong>Relay architecture extended:</strong> <code>AuthoritativeRelay</code> is a new relay mode (alongside standard lockstep relay) that adds headless sim + per-client visibility + per-client order curation.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../cross-engine/compatibility-packs.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="../08-ROADMAP.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../cross-engine/compatibility-packs.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="../08-ROADMAP.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../elasticlunr-ef4e11c1.min.js"></script>
+        <script src="../mark-09e88c2c.min.js"></script>
+        <script src="../searcher-c2a407aa.js"></script>
+
+        <script src="../clipboard-1626706a.min.js"></script>
+        <script src="../highlight-abc7f01d.js"></script>
+        <script src="../book-a0b12cfe.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>
